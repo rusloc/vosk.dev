@@ -12,10 +12,7 @@ export default function Home() {
         <div className="max-w-2xl">
           <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
             <span className="font-bold italic uppercase">Save</span> money by
-            implementing{" "}
-            <span className="font-bold italic uppercase">speedy</span> solutions
-            and understanding your business{" "}
-            <span className="font-bold italic uppercase">data</span>
+            understanding <span className="font-bold italic uppercase">data</span>
           </h1>
           <div className="mt-10 flex flex-wrap gap-3">
             <Link

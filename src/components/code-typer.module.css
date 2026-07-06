@@ -1,12 +1,12 @@
 /* Home-only decorative code block.
-   Mobile: full-width strip across the bottom third of the screen.
-   Desktop (≥768px): confined to the bottom-right quadrant (2×2 grid). */
+   Mobile: bottom-third strip spanning the right 2/3 of the screen width.
+   Desktop (≥768px): confined to the bottom-right cell of a 3×3 grid. */
 
 .wrap {
   position: fixed;
   top: 66.6667%; /* bottom third */
-  left: 0; /* full width */
-  width: 100%;
+  left: 33.3333%; /* right two-thirds */
+  width: 66.6667%;
   height: 33.3333%;
   z-index: -10; /* behind content, above the body background */
   pointer-events: none;
@@ -19,10 +19,10 @@
 
 @media (min-width: 768px) {
   .wrap {
-    top: 50%; /* lower half */
-    left: 50%; /* right half */
-    width: 50%;
-    height: 50%;
+    top: 66.6667%; /* bottom third */
+    left: 66.6667%; /* right third */
+    width: 33.3333%;
+    height: 33.3333%;
   }
 }
 

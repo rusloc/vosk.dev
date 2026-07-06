@@ -7,7 +7,7 @@ export function SiteFooter() {
     <footer>
       <Container className="text-muted-foreground py-8 text-xs">
         <p>
-          <span className="hidden sm:inline">© VOSK </span>
+          © <span className="hidden sm:inline">VOSK </span>
           {year}
         </p>
       </Container>

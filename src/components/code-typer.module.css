@@ -103,12 +103,19 @@
 }
 
 .dialog {
+  /* Fixed size — never shrinks/grows with the code length. Sized to hold the
+     tallest snippet (9 lines × 28 cols) with a little breathing room. */
+  box-sizing: border-box;
+  width: 24rem;
+  height: 18rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--background);
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
   padding: 1.25rem 1.5rem;
-  max-width: min(90vw, 24rem);
 }
 
 .dialogCode {
@@ -118,5 +125,4 @@
   line-height: 1.55;
   color: #2563eb;
   white-space: pre;
-  overflow-x: auto;
 }

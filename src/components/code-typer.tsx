@@ -109,6 +109,8 @@ const GAP_MS = 500; // pause before the next snippet
 export function CodeTyper() {
   const [text, setText] = useState("");
   const [open, setOpen] = useState(false);
+  // Frozen copy of the code as it was at the moment the popup was opened.
+  const [snapshot, setSnapshot] = useState("");
 
   useEffect(() => {
     // Honor reduced-motion: show one static snippet, no typing loop.
@@ -175,7 +177,10 @@ export function CodeTyper() {
         type="button"
         aria-label="Show the code clearly"
         className={styles.hit}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setSnapshot(text);
+          setOpen(true);
+        }}
       />
 
       {open && (
@@ -186,10 +191,7 @@ export function CodeTyper() {
           onClick={() => setOpen(false)}
         >
           <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
-            <pre className={styles.dialogCode}>
-              {text}
-              <span className={styles.caret} />
-            </pre>
+            <pre className={styles.dialogCode}>{snapshot}</pre>
           </div>
         </div>
       )}

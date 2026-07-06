@@ -1,12 +1,12 @@
-/* Home-only decorative code block, placed in the lower-right quadrant of the
-   page (page split into 4 equal rects → bottom-right one). */
+/* Home-only decorative code block, placed in the very bottom-right cell of a
+   3×3 grid over the page (screen split into 9 equal rects → bottom-right one). */
 
 .wrap {
   position: fixed;
-  top: 50%; /* lower half */
-  left: 50%; /* right half */
-  width: 50%;
-  height: 50%;
+  top: 66.6667%; /* bottom third */
+  left: 66.6667%; /* right third */
+  width: 33.3333%;
+  height: 33.3333%;
   z-index: -10; /* behind content, above the body background */
   pointer-events: none;
   overflow: hidden;

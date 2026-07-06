@@ -21,6 +21,20 @@
   transform: scaleX(1);
 }
 
+/* Reserve the BOLD width on every item so the active (bold) page doesn't
+   widen and shove its neighbours — kills the horizontal jump between pages. */
+.label {
+  display: inline-grid;
+}
+
+.label::after {
+  content: attr(data-label);
+  grid-area: 1 / 1; /* stack the ghost under the visible label */
+  height: 0;
+  font-weight: 700;
+  visibility: hidden;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .navLink::after {
     transition: none;

@@ -35,7 +35,9 @@ export function SiteNav() {
                       : "text-muted-foreground",
                   )}
                 >
-                  {item.label}
+                  <span className={styles.label} data-label={item.label}>
+                    {item.label}
+                  </span>
                 </Link>
               </li>
             ))}

@@ -37,22 +37,6 @@ export function ContactForm() {
       </div>
 
       <div>
-        <label htmlFor="name" className="text-sm font-medium">
-          Name
-        </label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          required
-          autoComplete="name"
-          aria-invalid={Boolean(state.fieldErrors?.name)}
-          className={fieldClass}
-        />
-        <FieldError errors={state.fieldErrors?.name} />
-      </div>
-
-      <div>
         <label htmlFor="email" className="text-sm font-medium">
           Email
         </label>
@@ -90,7 +74,7 @@ export function ContactForm() {
           id="message"
           name="message"
           required
-          rows={6}
+          rows={4}
           aria-invalid={Boolean(state.fieldErrors?.message)}
           className={fieldClass}
         />
@@ -116,7 +100,5 @@ export function ContactForm() {
 
 function FieldError({ errors }: { errors?: string[] }) {
   if (!errors?.length) return null;
-  return (
-    <p className="mt-1 text-sm text-red-600">{errors[0]}</p>
-  );
+  return <p className="mt-1 text-sm text-red-600">{errors[0]}</p>;
 }

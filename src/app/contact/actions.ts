@@ -30,7 +30,6 @@ export async function submitContactForm(
   }
 
   const parsed = contactSchema.safeParse({
-    name: formData.get("name"),
     email: formData.get("email"),
     subject: formData.get("subject") || undefined,
     message: formData.get("message"),
@@ -66,7 +65,7 @@ export async function submitContactForm(
   const to = process.env.CONTACT_TO_EMAIL || siteConfig.contactEmail;
   const from =
     process.env.CONTACT_FROM_EMAIL || "VOSK Website <onboarding@resend.dev>";
-  const { name, email, subject, message } = parsed.data;
+  const { email, subject, message } = parsed.data;
 
   try {
     const resend = new Resend(apiKey);
@@ -74,9 +73,8 @@ export async function submitContactForm(
       from,
       to,
       replyTo: email,
-      subject: subject ? `Contact: ${subject}` : `New message from ${name}`,
+      subject: subject ? `Contact: ${subject}` : `New message from ${email}`,
       text: [
-        `Name: ${name}`,
         `Email: ${email}`,
         subject ? `Subject: ${subject}` : null,
         "",

@@ -12,14 +12,13 @@ export const metadata: Metadata = buildMetadata({
 
 export default function ContactPage() {
   return (
-    <Container className="py-24">
+    <Container className="py-12">
       <h1 className="text-3xl font-semibold tracking-tight">Contact</h1>
       <p className="text-muted-foreground mt-4 max-w-xl">
-        Have a project or a question? Send a message below and it lands straight
-        in my inbox — or reach me directly.
+        Send your business related message straight into my email box.
       </p>
 
-      <div className="mt-10 grid gap-12 md:grid-cols-[minmax(0,1fr)_16rem]">
+      <div className="mt-8 grid gap-8 md:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="max-w-xl">
           <ContactForm />
         </div>

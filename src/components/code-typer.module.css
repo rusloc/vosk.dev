@@ -1,16 +1,17 @@
-/* Home-only decorative code column: types fun snippets forever on the right. */
+/* Home-only decorative code block, placed in the lower-right quadrant of the
+   page (page split into 4 equal rects → bottom-right one). */
 
 .wrap {
   position: fixed;
-  top: 0;
-  right: 0;
-  width: 20vw; /* ~20% of the screen width */
-  height: 100vh;
+  top: 50%; /* lower half */
+  left: 50%; /* right half */
+  width: 50%;
+  height: 50%;
   z-index: -10; /* behind content, above the body background */
   pointer-events: none;
   overflow: hidden;
   display: flex;
-  align-items: center; /* vertically centered */
+  align-items: center; /* centered within the quadrant */
   filter: blur(2px); /* light frost — 10px obliterated the thin text strokes */
   opacity: 0.45;
 }

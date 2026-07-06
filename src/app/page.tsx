@@ -25,13 +25,7 @@ export default function Home() {
               href="/work"
               className="bg-primary text-primary-foreground inline-flex h-11 items-center justify-center rounded-md px-6 text-sm font-medium transition-opacity hover:opacity-90"
             >
-              View my work
-            </Link>
-            <Link
-              href="/contact"
-              className="border-border hover:bg-muted inline-flex h-11 items-center justify-center rounded-md border px-6 text-sm font-medium transition-colors"
-            >
-              Get in touch
+              View cases
             </Link>
           </div>
         </div>

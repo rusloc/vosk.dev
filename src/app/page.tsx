@@ -20,14 +20,14 @@ export default function Home() {
             I design dashboards, build data pipelines, and ship analytics that
             teams actually use — from messy source data to a clear answer.
           </p>
-          <div className="mt-10 flex flex-wrap gap-3">
-            <Link
-              href="/work"
-              className="bg-primary text-primary-foreground inline-flex h-11 items-center justify-center rounded-md px-6 text-sm font-medium transition-opacity hover:opacity-90"
-            >
-              View cases
-            </Link>
-          </div>
+        </div>
+        <div className="mt-10 flex justify-end">
+          <Link
+            href="/work"
+            className="bg-primary text-primary-foreground inline-flex h-11 items-center justify-center rounded-md px-6 text-sm font-medium transition-opacity hover:opacity-90"
+          >
+            View cases
+          </Link>
         </div>
       </Container>
     </>

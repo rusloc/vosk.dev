@@ -1,26 +1,13 @@
 @import "tailwindcss";
 
-/* Class-based dark mode (driven by next-themes adding `.dark` on <html>). */
-@custom-variant dark (&:where(.dark, .dark *));
-
-/* Design tokens — a minimal, neutral foundation. The design skill refines these later. */
+/* Single warm-cream theme. Tokens tuned for contrast on the cream background. */
 :root {
-  --background: #ffffff;
-  --foreground: #0a0a0a;
-  --muted: #f4f4f5;
-  --muted-foreground: #52525b;
-  --border: #e4e4e7;
+  --background: #fff8e7;
+  --foreground: #1f1b16;
+  --muted: #f4ead0;
+  --muted-foreground: #6f6a5f;
+  --border: #e7dbbe;
   --primary: #4f46e5;
-  --primary-foreground: #ffffff;
-}
-
-.dark {
-  --background: #0a0a0a;
-  --foreground: #fafafa;
-  --muted: #18181b;
-  --muted-foreground: #a1a1aa;
-  --border: #27272a;
-  --primary: #6366f1;
   --primary-foreground: #ffffff;
 }
 

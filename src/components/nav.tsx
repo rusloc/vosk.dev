@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/cn";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export function SiteNav() {
   const pathname = usePathname();
@@ -39,8 +38,6 @@ export function SiteNav() {
               </li>
             ))}
           </ul>
-
-          <ThemeToggle />
 
           <button
             type="button"

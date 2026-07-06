@@ -5,8 +5,11 @@ export function SiteFooter() {
 
   return (
     <footer>
-      <Container className="text-muted-foreground py-8 text-sm">
-        <p>© VOSK {year}</p>
+      <Container className="text-muted-foreground py-8 text-xs">
+        <p>
+          <span className="hidden sm:inline">© VOSK </span>
+          {year}
+        </p>
       </Container>
     </footer>
   );

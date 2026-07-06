@@ -46,7 +46,7 @@ export function SiteNav() {
             aria-label="Toggle menu"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="border-border bg-background text-foreground hover:bg-muted fixed right-4 bottom-4 z-50 inline-flex h-11 w-11 items-center justify-center rounded-md border shadow-lg transition-colors md:hidden"
+            className="border-border bg-background text-foreground hover:bg-muted fixed right-2 bottom-2 z-50 inline-flex h-11 w-11 items-center justify-center rounded-md border shadow-lg transition-colors md:hidden"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

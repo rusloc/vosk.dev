@@ -1,5 +1,6 @@
-/* Home-only decorative code block, placed in the bottom row of a 1×3 grid over
-   the page (screen split into 3 full-width rows → the lowest one). */
+/* Home-only decorative code block.
+   Mobile: full-width strip across the bottom third of the screen.
+   Desktop (≥768px): confined to the bottom-right quadrant (2×2 grid). */
 
 .wrap {
   position: fixed;
@@ -14,6 +15,15 @@
   align-items: flex-start; /* top-anchored so lines grow DOWN, never slide up */
   filter: blur(2px); /* light frost — 10px obliterated the thin text strokes */
   opacity: 0.45;
+}
+
+@media (min-width: 768px) {
+  .wrap {
+    top: 50%; /* lower half */
+    left: 50%; /* right half */
+    width: 50%;
+    height: 50%;
+  }
 }
 
 .code {

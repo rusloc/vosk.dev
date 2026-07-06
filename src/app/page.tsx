@@ -11,8 +11,23 @@ export default function Home() {
       <Container className="py-24 sm:py-32">
         <div className="max-w-2xl">
           <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-            <span className="font-bold italic uppercase">Save</span> money by
-            understanding <span className="font-bold italic uppercase">data</span>
+            {/* Mobile: natural inline flow (unchanged). */}
+            <span className="md:hidden">
+              <span className="font-bold italic uppercase">Save</span> money by
+              understanding{" "}
+              <span className="font-bold italic uppercase">data</span>
+            </span>
+
+            {/* Desktop: two rows, DATA pushed to the very end of its row. */}
+            <span className="hidden md:flex md:flex-col">
+              <span>
+                <span className="font-bold italic uppercase">Save</span> money
+                by understanding
+              </span>
+              <span className="self-end">
+                <span className="font-bold italic uppercase">data</span>
+              </span>
+            </span>
           </h1>
           <div className="mt-10 flex flex-wrap gap-3">
             <Link

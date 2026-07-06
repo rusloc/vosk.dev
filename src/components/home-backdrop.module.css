@@ -2,17 +2,20 @@
 
 .backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: 30vw; /* bars occupy ~30% of the screen width when fully expanded */
+  inset: 0;
   z-index: -10; /* behind page content, above the body background */
   pointer-events: none;
+  overflow: hidden; /* clip the blur halo so it never adds a scrollbar */
+}
+
+.svg {
+  display: block;
+  width: 100%; /* spans the full viewport; bar widths map to % of screen */
+  height: 100%;
   filter: blur(10px); /* frosted-glass look */
 }
 
 .bar {
-  fill: var(--primary);
   transform: scaleX(0);
   transform-box: fill-box; /* scale relative to the rect, not the SVG */
   transform-origin: left center; /* grow from the left edge */

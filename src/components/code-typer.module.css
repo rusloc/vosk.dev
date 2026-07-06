@@ -11,8 +11,8 @@
   overflow: hidden;
   display: flex;
   align-items: center; /* vertically centered */
-  filter: blur(10px); /* frosted, same feel as the bars */
-  opacity: 0.2;
+  filter: blur(2px); /* light frost — 10px obliterated the thin text strokes */
+  opacity: 0.45;
 }
 
 .code {

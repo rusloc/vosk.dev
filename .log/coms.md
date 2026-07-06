@@ -15,3 +15,7 @@ One line per user request + brief response. Tag `#decision` / `#idea` / `#bug` i
 - #bug Vercel build failed (`Cannot find module @/app/contact/actions`) → root cause: `actions.ts` + `schema.ts` were untracked, never pushed. Fixed by committing them (`7e75583`). Checked git tree: clean, HEAD == origin/main.
 - Home backdrop: added 5 frosted animated SVG bars (left→right one-shot on load, home-only). #feature Then restyled (thicker=10% vh, centered cluster, closer gaps, black→grey gradient, widths 75%→25%). Then recolored all to `#FF991C` with opacity fade 25%→10%.
 - Code-typer backdrop: looping Python/SQL/DAX "fun code" typing column, right ~20vw, blue, 10px blur, 20% opacity, reduced-motion aware; 9 snippets interleaved + looped. #feature Flagged: 10px blur makes code texture-only; offered ~2-3px if legibility wanted.
+- Nav fixes: added "Home" item; renamed "Contracts" → "Contacts"; #bug fixed cross-page horizontal jump via `scrollbar-gutter: stable` on html (scrollbar appeared only on the tall Contacts page).
+- #bug Right-side code "not visible": verified it renders/types fine (SSR wrapper present, GET / 200) — root cause was 10px blur obliterating thin text at 20% opacity. Fixed: blur 10px→2px, opacity 0.2→0.45.
+- Moved code block into the page's lower-right quadrant (fixed top:50%/left:50%, 50%×50%).
+- Top-anchored the code (align-items flex-start) so lines appear downward without sliding up.

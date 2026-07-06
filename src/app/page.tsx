@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { Container } from "@/components/container";
 import { HomeBackdrop } from "@/components/home-backdrop";
+import { CodeTyper } from "@/components/code-typer";
 
 export default function Home() {
   return (
     <>
       <HomeBackdrop />
+      <CodeTyper />
       <Container className="py-24 sm:py-32">
         <div className="max-w-2xl">
           <p className="text-primary text-sm font-medium">

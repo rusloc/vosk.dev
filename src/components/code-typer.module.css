@@ -1,0 +1,50 @@
+/* Home-only decorative code column: types fun snippets forever on the right. */
+
+.wrap {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 20vw; /* ~20% of the screen width */
+  height: 100vh;
+  z-index: -10; /* behind content, above the body background */
+  pointer-events: none;
+  overflow: hidden;
+  display: flex;
+  align-items: center; /* vertically centered */
+  filter: blur(10px); /* frosted, same feel as the bars */
+  opacity: 0.2;
+}
+
+.code {
+  margin: 0;
+  padding: 0 1rem;
+  width: 100%;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: #2563eb; /* blue */
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.caret {
+  display: inline-block;
+  width: 0.55ch;
+  height: 1em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    animation: none;
+  }
+}

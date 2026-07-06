@@ -6,18 +6,24 @@
   z-index: -10; /* behind page content, above the body background */
   pointer-events: none;
   overflow: hidden; /* clip the blur halo so it never adds a scrollbar */
-}
-
-.svg {
-  display: block;
-  width: 100%; /* spans the full viewport; bar widths map to % of screen */
-  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* centre the stack vertically */
+  align-items: flex-start; /* anchor bars to the left edge */
+  gap: 2.5vh;
   filter: blur(10px); /* frosted-glass look */
 }
 
 .bar {
+  height: 10vh;
+  border-radius: 0 8px 8px 0; /* rounded on the right side only */
+  /* fill fades from transparent on the left to ~90% opacity on the right */
+  background: linear-gradient(
+    to right,
+    rgba(255, 153, 28, 0) 0%,
+    rgba(255, 153, 28, 0.9) 100%
+  );
   transform: scaleX(0);
-  transform-box: fill-box; /* scale relative to the rect, not the SVG */
   transform-origin: left center; /* grow from the left edge */
   animation: bar-expand 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }

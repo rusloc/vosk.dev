@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/cn";
+import styles from "./nav.module.css";
 
 export function SiteNav() {
   const pathname = usePathname();
@@ -27,7 +28,8 @@ export function SiteNav() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "hover:text-foreground rounded-md px-3 py-2 text-sm transition-colors",
+                    styles.navButton,
+                    "hover:text-foreground px-3 py-2 text-sm transition-colors",
                     isActive(item.href)
                       ? "text-foreground"
                       : "text-muted-foreground",

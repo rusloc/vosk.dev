@@ -74,7 +74,7 @@ export function SiteNav() {
       </nav>
 
       {open && (
-        <ul className="border-border border-t px-4 py-2 md:hidden">
+        <ul className="border-border bg-background absolute inset-x-0 top-full border-b px-4 py-2 shadow-lg md:hidden">
           {siteConfig.nav.map((item) => (
             <li key={item.href}>
               <Link

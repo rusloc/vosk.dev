@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/cn";
+import styles from "./nav.module.css";
 
 export function SiteNav() {
   const pathname = usePathname();
@@ -27,9 +28,10 @@ export function SiteNav() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "px-3 py-2 text-sm underline-offset-4 hover:underline hover:decoration-gray-400",
+                    styles.navLink,
+                    "px-3 py-2 text-sm",
                     isActive(item.href)
-                      ? "text-foreground"
+                      ? "text-foreground font-bold"
                       : "text-muted-foreground",
                   )}
                 >

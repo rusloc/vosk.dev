@@ -1,0 +1,28 @@
+/* Top-nav items: a gray underline wipes in fast from left→right on hover. */
+
+.navLink {
+  position: relative;
+}
+
+.navLink::after {
+  content: "";
+  position: absolute;
+  left: 0.75rem; /* align with px-3 padding so the line sits under the text */
+  right: 0.75rem;
+  bottom: 0.3rem;
+  height: 1px;
+  background: #9ca3af; /* gray-400 */
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.15s ease-out; /* gradual + fast */
+}
+
+.navLink:hover::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navLink::after {
+    transition: none;
+  }
+}

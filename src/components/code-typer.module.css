@@ -59,3 +59,64 @@
     animation: none;
   }
 }
+
+/* Invisible click target over the code region — desktop only. No cursor
+   change / hover / focus ring, so there's no hint it's interactive. */
+.hit {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hit {
+    display: block;
+    position: fixed;
+    top: 66.6667%;
+    left: 66.6667%;
+    width: 33.3333%;
+    height: 33.3333%;
+    z-index: 30;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: default;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .hit:focus,
+  .hit:focus-visible {
+    outline: none;
+  }
+}
+
+/* Clear-view popup: the same running code, unblurred. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.dialog {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  padding: 1.25rem 1.5rem;
+  max-width: min(90vw, 24rem);
+}
+
+.dialogCode {
+  margin: 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #2563eb;
+  white-space: pre;
+  overflow-x: auto;
+}

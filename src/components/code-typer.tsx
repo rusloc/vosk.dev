@@ -3,61 +3,103 @@
 import { useEffect, useState } from "react";
 import styles from "./code-typer.module.css";
 
-// Fun snippets — each takes a human concept and wraps it in an IT/coding package.
-// 2–3 per language (Python / SQL / DAX), interleaved, then looped forever.
+// Fun snippets — each wraps a human idea in an IT/coding package.
+// 3 per language (Python / SQL / DAX), interleaved, then looped forever.
+// Constraints: 7–9 lines each, ≤28 columns wide (indent = 4 spaces).
 const SAMPLES = [
-  `def help_me(data, clean) -> str:
-    clean_data = data.process().clean().load()
-    clean == True
-    return clean_data`,
+  // — Python —
+  `def save_money(data):
+    clean = (
+        data
+        .dropna()
+        .simplify()
+    )
+    roi = clean.value()
+    return roi > cost`,
 
-  `select trust, revenue
+  // — SQL —
+  `select
+    trust,
+    revenue
 from clients
-where delivered = 'on_time'
-  and quality > expectations
-group by relationship;`,
+where delivered
+  and quality
+    > promises
+group by trust;`,
 
+  // — DAX —
   `Insight =
 CALCULATE(
     SUM( Data[Value] ),
-    FILTER( Reality, Reality[Noise] = FALSE )
+    FILTER(
+        Reality,
+        Reality[Noise]
+            = FALSE
+    )
 )`,
 
-  `def make_it_work(idea: Idea) -> Product:
-    while not idea.shipped:
-        idea = idea.iterate().test().deploy()
-    return idea.to_product()`,
+  // — Python —
+  `def make_it_work(idea):
+    while not idea.done:
+        idea = (
+            idea
+            .test()
+            .deploy()
+        )
+    return idea.ship()`,
 
-  `with good_decisions as (
-    select metric, value
+  // — SQL —
+  `with clarity as (
+    select metric,
+           value
     from raw_data
-    where confusion is null
+    where confusion
+        is null
 )
 select clarity
-from good_decisions
-order by impact desc;`,
+from clarity;`,
 
+  // — DAX —
   `Momentum =
-VAR Progress = DIVIDE( [Shipped], [Planned] )
+VAR Progress =
+    DIVIDE(
+        [Shipped],
+        [Planned]
+    )
 RETURN
-    IF( Progress >= 1, "shipped", Progress )`,
+    IF( Progress
+        >= 1, "yes" )`,
 
-  `class DataAnalyst:
-    def solve(self, chaos):
-        signal = chaos.filter(noise).groupby("what_matters")
-        return signal.tell_a_story()`,
+  // — Python —
+  `class Analyst:
+    def solve(self, mess):
+        signal = (
+            mess
+            .filter(noise)
+            .groupby("key")
+        )
+        return signal.tell()`,
 
+  // — SQL —
   `update roadmap
-set status = 'shipped'
+set status =
+    'shipped'
 where blockers = 0
-  and coffee_level > 9000;`,
+  and coffee > 9000
+  and doubt is null
+  and tests = 'pass'
+returning status;`,
 
+  // — DAX —
   `Trust% =
-DIVIDE(
-    [Promises Kept],
-    [Promises Made],
-    "building..."
-)`,
+VAR Kept = [Kept]
+VAR Made = [Made]
+RETURN
+    DIVIDE(
+        Kept,
+        Made,
+        "soon..."
+    )`,
 ];
 
 const TYPE_MS = 45; // per character
@@ -66,6 +108,7 @@ const GAP_MS = 500; // pause before the next snippet
 
 export function CodeTyper() {
   const [text, setText] = useState("");
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     // Honor reduced-motion: show one static snippet, no typing loop.
@@ -107,12 +150,49 @@ export function CodeTyper() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Close the clear-view popup on Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
-    <div className={styles.wrap} aria-hidden="true">
-      <pre className={styles.code}>
-        {text}
-        <span className={styles.caret} />
-      </pre>
-    </div>
+    <>
+      <div className={styles.wrap} aria-hidden="true">
+        <pre className={styles.code}>
+          {text}
+          <span className={styles.caret} />
+        </pre>
+      </div>
+
+      {/* Desktop-only invisible hit area over the code region — click to see
+          the same running code clearly (no blur). No visual affordance. */}
+      <button
+        type="button"
+        aria-label="Show the code clearly"
+        className={styles.hit}
+        onClick={() => setOpen(true)}
+      />
+
+      {open && (
+        <div
+          className={styles.overlay}
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setOpen(false)}
+        >
+          <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
+            <pre className={styles.dialogCode}>
+              {text}
+              <span className={styles.caret} />
+            </pre>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

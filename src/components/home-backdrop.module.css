@@ -1,0 +1,35 @@
+/* Home-only decorative backdrop: 5 frosted bars that expand left→right once. */
+
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 30vw; /* bars occupy ~30% of the screen width when fully expanded */
+  z-index: -10; /* behind page content, above the body background */
+  pointer-events: none;
+  filter: blur(10px); /* frosted-glass look */
+}
+
+.bar {
+  fill: var(--primary);
+  transform: scaleX(0);
+  transform-box: fill-box; /* scale relative to the rect, not the SVG */
+  transform-origin: left center; /* grow from the left edge */
+  animation: bar-expand 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes bar-expand {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Runs only when the component mounts (page load / reload); never loops. */
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    animation: none;
+    transform: scaleX(1);
+  }
+}

@@ -103,14 +103,13 @@
 }
 
 .dialog {
-  /* Fixed size — never shrinks/grows with the code length. Sized to hold the
-     tallest snippet (9 lines × 28 cols) with a little breathing room. */
+  /* Fixed size — never shrinks/grows as the code types out. Sized to hold the
+     tallest snippet (9 lines × 28 cols) with a little breathing room. Code is
+     top-left anchored so the animation grows downward without shifting. */
   box-sizing: border-box;
   width: 24rem;
   height: 18rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
   background: var(--background);
   border: 1px solid var(--border);
   border-radius: 8px;

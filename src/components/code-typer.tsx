@@ -108,9 +108,10 @@ const GAP_MS = 500; // pause before the next snippet
 
 export function CodeTyper() {
   const [text, setText] = useState("");
-  const [open, setOpen] = useState(false);
-  // Frozen copy of the code as it was at the moment the popup was opened.
-  const [snapshot, setSnapshot] = useState("");
+  // Index of the snippet currently running in the background.
+  const [sampleIdx, setSampleIdx] = useState(0);
+  // Snippet index the popup is looping, or null when closed.
+  const [popupIdx, setPopupIdx] = useState<number | null>(null);
 
   useEffect(() => {
     // Honor reduced-motion: show one static snippet, no typing loop.
@@ -131,6 +132,7 @@ export function CodeTyper() {
         clearing = false;
         char = 0;
         sample = (sample + 1) % SAMPLES.length;
+        setSampleIdx(sample);
         setText("");
         timer = setTimeout(tick, GAP_MS);
         return;
@@ -152,16 +154,6 @@ export function CodeTyper() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Close the clear-view popup on Escape.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
-
   return (
     <>
       <div className={styles.wrap} aria-hidden="true">
@@ -171,30 +163,92 @@ export function CodeTyper() {
         </pre>
       </div>
 
-      {/* Desktop-only invisible hit area over the code region — click to see
-          the same running code clearly (no blur). No visual affordance. */}
+      {/* Desktop-only invisible hit area over the code region — click to open
+          a clear, looping view of the running snippet. No visual affordance. */}
       <button
         type="button"
         aria-label="Show the code clearly"
         className={styles.hit}
-        onClick={() => {
-          setSnapshot(text);
-          setOpen(true);
-        }}
+        onClick={() => setPopupIdx(sampleIdx)}
       />
 
-      {open && (
-        <div
-          className={styles.overlay}
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setOpen(false)}
-        >
-          <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
-            <pre className={styles.dialogCode}>{snapshot}</pre>
-          </div>
-        </div>
+      {popupIdx !== null && (
+        <CodePopup
+          snippet={SAMPLES[popupIdx] ?? ""}
+          onClose={() => setPopupIdx(null)}
+        />
       )}
     </>
+  );
+}
+
+// Clear (unblurred), fixed-size popup that types out one snippet and loops it
+// forever. Closes on backdrop click or Escape.
+function CodePopup({
+  snippet,
+  onClose,
+}: {
+  snippet: string;
+  onClose: () => void;
+}) {
+  const [text, setText] = useState("");
+
+  useEffect(() => {
+    let char = 0;
+    let clearing = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      timer = setTimeout(() => setText(snippet), 0);
+      return () => clearTimeout(timer);
+    }
+
+    const tick = () => {
+      if (clearing) {
+        clearing = false;
+        char = 0;
+        setText("");
+        timer = setTimeout(tick, GAP_MS);
+        return;
+      }
+
+      char += 1;
+      setText(snippet.slice(0, char));
+
+      if (char >= snippet.length) {
+        clearing = true;
+        timer = setTimeout(tick, HOLD_MS);
+        return;
+      }
+
+      timer = setTimeout(tick, TYPE_MS);
+    };
+
+    timer = setTimeout(tick, GAP_MS);
+    return () => clearTimeout(timer);
+  }, [snippet]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className={styles.overlay}
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
+        <pre className={styles.dialogCode}>
+          {text}
+          <span className={styles.caret} />
+        </pre>
+      </div>
+    </div>
   );
 }

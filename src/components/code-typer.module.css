@@ -11,14 +11,14 @@
   pointer-events: none;
   overflow: hidden;
   display: flex;
-  align-items: center; /* centered within the quadrant */
+  align-items: flex-start; /* top-anchored so lines grow DOWN, never slide up */
   filter: blur(2px); /* light frost — 10px obliterated the thin text strokes */
   opacity: 0.45;
 }
 
 .code {
   margin: 0;
-  padding: 0 1rem;
+  padding: 1.25rem 1rem;
   width: 100%;
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.8rem;

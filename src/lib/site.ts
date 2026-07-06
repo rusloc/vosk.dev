@@ -2,7 +2,7 @@ import { env } from "./env";
 
 /**
  * Central site config — brand, nav, contact. Single source for metadata and UI.
- * TODO: replace placeholder owner details (email/social) with real values.
+ * TODO: replace placeholder social URLs with real profiles.
  */
 export const siteConfig = {
   name: "VOSK",
@@ -16,7 +16,10 @@ export const siteConfig = {
     { href: "/blog", label: "Blog" },
     { href: "/contact", label: "Contact" },
   ],
-  contactEmail: "hello@vosk.dev",
+  contactEmail: "vosk.dev@gmail.com",
+  // Display form; `contactPhoneHref` is the tel: value (digits + leading +).
+  contactPhone: "+90 506 042 59 33",
+  contactPhoneHref: "+905060425933",
   social: {
     github: "https://github.com/",
     linkedin: "https://www.linkedin.com/",

@@ -6,7 +6,7 @@ export function SiteFooter() {
   return (
     <footer className="border-border border-t">
       <Container className="text-muted-foreground py-8 text-sm">
-        <p>© VOSK.DEV {year} · Freelance BI analyst &amp; developer.</p>
+        <p>© VOSK {year}</p>
       </Container>
     </footer>
   );

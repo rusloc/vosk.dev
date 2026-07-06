@@ -29,7 +29,7 @@ export function SiteNav() {
                   href={item.href}
                   className={cn(
                     styles.navButton,
-                    "hover:text-foreground px-3 py-2 text-sm transition-colors",
+                    "border-border hover:text-foreground border px-3 py-2 text-sm transition-colors",
                     isActive(item.href)
                       ? "text-foreground"
                       : "text-muted-foreground",
@@ -46,7 +46,7 @@ export function SiteNav() {
             aria-label="Toggle menu"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="border-border text-foreground hover:bg-muted inline-flex h-9 w-9 items-center justify-center rounded-md border transition-colors md:hidden"
+            className="border-border bg-background text-foreground hover:bg-muted fixed right-4 bottom-4 z-50 inline-flex h-11 w-11 items-center justify-center rounded-md border shadow-lg transition-colors md:hidden"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

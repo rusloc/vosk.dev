@@ -11,10 +11,11 @@ export const siteConfig = {
     "Freelance Business Intelligence analyst and developer. Dashboards, data pipelines, and analytics that turn raw data into decisions.",
   url: env.NEXT_PUBLIC_SITE_URL,
   nav: [
+    { href: "/", label: "Home" },
     { href: "/work", label: "Showcase" },
     { href: "/blog", label: "Blog" },
     { href: "/services", label: "Service" },
-    { href: "/contact", label: "Contracts" },
+    { href: "/contact", label: "Contacts" },
   ],
   contactEmail: "vosk.dev@gmail.com",
   // Display form; `contactPhoneHref` is the tel: value (digits + leading +).

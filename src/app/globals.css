@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Always reserve scrollbar space so centered layout (nav/footer) doesn't shift
+   horizontally between short pages (no scrollbar) and tall pages (scrollbar). */
+html {
+  scrollbar-gutter: stable;
+}
+
 /* Single warm-cream theme. Tokens tuned for contrast on the cream background. */
 :root {
   --background: #fff8e7;

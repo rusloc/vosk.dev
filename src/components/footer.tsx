@@ -4,7 +4,7 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-border border-t">
+    <footer>
       <Container className="text-muted-foreground py-8 text-sm">
         <p>© VOSK {year}</p>
       </Container>

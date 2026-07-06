@@ -1,9 +1,10 @@
 import styles from "./home-backdrop.module.css";
 
 // Five bars clustered around the vertical center. From top to bottom:
-//  - color steps from black up ~10% lightness each (#000 → #666)
+//  - all the same colour (#FF991C), opacity fading 25% → 10% linearly
 //  - width decreases linearly from 75% to 25% of the screen
 //  - each is 10% of the viewport height thick, with small gaps (close together)
+const BAR_COLOR = "#FF991C";
 const BAR_HEIGHT = 10;
 const BAR_GAP = 2.5;
 const BAR_COUNT = 5;
@@ -11,11 +12,11 @@ const BAR_COUNT = 5;
 const STACK_TOP = (100 - (BAR_COUNT * BAR_HEIGHT + (BAR_COUNT - 1) * BAR_GAP)) / 2;
 
 const bars = [
-  { fill: "#000000", width: 75 },
-  { fill: "#1a1a1a", width: 62.5 },
-  { fill: "#333333", width: 50 },
-  { fill: "#4d4d4d", width: 37.5 },
-  { fill: "#666666", width: 25 },
+  { opacity: 0.25, width: 75 },
+  { opacity: 0.2125, width: 62.5 },
+  { opacity: 0.175, width: 50 },
+  { opacity: 0.1375, width: 37.5 },
+  { opacity: 0.1, width: 25 },
 ];
 
 export function HomeBackdrop() {
@@ -30,13 +31,14 @@ export function HomeBackdrop() {
       >
         {bars.map((bar, i) => (
           <rect
-            key={bar.fill}
+            key={bar.width}
             className={styles.bar}
             x="0"
             y={STACK_TOP + i * (BAR_HEIGHT + BAR_GAP)}
             width={bar.width}
             height={BAR_HEIGHT}
-            fill={bar.fill}
+            fill={BAR_COLOR}
+            fillOpacity={bar.opacity}
             // Stagger each bar so they cascade top→bottom on load.
             style={{ animationDelay: `${0.05 + i * 0.1}s` }}
           />

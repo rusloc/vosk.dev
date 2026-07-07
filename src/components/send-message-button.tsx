@@ -34,12 +34,12 @@ export function SendMessageButton({ className }: { className?: string }) {
           className,
         )}
       >
-        Send a message
+        Message
       </button>
 
       {open && (
         <div
-          className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/40 p-4 pt-16 sm:pt-24"
+          className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/40 p-4"
           onClick={() => setOpen(false)}
         >
           <div

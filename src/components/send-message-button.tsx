@@ -31,7 +31,7 @@ export function SendMessageButton({ className }: { className?: string }) {
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "bg-foreground text-background inline-flex h-10 items-center justify-center rounded-md px-5 text-sm font-medium transition-opacity hover:opacity-90",
+          "bg-foreground text-background h-10 items-center justify-center rounded-md px-5 text-sm font-medium transition-opacity hover:opacity-90",
           className,
         )}
       >

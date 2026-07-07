@@ -99,7 +99,7 @@ export function SiteNav() {
             </li>
           ))}
           <li className="px-3 py-2">
-            <SendMessageButton className="w-full" />
+            <SendMessageButton className="inline-flex w-full" />
           </li>
         </ul>
       )}

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/cn";
+import { SendMessageButton } from "@/components/send-message-button";
 import styles from "./nav.module.css";
 
 export function SiteNav() {
@@ -42,6 +43,8 @@ export function SiteNav() {
               </li>
             ))}
           </ul>
+
+          <SendMessageButton className="ml-2 hidden md:inline-flex" />
 
           <button
             type="button"
@@ -95,6 +98,9 @@ export function SiteNav() {
               </Link>
             </li>
           ))}
+          <li className="px-3 py-2">
+            <SendMessageButton className="w-full" />
+          </li>
         </ul>
       )}
     </header>

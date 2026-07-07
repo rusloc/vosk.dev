@@ -14,7 +14,7 @@ export const siteConfig = {
     { href: "/", label: "Home" },
     { href: "/work", label: "Showcase" },
     { href: "/blog", label: "Blog" },
-    { href: "/services", label: "Service" },
+    { href: "/services", label: "Services" },
     { href: "/contact", label: "Contacts" },
   ],
   contactEmail: "vosk.dev@gmail.com",

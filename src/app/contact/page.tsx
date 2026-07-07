@@ -5,7 +5,7 @@ import { buildMetadata } from "@/lib/metadata";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Contact",
+  title: "Contacts",
   description: "Get in touch about a BI or analytics project.",
   path: "/contact",
 });
@@ -13,7 +13,7 @@ export const metadata: Metadata = buildMetadata({
 export default function ContactPage() {
   return (
     <Container className="py-12">
-      <h1 className="text-3xl font-semibold tracking-tight">Contact</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">Contacts</h1>
       <p className="text-muted-foreground mt-4 max-w-xl">
         Send your business related message straight into my email box.
       </p>

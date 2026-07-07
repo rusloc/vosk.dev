@@ -4,12 +4,13 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer>
-      <Container className="text-muted-foreground py-8 text-xs">
+    <footer className="border-border border-t">
+      <Container className="text-muted-foreground flex items-center justify-between py-8 font-mono text-xs tracking-wider uppercase">
         <p>
           © <span className="hidden sm:inline">VOSK </span>
           {year}
         </p>
+        <p className="hidden sm:block">Freelance BI · Remote / EU</p>
       </Container>
     </footer>
   );

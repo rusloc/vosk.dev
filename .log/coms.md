@@ -32,3 +32,9 @@ One line per user request + brief response. Tag `#decision` / `#idea` / `#bug` i
 - Clarified "hero" terminology (user had misread the term); no change — hero kept.
 - Code-typer placement dialed in responsively (desktop bottom-right 3×3 cell; mobile right-2/3 strip).
 - #feature Code-typer rewritten: 9 snippets (3 each SQL/Python/DAX), 7–9 lines, ≤28 cols. Desktop-only invisible click target opens a fixed-size, unblurred popup that types + **loops the clicked snippet forever**.
+
+## 2026-07-07
+- Home hero redesign per screenshot: availability eyebrow (green dot · Q3 2026), big headline with blue "data", subheading, dark "View case studies →" CTA + "explore services" link. Backdrop/code-typer/fonts untouched. #decision
+- Nav: added "Send a message" button (screenshot's "Book a call" slot) opening a popup contact form (reuses ContactForm); renamed "Service" → "Services". New `send-message-button.tsx`.
+- Footer: two-column meta bar ("© VOSK 2026" / "FREELANCE BI · REMOTE / EU"), top border, mono uppercase.
+- Contacts page: h1 + metadata "Contact" → "Contacts". typecheck+lint+build green.

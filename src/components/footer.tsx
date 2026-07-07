@@ -10,7 +10,13 @@ export function SiteFooter() {
           © <span className="hidden sm:inline">VOSK </span>
           {year}
         </p>
-        <p className="hidden sm:block">Freelance BI · Remote / EU</p>
+        <p className="hidden items-center gap-2 sm:flex">
+          <span aria-hidden="true" className="relative inline-flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+          </span>
+          Available for new projects
+        </p>
       </Container>
     </footer>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 import { ContactForm } from "@/components/contact-form";
 
@@ -30,61 +31,63 @@ export function SendMessageButton({ className }: { className?: string }) {
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "border-border bg-background hover:bg-muted inline-flex h-9 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors",
+          "bg-foreground text-background inline-flex h-10 items-center justify-center rounded-md px-5 text-sm font-medium transition-opacity hover:opacity-90",
           className,
         )}
       >
         Message
       </button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/40 p-4"
-          onClick={() => setOpen(false)}
-        >
+      {open &&
+        createPortal(
           <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Send a message"
-            onClick={(e) => e.stopPropagation()}
-            className="border-border bg-background relative w-full max-w-md rounded-lg border p-6 shadow-xl"
+            className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/40 p-4"
+            onClick={() => setOpen(false)}
           >
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={() => setOpen(false)}
-              className="text-muted-foreground hover:text-foreground absolute top-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-md"
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Send a message"
+              onClick={(e) => e.stopPropagation()}
+              className="border-border bg-background relative w-full max-w-md rounded-lg border p-6 shadow-xl"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                className="h-4 w-4"
-                aria-hidden="true"
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setOpen(false)}
+                className="text-muted-foreground hover:text-foreground absolute top-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-md"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18 18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  className="h-4 w-4"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18 18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
 
-            <h2 className="text-lg font-semibold tracking-tight">
-              Send a message
-            </h2>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Straight into my inbox — I&apos;ll get back to you soon.
-            </p>
+              <h2 className="text-lg font-semibold tracking-tight">
+                Send a message
+              </h2>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Straight into my inbox — I&apos;ll get back to you soon.
+              </p>
 
-            <div className="mt-5">
-              <ContactForm />
+              <div className="mt-5">
+                <ContactForm />
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

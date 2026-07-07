@@ -28,11 +28,6 @@ export default function Home() {
             <span className="text-primary italic">data</span>.
           </h1>
 
-          <p className="text-muted-foreground mt-8 max-w-xl text-lg leading-relaxed sm:text-xl">
-            Freelance BI analyst &amp; developer. Dashboards, data pipelines,
-            and analytics that turn raw numbers into decisions you can act on.
-          </p>
-
           <div className="mt-10 flex flex-wrap items-center gap-4">
             <Link
               href="/work"

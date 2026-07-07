@@ -1,28 +1,27 @@
 /* Home-only decorative code block.
-   Mobile: bottom-third strip spanning the right 2/3 of the screen width.
-   Desktop (≥768px): confined to the bottom-right cell of a 3×3 grid. */
+   Mobile: hidden — no running code.
+   Desktop (≥768px): right third; box bottom aligned to the lowest backdrop bar. */
 
+/* Mobile: disabled entirely. */
 .wrap {
-  position: fixed;
-  top: 66.6667%; /* bottom third */
-  left: 33.3333%; /* right two-thirds */
-  width: 66.6667%;
-  height: 33.3333%;
-  z-index: -10; /* behind content, above the body background */
-  pointer-events: none;
-  overflow: hidden;
-  display: flex;
-  align-items: flex-start; /* top-anchored so lines grow DOWN, never slide up */
-  filter: blur(2px); /* light frost — 10px obliterated the thin text strokes */
-  opacity: 0.45;
+  display: none;
 }
 
 @media (min-width: 768px) {
   .wrap {
-    top: 66.6667%; /* bottom third */
+    display: flex;
+    position: fixed;
     left: 66.6667%; /* right third */
     width: 33.3333%;
-    height: 33.3333%;
+    /* Backdrop bars span 20vh–80vh; pin this box's bottom to the lowest bar. */
+    bottom: 20vh;
+    height: 14rem; /* holds the tallest snippet (9 lines) */
+    z-index: -10; /* behind content, above the body background */
+    pointer-events: none;
+    overflow: hidden;
+    align-items: flex-start; /* top-anchored so lines grow DOWN, never slide up */
+    filter: blur(2px); /* light frost — 10px obliterated the thin text strokes */
+    opacity: 0.45;
   }
 }
 
@@ -70,10 +69,10 @@
   .hit {
     display: block;
     position: fixed;
-    top: 66.6667%;
+    bottom: 20vh;
     left: 66.6667%;
     width: 33.3333%;
-    height: 33.3333%;
+    height: 14rem;
     z-index: 30;
     margin: 0;
     padding: 0;

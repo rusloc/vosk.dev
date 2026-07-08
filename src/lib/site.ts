@@ -10,6 +10,11 @@ export const siteConfig = {
   description:
     "Freelance Business Intelligence analyst and developer. Dashboards, data pipelines, and analytics that turn raw data into decisions.",
   url: env.NEXT_PUBLIC_SITE_URL,
+  locale: "en_US",
+  author: {
+    name: "Alex Vosk",
+    jobTitle: "Freelance BI Analyst & Developer",
+  },
   nav: [
     { href: "/", label: "Home" },
     { href: "/work", label: "Showcase" },
@@ -21,6 +26,8 @@ export const siteConfig = {
   // Display form; `contactPhoneHref` is the tel: value (digits + leading +).
   contactPhone: "+90 506 042 59 33",
   contactPhoneHref: "+905060425933",
+  // TODO: replace with real profile URLs, then add them to JSON-LD `sameAs`
+  // in src/lib/structured-data.ts (currently omitted — no false entity signals).
   social: {
     github: "https://github.com/",
     linkedin: "https://www.linkedin.com/",

@@ -25,6 +25,15 @@ export default function ContactPage() {
 
         <dl className="md:border-border space-y-3 text-sm md:border-l md:pl-8">
           <div className="flex gap-2">
+            <dt className="text-muted-foreground w-16">Name</dt>
+            <dd>
+              <span className="font-medium">{siteConfig.author.name}</span>
+              <span className="text-muted-foreground block text-xs">
+                {siteConfig.author.jobTitle}
+              </span>
+            </dd>
+          </div>
+          <div className="flex gap-2">
             <dt className="text-muted-foreground w-16">Email</dt>
             <dd>
               <a

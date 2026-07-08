@@ -14,7 +14,10 @@ export function buildMetadata({
   return {
     title,
     description,
-    alternates: { canonical: path },
+    alternates: {
+      canonical: path,
+      types: { "application/rss+xml": "/feed.xml" },
+    },
     openGraph: {
       title: title ? `${title} · ${siteConfig.name}` : siteConfig.title,
       description,

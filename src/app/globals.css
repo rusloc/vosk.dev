@@ -17,6 +17,15 @@ html {
   --primary-foreground: #ffffff;
 }
 
+/* Inline code inside rendered MDX (block code lives in <pre>, styled by shiki). */
+.mdx :not(pre) > code {
+  background: var(--muted);
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

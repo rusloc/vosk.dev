@@ -1,0 +1,62 @@
+---
+title: "Turning dashboards into decisions"
+description: "A dashboard that nobody acts on is a cost, not an asset. Here's how I design BI that changes what people do on Monday morning."
+date: "2026-07-08"
+tags: ["business intelligence", "dashboards", "analytics"]
+draft: false
+---
+
+Most dashboards fail quietly. They get built, demoed, admired for a week — and
+then nobody opens them. The data is correct, the charts are pretty, and yet no
+decision ever changes. That's not an analytics problem; it's a **design**
+problem.
+
+## Start from the decision, not the data
+
+Before writing a single query, I ask one question: *what decision should this
+dashboard change, and who makes it?* If we can't name the decision and the
+person, we're building a wall poster.
+
+A useful dashboard answers a question the viewer already has:
+
+- Which customers are about to churn — **this week**?
+- Is this campaign worth the spend, or should we cut it?
+- Where is margin leaking, and by how much?
+
+## Cut everything that isn't the answer
+
+The fastest way to kill adoption is to show everything you *can* measure.
+Restraint is the feature. A good rule: every element on the screen either
+supports the decision or gets deleted.
+
+> If a chart doesn't change what someone does, it's decoration.
+
+## Make the number trustworthy
+
+People act on numbers they trust. That means one definition of "revenue," one
+source of truth, and transformations that anyone can audit. A quick SQL sketch
+of the kind of model I build under the hood:
+
+```sql
+select
+  date_trunc('week', order_date) as week,
+  count(distinct customer_id)    as active_customers,
+  sum(net_revenue)               as revenue
+from fact_orders
+where order_date >= current_date - interval '90 days'
+group by 1
+order by 1;
+```
+
+Clean, dated, reproducible — the opposite of a spreadsheet that only one person
+understands. Inline values like `net_revenue` should mean exactly one thing
+across every report.
+
+## Close the loop
+
+The last step is the one most teams skip: **watch how the dashboard gets used**,
+then cut what's ignored and sharpen what's clicked. A BI asset is a product, not
+a deliverable — it earns its place by changing decisions, over and over.
+
+If your dashboards look impressive but nobody acts on them, that's fixable. It
+usually takes less rebuilding than you'd think.

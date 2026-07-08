@@ -7,7 +7,10 @@ import { JsonLd } from "@/components/json-ld";
 import { homeGraph } from "@/lib/structured-data";
 
 export const metadata: Metadata = {
-  alternates: { canonical: "/" },
+  alternates: {
+    canonical: "/",
+    types: { "application/rss+xml": "/feed.xml" },
+  },
 };
 
 export default function Home() {

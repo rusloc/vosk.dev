@@ -43,3 +43,30 @@ export function homeGraph(): Record<string, unknown> {
     ],
   };
 }
+
+/** BlogPosting schema for a single article. Author mirrors the site's Person entity. */
+export function blogPostingGraph(post: {
+  slug: string;
+  title: string;
+  description: string;
+  date: string;
+  tags: string[];
+}): Record<string, unknown> {
+  const { url, author } = siteConfig;
+  const postUrl = `${url}/blog/${post.slug}`;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.description,
+    datePublished: post.date,
+    dateModified: post.date,
+    author: { "@type": "Person", "@id": `${url}/#person`, name: author.name },
+    publisher: { "@id": `${url}/#org` },
+    mainEntityOfPage: postUrl,
+    url: postUrl,
+    image: `${postUrl}/opengraph-image`,
+    ...(post.tags.length > 0 ? { keywords: post.tags.join(", ") } : {}),
+  };
+}

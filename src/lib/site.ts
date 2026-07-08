@@ -11,8 +11,10 @@ export const siteConfig = {
     "Freelance Business Intelligence analyst and developer. Dashboards, data pipelines, and analytics that turn raw data into decisions.",
   url: env.NEXT_PUBLIC_SITE_URL,
   locale: "en_US",
+  // Public/professional name. Legal name (Kirill Bezzubkin) stays on
+  // contracts/invoices/ID; "Vosk" ties the person to the vosk.dev brand.
   author: {
-    name: "Alex Vosk",
+    name: "Kirill Vosk",
     jobTitle: "Freelance BI Analyst & Developer",
   },
   nav: [

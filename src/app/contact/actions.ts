@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { Resend } from "resend";
 import { z } from "zod";
 import { contactSchema, type ContactState } from "@/lib/schema";
+import { getContactConfig } from "@/lib/contact-config";
 import { siteConfig } from "@/lib/site";
 
 // Best-effort in-memory rate limit. On serverless this is per-instance and
@@ -54,7 +55,7 @@ export async function submitContactForm(
     };
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
+  const { apiKey, to, from } = getContactConfig();
   if (!apiKey) {
     return {
       status: "error",
@@ -62,9 +63,6 @@ export async function submitContactForm(
     };
   }
 
-  const to = process.env.CONTACT_TO_EMAIL || siteConfig.contactEmail;
-  const from =
-    process.env.CONTACT_FROM_EMAIL || "VOSK Website <onboarding@resend.dev>";
   const { email, subject, message } = parsed.data;
 
   try {

@@ -12,7 +12,7 @@ export const metadata: Metadata = buildMetadata({
 
 export default function ContactPage() {
   return (
-    <Container className="py-12">
+    <Container className="py-16 sm:py-24">
       <h1 className="text-3xl font-semibold tracking-tight">Contacts</h1>
       <p className="text-muted-foreground mt-4 max-w-xl">
         Send your business related message straight into my email box.

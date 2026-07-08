@@ -33,10 +33,14 @@ One line per user request + brief response. Tag `#decision` / `#idea` / `#bug` i
 - Code-typer placement dialed in responsively (desktop bottom-right 3×3 cell; mobile right-2/3 strip).
 - #feature Code-typer rewritten: 9 snippets (3 each SQL/Python/DAX), 7–9 lines, ≤28 cols. Desktop-only invisible click target opens a fixed-size, unblurred popup that types + **loops the clicked snippet forever**.
 
-## 2026-07-07
+## 2026-07-07 _(DAY CLOSED)_
 - Home hero redesign per screenshot: availability eyebrow (green dot · Q3 2026), big headline with blue "data", subheading, dark "View case studies →" CTA + "explore services" link. Backdrop/code-typer/fonts untouched. #decision
 - Nav: added "Send a message" button (screenshot's "Book a call" slot) opening a popup contact form (reuses ContactForm); renamed "Service" → "Services". New `send-message-button.tsx`.
 - Footer: two-column meta bar ("© VOSK 2026" / "FREELANCE BI · REMOTE / EU"), top border, mono uppercase.
 - Contacts page: h1 + metadata "Contact" → "Contacts". typecheck+lint+build green.
 - Fix round on hero/nav: renamed CTA "Send a message" → "Message"; popup now centers on the main block (not header); made "money" & "data" italic + `#4F46E5`; removed "or explore services"; eyebrow trimmed to "Available for new projects" (dropped Q3 2026); animated the green status dot (`animate-ping`).
 - #bug Message popup rendered clipped inside the header. Root cause: the sticky header's `backdrop-blur` (`backdrop-filter`) makes it the containing block for `position:fixed` descendants, so `fixed inset-0` bounded to the 56px header instead of the viewport. #decision Fixed by portaling the modal to `document.body` (escapes the containing block); also restyled "Message" as the dark filled CTA to match "View case studies". typecheck+lint+build green.
+- Desktop code-typer aligned: box `bottom:20vh` + `height:14rem` so its bottom meets the lowest backdrop bar (bars span 20vh–80vh); moved the click-target to match. #bug Disabled the running code on mobile (`.wrap` display:none <768px). Removed the hero subheading paragraph.
+- Moved the availability status ("Available for new projects" + animated dot) into the footer's right slot; removed the static "Freelance BI · Remote / EU" tagline and the hero eyebrow (a move, not a dup).
+- #bug Two "Message" buttons on mobile (one by the burger, one in the menu). Root cause: base button class hardcoded `inline-flex`, which beat the desktop instance's `hidden` due to Tailwind CSS source order. #decision Fixed by removing `inline-flex` from the base and letting each caller own its display class (desktop `hidden md:inline-flex`, menu `inline-flex w-full`). typecheck+lint+build green.
+- Ran EOD: logged coms + closed day, finalized daily, wrote plan-2026-07-07.

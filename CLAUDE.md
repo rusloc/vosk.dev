@@ -37,7 +37,6 @@ public/images/    → work/<slug>/… and blog/<slug>/… assets
 ## Available agents & skills
 
 Sub-agents (`.claude/agents/`) are reusable helpers — route to them when useful, don't force it on a solo static site:
-
 - **archi** (web-app-architect) — architecture / stack / security decisions.
 - **nerd** (nextjs-react-nerd-reviewer) — React/Next.js implementation, review, perf.
 - **hunter** (qa-test-hunter) — tests, security, edge cases.
@@ -49,43 +48,36 @@ Skills in `.claude/skills/` (design, front-end, QA, SEO, PM, etc.) are stack-agn
 ## Conventions
 
 ### Code style
-
 - TypeScript strict mode everywhere.
 - **Zod** for all external input (contact form, MDX frontmatter) with `.strict()` — reject unknown fields; fail the build loudly on invalid content.
 - ESLint + Prettier (with `prettier-plugin-tailwindcss`).
 - No business/data logic scattered in components — keep parsing/data in `src/lib/`.
 
 ### Naming
-
 - Files: `kebab-case.ts` / `kebab-case.tsx`.
 - Components: `PascalCase`.
 - Env vars: `SCREAMING_SNAKE_CASE`; `NEXT_PUBLIC_` prefix ONLY for client-safe values.
 
 ### Git
-
 - After any code change, output git commands as a single copy-paste bash block. **Do not execute; do not touch the working tree.**
-
 ```bash
 git add "<paths>"
 git commit -m "<type>: <message>"
 git push
 ```
-
 - Wrap file paths in double quotes.
 
 ### Branching / deploy
-
 - `main` → production on Vercel; PRs → preview deploys.
 - Runtime env: `NEXT_PUBLIC_SITE_URL`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL` — validated in `src/lib/env.ts` (build fails if missing).
 
 ### Testing / verification
-
 - Run `pnpm typecheck && pnpm lint && pnpm build` before considering a change done.
 - Manual / browser verification on the Vercel preview deploy (parity with production), not just `localhost`.
 
 ## Logging (lightweight)
 
-- `.log/coms.md` — append a one-line entry per user request + brief response. Tag `#decision` / `#idea` / `#bug` inline for grep. That's the whole routine — no daily/weekly/day-close ceremony unless the user asks to expand it.
+- `.log/coms/coms {yyyy-mm-dd}.md` — append a one-line entry per user request + brief response to today's file (create it if absent; one file per day, sibling to `.log/plan/` and `.log/daily/`). Tag `#decision` / `#idea` / `#bug` inline for grep. That's the whole routine — no daily/weekly/day-close ceremony unless the user asks to expand it.
 
 ## Core coding rules
 

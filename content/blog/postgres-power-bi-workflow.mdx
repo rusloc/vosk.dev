@@ -1,0 +1,146 @@
+---
+title: "A Postgres + Power BI workflow that saves your time and sanity"
+description: "Stop copy-pasting SQL between your IDE and Power BI. Keep the query in a Postgres table and let Power Query pull it in — one click to edit, one click to refresh."
+date: "2026-02-11"
+tags: ["postgresql", "power bi", "workflow"]
+draft: false
+---
+
+Picture a SQL script — maybe a monster, maybe tiny. Either way, the odds are you
+edit it in one window and then copy-paste it into the Power Query editor as a
+custom SQL source to pull the data. Every change means doing that dance again.
+
+## The problem
+
+You're working on a big query and bouncing between the SQL IDE and the Power
+Query advanced editor, running the same tedious loop over and over:
+**edit SQL → copy → paste into PQ → refresh**. Add a teammate who needs the same
+script, or a quick logic tweak, and the alt-tabbing between two windows gets old
+fast.
+
+Here's the sample we'll work with:
+
+```sql
+/* your real query — possibly huge and hard to manage */
+select
+     a."ACCOUNTINGDATE"::date  _acc_date
+    ,round(coalesce(a."ACCOUNTINGCURRENCYAMOUNT INV" * e."Exrate",
+                    a."REPORTINGCURRENCYAMOUNT INV")::numeric, 3)  _amount_usd
+    ,round(coalesce(a."ACCOUNTINGCURRENCYAMOUNT INV",
+                    a."REPORTINGCURRENCYAMOUNT INV")::numeric, 3)  _amount
+    ,upper(a."Name")  _oper_type
+from public."dax__SAB_TGTGeneralJournalAccountEntryEntityStaging" a
+left join public."dax__ExRateMaster_daily" e
+    on  a."ACCOUNTINGCURRENCY" = e."FROMCURRENCY"
+    and a."ACCOUNTINGDATE"     = e."STARTDATE"
+    and e."TOCURRENCY"         = 'USD'
+```
+
+## The solution
+
+The idea: keep the SQL in the database itself and have Power Query read it from
+there. No more copy-paste. In short:
+
+- Work in a SQL IDE (I'd go with [DBeaver](https://dbeaver.com/)).
+- Create a small table that stores your scripts — a lightweight in-DB "repo."
+- Wrap the SQL in a session variable (**Code 1**).
+- Push that variable into the table (**Code 2**).
+- In Power Query, one query fetches the SQL as a string (**Code 3**)...
+- ...and a second query runs it (**Code 4**).
+
+## The code base
+
+### SQL source table
+
+A simple table to hold the scripts. The columns:
+
+- `id` — primary key
+- `_report` — the report it belongs to
+- `_page` — page name, if the script is page-specific
+- `_code` — the SQL itself
+- `_comment` — whatever notes you want to leave
+- `_updated` — timestamp, set with `now()` on each update
+
+```sql
+create table public.sql_source (
+     id        int4 generated always as identity not null
+    ,_report   text not null
+    ,_page     text not null default 'unnamed_script'::text
+    ,_code     text not null
+    ,_comment  text null
+    ,_updated  timestamptz null default current_timestamp
+    ,constraint sql_source_pkey primary key (id)
+);
+```
+
+### Code 1 — wrap the SQL in a variable
+
+- Uses a custom namespace `dev` (any name works).
+- Sets a session variable and assigns the SQL to it.
+- Wraps the body in `$sql$ ... $sql$` dollar-quotes, so single or double quotes
+  inside your query don't fight you.
+
+```sql
+set dev.total_revenue_view =
+$sql$
+    select * from table
+$sql$
+```
+
+### Code 2 — write it to the table
+
+- Reads the variable back with `current_setting()`.
+- Updates the `sql_source` row with the new code and bumps `_updated`.
+- The `where` picks which script to overwrite.
+
+```sql
+update public.sql_source
+set  _code    = current_setting('dev.total_revenue_view')
+    ,_updated = now()
+where _name = 'TOTAL REVENUE' and _report = 'GP CONTRIBUTION';
+```
+
+### Code 3 — Power Query: fetch the SQL string
+
+- Pulls the SQL out of `sql_source` as plain text.
+- It's a helper query — kept in the model to hold the string, not loaded as data.
+
+```powerquery
+let
+    Source = PostgreSQL.Database("your-host.postgres.database.azure.com", "powerbi"),
+    selectRows = Table.SelectRows(Source, each ([Schema] = "public") and ([Name] = "public.sql_source")),
+    _dropCols = Table.SelectColumns(selectRows, {"Data"}),
+    _expandData = Table.ExpandTableColumn(_dropCols, "Data", {"_code", "_name"}, {"_code", "_name"}),
+    _selectTable = Table.SelectRows(_expandData, each ([_name] = "TOTAL REVENUE"))
+in
+    _selectTable
+```
+
+### Code 4 — Power Query: run it
+
+- Feeds the string from Code 3 into the connection as the query.
+- Instead of pasting SQL, you just reference the cell that holds it.
+
+```powerquery
+let
+    Source = PostgreSQL.Database("your-host.postgres.database.azure.com", "powerbi",
+        [Query = TOTAL_REVENUE_SQL_SOURCE[_code]{0}])
+in
+    Source
+```
+
+## Workflow overview
+
+Day to day it comes down to this:
+
+- Edit the query. In DBeaver you can comment out the opening `$sql$` tag, test
+  freely, then uncomment it and run **Code 1 + Code 2** to save the new version
+  to the source table. (Ctrl+S to save the file is a good habit.)
+- Refresh the dataset — or just the one table.
+
+Two blocks, one click each, and the model is up to date. No copy-paste, no
+window-hopping, no redundant busywork.
+
+![Workflow overview — the SQL IDE side saves the script to a source table; the Power Query side reads it back and runs it.](/images/blog/postgres-power-bi-workflow/workflow-overview.png)
+
+And that's the whole trick.

@@ -12,12 +12,15 @@ import styles from "./title-bar.module.css";
  */
 export function BlogList({ posts }: { posts: PostMeta[] }) {
   const [query, setQuery] = useState("");
+  const [asc, setAsc] = useState(false); // false = newest first (default)
   const q = query.trim().toLowerCase();
   const filtered = q
     ? posts.filter((p) =>
         [p.title, p.description, ...p.tags].join(" ").toLowerCase().includes(q),
       )
     : posts;
+  // `posts` arrives newest-first; reversing the filtered slice flips to oldest-first.
+  const ordered = asc ? [...filtered].reverse() : filtered;
 
   return (
     <>
@@ -44,13 +47,39 @@ export function BlogList({ posts }: { posts: PostMeta[] }) {
         />
       </div>
 
-      {filtered.length === 0 ? (
+      {/* Sort toggle — flips date order between newest- and oldest-first. */}
+      <div className="mt-4 flex justify-end">
+        <button
+          type="button"
+          onClick={() => setAsc((v) => !v)}
+          aria-label={`Sorted by date, ${asc ? "oldest" : "newest"} first — click to toggle`}
+          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors"
+        >
+          {asc ? "Oldest first" : "Newest first"}
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            className={`h-3.5 w-3.5 transition-transform ${asc ? "rotate-180" : ""}`}
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 5v14M6 13l6 6 6-6"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {ordered.length === 0 ? (
         <p className="text-muted-foreground mt-12">
           No posts match “{query.trim()}”.
         </p>
       ) : (
         <ul className="mt-12 space-y-6">
-          {filtered.map((post) => (
+          {ordered.map((post) => (
             <li key={post.slug}>
               <article className="border-border rounded-lg border p-6">
                 {/* Title + arrow-link on one row, vertically centred together. */}

@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 410" role="img" aria-labelledby="title desc">
+  <title id="title">Workflow overview</title>
+  <desc id="desc">Two zones. On the SQL IDE side you edit the SQL and assign it to a variable, then write it to a SQL source table that acts as a shared repo. On the Power Query side, a base query retrieves the SQL string and a second query runs it to pull the data — no data import in between.</desc>
+
+  <style>
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .title { font-size: 28px; font-weight: 700; fill: #2b2438; }
+    .zone  { font-size: 16px; font-weight: 600; fill: #6f6a5f; }
+    .node  { font-size: 11px; font-weight: 600; fill: #ffffff; }
+    .note  { font-size: 10.5px; fill: #6f6a5f; }
+  </style>
+
+  <!-- background -->
+  <rect x="0" y="0" width="800" height="410" rx="12" fill="#ffffff" />
+
+  <defs>
+    <linearGradient id="grayGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef0f4" />
+      <stop offset="1" stop-color="#d6d8e2" />
+    </linearGradient>
+    <linearGradient id="pinkGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f9e2f0" />
+      <stop offset="1" stop-color="#f2cde5" />
+    </linearGradient>
+  </defs>
+
+  <text class="title" x="30" y="54">Workflow overview</text>
+
+  <!-- panels -->
+  <rect x="24"  y="84" width="360" height="272" rx="10" fill="url(#grayGrad)" stroke="#d4d6e0" />
+  <rect x="416" y="84" width="360" height="272" rx="10" fill="url(#pinkGrad)" stroke="#ecc7de" />
+
+  <text class="zone" x="204" y="388" text-anchor="middle">SQL IDE</text>
+  <text class="zone" x="596" y="388" text-anchor="middle">PowerQuery</text>
+
+  <!-- flow connectors (drawn behind the nodes) -->
+  <g stroke="#a48fce" stroke-width="2.5" fill="none">
+    <line x1="194" y1="222" x2="214" y2="222" />
+    <line x1="364" y1="222" x2="436" y2="222" />
+    <line x1="586" y1="222" x2="606" y2="222" />
+  </g>
+  <!-- arrowhead on the SQL IDE -> PowerQuery handoff -->
+  <path d="M436,222 L428,217 L428,227 Z" fill="#a48fce" />
+
+  <!-- dashed annotation connectors -->
+  <g stroke="#b6adc9" stroke-width="1.2" stroke-dasharray="3 3">
+    <line x1="119" y1="160" x2="119" y2="196" />
+    <line x1="511" y1="160" x2="511" y2="196" />
+    <line x1="289" y1="248" x2="289" y2="266" />
+    <line x1="681" y1="248" x2="681" y2="266" />
+  </g>
+
+  <!-- top annotations -->
+  <text class="note" x="119" y="140" text-anchor="middle">Save SQL files</text>
+  <text class="note" x="119" y="153" text-anchor="middle">as a local repo</text>
+  <text class="note" x="511" y="153" text-anchor="middle">No data import</text>
+
+  <!-- nodes: dark chevrons -->
+  <g>
+    <path d="M44,196 L180,196 L194,222 L180,248 L44,248 L58,222 Z" fill="#3c2768" />
+    <text class="node" x="119" y="217" text-anchor="middle">Edit SQL code and</text>
+    <text class="node" x="119" y="231" text-anchor="middle">assign to a variable</text>
+
+    <path d="M214,196 L350,196 L364,222 L350,248 L214,248 L228,222 Z" fill="#3c2768" />
+    <text class="node" x="289" y="217" text-anchor="middle">Update the SQL</text>
+    <text class="node" x="289" y="231" text-anchor="middle">SOURCE table</text>
+
+    <path d="M436,196 L572,196 L586,222 L572,248 L436,248 L450,222 Z" fill="#3c2768" />
+    <text class="node" x="511" y="217" text-anchor="middle">Base query to fetch</text>
+    <text class="node" x="511" y="231" text-anchor="middle">the SQL statement</text>
+
+    <path d="M606,196 L742,196 L756,222 L742,248 L606,248 L620,222 Z" fill="#3c2768" />
+    <text class="node" x="681" y="211" text-anchor="middle">Second query runs</text>
+    <text class="node" x="681" y="224" text-anchor="middle">the SQL to pull</text>
+    <text class="node" x="681" y="237" text-anchor="middle">data from the DB</text>
+  </g>
+
+  <!-- bottom annotations -->
+  <text class="note" x="289" y="282" text-anchor="middle">The SQL SOURCE table is a</text>
+  <text class="note" x="289" y="295" text-anchor="middle">shared repo others can reuse</text>
+
+  <text class="note" x="681" y="282" text-anchor="middle">Reference the SQL from</text>
+  <text class="note" x="681" y="295" text-anchor="middle">the first query</text>
+</svg>

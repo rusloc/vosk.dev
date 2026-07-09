@@ -31,7 +31,7 @@ export function SendMessageButton({ className }: { className?: string }) {
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "bg-foreground text-background h-10 items-center justify-center rounded-md px-5 text-sm font-medium transition-opacity hover:opacity-90",
+          "bg-foreground text-background h-10 cursor-pointer items-center justify-center rounded-md px-5 text-sm font-medium transition-opacity hover:opacity-90",
           className,
         )}
       >
@@ -55,7 +55,7 @@ export function SendMessageButton({ className }: { className?: string }) {
                 type="button"
                 aria-label="Close"
                 onClick={() => setOpen(false)}
-                className="text-muted-foreground hover:text-foreground absolute top-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-md"
+                className="text-muted-foreground hover:text-foreground absolute top-3 right-3 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

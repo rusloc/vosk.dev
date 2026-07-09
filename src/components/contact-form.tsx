@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { submitContactForm } from "@/app/contact/actions";
+import { trackLead } from "@/components/analytics";
 import type { ContactState } from "@/lib/schema";
 
 const initialState: ContactState = { status: "idle" };
@@ -14,6 +15,12 @@ export function ContactForm() {
     submitContactForm,
     initialState,
   );
+
+  // Lead conversion — fires once on success (covers the Contacts page and the
+  // nav popup, which both render this form). No-op until GTM loads.
+  useEffect(() => {
+    if (state.status === "success") trackLead();
+  }, [state.status]);
 
   if (state.status === "success") {
     return (

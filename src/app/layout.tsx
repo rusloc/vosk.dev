@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import { siteConfig } from "@/lib/site";
 import { SiteNav } from "@/components/nav";
 import { SiteFooter } from "@/components/footer";
+import { Analytics } from "@/components/analytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,6 +65,7 @@ export default function RootLayout({
         <SiteNav />
         <main className="flex-1">{children}</main>
         <SiteFooter />
+        <Analytics gtmId={env.NEXT_PUBLIC_GTM_ID} />
       </body>
     </html>
   );

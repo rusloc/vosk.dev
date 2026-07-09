@@ -56,7 +56,7 @@ A simple table to hold the scripts. The columns:
 
 - `id` — primary key
 - `_report` — the report it belongs to
-- `_page` — page name, if the script is page-specific
+- `_name` — the script's name (defaults to `unnamed_script`)
 - `_code` — the SQL itself
 - `_comment` — whatever notes you want to leave
 - `_updated` — timestamp, set with `now()` on each update
@@ -65,7 +65,7 @@ A simple table to hold the scripts. The columns:
 create table public.sql_source (
      id        int4 generated always as identity not null
     ,_report   text not null
-    ,_page     text not null default 'unnamed_script'::text
+    ,_name     text not null default 'unnamed_script'::text
     ,_code     text not null
     ,_comment  text null
     ,_updated  timestamptz null default current_timestamp

@@ -12,6 +12,7 @@ import { mdxComponents } from "@/components/mdx-components";
 import { buildMetadata } from "@/lib/metadata";
 import { blogPostingGraph } from "@/lib/structured-data";
 import { getAllPosts, getPostBySlug, getPostSlugs } from "@/lib/content";
+import styles from "../title-bar.module.css";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -93,7 +94,10 @@ export default async function PostPage({ params }: Props) {
 
       <header className="mt-6">
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          {post.title}
+          <span className="relative inline-block">
+            <span aria-hidden="true" className={styles.titleBar} />
+            <span className="relative">{post.title}</span>
+          </span>
         </h1>
         {/* Date (YYYY-MM-DD) and tags under the title, pipe-separated — mirrors
             the blog list. Read time dropped. */}

@@ -1,0 +1,187 @@
+---
+title: "How to format SQL for readability"
+description: "Legacy SQL with no comments and no formatting can cost you hours before you even find where to start. Here are the rules I use to keep my own queries readable."
+date: "2024-12-12"
+tags: ["sql", "code quality"]
+draft: false
+---
+
+Over the years I've inherited plenty of legacy SQL that was badly formatted — or
+not formatted at all. You open one of those scripts and can't even tell where to
+start: no comments, no structure, just hours spent working out what the query
+actually does. After enough of those hours (and a lot of habits borrowed from
+other people), I settled on a small set of rules for writing SQL that's easy to
+read and easy to come back to.
+
+## The code
+
+Here's a sample first; the rules follow below. It isn't complicated or
+especially long — but strip the formatting away and it would take a while to see
+where it starts and what the logic is.
+
+```sql
+/*
+    Logic:
+      * build a CTE we can reuse for the aggregation
+      * write one query per step (Total, Subcon, Own, ...)
+      * stitch the steps together with UNION ALL
+*/
+with _main as (
+    select
+         coalesce(d3._date, d4._date)              _date
+        ,coalesce(d3._source, d4._source)          _source
+        ,coalesce(d3._enterprise, d4._enterprise)  _enterprise
+        ,coalesce(d3._group, d4._group)            _group
+        ,coalesce(d3._entGroup, d4._entGroup)      _entGroup
+        ,[_load_plan_month]
+        ,[_load_fact_month]
+        ,[_load_delta_month]
+        ,[_load_plan_NET]
+        ,[_loadRW_fact_month]
+        ,[_loadRW_delta_month]
+        ,[_loadRW_plan_NET]
+        ,[_loadHybrid_fact_month]
+        ,[_loadHybrid_delta_month]
+        ,[_loadHybrid_plan_NET]
+    from [PAC].[dbo].[_mea_3_table] d3
+    full join [PAC].[dbo].[_mea_4_table] d4
+        on  d3._date     = d4._date
+        and d3._group    = d4._group
+        and d3._entGroup = d4._entGroup
+)
+-- ############################## Total ##############################
+    select
+         _date
+        ,_entGroup                                 _enterprise
+        ,N'Total'                                  _cat
+        ,sum(coalesce([_load_fact_month], 0)
+            + coalesce([_loadRW_fact_month], 0)
+            + coalesce([_loadHybrid_fact_month], 0))       _fact
+        ,sum(coalesce([_load_plan_NET], 0)
+            + coalesce([_loadRW_plan_NET], 0)
+            + coalesce([_loadHybrid_plan_NET], 0))         _plan
+    from _main
+    where 1 = 1
+        and _source = N'office'
+    group by
+         _date
+        ,_entGroup
+        ,_source
+union all
+-- ############################## Subcon #############################
+    select
+         _date
+        ,_entGroup                                 _enterprise
+        ,N'subcon'                                 _cat
+        ,sum(coalesce([_load_fact_month], 0)
+            + coalesce([_loadRW_fact_month], 0)
+            + coalesce([_loadHybrid_fact_month], 0))       _fact
+        ,sum(coalesce([_load_plan_NET], 0)
+            + coalesce([_loadRW_plan_NET], 0)
+            + coalesce([_loadHybrid_plan_NET], 0))         _plan
+    from _main
+    where 1 = 1
+        and _source = N'subcontractor'
+    group by
+         _date
+        ,_entGroup
+        ,_source
+union all
+-- ############################## Own ################################
+    select
+         _date
+        ,_enterprise
+        ,N'Own'                                    _cat
+        ,_fact_TOTAL - _fact_SUB                   _fact
+        ,_plan_TOTAL - _plan_SUB                   _plan
+    /* transpose the rows */
+    from (
+        select
+             _date
+            ,_entGroup                             _enterprise
+            ,sum(
+                case
+                    when _source = N'office'
+                        then coalesce([_load_plan_NET], 0)
+                           + coalesce([_loadRW_plan_NET], 0)
+                           + coalesce([_loadHybrid_plan_NET], 0)
+                    else 0
+                end)                               _plan_TOTAL
+            ,sum(
+                case
+                    when _source = N'office'
+                        then coalesce([_load_fact_month], 0)
+                           + coalesce([_loadRW_fact_month], 0)
+                           + coalesce([_loadHybrid_fact_month], 0)
+                    else 0
+                end)                               _fact_TOTAL
+            ,sum(
+                case
+                    when _source = N'subcontractor'
+                        then coalesce([_load_plan_NET], 0)
+                           + coalesce([_loadRW_plan_NET], 0)
+                           + coalesce([_loadHybrid_plan_NET], 0)
+                    else 0
+                end)                               _plan_SUB
+            ,sum(
+                case
+                    when _source = N'subcontractor'
+                        then coalesce([_load_fact_month], 0)
+                           + coalesce([_loadRW_fact_month], 0)
+                           + coalesce([_loadHybrid_fact_month], 0)
+                    else 0
+                end)                               _fact_SUB
+        from _main
+        group by
+             _date
+            ,_entGroup
+    ) t
+-- (Trucks and Inc. other repeat the same shape as Own, swapping which
+--  load columns feed each SUM — left out here to keep the sample short.)
+```
+
+## The rules
+
+Everything above follows the same handful of rules:
+
+- **Comment your code.** No one can see the logic in your head. Use `--` for
+  quick notes and `/* ... */` to describe the general logic of a block. The
+  next person to inherit the script — quite possibly you — shouldn't have to
+  reverse-engineer it.
+- **Indent everything.** Indentation is what turns a wall of text into a map:
+  you can see the blocks and how they connect.
+- **Lead with commas.** Put the comma in front of each column, not after. You
+  stop losing them, and you don't jump line to line hunting for the one you
+  missed.
+- **Add a throwaway first column.** Combined with leading commas, a lone `1` as
+  the first selected column lets you comment out any real column without
+  breaking the syntax.
+- **Give big expressions their own lines.** Break out `SUM`, `CASE WHEN`, and
+  the like. It's more vertical, but it reads better — and you can comment out a
+  single column cleanly.
+- **Align your aliases.** Keep two vertical lanes: source columns on the left,
+  aliases on the right (see the sample). Your eye can scan either lane on its
+  own.
+- **Prefix your own names with `_`.** An underscore separates the names you
+  invented (aliases, CTEs) from the ones that came out of the tables. Sometimes
+  it's overkill; mostly it's worth it.
+- **Break sections with comment banners.** Something like
+  `-- ##### NEW BLOCK #####` hands the reader your section boundaries instead of
+  making them guess.
+- **Open every WHERE with `1 = 1`.** Then every real condition is an `and ...`
+  on its own line, and you can comment any of them out without breaking the
+  query.
+
+These are opinions, not laws. But I've used them for years and never had a
+complaint from whoever picked up the code next — and since I forget my own
+queries as fast as anyone, the person they help most is usually future me.
+
+## Formatters I reach for
+
+When the mess isn't mine, one of these does the first pass:
+
+- [poorsql.com](https://poorsql.com/) — my go-to
+- [draxlr.com/tools/sql-formatter](https://www.draxlr.com/tools/sql-formatter/)
+- [red-gate.com/website/sql-formatter](https://www.red-gate.com/website/sql-formatter)
+
+That's it, folks.

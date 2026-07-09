@@ -93,10 +93,11 @@ export default async function PostPage({ params }: Props) {
       </Link>
 
       <header className="mt-6">
-        <h1 className="relative text-3xl font-semibold tracking-tight sm:text-4xl">
-          {/* Bar spans the full-width title block, not just the text. */}
-          <span aria-hidden="true" className={styles.titleBar} />
-          <span className="relative">{post.title}</span>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          <span className="relative inline-block">
+            <span aria-hidden="true" className={styles.titleBar} />
+            <span className="relative">{post.title}</span>
+          </span>
         </h1>
         {/* Date (YYYY-MM-DD) and tags under the title, pipe-separated — mirrors
             the blog list. Read time dropped. */}

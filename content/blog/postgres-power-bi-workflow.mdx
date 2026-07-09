@@ -43,10 +43,10 @@ there. No more copy-paste. In short:
 
 - Work in a SQL IDE (I'd go with [DBeaver](https://dbeaver.com/)).
 - Create a small table that stores your scripts — a lightweight in-DB "repo."
-- Wrap the SQL in a session variable (**Code 1**).
-- Push that variable into the table (**Code 2**).
-- In Power Query, one query fetches the SQL as a string (**Code 3**)...
-- ...and a second query runs it (**Code 4**).
+- Wrap the SQL in a session variable ([**Code 1**](#code-1--wrap-the-sql-in-a-variable)).
+- Push that variable into the table ([**Code 2**](#code-2--write-it-to-the-table)).
+- In Power Query, one query fetches the SQL as a string ([**Code 3**](#code-3--power-query-fetch-the-sql-string))...
+- ...and a second query runs it ([**Code 4**](#code-4--power-query-run-it)).
 
 ## The code base
 
@@ -134,8 +134,9 @@ in
 Day to day it comes down to this:
 
 - Edit the query. In DBeaver you can comment out the opening `$sql$` tag, test
-  freely, then uncomment it and run **Code 1 + Code 2** to save the new version
-  to the source table. (Ctrl+S to save the file is a good habit.)
+  freely, then uncomment it and run [**Code 1**](#code-1--wrap-the-sql-in-a-variable)
+  + [**Code 2**](#code-2--write-it-to-the-table) to save the new version to the
+  source table. (Ctrl+S to save the file is a good habit.)
 - Refresh the dataset — or just the one table.
 
 Two blocks, one click each, and the model is up to date. No copy-paste, no

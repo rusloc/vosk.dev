@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Container } from "@/components/container";
-import { HeroCta } from "@/components/hero-cta";
 import { HomeBackdrop } from "@/components/home-backdrop";
 import { CodeTyper } from "@/components/code-typer";
 import { JsonLd } from "@/components/json-ld";
@@ -27,8 +27,15 @@ export default function Home() {
             <span className="text-primary italic">data</span>.
           </h1>
 
+          {/* Animated variant available: swap in <HeroCta /> from
+              @/components/hero-cta (drops the Link below). */}
           <div className="mt-10 flex flex-wrap items-center gap-4">
-            <HeroCta />
+            <Link
+              href="/work"
+              className="bg-foreground text-background inline-flex h-12 items-center justify-center gap-2 rounded-md px-7 text-sm font-medium transition-opacity hover:opacity-90"
+            >
+              View case studies <span aria-hidden="true">→</span>
+            </Link>
           </div>
         </div>
       </Container>

@@ -2,6 +2,9 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import styles from "./hero-cta.module.css";
 
+// Animated variant of the hero CTA. Not currently mounted — the home page
+// renders the plain Link. Reapply by importing this and replacing that Link.
+
 // Fixed table rather than Math.random(): the page is statically rendered, so
 // runtime randomness would bake into the build. Irregular positions, sizes and
 // non-repeating durations read as random; negative delays start each bar

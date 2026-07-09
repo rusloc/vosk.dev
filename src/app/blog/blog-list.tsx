@@ -56,7 +56,16 @@ export function BlogList({ posts }: { posts: PostMeta[] }) {
           aria-label={`Sorted by date, ${asc ? "oldest" : "newest"} first — click to toggle`}
           className="border-border text-muted-foreground hover:bg-muted hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors"
         >
-          {asc ? "Oldest first" : "Newest first"}
+          {/* Both labels share one grid cell so the pill width stays constant
+              regardless of which is shown — no layout shift on toggle. */}
+          <span className="grid">
+            <span className={`col-start-1 row-start-1 ${asc ? "invisible" : ""}`}>
+              Newest first
+            </span>
+            <span className={`col-start-1 row-start-1 ${asc ? "" : "invisible"}`}>
+              Oldest first
+            </span>
+          </span>
           <svg
             viewBox="0 0 24 24"
             fill="none"

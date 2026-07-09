@@ -24,8 +24,8 @@ export function BlogList({ posts }: { posts: PostMeta[] }) {
 
   return (
     <>
-      {/* Search + sort on one row: input fills the width, sort is a compact square. */}
-      <div className="mt-4 flex items-stretch gap-2">
+      {/* Search + sort on one row: input fills the width, sort keeps its label. */}
+      <div className="mt-4 flex items-center gap-2">
         {/* Search — a white pill that replaces the sub-header title. */}
         <div className="relative flex-1">
           <svg
@@ -53,16 +53,16 @@ export function BlogList({ posts }: { posts: PostMeta[] }) {
         <button
           type="button"
           onClick={() => setAsc((v) => !v)}
-          title={`Sorted by date, ${asc ? "oldest" : "newest"} first — click to toggle`}
           aria-label={`Sorted by date, ${asc ? "oldest" : "newest"} first — click to toggle`}
-          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground inline-flex aspect-square shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors"
+          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors"
         >
+          {asc ? "Oldest first" : "Newest first"}
           <svg
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth={2}
-            className={`h-4 w-4 transition-transform ${asc ? "rotate-180" : ""}`}
+            className={`h-3.5 w-3.5 transition-transform ${asc ? "rotate-180" : ""}`}
             aria-hidden="true"
           >
             <path

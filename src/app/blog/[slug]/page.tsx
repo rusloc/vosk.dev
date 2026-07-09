@@ -104,7 +104,7 @@ export default async function PostPage({ params }: Props) {
         <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-2 text-xs">
           <time dateTime={post.date}>{post.date}</time>
           {post.tags.length > 0 && (
-            <>
+            <div className="hidden items-center gap-2 sm:flex">
               <span aria-hidden="true">|</span>
               <ul className="flex flex-wrap gap-2">
                 {post.tags.map((tag) => (
@@ -116,7 +116,7 @@ export default async function PostPage({ params }: Props) {
                   </li>
                 ))}
               </ul>
-            </>
+            </div>
           )}
         </div>
       </header>

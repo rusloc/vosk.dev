@@ -5,7 +5,7 @@
   position: absolute;
   inset: -0.1em -0.6em;
   z-index: 0;
-  border-radius: 0 8px 8px 0; /* rounded on the right, like the home bars */
+  border-radius: 0 16px 16px 0; /* right-rounded, doubled from the home bars */
   background: linear-gradient(
     to right,
     rgba(255, 153, 28, 0) 0%,

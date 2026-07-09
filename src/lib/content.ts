@@ -85,12 +85,3 @@ export function getPostBySlug(slug: string): Post | null {
   if (isProd && post.draft) return null;
   return post;
 }
-
-/** Display date, e.g. "July 8, 2026". */
-export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}

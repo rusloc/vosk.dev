@@ -11,12 +11,7 @@ import { JsonLd } from "@/components/json-ld";
 import { mdxComponents } from "@/components/mdx-components";
 import { buildMetadata } from "@/lib/metadata";
 import { blogPostingGraph } from "@/lib/structured-data";
-import {
-  getAllPosts,
-  getPostBySlug,
-  getPostSlugs,
-  formatDate,
-} from "@/lib/content";
+import { getAllPosts, getPostBySlug, getPostSlugs } from "@/lib/content";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -75,32 +70,51 @@ export default async function PostPage({ params }: Props) {
 
       <Link
         href="/blog"
-        className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+        className="text-muted-foreground hover:text-foreground group inline-flex items-center gap-2 text-sm transition-colors"
       >
-        ← Back to blog
+        <span className="bg-foreground text-background inline-flex h-7 w-7 items-center justify-center rounded-full transition-opacity group-hover:opacity-90">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            className="h-3.5 w-3.5"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 12H5M11 6l-6 6 6 6"
+            />
+          </svg>
+        </span>
+        Back to blog
       </Link>
 
       <header className="mt-6">
-        <div className="text-muted-foreground flex items-center gap-2 text-xs">
-          <time dateTime={post.date}>{formatDate(post.date)}</time>
-          <span aria-hidden="true">·</span>
-          <span>{post.readingTime}</span>
-        </div>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
           {post.title}
         </h1>
-        {post.tags.length > 0 && (
-          <ul className="mt-4 flex flex-wrap gap-2">
-            {post.tags.map((tag) => (
-              <li
-                key={tag}
-                className="border-border text-muted-foreground rounded-full border px-2.5 py-0.5 text-xs"
-              >
-                {tag}
-              </li>
-            ))}
-          </ul>
-        )}
+        {/* Date (YYYY-MM-DD) and tags under the title, pipe-separated — mirrors
+            the blog list. Read time dropped. */}
+        <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-2 text-xs">
+          <time dateTime={post.date}>{post.date}</time>
+          {post.tags.length > 0 && (
+            <>
+              <span aria-hidden="true">|</span>
+              <ul className="flex flex-wrap gap-2">
+                {post.tags.map((tag) => (
+                  <li
+                    key={tag}
+                    className="border-border rounded-full border px-2.5 py-0.5"
+                  >
+                    {tag}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
       </header>
 
       <article className="mdx mt-8 max-w-2xl">{content}</article>

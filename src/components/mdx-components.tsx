@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { MDXComponents } from "mdx/types";
+import { WorkflowDiagram } from "@/components/workflow-diagram";
 
 /**
  * Element map for rendered MDX, styled to the cream theme. Code blocks are
@@ -8,6 +9,8 @@ import type { MDXComponents } from "mdx/types";
  * headings, behavior "wrap") get the `heading-anchor` class and render plain.
  */
 export const mdxComponents: MDXComponents = {
+  // Custom block usable directly in MDX: <WorkflowDiagram />
+  WorkflowDiagram,
   h2: (props) => (
     <h2
       className="mt-10 mb-4 scroll-mt-24 text-2xl font-semibold tracking-tight"

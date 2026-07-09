@@ -25,7 +25,7 @@ export function BlogList({ posts }: { posts: PostMeta[] }) {
   return (
     <>
       {/* Search + sort on one row: input fills the width, sort keeps its label. */}
-      <div className="mt-4 flex items-center gap-2">
+      <div className="mt-4 flex items-stretch gap-2">
         {/* Search — a white pill that replaces the sub-header title. */}
         <div className="relative flex-1">
           <svg

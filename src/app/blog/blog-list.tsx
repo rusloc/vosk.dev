@@ -54,23 +54,22 @@ export function BlogList({ posts }: { posts: PostMeta[] }) {
             <li key={post.slug}>
               <article className="border-border rounded-lg border p-6">
                 {/* Title + arrow-link on one row, vertically centred together. */}
-                <div className="flex items-center justify-between gap-4">
-                  <h2 className="min-w-0 text-xl font-semibold tracking-tight">
-                    <span className="relative inline-block">
-                      <span aria-hidden="true" className={styles.titleBar} />
-                      <Link
-                        href={`/blog/${post.slug}`}
-                        className="hover:text-primary relative transition-colors"
-                      >
-                        {post.title}
-                      </Link>
-                    </span>
+                <div className="relative flex items-center justify-between gap-4">
+                  {/* Bar spans the whole row; its orange end sits under the arrow. */}
+                  <span aria-hidden="true" className={styles.titleBar} />
+                  <h2 className="relative min-w-0 text-xl font-semibold tracking-tight">
+                    <Link
+                      href={`/blog/${post.slug}`}
+                      className="hover:text-primary transition-colors"
+                    >
+                      {post.title}
+                    </Link>
                   </h2>
 
                   <Link
                     href={`/blog/${post.slug}`}
                     aria-label={`Read “${post.title}”`}
-                    className="bg-foreground text-background inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90"
+                    className="bg-foreground text-background relative inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90"
                   >
                     <svg
                       viewBox="0 0 24 24"

@@ -6,9 +6,9 @@ export function SiteFooter() {
   return (
     <footer className="border-border border-t">
       <Container className="text-muted-foreground flex items-center justify-between py-8 font-mono text-xs tracking-wider uppercase">
-        <p>
-          © <span className="hidden sm:inline">VOSK </span>
-          {year}
+        <p className="flex items-center">
+          © <span className="hidden sm:inline">&nbsp;VOSK</span>
+          &nbsp;{year}
         </p>
         <p className="hidden items-center gap-2 sm:flex">
           <span aria-hidden="true" className="relative inline-flex h-2 w-2">

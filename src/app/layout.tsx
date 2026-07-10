@@ -63,7 +63,7 @@ export default function RootLayout({
     >
       <body className="bg-background text-foreground flex min-h-full flex-col font-sans antialiased">
         <SiteNav />
-        <main className="flex-1">{children}</main>
+        <main className="flex flex-1 flex-col">{children}</main>
         <SiteFooter />
         <Analytics gtmId={env.NEXT_PUBLIC_GTM_ID} />
       </body>

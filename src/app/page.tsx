@@ -19,7 +19,7 @@ export default function Home() {
       <JsonLd data={homeGraph()} />
       <HomeBackdrop />
       <CodeTyper />
-      <Container className="flex min-h-full flex-col justify-center py-20 sm:py-28">
+      <Container className="flex flex-1 flex-col justify-center py-20 sm:py-28">
         <div className="max-w-3xl">
           <h1 className="text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl">
             Save <span className="text-primary italic">money</span> by

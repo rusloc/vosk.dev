@@ -17,12 +17,7 @@ export type Showcase = {
   embedUrl: string;
   href: string;
   details: string[]; // paragraphs shown on the detail page, above the report
-  /** Decorative art bleeding off the right of the list card. Falls back to the placeholder. */
-  image?: string;
 };
-
-/** Dull stand-in art for list cards until each showcase gets its own. */
-export const SHOWCASE_PLACEHOLDER_IMAGE = "/images/work/placeholder.svg";
 
 export const PLATFORM_LABEL: Record<ShowcasePlatform, string> = {
   "power-bi": "Power BI",

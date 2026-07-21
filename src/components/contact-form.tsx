@@ -53,6 +53,7 @@ export function ContactForm() {
           type="email"
           required
           autoComplete="email"
+          placeholder="your contact email"
           aria-invalid={Boolean(state.fieldErrors?.email)}
           className={fieldClass}
         />
@@ -67,6 +68,7 @@ export function ContactForm() {
           id="subject"
           name="subject"
           type="text"
+          placeholder="what is the request about"
           className={fieldClass}
           aria-invalid={Boolean(state.fieldErrors?.subject)}
         />
@@ -82,6 +84,7 @@ export function ContactForm() {
           name="message"
           required
           rows={4}
+          placeholder="Ask me about rates, availability, or an initial assessment."
           aria-invalid={Boolean(state.fieldErrors?.message)}
           className={fieldClass}
         />

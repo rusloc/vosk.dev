@@ -10,9 +10,9 @@ const ACCENT_COLOR = "#d8a7b0";
  * arrow-link on one row, a short summary, and a platform badge. No iframe here;
  * the live report lives on the detail page (/work/[slug]) this links to.
  *
- * A 16:9 accent block (~20% of the width) sits at the right edge, faded via a
- * left-to-right mask (transparent at the left, opaque at the right) so it tucks in
- * behind the arrow circle without competing with the text.
+ * An accent block (~20% of the width, full card height) sits at the right edge,
+ * faded via a left-to-right mask (transparent at the left, opaque at the right) so
+ * it tucks in behind the arrow circle without competing with the text.
  */
 export function ShowcaseCard({ showcase }: { showcase: Showcase }) {
   const { slug, title, summary, platform } = showcase;
@@ -20,10 +20,10 @@ export function ShowcaseCard({ showcase }: { showcase: Showcase }) {
 
   return (
     <article className="border-border relative overflow-hidden rounded-lg border">
-      {/* Accent block — right-aligned, 16:9, masked so it fades out toward the left. */}
+      {/* Accent block — right-aligned, full height, masked so it fades out toward the left. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute top-1/2 right-0 aspect-video w-1/5 -translate-y-1/2"
+        className="pointer-events-none absolute inset-y-0 right-0 w-1/5"
         style={{
           backgroundColor: ACCENT_COLOR,
           WebkitMaskImage: "linear-gradient(to right, transparent, black)",

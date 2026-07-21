@@ -5,6 +5,7 @@ import { Resend } from "resend";
 import { z } from "zod";
 import { contactSchema, type ContactState } from "@/lib/schema";
 import { getContactConfig } from "@/lib/contact-config";
+import { renderContactEmail } from "@/lib/contact-email";
 import { siteConfig } from "@/lib/site";
 
 // Best-effort in-memory rate limit. On serverless this is per-instance and
@@ -67,19 +68,14 @@ export async function submitContactForm(
 
   try {
     const resend = new Resend(apiKey);
+    const { html, text } = renderContactEmail({ email, subject, message });
     const { error } = await resend.emails.send({
       from,
       to,
       replyTo: email,
       subject: subject ? `Contact: ${subject}` : `New message from ${email}`,
-      text: [
-        `Email: ${email}`,
-        subject ? `Subject: ${subject}` : null,
-        "",
-        message,
-      ]
-        .filter((line) => line !== null)
-        .join("\n"),
+      html,
+      text,
     });
 
     if (error) {

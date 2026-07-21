@@ -1,0 +1,131 @@
+import { siteConfig } from "./site";
+
+/**
+ * Renders the notification email that lands in the inbox when someone submits the
+ * contact form. Returns both an `html` (styled, site-palette, table-based for email
+ * clients) and a `text` fallback (deliverability + non-HTML readers).
+ *
+ * The message/subject/email are visitor-supplied, so every interpolated value is
+ * HTML-escaped before it touches the markup — no injection into the email body.
+ */
+
+/** Escape user input for safe inclusion in HTML (body + attributes). */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Site palette (mirrors globals.css) + the brand orange from the favicon.
+const C = {
+  bg: "#fff8e7",
+  card: "#ffffff",
+  footer: "#fffdf7",
+  panel: "#f4ead0",
+  border: "#e7dbbe",
+  fg: "#1f1b16",
+  muted: "#6f6a5f",
+  primary: "#4f46e5",
+  accent: "#ff991c",
+} as const;
+
+const FONT =
+  "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+
+export function renderContactEmail(input: {
+  email: string;
+  subject?: string;
+  message: string;
+}): { html: string; text: string } {
+  const { email, subject, message } = input;
+
+  const text = [
+    `New message from the ${siteConfig.name} website`,
+    "",
+    `From: ${email}`,
+    subject ? `Subject: ${subject}` : null,
+    "",
+    message,
+    "",
+    `— Reply directly to this email to respond to ${email}.`,
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+
+  const safeEmail = escapeHtml(email);
+  const safeSubject = subject ? escapeHtml(subject) : "";
+  const safeMessage = escapeHtml(message).replace(/\n/g, "<br>");
+  const replyHref = escapeHtml(
+    `mailto:${email}?subject=${encodeURIComponent(`Re: ${subject ?? "your message"}`)}`,
+  );
+  const host = siteConfig.url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const preheader = escapeHtml(
+    subject ? `${subject} — from ${email}` : `New message from ${email}`,
+  );
+
+  const subjectRow = safeSubject
+    ? `<tr>
+        <td style="padding:8px 0;font-size:13px;color:${C.muted};width:72px;vertical-align:top;">Subject</td>
+        <td style="padding:8px 0;font-size:14px;color:${C.fg};">${safeSubject}</td>
+      </tr>`
+    : "";
+
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+</head>
+<body style="margin:0;padding:0;background:${C.bg};">
+<span style="display:none;max-height:0;overflow:hidden;opacity:0;">${preheader}</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.bg};">
+<tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:${C.card};border:1px solid ${C.border};border-radius:12px;overflow:hidden;font-family:${FONT};">
+
+<!-- header -->
+<tr><td style="padding:20px 28px;border-bottom:1px solid ${C.border};">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr>
+<td width="30" height="30" align="center" valign="middle" style="width:30px;height:30px;background:${C.accent};border-radius:7px;color:${C.primary};font-family:${FONT};font-weight:700;font-size:16px;line-height:30px;">V</td>
+<td style="padding-left:10px;font-family:${FONT};font-weight:600;font-size:15px;letter-spacing:.02em;color:${C.fg};">VOSK<span style="color:${C.muted};">.DEV</span></td>
+</tr></table>
+</td></tr>
+
+<!-- body -->
+<tr><td style="padding:28px;">
+<p style="margin:0 0 6px;font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:${C.accent};">New enquiry</p>
+<h1 style="margin:0 0 22px;font-size:20px;font-weight:600;color:${C.fg};">You've got a new message</h1>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+<tr>
+<td style="padding:8px 0;font-size:13px;color:${C.muted};width:72px;vertical-align:top;">From</td>
+<td style="padding:8px 0;font-size:14px;"><a href="mailto:${safeEmail}" style="color:${C.primary};text-decoration:none;font-weight:500;">${safeEmail}</a></td>
+</tr>
+${subjectRow}
+</table>
+
+<div style="margin-top:16px;background:${C.panel};border:1px solid ${C.border};border-radius:10px;padding:18px 20px;font-size:15px;line-height:1.65;color:${C.fg};">${safeMessage}</div>
+
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:24px;"><tr>
+<td style="border-radius:8px;background:${C.primary};">
+<a href="${replyHref}" style="display:inline-block;padding:11px 22px;font-family:${FONT};font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">Reply to ${safeEmail}</a>
+</td></tr></table>
+</td></tr>
+
+<!-- footer -->
+<tr><td style="padding:18px 28px;border-top:1px solid ${C.border};background:${C.footer};">
+<p style="margin:0;font-size:12px;line-height:1.6;color:${C.muted};">Sent from the contact form at <a href="${escapeHtml(siteConfig.url)}" style="color:${C.muted};">${escapeHtml(host)}</a>. Just hit reply — it goes straight to the sender.</p>
+</td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+
+  return { html, text };
+}

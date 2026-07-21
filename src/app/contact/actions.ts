@@ -5,7 +5,7 @@ import { Resend } from "resend";
 import { z } from "zod";
 import { contactSchema, type ContactState } from "@/lib/schema";
 import { getContactConfig } from "@/lib/contact-config";
-import { renderContactEmail } from "@/lib/contact-email";
+import { renderContactEmail, renderAutoReplyEmail } from "@/lib/contact-email";
 import { siteConfig } from "@/lib/site";
 
 // Best-effort in-memory rate limit. On serverless this is per-instance and
@@ -83,6 +83,23 @@ export async function submitContactForm(
         status: "error",
         message: `Sorry — sending failed. Please email me directly at ${siteConfig.contactEmail}.`,
       };
+    }
+
+    // Auto-reply to the visitor — best-effort. The lead already reached the inbox
+    // above, so a failure here must not fail the submission; `replyTo` points at
+    // the owner so the visitor's reply lands in the right place.
+    try {
+      const reply = renderAutoReplyEmail({ email, subject, message });
+      await resend.emails.send({
+        from,
+        to: email,
+        replyTo: to,
+        subject: `Thanks for reaching out — ${siteConfig.name}`,
+        html: reply.html,
+        text: reply.text,
+      });
+    } catch {
+      // Swallow: the notification succeeded; the confirmation is non-critical.
     }
   } catch {
     return {

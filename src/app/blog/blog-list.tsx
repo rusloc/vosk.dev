@@ -91,7 +91,7 @@ export function BlogList({ posts }: { posts: PostMeta[] }) {
         <ul className="mt-12 space-y-6">
           {ordered.map((post) => (
             <li key={post.slug}>
-              <article className="border-border rounded-lg border p-6">
+              <article className="bg-background border-border rounded-lg border p-6 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(31,27,22,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
                 {/* Title + arrow-link on one row, vertically centred together. */}
                 <div className="flex items-center justify-between gap-4">
                   <h2 className="min-w-0 text-xl font-semibold tracking-tight">

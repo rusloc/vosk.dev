@@ -41,7 +41,74 @@ export const en = {
   services: {
     title: "Services",
     metaDescription: "BI consulting, dashboard development, and data pipelines.",
-    body: "Service details coming soon.",
+    subtitle:
+      "BI delivery and consulting on Power BI and Superset — pick the engagement that fits.",
+    urgent: {
+      eyebrow: "Urgent",
+      note: "One option · fixed scope",
+      name: "Urgent BI solution request",
+      desc: "Same-week fix for a broken report, blocked refresh, or a deadline dashboard.",
+      price: "$1k–3k",
+      unit: "one-off",
+    },
+    subscription: {
+      eyebrow: "Subscription",
+      kicker: "Regular support / subscription",
+      tiers: [
+        {
+          name: "Plan S",
+          desc: "Light monthly upkeep — small changes and priority answers.",
+          price: "$1,000",
+          unit: "/ mo",
+        },
+        {
+          name: "Plan M",
+          desc: "Regular changes plus ongoing support for a live dashboard set.",
+          price: "$2,000",
+          unit: "/ mo",
+        },
+        {
+          name: "Plan L",
+          desc: "Priority support and a higher volume of changes each month.",
+          price: "$2,500",
+          unit: "/ mo",
+        },
+      ],
+    },
+    project: {
+      eyebrow: "Project work",
+      tiers: [
+        {
+          name: "Project work — short term",
+          duration: "~3 months",
+          desc: "A single dashboard or focused report, scoped and shipped end to end.",
+          price: "$2k–5k",
+          unit: "project",
+        },
+        {
+          name: "Project work — mid term",
+          duration: "6–12 months",
+          desc: "A clean data model plus a connected set of dashboards for a team.",
+          price: "$5k–12k",
+          unit: "project",
+        },
+        {
+          name: "Project work — long term",
+          duration: "12+ months",
+          desc: "A full reporting platform built and evolved from source data to delivery.",
+          price: "$10k–25k",
+          unit: "project",
+        },
+      ],
+    },
+    cta: {
+      title: "Not sure which one fits?",
+      body: "Tell me what you're working on and I'll point you to the right engagement.",
+      button: "Message me",
+    },
+    prevAria: "Previous",
+    nextAria: "Next",
+    goToAria: "Go to slide",
   },
   contact: {
     title: "Contacts",

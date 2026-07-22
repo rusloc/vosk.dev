@@ -12,7 +12,6 @@ import {
 } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { SendMessageButton } from "@/components/send-message-button";
-import { LangSwitcher } from "@/components/lang-switcher";
 import styles from "./nav.module.css";
 
 export function SiteNav({
@@ -68,8 +67,6 @@ export function SiteNav({
               </li>
             ))}
           </ul>
-
-          <LangSwitcher locale={locale} label={dict.langSwitcher.label} />
 
           <SendMessageButton
             locale={locale}

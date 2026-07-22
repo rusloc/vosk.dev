@@ -89,7 +89,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       <body className="bg-background text-foreground flex min-h-full flex-col font-sans antialiased">
         <SiteNav locale={locale as Locale} dict={dict} />
         <main className="flex-1">{children}</main>
-        <SiteFooter dict={dict} />
+        <SiteFooter locale={locale as Locale} dict={dict} />
         <Analytics gtmId={env.NEXT_PUBLIC_GTM_ID} />
       </body>
     </html>

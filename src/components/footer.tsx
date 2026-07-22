@@ -1,17 +1,32 @@
 import { Container } from "@/components/container";
+import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { LangSwitcher } from "@/components/lang-switcher";
 
-export function SiteFooter({ dict }: { dict: Dictionary }) {
+export function SiteFooter({
+  locale,
+  dict,
+}: {
+  locale: Locale;
+  dict: Dictionary;
+}) {
   const year = new Date().getFullYear();
 
   return (
     <footer className="border-border border-t">
-      <Container className="text-muted-foreground flex items-center justify-between py-8 font-mono text-xs tracking-wider uppercase">
-        <p className="flex items-center">
+      {/* Three columns so the language switch stays centered regardless of the
+          side content (the availability line is hidden below `sm`). */}
+      <Container className="text-muted-foreground grid grid-cols-3 items-center py-8 font-mono text-xs tracking-wider uppercase">
+        <p className="flex items-center justify-self-start">
           © <span className="hidden sm:inline">&nbsp;VOSK</span>
           &nbsp;{year}
         </p>
-        <p className="hidden items-center gap-2 sm:flex">
+
+        <div className="justify-self-center">
+          <LangSwitcher locale={locale} label={dict.langSwitcher.label} />
+        </div>
+
+        <p className="hidden items-center gap-2 justify-self-end sm:flex">
           <span aria-hidden="true" className="relative inline-flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />

@@ -4,21 +4,24 @@ import { useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { Icon } from "./service-icons";
 
 /**
- * Minimal slide carousel for the multi-tier service columns. Slides are rendered
- * on the server (ServiceCard) and passed in as `slides`; this component only owns
- * the index, the sliding track, drag/swipe, and the arrow + dot controls. One
- * slide visible at a time; height follows the tallest slide.
+ * One service column: a numbered heading with inline prev/next controls, above a
+ * single-slide carousel. Slides are rendered on the server (ServiceCard) and
+ * passed in as `slides`; this component owns the index, the sliding track, and
+ * drag/swipe. The `<` / `>` buttons sit on the heading line, sized to the row's
+ * text; there are no dots.
  */
 export function ServiceCarousel({
+  number,
+  label,
   slides,
   prevAria,
   nextAria,
-  goToAria,
 }: {
+  number: number;
+  label: string;
   slides: ReactNode[];
   prevAria: string;
   nextAria: string;
-  goToAria: string;
 }) {
   const [index, setIndex] = useState(0);
   const last = slides.length - 1;
@@ -36,16 +39,46 @@ export function ServiceCarousel({
     else if (dx < -40) go(index + 1);
   };
 
+  const btn =
+    "bg-foreground text-background inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-25";
+
   return (
     <div
-      className="flex min-h-0 flex-1 flex-col"
+      className="flex min-h-[340px] flex-col"
       onKeyDown={(e) => {
         if (e.key === "ArrowLeft") go(index - 1);
         if (e.key === "ArrowRight") go(index + 1);
       }}
     >
+      {/* Heading row: "N · Label" left, prev/next controls right. */}
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="text-foreground text-xs font-semibold tracking-[0.12em] uppercase">
+          {number} · {label}
+        </span>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            aria-label={prevAria}
+            onClick={() => go(index - 1)}
+            disabled={index === 0}
+            className={btn}
+          >
+            <Icon name="chevron-left" className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            aria-label={nextAria}
+            onClick={() => go(index + 1)}
+            disabled={index === last}
+            className={btn}
+          >
+            <Icon name="chevron-right" className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+
       <div
-        className="border-border relative min-h-0 flex-1 touch-pan-y overflow-hidden rounded-2xl"
+        className="relative min-h-0 flex-1 touch-pan-y overflow-hidden rounded-2xl"
         onPointerDown={onDown}
         onPointerUp={onUp}
       >
@@ -59,46 +92,6 @@ export function ServiceCarousel({
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Controls: prev · dots · next */}
-      <div className="mt-4 flex items-center justify-center gap-4">
-        <button
-          type="button"
-          aria-label={prevAria}
-          onClick={() => go(index - 1)}
-          disabled={index === 0}
-          className="bg-foreground text-background inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          <Icon name="chevron-left" className="h-4.5 w-4.5" />
-        </button>
-
-        <div className="flex items-center gap-2">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              aria-label={`${goToAria} ${i + 1}`}
-              aria-current={i === index}
-              onClick={() => go(i)}
-              className={`h-2 cursor-pointer rounded-full transition-all ${
-                i === index
-                  ? "bg-foreground w-6"
-                  : "w-2 bg-[rgba(30,20,0,0.18)] hover:bg-[rgba(30,20,0,0.3)]"
-              }`}
-            />
-          ))}
-        </div>
-
-        <button
-          type="button"
-          aria-label={nextAria}
-          onClick={() => go(index + 1)}
-          disabled={index === last}
-          className="bg-foreground text-background inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          <Icon name="chevron-right" className="h-4.5 w-4.5" />
-        </button>
       </div>
     </div>
   );

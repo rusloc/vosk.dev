@@ -9,6 +9,8 @@ export type IconName =
   | "flag"
   | "map"
   | "route"
+  | "clock"
+  | "graduation-cap"
   | "chevron-left"
   | "chevron-right";
 
@@ -39,6 +41,18 @@ const paths: Record<IconName, React.ReactNode> = {
       <circle cx="6" cy="19" r="3" />
       <circle cx="18" cy="5" r="3" />
       <path d="M9 19h6.5a3.5 3.5 0 0 0 0-7h-6a3.5 3.5 0 0 1 0-7H15" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </>
+  ),
+  "graduation-cap": (
+    <>
+      <path d="M22 10 12 5 2 10l10 5 10-5Z" />
+      <path d="M6 12v5c0 1 2.5 3 6 3s6-2 6-3v-5" />
     </>
   ),
   "chevron-left": <path d="m15 18-6-6 6-6" />,

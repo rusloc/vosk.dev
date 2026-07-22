@@ -15,10 +15,16 @@ export function SendMessageButton({
   locale,
   dict,
   className,
+  label,
+  variant = "solid",
 }: {
   locale: Locale;
   dict: Dictionary;
   className?: string;
+  /** Button text; defaults to the dialog's "Message" label. */
+  label?: string;
+  /** "solid" = dark button (nav); "inverse" = light button on a dark surface (CTA). */
+  variant?: "solid" | "inverse";
 }) {
   const [open, setOpen] = useState(false);
 
@@ -41,11 +47,14 @@ export function SendMessageButton({
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "bg-foreground text-background h-10 cursor-pointer items-center justify-center rounded-md px-5 text-sm font-medium transition-opacity hover:opacity-90",
+          "h-10 cursor-pointer items-center justify-center rounded-md px-5 text-sm font-medium transition-opacity hover:opacity-90",
+          variant === "inverse"
+            ? "bg-background text-foreground"
+            : "bg-foreground text-background",
           className,
         )}
       >
-        {dict.sendDialog.open}
+        {label ?? dict.sendDialog.open}
       </button>
 
       {open &&

@@ -41,16 +41,6 @@ export const en = {
   services: {
     title: "Services",
     metaDescription: "BI consulting, dashboard development, and data pipelines.",
-    subtitle:
-      "BI delivery and consulting on Power BI and Superset — pick the engagement that fits.",
-    urgent: {
-      eyebrow: "Urgent",
-      note: "One option · fixed scope",
-      name: "Urgent BI solution request",
-      desc: "Same-week fix for a broken report, blocked refresh, or a deadline dashboard.",
-      price: "$1k–3k",
-      unit: "one-off",
-    },
     subscription: {
       eyebrow: "Subscription",
       kicker: "Regular support / subscription",
@@ -76,7 +66,7 @@ export const en = {
       ],
     },
     project: {
-      eyebrow: "Project work",
+      eyebrow: "Project",
       tiers: [
         {
           name: "Project work — short term",
@@ -101,6 +91,30 @@ export const en = {
         },
       ],
     },
+    other: {
+      eyebrow: "Other",
+      // Prices for full-time / tutoring are placeholders — confirm before publish.
+      tiers: [
+        {
+          name: "Urgent BI request",
+          desc: "Same-week fix for a broken report, blocked refresh, or a deadline dashboard.",
+          price: "$1k–3k",
+          unit: "one-off",
+        },
+        {
+          name: "Full-time / embedded",
+          desc: "Dedicated full-time BI work as an embedded member of your team, month to month.",
+          price: "from $6k",
+          unit: "/ mo",
+        },
+        {
+          name: "Tutoring / mentoring",
+          desc: "One-on-one sessions on Power BI, DAX, SQL, and data modeling.",
+          price: "$50",
+          unit: "/ hr",
+        },
+      ],
+    },
     cta: {
       title: "Not sure which one fits?",
       body: "Tell me what you're working on and I'll point you to the right engagement.",
@@ -108,7 +122,6 @@ export const en = {
     },
     prevAria: "Previous",
     nextAria: "Next",
-    goToAria: "Go to slide",
   },
   contact: {
     title: "Contacts",

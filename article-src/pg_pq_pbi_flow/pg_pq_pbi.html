@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+
+
+    <!-- Google Tag Manager -->
+    <script>(function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            }); var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                    'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-TJ6T895');</script>
+    <!-- End Google Tag Manager -->
+
+    <!--- basic page needs
+    ================================================== -->
+    <meta charset="utf-8">
+    <title>PG SQL and Power BI work flow with custom SQL scripts</title>
+    <meta name="description"
+        content="Learn how to optimize your Power BI workflow using custom PostgreSQL scripts for faster data management and performance.">
+    <meta name="author" content="Kirill Bezzubkin">
+    <meta name="keywords" content="postgresql, power bi, sql, workflow, analytics, etl, views, performance">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://pimpmybi.com/blog/pgsql_pbi.html">
+    <meta property="og:title" content="PG SQL and Power BI work flow with custom SQL scripts">
+    <meta property="og:description"
+        content="Learn how to optimize your Power BI workflow using custom PostgreSQL scripts.">
+    <meta property="og:image" content="https://pimpmybi.com/images/icons/chart-2-svgrepo-com.svg">
+    <meta property="og:site_name" content="pimp.my.bi">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://pimpmybi.com/blog/pgsql_pbi.html">
+    <meta property="twitter:title" content="PG SQL and Power BI work flow with custom SQL scripts">
+    <meta property="twitter:description"
+        content="Learn how to optimize your Power BI workflow using custom PostgreSQL scripts.">
+    <meta property="twitter:image" content="https://pimpmybi.com/images/icons/chart-2-svgrepo-com.svg">
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://pimpmybi.com/blog/pgsql_pbi.html">
+
+    <!-- Schema.org -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "PG SQL and Power BI work flow with custom SQL scripts",
+      "image": [
+        "https://pimpmybi.com/images/icons/chart-2-svgrepo-com.svg"
+       ],
+      "author": {
+        "@type": "Person",
+        "name": "Kirill Bezzubkin"
+      },
+      "description": "Learn how to optimize your Power BI workflow using custom PostgreSQL scripts."
+    }
+    </script>
+
+    <!-- mobile specific metas
+    ================================================== -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- CSS
+    ================================================== -->
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/vendor.css">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/fonts.css">
+
+    <!-- script
+    ================================================== -->
+    <script src="../js/modernizr.js"></script>
+
+    <!-- favicons
+    ================================================== -->
+    <link rel="apple-touch-icon" sizes="180x180" href="../images/icons/chart-2-svgrepo-com.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../images/icons/chart-2-svgrepo-com.svg">
+    <link rel="icon" type="image/png" sizes="16x16" href="../images/icons/chart-2-svgrepo-com.svg">
+    <link rel="manifest" href="site.webmanifest">
+
+</head>
+
+<body class="ss-bg-white">
+
+
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TJ6T895" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <!-- preloader
+    ================================================== -->
+    <div id="preloader">
+        <div id="loader" class="dots-fade">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+
+    <div id="top" class="s-wrap site-wrapper"></div>
+    <!-- site header
+        ================================================== -->
+    <header class="s-header">
+
+        <div class="header__top">
+            <div class="header__logo">
+                <a class="site-logo" href="../index.html">
+                    <p class="mainLogo">pimp.my.bi</p>
+                </a>
+            </div>
+        </div> <!-- end header__top -->
+
+        <nav class="header__nav-wrap">
+
+            <ul class="header__nav">
+                <li><a href="../index.html" title="">Home</a></li>
+                <li><a href="../page-about.html" title="">About</a></li>
+                <li><a href="../page-contact.html" title="">Contact</a></li>
+            </ul> <!-- end header__nav -->
+
+            <ul class="header__social">
+                <li class="ss-linked">
+                    <a href="https://www.linkedin.com/in/kirill-bezzubkin-b6860b235">
+                        <span class="screen-reader-text">Linkedin</span>
+                    </a>
+                </li>
+                <li class="ss-facebook">
+                    <a href="https://www.facebook.com">
+                        <span class="screen-reader-text">Facebook</span>
+                    </a>
+                </li>
+                <li class="ss-upwork">
+                    <a href="https://www.upwork.com/freelancers/~011afab395f15a047f">
+                        <span class="screen-reader-text">Upwork</span>
+                    </a>
+                </li>
+            </ul>
+
+        </nav> <!-- end header__nav-wrap -->
+
+        <!-- menu toggle -->
+        <a href="#0" class="header__menu-toggle">
+            <span>Menu</span>
+        </a>
+
+    </header> <!-- end s-header -->
+
+
+    <!-- search-block -->
+    <div class="s-search">
+
+        <div class="search-block">
+
+            <form role="search" method="get" class="search-form" action="#">
+                <label>
+                    <span class="hide-content">Ping me in <a href="http://www.t.me/cirob">Telegram</a> or send <a
+                            class="popupLink" href="mailto: pimp.my.bi@gmail.com">Email</a></span>
+                </label>
+                <input type="submit" class="search-submit" value="Search">
+            </form>
+
+            <a href="#0" title="Close Search" class="search-close">Close</a>
+
+        </div>
+        <!-- end search-block -->
+
+        <!-- search modal trigger -->
+        <a href="#0" class="search-trigger">
+
+            <!-- <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill:rgba(0, 0, 0, 1);transform:;-ms-filter:"><path d="M10,18c1.846,0,3.543-0.635,4.897-1.688l4.396,4.396l1.414-1.414l-4.396-4.396C17.365,13.543,18,11.846,18,10 c0-4.411-3.589-8-8-8s-8,3.589-8,8S5.589,18,10,18z M10,4c3.309,0,6,2.691,6,6s-2.691,6-6,6s-6-2.691-6-6S6.691,4,10,4z"></path></svg> -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <g>
+                    <path fill="none" d="M0 0h24v24H0z" />
+                    <path
+                        d="M22 17.002a6.002 6.002 0 0 1-4.713 5.86l-.638-1.914A4.003 4.003 0 0 0 19.465 19H17a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h2.938a8.001 8.001 0 0 0-15.876 0H7a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5C2 6.477 6.477 2 12 2s10 4.477 10 10V17.002zM20 17v-4h-3v4h3zM4 13v4h3v-4H4z" />
+                </g>
+            </svg>
+            <span>contact</span>
+        </a>
+        <span class="search-line"></span>
+
+    </div>
+    <!-- end s-search -->
+
+
+    <!-- site content
+        ================================================== -->
+    <div class="s-content content">
+        <main class="row content__page">
+
+            <article class="column large-full entry format-standard">
+
+                <div class="content__page-header entry__header">
+                    <h1 class="display-1 entry__title">
+                        PG SQL and Power BI work flow that will save you tons of time & nerves and wont kill your
+                        mental health.
+                    </h1>
+
+                </div>
+
+                <!-- <div class="media-wrap entry__media">
+                        <div class="entry__post-thumb">
+                            <img src="../images/thumbs/time_funnel/funnel_chart_preview_1000.png" 
+                                 srcset="../images/thumbs/time_funnel/funnel_chart_preview_2000.png 2000w, 
+                                 ../images/thumbs/time_funnel/funnel_chart_preview_1000.png 1000w, 
+                                 ../images/thumbs/time_funnel/funnel_chart_preview_500.png 500w" sizes="(max-width: 2000px) 100vw, 2000px" alt="">
+                            </div>
+                    </div> -->
+
+                <!-- end entry__header -->
+
+                <div class="entry__content">
+
+                    <p class="lead drop-cap">
+                        Imagine you have an SQL script. Maybe it s really huge. Even if it s tiny: most likely you will
+                        use 'copy-paste' turbo combo to
+                        edit the script and insert into PowerQuery editor (as custom SQL to retrieve the data).
+                    </p>
+                    <h2>
+                        The problem.
+                    </h2>
+                    <br>
+                    <p>
+                        I wonna offer you one great solution (really it s HUGE) which will save your visual attention
+                        capacity,
+                        nerves, minimize manual work and jumps between screens / windows.
+                    </p>
+
+                    <p>
+                        So you have a really huge SQL that you work on and keep jumping back and forth between
+                        the SQL IDE and PowerQuery advanced editor?
+                        Basically you keep repeating the same stupid operation many times: <b> edit SQL -> copy -> paste
+                            into PQ -> refresh dataset</b>.
+                        Or probably you need to share this script with someone else in your team/company ? Or you just
+                        need to quickly update some logic? So what i m
+                        trying to say is that there are two instances you jump between and this may be really time
+                        consuming
+                        and annoying when you have to 'alt-tab' between two windows.
+
+
+                    </p>
+                    <p>Here s a sample SQL code:</p>
+                    <pre id="sql_sample">
+                        <code class="language-sql">
+/*
+    sample SQL query here (maybe really huge and hardly managable)
+*/
+    select 
+        a."ACCOUNTINGDATE"::date 																								_acc_date
+        ,round(coalesce(a."ACCOUNTINGCURRENCYAMOUNT INV" * e."Exrate", a."REPORTINGCURRENCYAMOUNT INV")::numeric,3)				_amount_usd
+        ,round(coalesce(a."ACCOUNTINGCURRENCYAMOUNT INV",a."REPORTINGCURRENCYAMOUNT INV")::numeric,3)							_amount
+        ,upper(a."Name")																										_oper_type 
+    from public."dax__SAB_TGTGeneralJournalAccountEntryEntityStaging" a
+    left join public."dax__ExRateMaster_daily" e
+        on a."ACCOUNTINGCURRENCY" = e."FROMCURRENCY"
+        and a."ACCOUNTINGDATE" = e."STARTDATE"
+        and e."TOCURRENCY" = 'USD'
+                        </code>
+                    </pre>
+
+
+
+                    <!-- Solution block hosting general algo and logic desciption -->
+                    <h2>The Solution</h2>
+
+                    <p>
+                        To get rid of jumping, copy-pasting routine you need to:
+                    <ul>
+                        <li>
+                            <b>Use your SQL IDE (i d recommend <a href="https://dbeaver.com/"
+                                    target="_blank">DBEAVER</a>)</b>
+                        </li>
+                        <li>
+                            <b>Setup your SQL Git repo table like here (<a href="#sql_repo">SQL repo</a>)</b>
+                        </li>
+                        <li>
+                            <b>Wrap your SQL code in <a href="#sql_var_set">Code number 1</a></b>
+                        </li>
+                        <li>
+                            <b>Run <a href="#sql_var_update">Code number 2</a> to update the SOURCE table (which will
+                                host
+                                your SQL and serve as
+                                local in-DB Git repo.
+                            </b>
+                        </li>
+                        <li>
+                            <b>Create this PowerQuery source query (<a href="#sql_var_pq">Code number 3</a>) to
+                                retrieve SQL code as a string for further usage</b>
+                        </li>
+                        <li>
+                            <b>Create another PowerQuery query (<a href="#pq_main">Code number 4</a>) that will utilize
+                                the SQL string from the
+                                previous query
+                                and execute it</b>
+                        </li>
+
+                    </ul>
+
+                    <b>For a process overview click here (<a href="#workflow">Workflow overview</a>)</b>
+                    </p>
+
+
+                    <!-- Code snippets -->
+                    <h2>The Code base</h2>
+
+                    <!-- SQL SOURCE TABLE DDL -->
+                    <p>
+                    <h3 id="sql_repo">SQL source table DDL</h3>
+                    I created a simple table to host my scripts. It basically has columns:
+                    <ul>
+                        <li>
+                            <b>id</b> - primary key
+                        </li>
+                        <li>
+                            <b>_report</b> - the name of the report it s used in
+                        </li>
+                        <li>
+                            <b>_page</b> - page name if this is specific to a page
+                        </li>
+                        <li>
+                            <b>_code</b> - the SQL SOURCE CODE itself
+                        </li>
+                        <li>
+                            <b>_comment</b> - any crap you will want to write here
+                        </li>
+                        <li>
+                            <b>_updated</b> - updated TS (simply uses now() function when a record is updated)
+                        </li>
+                    </ul>
+                    </p>
+                    <pre>
+                        <code class="language-sql">
+    create table public.sql_source (
+        id int4 generated always as identity( increment by 1 minvalue 1 maxvalue 2147483647 start 1 cache 1 no cycle) not null
+        ,_report text not null
+        ,_page text default 'unnamed_script'::text not null
+        ,_code text not null
+        ,_comment text null
+        ,_updated timestamptz default current_timestamp null
+        constraint sql_source_pkey primary key (id)
+            );
+                    </code>
+                    </pre>
+
+
+
+
+
+                    <!-- code 1 -->
+                    <p>
+                    <h3 id="sql_var_set">Code number 1 (setter-wrapper)</h3>
+                    <ul>
+                        <li>
+                            Creates a custom namespace <b>dev</b> (you can literaly choose any name you want)
+                        </li>
+                        <li>
+                            Sets a local variable <b>total_revenue_view</b> and assign the code below
+                            to this var
+                        </li>
+                        <li>
+                            Wraps the code in <b>$sql$</b> quotes (you can use this type of quotes to avoid
+                            issues with single/double classic quotes in your code; between Dollar signs you can use
+                            almost any name)
+                        </li>
+                    </ul>
+
+
+                    </p>
+                    <pre>
+                        <code class="language-sql">
+    set dev.total_revenue_view = 
+    $sql$
+            select * from table
+
+    $sql$
+                    </code>
+                    </pre>
+
+                    <!-- code 2 -->
+
+                    <p>
+                    <h3 id="sql_var_update">Code number 2 (updater)</h3>
+                    <ul>
+                        <li>
+                            Grabs the code from the variable
+                        </li>
+                        <li>
+                            Updates the <b>sql_source</b> table with the code from the variable
+                        </li>
+                        <li>
+                            <b>public.sql_source</b> is the SOURCE table hosting the code base
+                        </li>
+                        <li>
+                            <b>current_setting('dev.total_gp_view')</b> is a PG SQL function that retrieves the value of
+                            the variable from the one you used in the previous step
+                        </li>
+                        <li>
+                            <b>where</b> condition is where you specify which record to update with the new SQL
+                        </li>
+                    </ul>
+
+
+                    </p>
+                    <pre>
+                        <code class="language-sql" >
+    update public.sql_source 
+    set _code = current_setting('dev.total_revenue_view') 
+        ,_updated = now()
+    where _name = 'TOTAL REVENUE' and _report = 'GP CONTRIBUTION';
+                    </code>
+                    </pre>
+
+                    <!-- code 3 -->
+
+                    <p>
+                    <h3 id="sql_var_pq">Code number 3 (PowerQuery source query)</h3>
+                    <ul>
+                        <li>
+                            Retrieves the SQL as a string from the <b>sql_source</b> table
+                        </li>
+                        <li>
+                            Used as a base query to retrieve and store the SQL code but not to be loaded into the model
+                        </li>
+                        <li>Basically you just need to get the content from the cell that stores the SQL source code and
+                            then use it as a string to feed into PQ query</li>
+                    </ul>
+                    </p>
+                    <pre>
+                        <code class="language-sql" >
+    let
+        Source = PostgreSQL.Database("c-powerbicosmos.k4mjimliu3npzv.postgres.cosmos.azure.com", "powerbi"),
+        selectRows = Table.SelectRows(Source, each ([Schema] = "public") and ([Name] = "public.sql_source")),
+        _dropCols = Table.SelectColumns(selectRows,{"Data"}),
+        _expandData = Table.ExpandTableColumn(_dropCols, "Data", {"_code", "_name"}, {"_code", "_name"}),
+        _selectTable = Table.SelectRows(_expandData, each ([_name] = "TOTAL REVENUE"))
+    in
+        _selectTable
+                    </code>
+                    </pre>
+
+                    <!-- code 4 -->
+
+                    <p>
+                    <h3 id="pq_main">Code number 4 (PowerQuery data retrieval)</h3>
+                    <ul>
+                        <li>
+                            Queries the DB using the SQL code retrieved from the <b>sql_source</b> table (previous step)
+                        </li>
+                        <li>
+                            Instead of copy-pasting the code you use the string from the previous query
+                        </li>
+                    </ul>
+                    </p>
+                    <pre>
+                        <code class="language-sql" >
+    let
+        Source = PostgreSQL.Database("c-powerbicosmos.k4mjimliu3npzv.postgres.cosmos.azure.com", "powerbi", 
+        [Query = 
+                
+                TOTAL_REVENUE_SQL_SOURCE[_code]{0}
+                
+        ])
+    in
+        Source
+                    </code>
+                    </pre>
+
+
+                    <!-- Workflow overview -->
+                    <p>
+                    <h2 id="workflow">Workflow overview (conclusion)</h2>
+                    Now a quick go through:
+                    <ul>
+                        <li>
+                            You amend your code. If you are using DBEAVER (which i recommend) then you can just comment
+                            the first "$sql$" quote tag and
+                            edit / test your code to check the results.
+                            When you finish editing you uncomment the first "$sql$" quote tag and run the <b>Code number
+                                1 & Code number 2</b> to update the SQL code in the source table.
+                            And it s a good practice to press CTRL + S to save the file after editing.
+                        </li>
+                        <li>
+                            Once the code is in the source table you can refresh the dataset (or just one table).
+                        </li>
+                    </ul>
+                    Below is a scheme of the workflow where you can see two main blocks that are just ONE CLICK + ONE
+                    CLICK away from updating the model. No more copy-pasting, exessive screen switching and extra
+                    redundant manual work.
+                    <div class="media-wrap" id="screenOne">
+                        <div>
+                            <img src="../blog/images/pgsql_pbi/scheme_1200.png" srcset="../blog/images/pgsql_pbi/scheme_1200.png 1200w, 
+                                    ../blog/images/pgsql_pbi/scheme_800.png 800w, 
+                                    ../blog/images/pgsql_pbi/scheme_500.png 500w"
+                                sizes="(max-width: 2000px) 100vw, 2000px" alt="">
+                        </div>
+                        <i>>>> screen 1</i>
+                    </div>
+                    </p>
+                </div> <!-- end entry content -->
+
+            </article> <!-- end column large-full entry-->
+
+
+
+        </main>
+
+    </div> <!-- end s-content -->
+
+
+    <!-- footer
+        ================================================== -->
+    <footer class="s-footer footer">
+        <div class="row">
+            <div class="column large-full footer__content">
+                <div class="footer__copyright">
+                    <span>© 2026</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="go-top">
+            <a class="smoothscroll" title="Back to Top" href="#top"></a>
+        </div>
+    </footer>
+
+    </div> <!-- end s-wrap -->
+
+
+    <!-- Java Script
+    ================================================== -->
+    <script src="../js/jquery-3.2.1.min.js"></script>
+    <script src="../js/plugins.js"></script>
+    <script src="../js/main.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,324 @@
+---
+title: "Building a time-utilization funnel chart in Power BI"
+description: "A top-down waterfall funnel that traces a mining fleet's 24/7 time from total available down through every idle category — built on a plain stacked bar chart and three DAX measures."
+date: "2026-07-22"
+tags: ["power bi", "dax", "data modeling"]
+draft: false
+---
+
+This report was built for a real client — a coal-mining company. Every number
+here is altered to hide the real metrics. What follows is my approach to a funnel
+chart that tracks time utilization, built on nothing fancier than Power BI's
+default **stacked bar chart**.
+
+The requirement was a funnel that flows top to bottom. It starts at total
+available time — 100% of the 24/7 clock — and deducts the time spent in each
+category, every slice also expressed as a percentage of that total.
+
+The twist was a set of **breakpoints** that mark stages of equipment readiness.
+"Ready for work," for instance, assumes all major maintenance is done and shows
+the share of total time the heavy loaders can actually operate in the field.
+"Effective work time" is the next breakpoint — how much of that time the loader
+was genuinely doing its main job.
+
+A second twist: a **switcher** between linear utilization and a weighted average,
+weighted by each excavator's ladle volume.
+
+Below is the actual interactive report. There's no mobile layout, so it's best
+viewed on a desktop or laptop — though it still works on a phone.
+
+<ReportEmbed
+  src="https://app.powerbi.com/view?r=eyJrIjoiY2M3YzU2MjAtNjdlOC00NGU2LThlMTItMzc2MTE2Yjk0MDlkIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9&embedImagePlaceholder=true"
+  href="https://app.powerbi.com/view?r=eyJrIjoiY2M3YzU2MjAtNjdlOC00NGU2LThlMTItMzc2MTE2Yjk0MDlkIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9&embedImagePlaceholder=true"
+  title="Time-utilization funnel — live Power BI report"
+/>
+
+Want the short version? The same report is written up as a case study on the
+[Mining fleet time utilization](/work/mining-time-utilization) showcase.
+
+## Model
+
+First we lay out the **fact table** — actually one fact table plus two plan
+tables, since there are two kinds of plan. The fact/plan table looks like this:
+
+| \_vehicleID       | \_date     | \_idleCategory | \_duration |
+| ---------------- | ---------- | ------------- | --------- |
+| LDR-1250-SP-3068 | 04/01/2023 | Total time    | 86 400    |
+| Visa-6076        | 14/05/2023 | Maintenance   | 4 804     |
+
+Four columns are all we need:
+
+- **\_vehicleID** — the vehicle's unique identifier
+- **\_date** — the day we capture time by category
+- **\_idleCategory** — what the vehicle was doing (I call it `_originalCat` in the model)
+- **\_duration** — in seconds (hours, or whatever unit suits you)
+
+We need one row per vehicle per day to anchor total available time — 86 400
+seconds, or 24 hours.
+
+With those three tables in place (fact, weekly plan, monthly plan), the model
+needs a few more:
+
+- A link table for the fact table — the low-level categories are many, so we
+  group them into higher-level ones
+- A link table for the weekly plan, and one for the monthly plan (same idea)
+- A high-level **idles** table — this drives the categories on the chart
+- A calendar table
+- A dimension table of vehicles with their fields and offices
+
+I used intermediary link tables because some idle categories in the fact and
+plan tables didn't match — and separate tables are simply easier to debug.
+
+> A side note: this report needed a custom calendar with the business week
+> starting on Saturday and ending on Friday. I'll share that PowerQuery M
+> solution in a future post.
+
+With everything loaded, the tables link up like so:
+
+- Fact → fact link table → idles table
+- Weekly plan → weekly-plan link table → idles table
+- Monthly plan → monthly-plan link table → idles table
+- Calendar → all fact and plan tables
+- Vehicle dimension → all fact and plan tables
+
+## Measures
+
+Two things to keep in mind:
+
+- For a category to sit on the chart axis, it has to physically exist in a table.
+- The funnel needs three measures:
+  - Time spent in **ordinary categories**
+  - The **breakpoints**
+  - The **blank bars** that fill empty space
+
+### Ordinary categories
+
+Start with the measure that sums time for each **ordinary category** — the linear
+version. We'll get to the weighted average next, then walk the logic.
+
+```dax
+VAR _breakPoint = SELECTEDVALUE('_idlesDIM'[Sorting])
+VAR _base =
+    ADDCOLUMNS(
+        SUMMARIZE('_vehiclesDIM', '_vehiclesDIM'[_vehicleName]),
+        "@active",
+            CALCULATE(
+                MAXX('_FACT', '_FACT'[_active]),
+                REMOVEFILTERS('_idlesDIM'[idle_model_category])),
+        "@hours",
+            CALCULATE(
+                SUMX(
+                    FILTER('_FACT', '_FACT'[_active] = 1),
+                    '_FACT'[duration])) / 3600,
+        "@totalHours",
+            CALCULATE(
+                SUM('_FACT'[duration]),
+                FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] = 1)) / 3600)
+RETURN
+    SWITCH(TRUE(),
+        _breakPoint IN {1, 6, 24, 27}, 0,
+        DIVIDE(
+            SUMX(_base, [@hours]),
+            SUMX(_base, [@totalHours])))
+```
+
+Now the same for **ordinary categories**, but weighted — each excavator's ladle
+volume acts as its weight:
+
+```dax
+VAR _breakPoint = SELECTEDVALUE('_idlesDIM'[Sorting])
+VAR _base =
+    ADDCOLUMNS(
+        SUMMARIZE('_vehiclesDIM', '_vehiclesDIM'[_vehicleName]),
+        "@vol",
+            CALCULATE(MAXX('_vehiclesDIM', '_vehiclesDIM'[_ladleVolume])),
+        "@active",
+            CALCULATE(
+                MAXX('_FACT', '_FACT'[_active]),
+                ALL('_idlesDIM')),
+        "@hours",
+            CALCULATE(
+                SUMX(
+                    FILTER('_FACT', '_FACT'[_active] = 1),
+                    '_FACT'[duration])) / 3600,
+        "@totalHours",
+            CALCULATE(
+                SUM('_FACT'[duration]),
+                FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] = 1)) / 3600)
+VAR _percent =
+    ADDCOLUMNS(
+        FILTER(_base, [@active] = 1),
+        "@percent", [@hours] / [@totalHours])
+RETURN
+    SWITCH(TRUE(),
+        _breakPoint IN {6, 24, 27}, 0,
+        DIVIDE(
+            SUMX(_percent, [@percent] * [@vol]),
+            SUMX(_percent, [@vol])))
+```
+
+The two measures share a skeleton:
+
+- **\_breakPoint** captures the current item on the plot (Total time,
+  Maintenance, Conservation, …) for use in the `RETURN`.
+- **\_base** is a **virtual table** where we add attributes:
+  - unique excavators first
+  - **@active** — was the excavator running in the selected period?
+  - **@hours** — hours summed from the fact/plan table
+  - **@totalHours** — total hours of work
+- The `RETURN` divides hours-per-category by total hours.
+
+The linear-vs-weighted difference comes down to two things:
+
+- The weighted version needs one more table to filter out excavators whose zero
+  time would break the math (they still carry a ladle volume).
+- The `RETURN` uses the weighted-average formula instead of the linear one.
+
+Not so bad. The **breakpoints** measure is where it gets trickier — different
+color, different logic.
+
+### Breakpoints
+
+```dax
+VAR _breakPoint = SELECTEDVALUE('_idlesDIM'[Sorting])
+VAR _base =
+    ADDCOLUMNS(
+        SUMMARIZE('_vehiclesDIM', '_vehiclesDIM'[_vehicleName]),
+        "@vol",
+            CALCULATE(MAXX('_vehiclesDIM', '_vehiclesDIM'[_ladleVolume])),
+        "@active",
+            CALCULATE(
+                MAXX('_FACT', '_FACT'[_active]),
+                ALL('_idlesDIM')),
+        "@hours",
+            SWITCH(TRUE(),
+                _breakPoint = 6,
+                    CALCULATE(
+                        SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]),
+                        FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5})) / 3600,
+                _breakPoint = 24,
+                    CALCULATE(
+                        SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]),
+                        FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5,7,8,9,10,11,12,14,15,21,22})) / 3600,
+                _breakPoint = 27,
+                    CALCULATE(
+                        SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]),
+                        FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5,7,8,9,10,11,12,14,15,21,22,25,26})) / 3600,
+                CALCULATE(
+                    SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration])) / 3600),
+        "@totalHours",
+            CALCULATE(
+                SUM('_FACT'[duration]),
+                FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] = 1)) / 3600)
+VAR _percent =
+    ADDCOLUMNS(
+        FILTER(_base, [@active] = 1),
+        "@percent",
+            SWITCH(TRUE(),
+                _breakPoint IN {6, 24, 27}, 1 - ([@hours] / [@totalHours]),
+                [@hours] / [@totalHours]))
+RETURN
+    SWITCH(TRUE(),
+        _breakPoint = 1,
+            DIVIDE(SUMX(_percent, [@hours]), SUMX(_percent, [@totalHours])),
+        _breakPoint IN {6, 24, 27},
+            IF(
+                ISBLANK(SUMX(_percent, [@totalHours])), 0,
+                DIVIDE(
+                    SUMX(_percent, [@percent] * [@vol]),
+                    SUMX(_percent, [@vol]))),
+        BLANK())
+```
+
+Same shape as before, with more logic:
+
+- Capture the breakpoint in a VAR.
+- Build the virtual table and add attributes.
+- In **@hours**, a `SWITCH` checks whether we're on a breakpoint and, if so, sums
+  the hours of every ordinary category up to it.
+- **\_percent** adds a second virtual table on top of the first, working out what
+  the breakpoint costs as a share of total time.
+- The `RETURN` handles the very first bar and computes only for breakpoints,
+  skipping ordinary categories.
+
+### Blank bars
+
+One last measure fills the gaps so the visible bars appear to hang in the air —
+the waterfall effect.
+
+```dax
+VAR _breakPoint = SELECTEDVALUE('_idlesDIM'[Sorting])
+VAR _base =
+    ADDCOLUMNS(
+        SUMMARIZE('_vehiclesDIM', '_vehiclesDIM'[_vehicleName]),
+        "@vol",
+            CALCULATE(MAXX('_vehiclesDIM', '_vehiclesDIM'[_ladleVolume])),
+        "@active",
+            CALCULATE(
+                MAXX('_FACT', '_FACT'[_active]),
+                ALL('_idlesDIM')),
+        "@hours",
+            SWITCH(TRUE(),
+                _breakPoint = 2,  CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2})) / 3600,
+                _breakPoint = 3,  CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3})) / 3600,
+                _breakPoint = 4,  CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4})) / 3600,
+                _breakPoint = 5,  CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5})) / 3600,
+                _breakPoint = 7,  CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5,7})) / 3600,
+                _breakPoint = 8,  CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5,7,8})) / 3600,
+                _breakPoint = 9,  CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5,7,8,9})) / 3600,
+                _breakPoint = 10, CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5,7,8,9,10})) / 3600,
+                _breakPoint = 11, CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5,7,8,9,10,11})) / 3600,
+                _breakPoint = 12, CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5,7,8,9,10,11,12})) / 3600,
+                _breakPoint = 14, CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5,7,8,9,10,11,12,14})) / 3600,
+                _breakPoint = 15, CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5,7,8,9,10,11,12,14,15})) / 3600,
+                _breakPoint = 21, CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5,7,8,9,10,11,12,14,15,21})) / 3600,
+                _breakPoint = 22, CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5,7,8,9,10,11,12,14,15,21,22})) / 3600,
+                _breakPoint = 25, CALCULATE(SUMX(FILTER('_FACT', '_FACT'[_active] = 1), '_FACT'[duration]), FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] IN {2,3,4,5,7,8,9,10,11,12,14,15,21,22,25})) / 3600,
+                0),
+        "@totalHours",
+            CALCULATE(
+                SUM('_FACT'[duration]),
+                FILTER(ALL('_idlesDIM'), '_idlesDIM'[Sorting] = 1)) / 3600)
+VAR _percent =
+    ADDCOLUMNS(
+        FILTER(_base, [@active] = 1),
+        "@percent",
+            SWITCH(TRUE(),
+                _breakPoint IN {2,3,4,5,7,8,9,10,11,12,14,15,21,22,25}, 1 - ([@hours] / [@totalHours]),
+                0))
+RETURN
+    SWITCH(TRUE(),
+        _breakPoint = 1,
+            DIVIDE(SUMX(_percent, [@hours]), SUMX(_percent, [@totalHours])),
+        DIVIDE(
+            SUMX(_percent, [@percent] * [@vol]),
+            SUMX(_percent, [@vol])))
+```
+
+At first glance it looks long for no reason. But it builds on the same pattern —
+plus one more. Here's why it runs on:
+
+- The `SWITCH` in **\_base** imitates a cumulative sum, the long, explicit way.
+  For each ordinary category it sums the time from every earlier category plus
+  the current one.
+- I kept the full explicit list on purpose — so categories can be added, removed,
+  or hidden without unravelling the logic. It could be shorter, but this way the
+  calculation for every point stays visible and easy to trace.
+- In **\_percent** we take the remaining share instead of the total, subtracting
+  from 1 (100%).
+- The `RETURN` finishes with a plain weighted average.
+
+## Additional thoughts
+
+When you reason about a bar chart and the logic behind each category, it helps to
+picture it like a small kid would:
+
+- An imaginary worker under the hood takes your request — the logic you spell out
+  in DAX.
+- Given those instructions, they walk the chart top to bottom, computing each bar
+  on its own, using the current category name on the Y axis plus the other
+  attributes.
+- On top of that you hand them a few special requests — external filters coming
+  in from slicers like Date or Type.
+
+And that's the whole trick.

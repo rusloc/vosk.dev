@@ -28,7 +28,7 @@ export default async function ShowcasePage({ params }: Props) {
   const showcase = getShowcase(slug);
   if (!showcase) notFound();
 
-  const { title, platform, embedUrl, href, details } = showcase;
+  const { title, platform, embedUrl, href, details, articleSlug } = showcase;
 
   return (
     <Container className="py-16 sm:py-20">
@@ -65,6 +65,25 @@ export default async function ShowcasePage({ params }: Props) {
           <p key={i}>{paragraph}</p>
         ))}
       </div>
+
+      {articleSlug && (
+        <Link
+          href={`/blog/${articleSlug}`}
+          className="text-primary mt-6 inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
+        >
+          Read the full write-up on the blog
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            className="h-4 w-4"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </Link>
+      )}
 
       {/* Example report — embedded live, lazy so it loads only when scrolled into view. */}
       <figure className="mt-10">

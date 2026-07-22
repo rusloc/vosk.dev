@@ -12,16 +12,21 @@ import { mdxComponents } from "@/components/mdx-components";
 import { buildMetadata } from "@/lib/metadata";
 import { blogPostingGraph } from "@/lib/structured-data";
 import { getAllPosts, getPostBySlug, getPostSlugs } from "@/lib/content";
+import { locales, isLocale, localizedPath, type Locale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import styles from "../title-bar.module.css";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = { params: Promise<{ locale: string; slug: string }> };
 
 export function generateStaticParams() {
-  return getPostSlugs().map((slug) => ({ slug }));
+  return locales.flatMap((locale) =>
+    getPostSlugs().map((slug) => ({ locale, slug })),
+  );
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  const l = (isLocale(locale) ? locale : "en") as Locale;
   const post = getPostBySlug(slug);
   if (!post) return { title: "Not found", robots: { index: false } };
 
@@ -29,6 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: post.title,
     description: post.description,
     path: `/blog/${slug}`,
+    locale: l,
   });
   return {
     ...base,
@@ -37,7 +43,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PostPage({ params }: Props) {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  const l = (isLocale(locale) ? locale : "en") as Locale;
+  const t = getDictionary(l).blog;
   const post = getPostBySlug(slug);
   if (!post) notFound();
 
@@ -70,7 +78,7 @@ export default async function PostPage({ params }: Props) {
       <JsonLd data={blogPostingGraph(post)} />
 
       <Link
-        href="/blog"
+        href={localizedPath(l, "/blog")}
         className="text-muted-foreground hover:text-foreground group inline-flex items-center gap-2 text-sm transition-colors"
       >
         <span className="bg-foreground text-background inline-flex h-7 w-7 items-center justify-center rounded-full transition-opacity group-hover:opacity-90">
@@ -89,7 +97,7 @@ export default async function PostPage({ params }: Props) {
             />
           </svg>
         </span>
-        Back to blog
+        {t.backToBlog}
       </Link>
 
       <header className="mt-6">
@@ -127,12 +135,12 @@ export default async function PostPage({ params }: Props) {
         <nav className="border-border mt-16 flex justify-between gap-4 border-t pt-8 text-sm">
           {older ? (
             <Link
-              href={`/blog/${older.slug}`}
+              href={localizedPath(l, `/blog/${older.slug}`)}
               className="group max-w-[45%]"
               rel="prev"
             >
               <span className="text-muted-foreground block text-xs">
-                Older
+                {t.older}
               </span>
               <span className="group-hover:text-primary transition-colors">
                 {older.title}
@@ -143,11 +151,13 @@ export default async function PostPage({ params }: Props) {
           )}
           {newer ? (
             <Link
-              href={`/blog/${newer.slug}`}
+              href={localizedPath(l, `/blog/${newer.slug}`)}
               className="group max-w-[45%] text-right"
               rel="next"
             >
-              <span className="text-muted-foreground block text-xs">Newer</span>
+              <span className="text-muted-foreground block text-xs">
+                {t.newer}
+              </span>
               <span className="group-hover:text-primary transition-colors">
                 {newer.title}
               </span>

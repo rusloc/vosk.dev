@@ -4,15 +4,20 @@ import { notFound } from "next/navigation";
 import { Container } from "@/components/container";
 import { buildMetadata } from "@/lib/metadata";
 import { PLATFORM_LABEL, getShowcase, getShowcaseSlugs } from "@/lib/work";
+import { locales, isLocale, localizedPath, type Locale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = { params: Promise<{ locale: string; slug: string }> };
 
 export function generateStaticParams() {
-  return getShowcaseSlugs().map((slug) => ({ slug }));
+  return locales.flatMap((locale) =>
+    getShowcaseSlugs().map((slug) => ({ locale, slug })),
+  );
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  const l = (isLocale(locale) ? locale : "en") as Locale;
   const showcase = getShowcase(slug);
   if (!showcase) return { title: "Not found", robots: { index: false } };
 
@@ -20,11 +25,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: showcase.title,
     description: showcase.summary,
     path: `/work/${slug}`,
+    locale: l,
   });
 }
 
 export default async function ShowcasePage({ params }: Props) {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  const l = (isLocale(locale) ? locale : "en") as Locale;
+  const t = getDictionary(l).work;
   const showcase = getShowcase(slug);
   if (!showcase) notFound();
 
@@ -33,7 +41,7 @@ export default async function ShowcasePage({ params }: Props) {
   return (
     <Container className="py-16 sm:py-20">
       <Link
-        href="/work"
+        href={localizedPath(l, "/work")}
         className="text-muted-foreground hover:text-foreground group inline-flex items-center gap-2 text-sm transition-colors"
       >
         <span className="bg-foreground text-background inline-flex h-7 w-7 items-center justify-center rounded-full transition-opacity group-hover:opacity-90">
@@ -48,7 +56,7 @@ export default async function ShowcasePage({ params }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M11 6l-6 6 6 6" />
           </svg>
         </span>
-        Back to showcase
+        {t.backToShowcase}
       </Link>
 
       <header className="mt-6">
@@ -68,10 +76,10 @@ export default async function ShowcasePage({ params }: Props) {
 
       {articleSlug && (
         <Link
-          href={`/blog/${articleSlug}`}
+          href={localizedPath(l, `/blog/${articleSlug}`)}
           className="text-primary mt-6 inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
         >
-          Read the full write-up on the blog
+          {t.readWriteUp}
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -103,7 +111,7 @@ export default async function ShowcasePage({ params }: Props) {
             rel="noopener noreferrer"
             className="text-primary inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
           >
-            Open live dashboard
+            {t.openLiveDashboard}
             <svg
               viewBox="0 0 24 24"
               fill="none"

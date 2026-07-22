@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PLATFORM_LABEL, type Showcase } from "@/lib/work";
+import { localizedPath, type Locale } from "@/lib/i18n/config";
 import { ReportMock } from "./report-mock";
 import titleStyles from "../blog/title-bar.module.css";
 
@@ -9,9 +10,15 @@ import titleStyles from "../blog/title-bar.module.css";
  * report illustration on the right. The whole card lifts a few pixels with a soft
  * shadow on hover. No iframe here; the live report lives on /work/[slug].
  */
-export function ShowcaseCard({ showcase }: { showcase: Showcase }) {
+export function ShowcaseCard({
+  showcase,
+  locale,
+}: {
+  showcase: Showcase;
+  locale: Locale;
+}) {
   const { slug, title, summary, platform, metric } = showcase;
-  const href = `/work/${slug}`;
+  const href = localizedPath(locale, `/work/${slug}`);
 
   return (
     <article className="group bg-background border-border relative flex gap-6 rounded-lg border p-6 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(31,27,22,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">

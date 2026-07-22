@@ -3,10 +3,12 @@
 import { headers } from "next/headers";
 import { Resend } from "resend";
 import { z } from "zod";
-import { contactSchema, type ContactState } from "@/lib/schema";
+import { makeContactSchema, type ContactState } from "@/lib/schema";
 import { getContactConfig } from "@/lib/contact-config";
 import { renderContactEmail, renderAutoReplyEmail } from "@/lib/contact-email";
 import { siteConfig } from "@/lib/site";
+import { defaultLocale, isLocale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 // Best-effort in-memory rate limit. On serverless this is per-instance and
 // resets on cold start — enough to blunt casual abuse on a low-traffic site.
@@ -26,12 +28,18 @@ export async function submitContactForm(
   _prev: ContactState,
   formData: FormData,
 ): Promise<ContactState> {
+  // Locale travels in a hidden field so responses match the page's language.
+  const rawLocale = String(formData.get("locale") ?? "");
+  const locale = isLocale(rawLocale) ? rawLocale : defaultLocale;
+  const t = getDictionary(locale).form;
+
   // Honeypot: bots fill hidden fields. Pretend success so we don't tip them off.
   if (String(formData.get("company") ?? "").trim() !== "") {
-    return { status: "success", message: SUCCESS_MESSAGE };
+    return { status: "success", message: t.success };
   }
 
-  const parsed = contactSchema.safeParse({
+  const schema = makeContactSchema(t);
+  const parsed = schema.safeParse({
     email: formData.get("email"),
     subject: formData.get("subject") || undefined,
     message: formData.get("message"),
@@ -40,7 +48,7 @@ export async function submitContactForm(
   if (!parsed.success) {
     return {
       status: "error",
-      message: "Please fix the highlighted fields.",
+      message: t.errorFields,
       fieldErrors: z.flattenError(parsed.error).fieldErrors,
     };
   }
@@ -52,7 +60,7 @@ export async function submitContactForm(
   if (isRateLimited(ip, now)) {
     return {
       status: "error",
-      message: "Too many messages in a short time. Please try again later.",
+      message: t.errorRateLimit,
     };
   }
 
@@ -60,7 +68,7 @@ export async function submitContactForm(
   if (!apiKey) {
     return {
       status: "error",
-      message: `The contact form isn't fully set up yet. Please email me directly at ${siteConfig.contactEmail}.`,
+      message: `${t.errorNotConfigured} ${siteConfig.contactEmail}.`,
     };
   }
 
@@ -81,7 +89,7 @@ export async function submitContactForm(
     if (error) {
       return {
         status: "error",
-        message: `Sorry — sending failed. Please email me directly at ${siteConfig.contactEmail}.`,
+        message: `${t.errorSendFailed} ${siteConfig.contactEmail}.`,
       };
     }
 
@@ -104,12 +112,9 @@ export async function submitContactForm(
   } catch {
     return {
       status: "error",
-      message: `Sorry — sending failed. Please email me directly at ${siteConfig.contactEmail}.`,
+      message: `${t.errorSendFailed} ${siteConfig.contactEmail}.`,
     };
   }
 
-  return { status: "success", message: SUCCESS_MESSAGE };
+  return { status: "success", message: t.success };
 }
-
-const SUCCESS_MESSAGE =
-  "Thanks — your message is on its way. I'll get back to you soon.";

@@ -1,6 +1,7 @@
 import { Container } from "@/components/container";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
-export function SiteFooter() {
+export function SiteFooter({ dict }: { dict: Dictionary }) {
   const year = new Date().getFullYear();
 
   return (
@@ -15,7 +16,7 @@ export function SiteFooter() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
           </span>
-          Available for new projects
+          {dict.footer.available}
         </p>
       </Container>
     </footer>

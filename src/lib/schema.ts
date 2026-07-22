@@ -1,17 +1,26 @@
 import { z } from "zod";
 
-/** Contact form input. Validated on the server before any email is sent. */
-export const contactSchema = z.object({
-  email: z.email("Please enter a valid email address").max(200),
-  subject: z.string().trim().max(150).optional(),
-  message: z
-    .string()
-    .trim()
-    .min(10, "Please write at least 10 characters")
-    .max(5000, "Message is too long"),
-});
+/** Locale-dependent validation messages injected into the schema. */
+export type ContactMessages = {
+  invalidEmail: string;
+  messageTooShort: string;
+  messageTooLong: string;
+};
 
-export type ContactInput = z.infer<typeof contactSchema>;
+/** Contact form input. Validated on the server before any email is sent. */
+export function makeContactSchema(msg: ContactMessages) {
+  return z.object({
+    email: z.email(msg.invalidEmail).max(200),
+    subject: z.string().trim().max(150).optional(),
+    message: z
+      .string()
+      .trim()
+      .min(10, msg.messageTooShort)
+      .max(5000, msg.messageTooLong),
+  });
+}
+
+export type ContactInput = z.infer<ReturnType<typeof makeContactSchema>>;
 
 export type ContactFieldErrors = Partial<Record<keyof ContactInput, string[]>>;
 

@@ -1,9 +1,12 @@
 import { ImageResponse } from "next/og";
 import { getPostBySlug, getPostSlugs } from "@/lib/content";
 import { siteConfig } from "@/lib/site";
+import { locales } from "@/lib/i18n/config";
 
 export function generateStaticParams() {
-  return getPostSlugs().map((slug) => ({ slug }));
+  return locales.flatMap((locale) =>
+    getPostSlugs().map((slug) => ({ locale, slug })),
+  );
 }
 
 // Per-post share card — post title on the cream theme, VOSK wordmark footer.
@@ -14,7 +17,7 @@ export const alt = "VOSK blog post";
 export default async function PostOgImage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }) {
   const { slug } = await params;
   const post = getPostBySlug(slug);

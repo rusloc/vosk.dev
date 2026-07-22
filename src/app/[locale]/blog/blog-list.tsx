@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { PostMeta } from "@/lib/content";
+import { localizedPath, type Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 import styles from "./title-bar.module.css";
 
 /**
@@ -10,7 +12,15 @@ import styles from "./title-bar.module.css";
  * search field replaces the sub-header line; posts render as bordered cards.
  * Tags are hidden below `sm` to keep the mobile meta row compact.
  */
-export function BlogList({ posts }: { posts: PostMeta[] }) {
+export function BlogList({
+  posts,
+  locale,
+  t,
+}: {
+  posts: PostMeta[];
+  locale: Locale;
+  t: Dictionary["blog"];
+}) {
   const [query, setQuery] = useState("");
   const [asc, setAsc] = useState(false); // false = newest first (default)
   const q = query.trim().toLowerCase();
@@ -43,8 +53,8 @@ export function BlogList({ posts }: { posts: PostMeta[] }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search posts by keyword…"
-            aria-label="Search blog posts"
+            placeholder={t.searchPlaceholder}
+            aria-label={t.searchAria}
             className="border-border focus:border-primary focus:ring-primary/30 w-full rounded-full border bg-white py-2.5 pr-4 pl-11 text-sm text-black outline-none focus:ring-2"
           />
         </div>
@@ -60,10 +70,10 @@ export function BlogList({ posts }: { posts: PostMeta[] }) {
               regardless of which is shown — no layout shift on toggle. */}
           <span className="grid">
             <span className={`col-start-1 row-start-1 ${asc ? "invisible" : ""}`}>
-              Newest first
+              {t.newestFirst}
             </span>
             <span className={`col-start-1 row-start-1 ${asc ? "" : "invisible"}`}>
-              Oldest first
+              {t.oldestFirst}
             </span>
           </span>
           <svg
@@ -85,7 +95,7 @@ export function BlogList({ posts }: { posts: PostMeta[] }) {
 
       {ordered.length === 0 ? (
         <p className="text-muted-foreground mt-12">
-          No posts match “{query.trim()}”.
+          {t.noMatch} “{query.trim()}”.
         </p>
       ) : (
         <ul className="mt-12 space-y-6">
@@ -98,7 +108,7 @@ export function BlogList({ posts }: { posts: PostMeta[] }) {
                     <span className="relative inline-block">
                       <span aria-hidden="true" className={styles.titleBar} />
                       <Link
-                        href={`/blog/${post.slug}`}
+                        href={localizedPath(locale, `/blog/${post.slug}`)}
                         className="hover:text-primary relative transition-colors"
                       >
                         {post.title}
@@ -107,8 +117,8 @@ export function BlogList({ posts }: { posts: PostMeta[] }) {
                   </h2>
 
                   <Link
-                    href={`/blog/${post.slug}`}
-                    aria-label={`Read “${post.title}”`}
+                    href={localizedPath(locale, `/blog/${post.slug}`)}
+                    aria-label={`${post.title}`}
                     className="bg-foreground text-background inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90"
                   >
                     <svg

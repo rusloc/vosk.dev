@@ -172,6 +172,7 @@ export const ru: Dictionary = {
     backToBlog: "Назад в блог",
     older: "Раньше",
     newer: "Позже",
+    paginationAria: "Страницы блога",
   },
   work: {
     title: "Портфолио",
@@ -189,6 +190,7 @@ export const ru: Dictionary = {
     openLiveDashboard: "Открыть живой дашборд",
     readWriteUp: "Читать полный разбор в блоге",
     openLiveReport: "Открыть живой отчёт",
+    paginationAria: "Страницы портфолио",
   },
   notFound: {
     code: "404",

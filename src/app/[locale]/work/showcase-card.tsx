@@ -21,7 +21,7 @@ export function ShowcaseCard({
   const href = localizedPath(locale, `/work/${slug}`);
 
   return (
-    <article className="group bg-background border-border relative flex gap-6 rounded-lg border p-6 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(31,27,22,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+    <article className="group bg-background border-border relative flex gap-6 rounded-lg border p-5 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(31,27,22,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
       {/* Left — title, summary, single platform tag (same rhythm as the blog card) */}
       <div className="min-w-0 flex-1">
         <h2 className="text-xl font-semibold tracking-tight">

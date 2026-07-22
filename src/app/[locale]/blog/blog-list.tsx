@@ -5,7 +5,12 @@ import Link from "next/link";
 import type { PostMeta } from "@/lib/content";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { Pagination } from "@/components/pagination";
 import styles from "./title-bar.module.css";
+
+// Posts per page — keeps the list within one screen; the page menu appears only
+// when there are more.
+const PAGE_SIZE = 4;
 
 /**
  * Client-side blog list with keyword search (title / description / tags). The
@@ -23,6 +28,7 @@ export function BlogList({
 }) {
   const [query, setQuery] = useState("");
   const [asc, setAsc] = useState(false); // false = newest first (default)
+  const [page, setPage] = useState(0);
   const q = query.trim().toLowerCase();
   const filtered = q
     ? posts.filter((p) =>
@@ -31,6 +37,10 @@ export function BlogList({
     : posts;
   // `posts` arrives newest-first; reversing the filtered slice flips to oldest-first.
   const ordered = asc ? [...filtered].reverse() : filtered;
+
+  const pageCount = Math.ceil(ordered.length / PAGE_SIZE);
+  const safePage = Math.min(page, Math.max(0, pageCount - 1));
+  const visible = ordered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
   return (
     <>
@@ -52,7 +62,10 @@ export function BlogList({
           <input
             type="search"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(0);
+            }}
             placeholder={t.searchPlaceholder}
             aria-label={t.searchAria}
             className="border-border focus:border-primary focus:ring-primary/30 w-full rounded-full border bg-white py-2.5 pr-4 pl-11 text-sm text-black outline-none focus:ring-2"
@@ -62,7 +75,10 @@ export function BlogList({
         {/* Sort toggle — flips date order between newest- and oldest-first. */}
         <button
           type="button"
-          onClick={() => setAsc((v) => !v)}
+          onClick={() => {
+            setAsc((v) => !v);
+            setPage(0);
+          }}
           aria-label={`Sorted by date, ${asc ? "oldest" : "newest"} first — click to toggle`}
           className="border-border text-muted-foreground hover:bg-muted hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors"
         >
@@ -94,14 +110,14 @@ export function BlogList({
       </div>
 
       {ordered.length === 0 ? (
-        <p className="text-muted-foreground mt-12">
+        <p className="text-muted-foreground mt-6">
           {t.noMatch} “{query.trim()}”.
         </p>
       ) : (
-        <ul className="mt-12 space-y-6">
-          {ordered.map((post) => (
+        <ul className="mt-6 space-y-3">
+          {visible.map((post) => (
             <li key={post.slug}>
-              <article className="bg-background border-border rounded-lg border p-6 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(31,27,22,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+              <article className="bg-background border-border rounded-lg border p-5 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(31,27,22,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
                 {/* Title + arrow-link on one row, vertically centred together. */}
                 <div className="flex items-center justify-between gap-4">
                   <h2 className="min-w-0 text-xl font-semibold tracking-tight">
@@ -166,6 +182,13 @@ export function BlogList({
           ))}
         </ul>
       )}
+
+      <Pagination
+        page={safePage}
+        pageCount={pageCount}
+        onGo={setPage}
+        label={t.paginationAria}
+      />
     </>
   );
 }

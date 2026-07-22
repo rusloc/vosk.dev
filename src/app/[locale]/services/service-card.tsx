@@ -28,9 +28,9 @@ export function ServiceCard({
   priceAccent = false,
 }: ServiceCardProps) {
   return (
-    <div className="border-border flex h-full flex-col rounded-2xl border bg-white p-7">
-      <div className="bg-muted border-border text-foreground flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border">
-        <Icon name={icon} className="h-6 w-6" />
+    <div className="border-border flex h-full flex-col rounded-2xl border bg-white p-6">
+      <div className="bg-muted border-border text-foreground flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border">
+        <Icon name={icon} className="h-5 w-5" />
       </div>
 
       {eyebrow && (

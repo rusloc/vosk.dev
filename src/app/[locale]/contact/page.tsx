@@ -27,11 +27,11 @@ export default async function ContactPage({ params }: Props) {
   const t = dict.contact;
 
   return (
-    <Container className="py-16 sm:py-24">
+    <Container className="py-10 sm:py-12">
       <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1>
-      <p className="text-muted-foreground mt-4 max-w-xl">{t.intro}</p>
+      <p className="text-muted-foreground mt-3 max-w-xl text-sm">{t.intro}</p>
 
-      <div className="mt-8 grid gap-8 md:grid-cols-[minmax(0,1fr)_16rem]">
+      <div className="mt-6 grid gap-8 md:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="max-w-xl">
           <ContactForm locale={l} dict={dict} />
         </div>

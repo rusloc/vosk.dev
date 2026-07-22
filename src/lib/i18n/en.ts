@@ -175,6 +175,7 @@ export const en = {
     backToBlog: "Back to blog",
     older: "Older",
     newer: "Newer",
+    paginationAria: "Blog pages",
   },
   work: {
     title: "Showcase",
@@ -192,6 +193,7 @@ export const en = {
     openLiveDashboard: "Open live dashboard",
     readWriteUp: "Read the full write-up on the blog",
     openLiveReport: "Open the live report",
+    paginationAria: "Showcase pages",
   },
   notFound: {
     code: "404",

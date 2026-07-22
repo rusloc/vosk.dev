@@ -44,7 +44,7 @@ export function ServiceCarousel({
 
   return (
     <div
-      className="flex min-h-[340px] flex-col"
+      className="flex min-h-[300px] flex-col"
       onKeyDown={(e) => {
         if (e.key === "ArrowLeft") go(index - 1);
         if (e.key === "ArrowRight") go(index + 1);

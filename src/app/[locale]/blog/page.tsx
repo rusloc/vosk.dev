@@ -27,7 +27,7 @@ export default async function BlogPage({ params }: Props) {
   const posts = getAllPosts();
 
   return (
-    <Container className="py-16 sm:py-24">
+    <Container className="py-10 sm:py-12">
       <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1>
 
       {posts.length === 0 ? (

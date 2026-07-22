@@ -5,6 +5,7 @@ import { showcases } from "@/lib/work";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { ShowcaseCard } from "./showcase-card";
+import { ShowcaseList } from "./showcase-list";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -26,9 +27,9 @@ export default async function WorkPage({ params }: Props) {
   const t = getDictionary(l).work;
 
   return (
-    <Container className="py-16 sm:py-24">
+    <Container className="py-10 sm:py-12">
       <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1>
-      <p className="text-muted-foreground mt-4 max-w-2xl">
+      <p className="text-muted-foreground mt-3 max-w-2xl text-sm">
         {t.intro.lead}
         <strong className="text-foreground font-medium">
           {t.intro.powerbi}
@@ -41,15 +42,14 @@ export default async function WorkPage({ params }: Props) {
       </p>
 
       {showcases.length === 0 ? (
-        <p className="text-muted-foreground mt-12">{t.empty}</p>
+        <p className="text-muted-foreground mt-6">{t.empty}</p>
       ) : (
-        <ul className="mt-12 space-y-6">
-          {showcases.map((showcase) => (
-            <li key={showcase.slug}>
-              <ShowcaseCard showcase={showcase} locale={l} />
-            </li>
+        <ShowcaseList
+          label={t.paginationAria}
+          cards={showcases.map((showcase) => (
+            <ShowcaseCard key={showcase.slug} showcase={showcase} locale={l} />
           ))}
-        </ul>
+        />
       )}
     </Container>
   );

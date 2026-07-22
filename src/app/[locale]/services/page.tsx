@@ -33,12 +33,12 @@ export default async function ServicesPage({ params }: Props) {
   const aria = { prevAria: t.prevAria, nextAria: t.nextAria };
 
   return (
-    <Container className="py-16 sm:py-24">
+    <Container className="py-10 sm:py-12">
       {/* Title matches the blog / showcase pages: plain, no highlight, no intro. */}
       <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1>
 
       {/* Three engagement models, each a single-slide carousel. */}
-      <div className="mt-10 grid gap-6 lg:grid-cols-3">
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <ServiceCarousel
           {...aria}
           number={1}
@@ -92,7 +92,7 @@ export default async function ServicesPage({ params }: Props) {
       </div>
 
       {/* CTA banner — the button opens the same message popup as the nav. */}
-      <div className="bg-foreground mt-8 flex flex-col gap-4 rounded-2xl px-8 py-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="bg-foreground mt-6 flex flex-col gap-4 rounded-2xl px-8 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-background text-xl font-semibold tracking-tight">
             {t.cta.title}

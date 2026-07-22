@@ -5,6 +5,17 @@ import { PLATFORM_LABEL, type Showcase } from "@/lib/work";
 // placeholder for now — swap for real per-showcase art later.
 const ACCENT_COLOR = "#d8a7b0";
 
+// Sigmoid (ease-in-out) fade mask — many stops approximate an eased curve, which
+// reads far smoother than a plain linear transparent→opaque ramp.
+const FADE_MASK =
+  "linear-gradient(to right," +
+  " rgba(0,0,0,0) 0%, rgba(0,0,0,0.013) 8.1%, rgba(0,0,0,0.049) 15.5%," +
+  " rgba(0,0,0,0.104) 22.5%, rgba(0,0,0,0.175) 29%, rgba(0,0,0,0.259) 35.3%," +
+  " rgba(0,0,0,0.352) 41.2%, rgba(0,0,0,0.45) 47.1%, rgba(0,0,0,0.55) 52.9%," +
+  " rgba(0,0,0,0.648) 58.8%, rgba(0,0,0,0.741) 64.7%, rgba(0,0,0,0.825) 71%," +
+  " rgba(0,0,0,0.896) 77.5%, rgba(0,0,0,0.951) 84.5%, rgba(0,0,0,0.987) 91.9%," +
+  " rgba(0,0,0,1) 100%)";
+
 /**
  * Concise showcase card for the /work list — mirrors the blog list item: title +
  * arrow-link on one row, a short summary, and a platform badge. No iframe here;
@@ -20,14 +31,14 @@ export function ShowcaseCard({ showcase }: { showcase: Showcase }) {
 
   return (
     <article className="border-border relative overflow-hidden rounded-lg border">
-      {/* Accent block — right-aligned, full height, masked so it fades out toward the left. */}
+      {/* Accent block — right-aligned, full height, eased fade toward the left. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-0 w-1/5"
+        className="pointer-events-none absolute inset-y-0 right-0 w-[24%]"
         style={{
           backgroundColor: ACCENT_COLOR,
-          WebkitMaskImage: "linear-gradient(to right, transparent, black)",
-          maskImage: "linear-gradient(to right, transparent, black)",
+          WebkitMaskImage: FADE_MASK,
+          maskImage: FADE_MASK,
         }}
       />
 

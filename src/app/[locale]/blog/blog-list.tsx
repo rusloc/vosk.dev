@@ -8,9 +8,9 @@ import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { Pagination } from "@/components/pagination";
 import styles from "./title-bar.module.css";
 
-// Posts per page — keeps the list within one screen; the page menu appears only
-// when there are more.
-const PAGE_SIZE = 4;
+// Posts per page — the blog list is the benchmark for page height, so it caps at
+// three; the page menu appears below when there are more.
+const PAGE_SIZE = 3;
 
 /**
  * Client-side blog list with keyword search (title / description / tags). The

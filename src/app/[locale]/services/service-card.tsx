@@ -1,13 +1,11 @@
-import { Icon, type IconName } from "./service-icons";
-
 /**
- * One service tier, presented as a card. Used standalone (the Urgent column) and
- * as a carousel slide (Subscription / Project). Fills its container height so
- * carousel slides stay equal. `priceAccent` renders the price in the amber
- * accent — used to set the subscription tiers apart, as in the design mock.
+ * One service tier, presented as a card and used as a carousel slide. Fills its
+ * container height so slides (and the three columns) stay equal. `priceAccent`
+ * renders the price in the amber accent — used to set the subscription tiers
+ * apart. `flex-1` on the description lets the card stretch: the title stays at
+ * the top and the price pins to the bottom.
  */
 export type ServiceCardProps = {
-  icon: IconName;
   eyebrow?: string;
   title: string;
   badge?: string;
@@ -18,7 +16,6 @@ export type ServiceCardProps = {
 };
 
 export function ServiceCard({
-  icon,
   eyebrow,
   title,
   badge,
@@ -29,18 +26,14 @@ export function ServiceCard({
 }: ServiceCardProps) {
   return (
     <div className="border-border flex h-full flex-col rounded-2xl border bg-white p-6">
-      <div className="bg-muted border-border text-foreground flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border">
-        <Icon name={icon} className="h-5 w-5" />
-      </div>
-
       {eyebrow && (
-        <div className="text-muted-foreground mt-4 text-xs font-medium tracking-wider uppercase">
+        <div className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           {eyebrow}
         </div>
       )}
 
       <h3
-        className={`text-foreground text-xl font-semibold tracking-tight ${eyebrow ? "mt-1" : "mt-4"}`}
+        className={`text-foreground text-xl font-semibold tracking-tight ${eyebrow ? "mt-1" : ""}`}
       >
         {title}
       </h3>

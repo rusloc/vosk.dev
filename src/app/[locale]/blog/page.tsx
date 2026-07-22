@@ -28,13 +28,17 @@ export default async function BlogPage({ params }: Props) {
 
   return (
     <Container className="py-10 sm:py-12">
-      <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1>
+      {/* Benchmark height for the list pages: blog with three posts. Showcase and
+          services stretch to the same min-height on desktop. */}
+      <div className="flex flex-col lg:min-h-[660px]">
+        <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1>
 
-      {posts.length === 0 ? (
-        <p className="text-muted-foreground mt-12">{t.empty}</p>
-      ) : (
-        <BlogList posts={posts} locale={l} t={t} />
-      )}
+        {posts.length === 0 ? (
+          <p className="text-muted-foreground mt-12">{t.empty}</p>
+        ) : (
+          <BlogList posts={posts} locale={l} t={t} />
+        )}
+      </div>
     </Container>
   );
 }

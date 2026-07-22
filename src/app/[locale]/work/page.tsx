@@ -28,29 +28,32 @@ export default async function WorkPage({ params }: Props) {
 
   return (
     <Container className="py-10 sm:py-12">
-      <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1>
-      <p className="text-muted-foreground mt-3 max-w-2xl text-sm">
-        {t.intro.lead}
-        <strong className="text-foreground font-medium">
-          {t.intro.powerbi}
-        </strong>
-        {t.intro.and}
-        <strong className="text-foreground font-medium">
-          {t.intro.superset}
-        </strong>
-        {t.intro.tail}
-      </p>
+      {/* Matches the blog benchmark height on desktop; cards stretch to fill. */}
+      <div className="flex flex-col lg:min-h-[660px]">
+        <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1>
+        <p className="text-muted-foreground mt-3 max-w-2xl text-sm">
+          {t.intro.lead}
+          <strong className="text-foreground font-medium">
+            {t.intro.powerbi}
+          </strong>
+          {t.intro.and}
+          <strong className="text-foreground font-medium">
+            {t.intro.superset}
+          </strong>
+          {t.intro.tail}
+        </p>
 
-      {showcases.length === 0 ? (
-        <p className="text-muted-foreground mt-6">{t.empty}</p>
-      ) : (
-        <ShowcaseList
-          label={t.paginationAria}
-          cards={showcases.map((showcase) => (
-            <ShowcaseCard key={showcase.slug} showcase={showcase} locale={l} />
-          ))}
-        />
-      )}
+        {showcases.length === 0 ? (
+          <p className="text-muted-foreground mt-6">{t.empty}</p>
+        ) : (
+          <ShowcaseList
+            label={t.paginationAria}
+            cards={showcases.map((showcase) => (
+              <ShowcaseCard key={showcase.slug} showcase={showcase} locale={l} />
+            ))}
+          />
+        )}
+      </div>
     </Container>
   );
 }

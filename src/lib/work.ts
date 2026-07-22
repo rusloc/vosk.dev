@@ -17,11 +17,12 @@ export type Showcase = {
   embedUrl: string;
   href: string;
   details: string[]; // paragraphs shown on the detail page, above the report
+  metric?: string; // headline figure for the list-card report illustration (e.g. "$4.2M")
 };
 
 export const PLATFORM_LABEL: Record<ShowcasePlatform, string> = {
   "power-bi": "Power BI",
-  superset: "Apache Superset",
+  superset: "Superset",
 };
 
 /**
@@ -32,11 +33,12 @@ export const PLATFORM_LABEL: Record<ShowcasePlatform, string> = {
  */
 export const showcases: Showcase[] = [
   {
-    slug: "sample-report",
-    title: "Sample report (placeholder)",
+    slug: "retail-sales",
+    title: "Retail sales performance",
     platform: "power-bi",
     summary:
-      "A live Power BI report — sales performance sliced by region, product, and time. Open the case study to explore the embedded dashboard.",
+      "Revenue sliced by region, product and time. Filter, cross-highlight and drill down exactly as the client does.",
+    metric: "$4.2M",
     embedUrl: "https://playground.powerbi.com/sampleReportEmbed",
     href: "https://playground.powerbi.com/sampleReportEmbed",
     details: [

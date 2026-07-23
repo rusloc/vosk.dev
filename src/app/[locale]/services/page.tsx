@@ -46,7 +46,6 @@ export default async function ServicesPage({ params }: Props) {
               <ServiceCard
                 key={i}
                 title={tier.name}
-                hours={tier.hours}
                 desc={tier.desc}
                 price={tier.price}
                 unit={tier.unit}
@@ -88,8 +87,8 @@ export default async function ServicesPage({ params }: Props) {
           />
         </div>
 
-        {/* What every subscription plan covers — a plain dot list under the plans. */}
-        <div className="mt-6">
+        {/* What every subscription plan covers — a boxed dot list under the plans. */}
+        <div className="border-border mt-6 rounded-2xl border bg-white p-6">
           <h2 className="text-foreground text-xs font-semibold tracking-[0.12em] uppercase">
             {t.subscription.servicesTitle}
           </h2>

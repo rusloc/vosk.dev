@@ -46,22 +46,19 @@ export const en = {
       tiers: [
         {
           name: "Small",
-          hours: "~40h / mo",
-          desc: "Light monthly upkeep — small changes and priority answers.",
+          desc: "Light monthly upkeep — around 40h a month of small changes and priority answers.",
           price: "$1,500",
           unit: "/ mo",
         },
         {
           name: "Medium",
-          hours: "~60h / mo",
-          desc: "Steady monthly capacity for changes, new reports, and support.",
+          desc: "Steady monthly capacity — around 60h a month for changes, new reports, and support.",
           price: "$2,200",
           unit: "/ mo",
         },
         {
           name: "Large",
-          hours: "~80h / mo",
-          desc: "High-volume monthly work across your full reporting stack.",
+          desc: "High-volume monthly work — around 80h a month across your full reporting stack.",
           price: "$3,000",
           unit: "/ mo",
         },

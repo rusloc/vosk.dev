@@ -4,7 +4,6 @@ import { SendMessageButton } from "@/components/send-message-button";
 import { buildMetadata } from "@/lib/metadata";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { ServiceCard } from "./service-card";
 import { ServiceCarousel } from "./service-carousel";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -42,48 +41,24 @@ export default async function ServicesPage({ params }: Props) {
             {...aria}
             number={1}
             label={t.subscription.eyebrow}
-            slides={t.subscription.tiers.map((tier, i) => (
-              <ServiceCard
-                key={i}
-                title={tier.name}
-                desc={tier.desc}
-                price={tier.price}
-                unit={tier.unit}
-                conditions={t.conditions}
-              />
-            ))}
+            tiers={t.subscription.tiers}
+            conditions={t.conditions}
           />
 
           <ServiceCarousel
             {...aria}
             number={2}
             label={t.project.eyebrow}
-            slides={t.project.tiers.map((tier, i) => (
-              <ServiceCard
-                key={i}
-                title={tier.name}
-                desc={tier.desc}
-                price={tier.price}
-                unit={tier.unit}
-                conditions={t.conditions}
-              />
-            ))}
+            tiers={t.project.tiers}
+            conditions={t.conditions}
           />
 
           <ServiceCarousel
             {...aria}
             number={3}
             label={t.other.eyebrow}
-            slides={t.other.tiers.map((tier, i) => (
-              <ServiceCard
-                key={i}
-                title={tier.name}
-                desc={tier.desc}
-                price={tier.price}
-                unit={tier.unit}
-                conditions={t.conditions}
-              />
-            ))}
+            tiers={t.other.tiers}
+            conditions={t.conditions}
           />
         </div>
 

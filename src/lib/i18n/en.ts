@@ -43,7 +43,6 @@ export const en = {
     metaDescription: "BI consulting, dashboard development, and data pipelines.",
     subscription: {
       eyebrow: "Subscription",
-      kicker: "Regular support / subscription",
       tiers: [
         {
           name: "Small",
@@ -129,6 +128,17 @@ export const en = {
       title: "Not sure which one fits?",
       body: "Tell me what you're working on and I'll point you to the right engagement.",
       button: "Message me",
+    },
+    // Placeholder terms shown by the card's conditions popup — real copy TBD.
+    conditions: {
+      aria: "View conditions",
+      title: "Conditions",
+      close: "Close",
+      body: [
+        "Placeholder conditions — the real terms for this engagement will go here. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+        "Scope, payment schedule, revisions, and cancellation terms will be listed as short, plain-language points.",
+        "Nothing here is binding yet; this text is a stand-in until the final conditions are provided.",
+      ],
     },
     prevAria: "Previous",
     nextAria: "Next",

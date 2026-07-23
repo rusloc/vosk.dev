@@ -45,12 +45,12 @@ export default async function ServicesPage({ params }: Props) {
             slides={t.subscription.tiers.map((tier, i) => (
               <ServiceCard
                 key={i}
-                eyebrow={t.subscription.kicker}
                 title={tier.name}
                 hours={tier.hours}
                 desc={tier.desc}
                 price={tier.price}
                 unit={tier.unit}
+                conditions={t.conditions}
               />
             ))}
           />
@@ -66,6 +66,7 @@ export default async function ServicesPage({ params }: Props) {
                 desc={tier.desc}
                 price={tier.price}
                 unit={tier.unit}
+                conditions={t.conditions}
               />
             ))}
           />
@@ -81,6 +82,7 @@ export default async function ServicesPage({ params }: Props) {
                 desc={tier.desc}
                 price={tier.price}
                 unit={tier.unit}
+                conditions={t.conditions}
               />
             ))}
           />

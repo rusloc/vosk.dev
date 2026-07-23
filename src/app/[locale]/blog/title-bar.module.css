@@ -1,6 +1,6 @@
-/* Blog-list only: a blurred orange bar behind each post title, same fill/blur
-   as the home backdrop bars (home-backdrop.module.css). The title text sits on
-   top, unblurred; the bar is a soft decorative highlight that fades in →right. */
+/* A blurred orange bar behind a title (blog-list posts + service cards), same
+   fill/blur as the home backdrop bars (home-backdrop.module.css). The title
+   text sits on top, unblurred; the bar is a soft highlight that fades in →right. */
 .titleBar {
   position: absolute;
   inset: -0.1em -0.6em;

@@ -47,10 +47,10 @@ export default async function ServicesPage({ params }: Props) {
                 key={i}
                 eyebrow={t.subscription.kicker}
                 title={tier.name}
+                hours={tier.hours}
                 desc={tier.desc}
                 price={tier.price}
                 unit={tier.unit}
-                priceAccent
               />
             ))}
           />
@@ -63,7 +63,6 @@ export default async function ServicesPage({ params }: Props) {
               <ServiceCard
                 key={i}
                 title={tier.name}
-                badge={tier.duration}
                 desc={tier.desc}
                 price={tier.price}
                 unit={tier.unit}
@@ -85,6 +84,27 @@ export default async function ServicesPage({ params }: Props) {
               />
             ))}
           />
+        </div>
+
+        {/* What every subscription plan covers — a plain dot list under the plans. */}
+        <div className="mt-6">
+          <h2 className="text-foreground text-xs font-semibold tracking-[0.12em] uppercase">
+            {t.subscription.servicesTitle}
+          </h2>
+          <ul className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+            {t.subscription.services.map((s, i) => (
+              <li
+                key={i}
+                className="text-muted-foreground flex items-start gap-2.5 text-sm"
+              >
+                <span
+                  aria-hidden="true"
+                  className="bg-primary mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full"
+                />
+                {s}
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* CTA banner — the button opens the same message popup as the nav. */}

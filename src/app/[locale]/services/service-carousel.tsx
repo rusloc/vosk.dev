@@ -8,9 +8,9 @@ import { Icon } from "./service-icons";
 /**
  * One service column: a numbered heading above a single-slide carousel. This
  * component owns the index, the sliding track, and drag/swipe, and builds each
- * ServiceCard from `tiers`. The prev/next `<` / `>` controls sit centered at the
- * very bottom of each card (in its divided footer), not on the heading line;
- * there are no dots.
+ * ServiceCard from `tiers`. The prev/next `<` / `>` controls sit centered below
+ * each card, outside the sliding track, so they stay in one fixed place; there
+ * are no dots.
  */
 export function ServiceCarousel({
   number,
@@ -78,32 +78,32 @@ export function ServiceCarousel({
                 price={tier.price}
                 unit={tier.unit}
                 conditions={conditions}
-                nav={
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      aria-label={prevAria}
-                      onClick={() => go(i - 1)}
-                      disabled={i === 0}
-                      className={btn}
-                    >
-                      <Icon name="chevron-left" className="h-3 w-3" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={nextAria}
-                      onClick={() => go(i + 1)}
-                      disabled={i === last}
-                      className={btn}
-                    >
-                      <Icon name="chevron-right" className="h-3 w-3" />
-                    </button>
-                  </div>
-                }
               />
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Stationary arrows below the card — they don't ride the sliding track. */}
+      <div className="mt-4 flex justify-center gap-1.5">
+        <button
+          type="button"
+          aria-label={prevAria}
+          onClick={() => go(index - 1)}
+          disabled={index === 0}
+          className={btn}
+        >
+          <Icon name="chevron-left" className="h-3 w-3" />
+        </button>
+        <button
+          type="button"
+          aria-label={nextAria}
+          onClick={() => go(index + 1)}
+          disabled={index === last}
+          className={btn}
+        >
+          <Icon name="chevron-right" className="h-3 w-3" />
+        </button>
       </div>
     </div>
   );

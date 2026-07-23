@@ -78,19 +78,19 @@ export const en = {
       eyebrow: "Project",
       tiers: [
         {
-          name: "Project work — short term",
+          name: "Short",
           desc: "A single dashboard or focused report, scoped and shipped end to end.",
           price: "$2k–5k",
           unit: "project",
         },
         {
-          name: "Project work — mid term",
+          name: "Mid",
           desc: "A clean data model plus a connected set of dashboards for a team.",
           price: "$5k–12k",
           unit: "project",
         },
         {
-          name: "Project work — long term",
+          name: "Long",
           desc: "A full reporting platform built and evolved from source data to delivery.",
           price: "$10k–25k",
           unit: "project",
@@ -102,19 +102,19 @@ export const en = {
       // Prices for full-time / tutoring are placeholders — confirm before publish.
       tiers: [
         {
-          name: "Urgent BI request",
+          name: "Urgent",
           desc: "Same-week fix for a broken report, blocked refresh, or a deadline dashboard.",
           price: "$1k–3k",
           unit: "one-off",
         },
         {
-          name: "Full-time / embedded",
+          name: "Full-time",
           desc: "Dedicated full-time BI work as an embedded member of your team, month to month.",
           price: "from $6k",
           unit: "/ mo",
         },
         {
-          name: "Tutoring / mentoring",
+          name: "Education",
           desc: "One-on-one sessions on Power BI, DAX, SQL, and data modeling.",
           price: "$50",
           unit: "/ hr",

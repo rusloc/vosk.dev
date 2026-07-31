@@ -37,8 +37,7 @@ export const ru: Dictionary = {
   },
   services: {
     title: "Услуги",
-    metaDescription:
-      "BI-консалтинг, разработка дашбордов и дата-пайплайнов.",
+    metaDescription: "BI-консалтинг, разработка дашбордов и дата-пайплайнов.",
     subscription: {
       eyebrow: "Подписка",
       tiers: [
@@ -159,8 +158,7 @@ export const ru: Dictionary = {
     invalidEmail: "Введите корректный адрес почты",
     messageTooShort: "Напишите хотя бы 10 символов",
     messageTooLong: "Сообщение слишком длинное",
-    success:
-      "Спасибо — ваше сообщение отправлено. Я скоро вам отвечу.",
+    success: "Спасибо — ваше сообщение отправлено. Я скоро вам отвечу.",
     errorFields: "Пожалуйста, исправьте отмеченные поля.",
     errorRateLimit:
       "Слишком много сообщений за короткое время. Попробуйте позже.",
@@ -207,6 +205,9 @@ export const ru: Dictionary = {
     openLiveDashboard: "Открыть живой дашборд",
     readWriteUp: "Читать полный разбор в блоге",
     openLiveReport: "Открыть живой отчёт",
+    dashboardLoading: "Загружаем живой дашборд…",
+    dashboardError:
+      "Не удалось загрузить дашборд. Попробуйте обновить страницу.",
     paginationAria: "Страницы портфолио",
   },
   notFound: {

@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@next/third-parties": "16.2.10",
+    "@superset-ui/embedded-sdk": "^0.4.0",
     "gray-matter": "^4.0.3",
     "next": "16.2.10",
     "next-mdx-remote": "^6.0.0",
@@ -27,6 +28,7 @@
     "rehype-slug": "^6.0.0",
     "remark-gfm": "^4.0.1",
     "resend": "^6.17.1",
+    "server-only": "^0.0.1",
     "shiki": "^4.3.1",
     "zod": "^4.4.3"
   },

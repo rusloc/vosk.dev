@@ -1,9 +1,12 @@
 /**
- * Live report embed for blog posts — a Power BI "publish to web" or Superset
- * public URL dropped straight into an article. Same figure treatment as the
- * /work detail page: a lazy iframe in a bordered 16:9 frame with an optional
+ * Live report embed for blog posts — any publicly reachable report URL (a Power BI
+ * "publish to web" link) dropped straight into an article. Same figure treatment as
+ * the /work detail page: a lazy iframe in a bordered 16:9 frame with an optional
  * "open live report" link underneath. Used from MDX as
  * <ReportEmbed src="…" href="…" title="…" />.
+ *
+ * Not usable for Superset: those dashboards have no public URL and need a guest
+ * token minted per viewer — see <SupersetEmbed> and ADR-0001.
  */
 export function ReportEmbed({
   src,

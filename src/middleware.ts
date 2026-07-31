@@ -13,11 +13,7 @@ import { defaultLocale, isLocale } from "@/lib/i18n/config";
  * Top-level metadata routes (opengraph-image, icon, …) have no file extension,
  * so the matcher can't exclude them by dot — they're skipped explicitly here.
  */
-const METADATA_ROUTES = new Set([
-  "/opengraph-image",
-  "/icon",
-  "/apple-icon",
-]);
+const METADATA_ROUTES = new Set(["/opengraph-image", "/icon", "/apple-icon"]);
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -43,7 +39,9 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Run on everything except Next internals and files with an extension
-  // (sitemap.xml, robots.txt, feed.xml, manifest.webmanifest, images, …).
-  matcher: ["/((?!_next/|_vercel/|.*\\..*).*)"],
+  // Run on everything except Next internals, API routes, and files with an
+  // extension (sitemap.xml, robots.txt, feed.xml, manifest.webmanifest, images, …).
+  // `api/` has to be named explicitly: API paths carry no extension, so the
+  // dot rule doesn't cover them and they'd be rewritten under /en and 404.
+  matcher: ["/((?!_next/|_vercel/|api/|.*\\..*).*)"],
 };

@@ -40,7 +40,8 @@ export const en = {
   },
   services: {
     title: "Services",
-    metaDescription: "BI consulting, dashboard development, and data pipelines.",
+    metaDescription:
+      "BI consulting, dashboard development, and data pipelines.",
     subscription: {
       eyebrow: "Subscription",
       tiers: [
@@ -210,6 +211,11 @@ export const en = {
     openLiveDashboard: "Open live dashboard",
     readWriteUp: "Read the full write-up on the blog",
     openLiveReport: "Open the live report",
+    // Guest-token dashboards (Superset) mount client-side, so they need a wait state
+    // and a visible failure — an embed that quietly renders nothing reads as a bug.
+    dashboardLoading: "Loading the live dashboard…",
+    dashboardError:
+      "The dashboard couldn't be loaded. Try refreshing the page.",
     paginationAria: "Showcase pages",
   },
   notFound: {

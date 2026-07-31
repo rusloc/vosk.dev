@@ -1,0 +1,84 @@
+# Superset for vosk.dev — single-VPS deployment (ADR-0003).
+#
+#   docker compose up -d
+#   docker compose exec superset superset-init      # first run only
+#
+# Four services: Superset, its metadata Postgres, Redis for caching, and Caddy for TLS.
+# Caddy is here because the whole embedding chain depends on HTTPS — SameSite=None cookies
+# are dropped without Secure, so a plain-HTTP instance cannot be framed at all.
+#
+# The demo warehouse (data/) lives in the same Postgres as a separate database. Nothing
+# here needs to be publicly addressable except Caddy: unlike a managed BI vendor, a
+# self-hosted Superset reaches its warehouse over the compose network.
+
+name: vosk-superset
+
+x-superset-env: &superset-env
+  SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:?set in .env}
+  SUPERSET_GUEST_TOKEN_JWT_SECRET: ${SUPERSET_GUEST_TOKEN_JWT_SECRET:?set in .env}
+  SUPERSET_METADATA_DB_URI: postgresql+psycopg2://superset:${POSTGRES_PASSWORD:?set in .env}@db:5432/superset
+  SUPERSET_FRAME_ANCESTORS: ${SUPERSET_FRAME_ANCESTORS:-https://vosk.dev http://localhost:3000}
+  REDIS_URL: redis://redis:6379/0
+  SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
+  PYTHONPATH: /app/pythonpath
+
+services:
+  superset:
+    image: apache/superset:5.0.0
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_started }
+    environment: *superset-env
+    volumes:
+      - ./superset_config.py:/app/pythonpath/superset_config.py:ro
+      - superset_home:/app/superset_home
+    # Bound to loopback: Caddy is the only thing that should reach Superset directly.
+    ports: ["127.0.0.1:8088:8088"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_DB: superset
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # Creates the `analytics` database on first boot; data/ is applied into it.
+      - ./init-analytics-db.sql:/docker-entrypoint-initdb.d/10-analytics.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U superset"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes: [redis_data:/data]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [superset]
+    ports: ["80:80", "443:443"]
+    environment:
+      SUPERSET_HOSTNAME: ${SUPERSET_HOSTNAME:?set in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  superset_home:
+  db_data:
+  redis_data:
+  caddy_data:
+  caddy_config:

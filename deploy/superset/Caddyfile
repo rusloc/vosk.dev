@@ -1,0 +1,25 @@
+# TLS termination for the Superset instance. Caddy obtains and renews a Let's Encrypt
+# certificate automatically, which is the whole reason it is here — the embed chain needs
+# HTTPS (SameSite=None cookies are dropped without Secure).
+#
+# Deliberately does NOT set security headers: Superset's Talisman config owns the CSP,
+# and a second frame-ancestors directive here would silently win over it and break the
+# embed with no error anywhere.
+
+{$SUPERSET_HOSTNAME} {
+	encode zstd gzip
+
+	reverse_proxy superset:8088 {
+		# Superset builds absolute URLs from these; without them OAuth-style redirects
+		# and the CSRF cookie domain come out as http://superset:8088.
+		header_up X-Forwarded-Proto https
+		header_up X-Forwarded-For {remote_host}
+		header_up Host {host}
+	}
+
+	# Dashboards hold long-running queries; the default 30s upstream timeout cuts them off
+	# mid-render and surfaces as an empty chart rather than an error.
+	transport http {
+		read_timeout 300s
+	}
+}

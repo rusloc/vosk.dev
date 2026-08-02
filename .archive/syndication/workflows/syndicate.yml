@@ -1,0 +1,116 @@
+name: Syndicate
+
+# Fires when a post or showcase appears on `main`, and on demand for backfills.
+#
+# Two jobs on purpose. `plan` always runs and only ever prints — it writes the exact
+# copy that would be published into the run summary. `publish` sits behind a
+# protected environment, so GitHub holds it until a human approves, and that human
+# is looking at the drafted text while deciding. Posting is public and irreversible;
+# the gate is the feature, not ceremony. See ADR-0004.
+#
+# Requires, one time:
+#   - an environment named `syndication` with yourself as a required reviewer
+#     (Settings → Environments). Without it the gate does not exist and publish runs
+#     unattended.
+#   - secrets DEVTO_API_KEY and LINKEDIN_ACCESS_TOKEN (and optionally
+#     LINKEDIN_AUTHOR_URN) on that environment.
+#   - repository variable NEXT_PUBLIC_SITE_URL, e.g. https://vosk.dev.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "content/blog/**"
+      - "src/lib/work.ts"
+  workflow_dispatch:
+    inputs:
+      backfill:
+        description: "Allow publishing more than one item on a first run"
+        type: boolean
+        default: false
+      only:
+        description: "Restrict to one platform (devto | linkedin); blank means both"
+        type: string
+        default: ""
+
+concurrency:
+  # Never let two runs post the same item twice, or race on the manifest commit.
+  group: syndicate
+  cancel-in-progress: false
+
+env:
+  NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+
+jobs:
+  plan:
+    name: Plan (dry run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Show what would be posted
+        run: |
+          {
+            echo '## Syndication plan'
+            echo
+            echo 'Review this copy before approving the publish job.'
+            echo
+            echo '```'
+            pnpm --silent syndicate ${{ inputs.only && format('--only {0}', inputs.only) || '' }}
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    name: Publish
+    needs: plan
+    runs-on: ubuntu-latest
+    # The approval gate. Reviewers configured on this environment must approve
+    # before the job starts; the `plan` summary is what they read to decide.
+    environment: syndication
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Post
+        env:
+          DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_AUTHOR_URN: ${{ secrets.LINKEDIN_AUTHOR_URN }}
+        run: |
+          pnpm --silent syndicate --publish \
+            ${{ inputs.backfill && '--backfill' || '' }} \
+            ${{ inputs.only && format('--only {0}', inputs.only) || '' }} \
+            | tee "$RUNNER_TEMP/result.txt"
+
+      # The manifest is the state store, so a successful post that isn't committed
+      # would be re-posted on the next run. This step runs even when the previous
+      # one failed: a partial success still has records worth keeping.
+      - name: Commit the manifest
+        if: always()
+        run: |
+          if git diff --quiet -- syndication.json; then
+            echo 'No manifest change to commit.'
+            exit 0
+          fi
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add syndication.json
+          git commit -m 'chore(syndication): record posted items [skip ci]'
+          git push

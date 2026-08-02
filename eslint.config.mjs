@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Retired features kept for reference only — not built, not linted.
+    ".archive/**",
   ]),
 ]);
 

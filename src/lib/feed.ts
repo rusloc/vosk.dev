@@ -1,6 +1,6 @@
 import { getAllPosts } from "./content";
-import { siteConfig } from "./site";
-import { localizedPath, type Locale } from "./i18n/config";
+import { absoluteUrl, siteConfig } from "./site";
+import { type Locale } from "./i18n/config";
 import { getDictionary } from "./i18n/dictionaries";
 
 /**
@@ -20,9 +20,9 @@ function escapeXml(s: string): string {
 }
 
 export function buildFeed(locale: Locale): Response {
-  const { url, name } = siteConfig;
+  const { name } = siteConfig;
   const t = getDictionary(locale).blog;
-  const abs = (path: string) => `${url}${localizedPath(locale, path)}`;
+  const abs = (path: string) => absoluteUrl(locale, path);
 
   const items = getAllPosts()
     .map((post) => {

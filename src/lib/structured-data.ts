@@ -1,59 +1,98 @@
-import { siteConfig } from "./site";
+import { absoluteUrl, siteConfig } from "./site";
+import { defaultLocale, type Locale } from "./i18n/config";
 
 /**
- * Home-page structured data: the freelancer (Person "Alex Vosk"), the practice
- * (ProfessionalService "VOSK"), and the site (WebSite), linked by @id.
- * Emit once on the home page via <JsonLd data={homeGraph()} />.
+ * JSON-LD builders. Every graph is emitted server-side via `<JsonLd>` and must
+ * mirror what the page actually shows — markup describing things a visitor
+ * can't see is a manual-action offense, not a shortcut.
+ *
+ * Entity `@id`s are anchored to the English (canonical) origin so the org, the
+ * person and the site resolve to one entity across both locales.
+ */
+const ORG_ID = `${siteConfig.url}/#org`;
+const PERSON_ID = `${siteConfig.url}/#person`;
+const WEBSITE_ID = `${siteConfig.url}/#website`;
+
+const ogLocale = (locale: Locale) => (locale === "ru" ? "ru-RU" : "en-US");
+
+/**
+ * Home-page structured data: the freelancer (Person), the practice
+ * (ProfessionalService) and the site (WebSite), linked by @id.
+ * Emit once on the home page via <JsonLd data={homeGraph(locale)} />.
  *
  * `sameAs` is intentionally omitted until real social profile URLs exist — see
- * the TODO in src/lib/site.ts. Person markup mirrors the visible "Alex Vosk"
- * name on the Contacts page (required for policy compliance).
+ * the TODO in src/lib/site.ts. Person markup mirrors the visible name on the
+ * Contacts page (required for policy compliance).
  */
-export function homeGraph(): Record<string, unknown> {
-  const { url, name, title, description, author } = siteConfig;
+export function homeGraph(locale: Locale = defaultLocale): Record<string, unknown> {
+  const { name, title, description, author, contactEmail, contactPhoneHref } =
+    siteConfig;
 
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "ProfessionalService",
-        "@id": `${url}/#org`,
+        "@id": ORG_ID,
         name,
         alternateName: title,
-        url,
+        url: siteConfig.url,
         description,
         areaServed: "Worldwide",
-        founder: { "@id": `${url}/#person` },
+        founder: { "@id": PERSON_ID },
+        email: contactEmail,
+        telephone: contactPhoneHref,
+        knowsAbout: [
+          "Business Intelligence",
+          "Power BI",
+          "Apache Superset",
+          "DAX",
+          "SQL",
+          "PostgreSQL",
+          "Data modeling",
+          "ETL",
+        ],
       },
       {
         "@type": "Person",
-        "@id": `${url}/#person`,
+        "@id": PERSON_ID,
         name: author.name,
         jobTitle: author.jobTitle,
-        url,
-        worksFor: { "@id": `${url}/#org` },
+        url: siteConfig.url,
+        worksFor: { "@id": ORG_ID },
       },
       {
         "@type": "WebSite",
-        "@id": `${url}/#website`,
-        url,
+        "@id": WEBSITE_ID,
+        url: siteConfig.url,
         name,
-        publisher: { "@id": `${url}/#org` },
+        inLanguage: ogLocale(locale),
+        publisher: { "@id": ORG_ID },
       },
     ],
   };
 }
 
-/** BlogPosting schema for a single article. Author mirrors the site's Person entity. */
-export function blogPostingGraph(post: {
-  slug: string;
-  title: string;
-  description: string;
-  date: string;
-  tags: string[];
-}): Record<string, unknown> {
-  const { url, author } = siteConfig;
-  const postUrl = `${url}/blog/${post.slug}`;
+/**
+ * BlogPosting schema for a single article. Author mirrors the site's Person entity.
+ *
+ * `locale` is required: the URL properties have to match the page's canonical,
+ * and a Russian page emitting English URLs contradicts its own `<link rel=canonical>`.
+ * `inLanguage` is always English — the prose is, whichever locale's chrome wraps it.
+ */
+export function blogPostingGraph(
+  locale: Locale,
+  post: {
+    slug: string;
+    title: string;
+    description: string;
+    date: string;
+    updated?: string;
+    tags: string[];
+  },
+): Record<string, unknown> {
+  const { author } = siteConfig;
+  const postUrl = absoluteUrl(locale, `/blog/${post.slug}`);
 
   return {
     "@context": "https://schema.org",
@@ -61,12 +100,192 @@ export function blogPostingGraph(post: {
     headline: post.title,
     description: post.description,
     datePublished: post.date,
-    dateModified: post.date,
-    author: { "@type": "Person", "@id": `${url}/#person`, name: author.name },
-    publisher: { "@id": `${url}/#org` },
+    dateModified: post.updated ?? post.date,
+    inLanguage: "en-US",
+    author: { "@type": "Person", "@id": PERSON_ID, name: author.name },
+    publisher: { "@id": ORG_ID },
+    isPartOf: { "@id": WEBSITE_ID },
     mainEntityOfPage: postUrl,
     url: postUrl,
     image: `${postUrl}/opengraph-image`,
     ...(post.tags.length > 0 ? { keywords: post.tags.join(", ") } : {}),
+  };
+}
+
+/**
+ * BreadcrumbList for pages below the home page. The last crumb is the current
+ * page and carries no `item`, per Google's guidance. Mirrors the visible
+ * <Breadcrumbs> trail — emit both or neither.
+ */
+export function breadcrumbGraph(
+  locale: Locale,
+  trail: readonly { name: string; path?: string }[],
+): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: trail.map((crumb, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: crumb.name,
+      ...(crumb.path ? { item: absoluteUrl(locale, crumb.path) } : {}),
+    })),
+  };
+}
+
+/** CollectionPage + ItemList for /blog and the tag pages. */
+export function collectionGraph(
+  locale: Locale,
+  {
+    name,
+    description,
+    path,
+    posts,
+  }: {
+    name: string;
+    description: string;
+    path: string;
+    posts: readonly { slug: string; title: string }[];
+  },
+): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name,
+    description,
+    url: absoluteUrl(locale, path),
+    inLanguage: ogLocale(locale),
+    isPartOf: { "@id": WEBSITE_ID },
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: posts.length,
+      itemListElement: posts.map((post, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name: post.title,
+        url: absoluteUrl(locale, `/blog/${post.slug}`),
+      })),
+    },
+  };
+}
+
+/**
+ * Service + OfferCatalog for /services, built from the same dictionary the page
+ * renders — so the markup can't drift from the visible prices.
+ *
+ * Prices are passed through as the display strings ("$1,500", "$2k–5k"): several
+ * tiers are genuinely ranges, and a range is `priceSpecification`, not `price`.
+ * Emitting a single invented number for "$2k–5k" would be markup that doesn't
+ * match the page.
+ */
+export function serviceGraph(
+  locale: Locale,
+  {
+    name,
+    description,
+    groups,
+  }: {
+    name: string;
+    description: string;
+    groups: readonly {
+      eyebrow: string;
+      tiers: readonly { name: string; desc: string; price: string; unit: string }[];
+    }[];
+  },
+): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name,
+    description,
+    serviceType: "Business Intelligence consulting",
+    url: absoluteUrl(locale, "/services"),
+    areaServed: "Worldwide",
+    provider: { "@id": ORG_ID },
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name,
+      itemListElement: groups.map((group) => ({
+        "@type": "OfferCatalog",
+        name: group.eyebrow,
+        itemListElement: group.tiers.map((tier) => ({
+          "@type": "Offer",
+          name: `${group.eyebrow} — ${tier.name}`,
+          description: tier.desc,
+          priceCurrency: "USD",
+          priceSpecification: {
+            "@type": "PriceSpecification",
+            price: tier.price,
+            priceCurrency: "USD",
+            unitText: tier.unit,
+          },
+          availability: "https://schema.org/InStock",
+          url: absoluteUrl(locale, "/services"),
+        })),
+      })),
+    },
+  };
+}
+
+/** ContactPage + the org's ContactPoint. Both values are visible on the page. */
+export function contactGraph(
+  locale: Locale,
+  { name, description }: { name: string; description: string },
+): Record<string, unknown> {
+  const { contactEmail, contactPhoneHref } = siteConfig;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    name,
+    description,
+    url: absoluteUrl(locale, "/contact"),
+    inLanguage: ogLocale(locale),
+    isPartOf: { "@id": WEBSITE_ID },
+    mainEntity: {
+      "@id": ORG_ID,
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        email: contactEmail,
+        telephone: contactPhoneHref,
+        areaServed: "Worldwide",
+        availableLanguage: ["en", "ru"],
+      },
+    },
+  };
+}
+
+/**
+ * CreativeWork for a /work/[slug] case study. The live report is an iframe —
+ * opaque to crawlers — so this is the only machine-readable description of what
+ * the page actually demonstrates.
+ */
+export function showcaseGraph(
+  locale: Locale,
+  showcase: {
+    slug: string;
+    title: string;
+    summary: string;
+    platform: string;
+    platformLabel: string;
+  },
+): Record<string, unknown> {
+  const url = absoluteUrl(locale, `/work/${showcase.slug}`);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: showcase.title,
+    description: showcase.summary,
+    url,
+    inLanguage: ogLocale(locale),
+    creator: { "@id": PERSON_ID },
+    publisher: { "@id": ORG_ID },
+    isPartOf: { "@id": WEBSITE_ID },
+    genre: "Data visualization",
+    keywords: [showcase.platformLabel, "dashboard", "business intelligence"].join(
+      ", ",
+    ),
   };
 }

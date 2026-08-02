@@ -33,16 +33,48 @@ export const en = {
       em2: "data",
       tail: ".",
     },
+    // The headline is brand voice; this line carries what the work actually is.
+    lede: "I'm a freelance Business Intelligence analyst and developer. I build Power BI and Apache Superset dashboards, the data models and SQL pipelines underneath them, and the automation that keeps the numbers arriving without anyone asking.",
     cta: "View case studies",
+    ctaSecondary: "See services & pricing",
+    whatIDo: {
+      title: "What I do",
+      items: [
+        {
+          title: "Dashboards & reports",
+          body: "Power BI and Apache Superset reports built on a data model that holds up — DAX measures that agree with each other, and drill-downs that answer the next question.",
+          href: "/work",
+          link: "See case studies",
+        },
+        {
+          title: "Data models & pipelines",
+          body: "SQL and Postgres warehousing, ETL, and the unglamorous data-quality work that decides whether anyone trusts the dashboard on top.",
+          href: "/services",
+          link: "See services",
+        },
+        {
+          title: "Automation & delivery",
+          body: "Refresh schedules, alerting, and reports that land in an inbox on their own — because the dashboard nobody opens delivered nothing.",
+          href: "/blog",
+          link: "Read the blog",
+        },
+      ],
+    },
   },
   footer: {
     available: "Available for new projects",
     rss: "RSS feed",
+    sitemap: "Site links",
   },
   services: {
     title: "Services",
+    metaTitle: "Power BI Services & Pricing",
     metaDescription:
-      "BI consulting, dashboard development, and data pipelines.",
+      "Power BI and Apache Superset consulting — dashboards, data models, pipelines. Subscription, project, and urgent-fix engagements, with prices.",
+    intro:
+      "BI delivery and consulting on Power BI and Apache Superset — pick the engagement that fits. Monthly capacity for teams with an ongoing reporting load, fixed-scope projects for a specific build, and one-off urgent work when a report breaks before a deadline.",
+    engagementsHeading: "Engagement models",
+    seeAlso: "See also:",
     subscription: {
       eyebrow: "Subscription",
       tiers: [
@@ -144,7 +176,9 @@ export const en = {
   },
   contact: {
     title: "Contacts",
-    metaDescription: "Get in touch about a BI or analytics project.",
+    metaTitle: "Contact a Freelance BI Analyst",
+    metaDescription:
+      "Get in touch about a Power BI, Superset, or analytics project — by form, email, or phone. Freelance BI analyst working with clients worldwide.",
     intro: "Send your business related message straight into my email box.",
     labelName: "Name",
     labelEmail: "Email",
@@ -183,8 +217,23 @@ export const en = {
   },
   blog: {
     title: "Blog",
-    metaTitle: "Blog",
-    metaDescription: "Notes on BI, analytics, and data engineering.",
+    metaTitle: "Blog — Power BI, DAX & SQL notes",
+    metaDescription:
+      "Hands-on notes on Power BI, DAX, SQL and data modeling from a freelance BI analyst — working patterns from real client work, not tutorials.",
+    intro:
+      "Working notes from client projects: Power BI and DAX patterns, SQL and Postgres workflows, and the delivery plumbing around them.",
+    // `{tag}` is replaced with the tag's display label — every tag page used to
+    // share the generic blog description above.
+    tagMetaDescription:
+      "Every article tagged {tag} — hands-on notes on BI, dashboards, data models and the tooling around them, from a freelance BI analyst.",
+    tagIntro: "Every article tagged {tag}, newest first.",
+    breadcrumbHome: "Home",
+    related: "Related posts",
+    ctaTitle: "Need this built for your team?",
+    ctaBody:
+      "I do this work for a living — Power BI and Superset dashboards, the data models under them, and the pipelines that keep them fresh.",
+    ctaServices: "See services & pricing",
+    ctaContact: "Get in touch",
     empty: "Articles coming soon.",
     searchPlaceholder: "Search posts by keyword…",
     searchAria: "Search blog posts",
@@ -199,6 +248,15 @@ export const en = {
   },
   work: {
     title: "Showcase",
+    metaTitle: "BI Dashboard Case Studies",
+    breadcrumbHome: "Home",
+    aboutHeading: "About this project",
+    liveReportHeading: "The live report",
+    ctaTitle: "Want something like this?",
+    ctaBody:
+      "This is the kind of work I do for clients — from the data model up to the report they open every morning.",
+    ctaServices: "See services & pricing",
+    ctaContact: "Get in touch",
     metaDescription:
       "Client dashboards written up as case studies — each with the story and a live Power BI or Apache Superset report you can explore.",
     intro: {

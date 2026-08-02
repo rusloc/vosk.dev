@@ -41,7 +41,7 @@ export function BlogList({
 
   const pageCount = Math.ceil(ordered.length / PAGE_SIZE);
   const safePage = Math.min(page, Math.max(0, pageCount - 1));
-  const visible = ordered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+  const first = safePage * PAGE_SIZE;
 
   return (
     <>
@@ -110,14 +110,21 @@ export function BlogList({
         </button>
       </div>
 
+      {/* Every post is rendered and the off-page ones are hidden with CSS rather
+          than sliced away: a `useState` slice keeps overflow posts out of the
+          served HTML entirely, so the fourth post's title, description and link
+          existed nowhere a crawler reads. Same visible result. */}
       {ordered.length === 0 ? (
         <p className="text-muted-foreground mt-6">
           {t.noMatch} “{query.trim()}”.
         </p>
       ) : (
         <ul className="mt-6 space-y-3">
-          {visible.map((post) => (
-            <li key={post.slug}>
+          {ordered.map((post, i) => (
+            <li
+              key={post.slug}
+              className={i >= first && i < first + PAGE_SIZE ? "" : "hidden"}
+            >
               <article className="bg-background border-border rounded-lg border p-5 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(31,27,22,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
                 {/* Title + arrow-link on one row, vertically centred together. */}
                 <div className="flex items-center justify-between gap-4">

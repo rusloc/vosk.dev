@@ -21,13 +21,19 @@ export function ShowcaseList({
 }) {
   const [page, setPage] = useState(0);
   const pageCount = Math.ceil(cards.length / PAGE_SIZE);
-  const visible = cards.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  const first = page * PAGE_SIZE;
 
   return (
     <>
+      {/* Every card is rendered and the off-page ones are hidden with CSS rather
+          than sliced away: a `useState` slice keeps overflow entries out of the
+          served HTML entirely, so their titles and links exist nowhere a crawler
+          reads. Same content, same visible result. */}
       <ul className="mt-6 space-y-4">
-        {visible.map((card, i) => (
-          <li key={i}>{card}</li>
+        {cards.map((card, i) => (
+          <li key={i} className={i >= first && i < first + PAGE_SIZE ? "" : "hidden"}>
+            {card}
+          </li>
         ))}
       </ul>
 

@@ -21,6 +21,10 @@ type ShowcaseBase<Text, Paragraphs> = {
   details: Paragraphs; // paragraphs shown on the detail page, above the report
   metric?: string; // headline figure for the list-card report illustration (e.g. "$4.2M")
   articleSlug?: string; // optional /blog/<slug> write-up linked from the detail page
+  // Reachable, but kept out of the index: an entry whose copy still says it's a
+  // placeholder is a thin page advertising itself as one. Drop the flag the
+  // moment the write-up describes a real engagement.
+  noindex?: boolean;
 };
 
 /**
@@ -60,6 +64,7 @@ export function localize(s: Showcase, locale: Locale): LocalizedShowcase {
     details: s.details[locale],
     metric: s.metric,
     articleSlug: s.articleSlug,
+    noindex: s.noindex,
   };
   return s.platform === "power-bi"
     ? { ...base, platform: "power-bi", embedUrl: s.embedUrl, href: s.href }
@@ -93,6 +98,7 @@ const allShowcases: Showcase[] = [
       ru: "Выручка в разрезе региона, продукта и времени. Фильтруйте, используйте кросс-выделение и детализацию — ровно так же, как это делает клиент.",
     },
     metric: "$4.2M",
+    noindex: true,
     embedUrl: "https://playground.powerbi.com/sampleReportEmbed",
     href: "https://playground.powerbi.com/sampleReportEmbed",
     details: {
@@ -173,6 +179,11 @@ export const showcases: Showcase[] = allShowcases.filter(
 
 export function getShowcaseSlugs(): string[] {
   return showcases.map((s) => s.slug);
+}
+
+/** Slugs safe to advertise in the sitemap — {@link getShowcaseSlugs} minus `noindex` entries. */
+export function getIndexableShowcaseSlugs(): string[] {
+  return showcases.filter((s) => !s.noindex).map((s) => s.slug);
 }
 
 export function getShowcase(slug: string): Showcase | undefined {

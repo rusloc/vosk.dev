@@ -38,6 +38,11 @@ export async function generateMetadata({
       template: `%s · ${siteConfig.name}`,
     },
     description: t.description,
+    // Authorship is an E-E-A-T signal on a one-person consultancy: the brand and
+    // the accountable person are the same entity, and the JSON-LD says so too.
+    authors: [{ name: siteConfig.author.name, url: siteConfig.url }],
+    creator: siteConfig.author.name,
+    publisher: siteConfig.name,
     openGraph: {
       type: "website",
       siteName: siteConfig.name,

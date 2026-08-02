@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const l = (isLocale(locale) ? locale : "en") as Locale;
   const t = getDictionary(l).work;
   return buildMetadata({
-    title: t.title,
+    title: t.metaTitle,
     description: t.metaDescription,
     path: "/work",
     locale: l,

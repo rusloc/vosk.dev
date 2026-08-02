@@ -19,6 +19,10 @@ const frontmatterSchema = z
     title: z.string().min(1),
     description: z.string().min(1),
     date: z.iso.date(), // "YYYY-MM-DD"
+    // Last meaningful edit. Omit until the post is actually revised — an
+    // `updated` that always equals `date` is a freshness lie, and it feeds
+    // `dateModified`, `article:modified_time` and the sitemap `lastmod`.
+    updated: z.iso.date().optional(),
     // Lowercase words joined by single spaces or hyphens. Constrained so every
     // tag survives the round-trip through `tagSlug` and can address a
     // /blog/tag/<slug> page — anything else fails the build rather than
@@ -68,6 +72,7 @@ function toMeta(post: Post): PostMeta {
     title: post.title,
     description: post.description,
     date: post.date,
+    updated: post.updated,
     tags: post.tags,
     cover: post.cover,
     draft: post.draft,
@@ -127,4 +132,28 @@ export function getAllTags(): TagSummary[] {
 /** Posts carrying `slug`, newest first. Empty when the tag doesn't exist. */
 export function getPostsByTag(slug: string): PostMeta[] {
   return getAllPosts().filter((p) => p.tags.some((t) => tagSlug(t) === slug));
+}
+
+/**
+ * Topically related posts, most shared tags first then newest. Complements the
+ * prev/next pair on a post page, which is chronological adjacency and says
+ * nothing about subject — a reader who finished the DAX post wants the other
+ * Power BI posts, not whatever happened to ship the week before.
+ */
+export function getRelatedPosts(slug: string, limit = 3): PostMeta[] {
+  const all = getAllPosts();
+  const self = all.find((p) => p.slug === slug);
+  if (!self) return [];
+  const own = new Set(self.tags.map(tagSlug));
+
+  return all
+    .filter((p) => p.slug !== slug)
+    .map((p) => ({
+      post: p,
+      shared: p.tags.filter((t) => own.has(tagSlug(t))).length,
+    }))
+    .filter(({ shared }) => shared > 0)
+    .sort((a, b) => b.shared - a.shared || (a.post.date < b.post.date ? 1 : -1))
+    .slice(0, limit)
+    .map(({ post }) => post);
 }

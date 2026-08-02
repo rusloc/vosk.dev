@@ -39,7 +39,9 @@ export function proxy(req: NextRequest) {
     if (first === defaultLocale) {
       const url = req.nextUrl.clone();
       url.pathname = pathname.slice(`/${defaultLocale}`.length) || "/";
-      return NextResponse.redirect(url);
+      // 308, not the default 307: this is permanent canonicalization, and a
+      // temporary redirect tells crawlers to keep the prefixed URL indexed.
+      return NextResponse.redirect(url, 308);
     }
     return NextResponse.next(forward);
   }

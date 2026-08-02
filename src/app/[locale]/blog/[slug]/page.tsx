@@ -6,14 +6,20 @@ import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypePrettyCode from "rehype-pretty-code";
-import { BackLink } from "@/components/back-link";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
 import { mdxComponents } from "@/components/mdx-components";
 import { PostMetaRow } from "@/components/post-meta-row";
-import { buildMetadata } from "@/lib/metadata";
-import { blogPostingGraph } from "@/lib/structured-data";
-import { getAllPosts, getPostBySlug, getPostSlugs } from "@/lib/content";
+import { buildMetadata, englishOnlyPosture } from "@/lib/metadata";
+import { siteConfig } from "@/lib/site";
+import { blogPostingGraph, breadcrumbGraph } from "@/lib/structured-data";
+import {
+  getAllPosts,
+  getPostBySlug,
+  getPostSlugs,
+  getRelatedPosts,
+} from "@/lib/content";
 import { locales, isLocale, localizedPath, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import styles from "../title-bar.module.css";
@@ -37,10 +43,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: post.description,
     path: `/blog/${slug}`,
     locale: l,
+    // The post's own card from ./opengraph-image.tsx. `buildMetadata` sets
+    // `openGraph`, which replaces the file-convention image, so it has to be
+    // named here or every post would share the generic site card.
+    images: [
+      {
+        url: `/blog/${slug}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: post.title,
+      },
+    ],
+    ...englishOnlyPosture(l),
   });
   return {
     ...base,
-    openGraph: { ...base.openGraph, type: "article", publishedTime: post.date },
+    openGraph: {
+      ...base.openGraph,
+      type: "article",
+      publishedTime: post.date,
+      ...(post.updated ? { modifiedTime: post.updated } : {}),
+      authors: [siteConfig.author.name],
+    },
   };
 }
 
@@ -74,12 +98,19 @@ export default async function PostPage({ params }: Props) {
   const idx = all.findIndex((p) => p.slug === slug);
   const newer = idx > 0 ? all[idx - 1] : null;
   const older = idx >= 0 && idx < all.length - 1 ? all[idx + 1] : null;
+  const related = getRelatedPosts(slug);
+  const trail = [
+    { name: t.breadcrumbHome, path: "/" },
+    { name: t.title, path: "/blog" },
+    { name: post.title },
+  ];
 
   return (
     <Container className="py-16 sm:py-20">
-      <JsonLd data={blogPostingGraph(post)} />
+      <JsonLd data={blogPostingGraph(l, post)} />
+      <JsonLd data={breadcrumbGraph(l, trail)} />
 
-      <BackLink href={localizedPath(l, "/blog")} label={t.backToBlog} />
+      <Breadcrumbs locale={l} trail={trail} />
 
       <header className="mt-6">
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -130,6 +161,51 @@ export default async function PostPage({ params }: Props) {
           )}
         </nav>
       )}
+
+      {/* Topical neighbours, unlike the chronological prev/next above. Also the
+          only thing linking posts to each other by subject. */}
+      {related.length > 0 && (
+        <section className="mt-12">
+          <h2 className="text-sm font-semibold tracking-tight">{t.related}</h2>
+          <ul className="mt-3 space-y-2">
+            {related.map((p) => (
+              <li key={p.slug}>
+                <Link
+                  href={localizedPath(l, `/blog/${p.slug}`)}
+                  className="text-muted-foreground hover:text-primary text-sm transition-colors"
+                >
+                  {p.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* The only crawlable path from a post to a money page — posts previously
+          dead-ended into prev/next. */}
+      <aside className="border-border bg-muted/40 mt-12 rounded-lg border p-6">
+        <h2 className="text-base font-semibold tracking-tight">
+          {t.ctaTitle}
+        </h2>
+        <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
+          {t.ctaBody}
+        </p>
+        <div className="mt-4 flex flex-wrap gap-4 text-sm font-medium">
+          <Link
+            href={localizedPath(l, "/services")}
+            className="text-primary hover:underline"
+          >
+            {t.ctaServices} →
+          </Link>
+          <Link
+            href={localizedPath(l, "/contact")}
+            className="text-primary hover:underline"
+          >
+            {t.ctaContact} →
+          </Link>
+        </div>
+      </aside>
     </Container>
   );
 }

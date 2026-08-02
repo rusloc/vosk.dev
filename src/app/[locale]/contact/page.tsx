@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/container";
 import { ContactForm } from "@/components/contact-form";
+import { JsonLd } from "@/components/json-ld";
 import { buildMetadata } from "@/lib/metadata";
+import { contactGraph } from "@/lib/structured-data";
 import { siteConfig } from "@/lib/site";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -13,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const l = (isLocale(locale) ? locale : "en") as Locale;
   const t = getDictionary(l).contact;
   return buildMetadata({
-    title: t.title,
+    title: t.metaTitle,
     description: t.metaDescription,
     path: "/contact",
     locale: l,
@@ -28,6 +30,13 @@ export default async function ContactPage({ params }: Props) {
 
   return (
     <Container className="py-10 sm:py-12">
+      <JsonLd
+        data={contactGraph(l, {
+          name: t.title,
+          description: t.metaDescription,
+        })}
+      />
+
       <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1>
       <p className="text-muted-foreground mt-3 max-w-xl text-sm">{t.intro}</p>
 

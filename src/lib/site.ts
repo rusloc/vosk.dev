@@ -1,4 +1,5 @@
 import { env } from "./env";
+import { localizedPath, type Locale } from "./i18n/config";
 
 /**
  * Central site config — brand, nav, contact. Single source for metadata and UI.
@@ -38,3 +39,13 @@ export const siteConfig = {
     linkedin: "https://www.linkedin.com/",
   },
 } as const;
+
+/**
+ * Absolute URL for a logical path in a given locale — the one place that turns
+ * "/blog/x" into "https://vosk.dev/ru/blog/x". Metadata can stay relative
+ * (`metadataBase` absolutises it), but the sitemap, the RSS feed and JSON-LD all
+ * need real absolute URLs, and each of them used to build its own.
+ */
+export function absoluteUrl(locale: Locale, path: string): string {
+  return `${siteConfig.url}${localizedPath(locale, path)}`;
+}

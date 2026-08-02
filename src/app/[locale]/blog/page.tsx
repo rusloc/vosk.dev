@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/container";
-import { buildMetadata } from "@/lib/metadata";
+import { JsonLd } from "@/components/json-ld";
+import { buildMetadata, englishOnlyPosture } from "@/lib/metadata";
+import { collectionGraph } from "@/lib/structured-data";
 import { getAllPosts, getAllTags } from "@/lib/content";
 import { TagLink } from "@/components/tag-link";
 import { isLocale, type Locale } from "@/lib/i18n/config";
@@ -18,6 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: t.metaDescription,
     path: "/blog",
     locale: l,
+    ...englishOnlyPosture(l),
   });
 }
 
@@ -30,10 +33,20 @@ export default async function BlogPage({ params }: Props) {
 
   return (
     <Container className="py-10 sm:py-12">
+      <JsonLd
+        data={collectionGraph(l, {
+          name: t.metaTitle,
+          description: t.metaDescription,
+          path: "/blog",
+          posts,
+        })}
+      />
+
       {/* Benchmark height for the list pages: blog with three posts. Showcase and
           services stretch to the same min-height on desktop. */}
       <div className="flex flex-col lg:min-h-[660px]">
         <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1>
+        <p className="text-muted-foreground mt-3 max-w-2xl">{t.intro}</p>
 
         {/* Visible at every width, unlike the per-post chips — this is the only
             entry point to the filter pages on mobile (and for mobile crawlers). */}

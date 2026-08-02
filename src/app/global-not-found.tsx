@@ -33,6 +33,8 @@ async function resolveLocale() {
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = getDictionary(await resolveLocale()).notFound;
+  // No `robots` here: Next emits `<meta name="robots" content="noindex">` on the
+  // not-found route itself, and setting it again just duplicates the tag.
   return { title: t.title };
 }
 

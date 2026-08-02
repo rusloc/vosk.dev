@@ -20,11 +20,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function Home({ params }: Props) {
   const { locale } = await params;
   const l = (isLocale(locale) ? locale : "en") as Locale;
-  const t = getDictionary(l).home;
+  const dict = getDictionary(l);
+  const t = dict.home;
 
   return (
     <>
-      <JsonLd data={homeGraph()} />
+      <JsonLd data={homeGraph(l)} />
       <HomeBackdrop />
       <CodeTyper />
       <Container className="py-20 sm:py-28">
@@ -37,6 +38,12 @@ export default async function Home({ params }: Props) {
             {t.headline.tail}
           </h1>
 
+          {/* The headline is brand voice and names nothing searchable. This
+              paragraph is where the page says what the work actually is. */}
+          <p className="text-muted-foreground mt-6 max-w-2xl text-lg">
+            {t.lede}
+          </p>
+
           <div className="mt-10 flex flex-wrap items-center gap-4">
             <Link
               href={localizedPath(l, "/work")}
@@ -44,8 +51,39 @@ export default async function Home({ params }: Props) {
             >
               {t.cta} <span aria-hidden="true">→</span>
             </Link>
+            <Link
+              href={localizedPath(l, "/services")}
+              className="border-border hover:bg-muted inline-flex h-12 items-center justify-center gap-2 rounded-md border px-7 text-sm font-medium transition-colors"
+            >
+              {t.ctaSecondary} <span aria-hidden="true">→</span>
+            </Link>
           </div>
         </div>
+
+        {/* The home page previously had one heading and one link. This section
+            gives it the terms the site should be found for and a path into each
+            of the three destinations. */}
+        <section className="mt-20 max-w-4xl">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t.whatIDo.title}
+          </h2>
+          <ul className="mt-6 grid gap-6 sm:grid-cols-3">
+            {t.whatIDo.items.map((item) => (
+              <li key={item.title}>
+                <h3 className="font-semibold tracking-tight">{item.title}</h3>
+                <p className="text-muted-foreground mt-2 text-sm">
+                  {item.body}
+                </p>
+                <Link
+                  href={localizedPath(l, item.href)}
+                  className="text-primary mt-3 inline-block text-sm font-medium hover:underline"
+                >
+                  {item.link} →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       </Container>
     </>
   );

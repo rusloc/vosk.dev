@@ -3,13 +3,19 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
-import type { Locale } from "@/lib/i18n/config";
+import { localizedPath, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { ContactForm } from "@/components/contact-form";
 
 /**
  * Nav CTA — opens a small popup with the same contact form as the Contacts
  * page, so visitors can send a message without leaving the page.
+ *
+ * It's an `<a href="/contact">` whose click is intercepted, not a `<button>`:
+ * this and the services banner were the site's two conversion CTAs, and as
+ * buttons they left /contact reachable from the nav alone — no link equity, and
+ * nothing at all without JS. The dialog is the enhancement; the link is the
+ * baseline.
  */
 export function SendMessageButton({
   locale,
@@ -43,11 +49,17 @@ export function SendMessageButton({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
+      <a
+        href={localizedPath(locale, "/contact")}
+        onClick={(e) => {
+          // Let modified clicks (new tab, save) and non-primary buttons through
+          // to the real /contact page.
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          e.preventDefault();
+          setOpen(true);
+        }}
         className={cn(
-          "h-10 cursor-pointer items-center justify-center rounded-md px-5 text-sm font-medium transition-opacity hover:opacity-90",
+          "inline-flex h-10 cursor-pointer items-center justify-center rounded-md px-5 text-sm font-medium transition-opacity hover:opacity-90",
           variant === "inverse"
             ? "bg-background text-foreground"
             : "bg-foreground text-background",
@@ -55,7 +67,7 @@ export function SendMessageButton({
         )}
       >
         {label ?? dict.sendDialog.open}
-      </button>
+      </a>
 
       {open &&
         createPortal(

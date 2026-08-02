@@ -302,6 +302,20 @@ export function EmailReportPreview() {
           </table>
         </div>
 
+        {/*
+          The escape hatch. Depicted, not clickable — this is a picture of an
+          email, so a live <a> here would be a dead end for the reader.
+        */}
+        <div className="border-t border-[#efece2] px-4 py-3">
+          <span className="inline-block rounded-md bg-[#4f46e5] px-3 py-2 text-[13px] font-semibold text-white">
+            Open the full report →
+          </span>
+          <p className="mt-2 text-[11px] text-[#8b8578]">
+            Drill by country, month, trade lane — opens the Power BI report this
+            email was built from.
+          </p>
+        </div>
+
         <div className="border-t border-[#efece2] px-4 py-3 text-[11px] leading-relaxed text-[#8b8578]">
           <div>
             YTD 2026-01-01 → 2026-07-31 · YTD PY 2025-01-01 → 2025-07-31
@@ -312,8 +326,9 @@ export function EmailReportPreview() {
         </div>
       </div>
       <figcaption className="text-muted-foreground mt-3 text-sm">
-        The whole deliverable: one email, no attachment, no login. Figures and
-        countries here are invented — the layout is the real one.
+        The whole deliverable: one email, no attachment, no login — and one
+        button out to the full report for anyone who wants to dig. Figures and
+        countries here are invented; the layout is the real one.
       </figcaption>
     </figure>
   );

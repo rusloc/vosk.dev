@@ -6,6 +6,13 @@ tags: ["microsoft fabric", "power bi", "python", "automation"]
 draft: false
 ---
 
+> **In short.** Nobody opens the dashboard. So don't make them: have a Fabric
+> notebook query the semantic model you already built, format the numbers into an
+> HTML table, and email it on a schedule. The KPIs land on a phone screen before
+> anyone thinks to ask for them, and a single button in that email opens the full
+> report for whoever wants to dig. Roughly 120 lines of Python, no new platform,
+> no licence, no AI in the loop.
+
 There's a particular kind of silence that follows a dashboard launch. The model
 is clean, the measures are right, the visuals are tight — and the traffic log
 says three people opened it last month, two of whom were you.
@@ -33,11 +40,56 @@ server to babysit, no AI in the loop:
 5. **Microsoft Graph sends it** from a real mailbox to a real distribution list.
 6. **A Fabric Pipeline runs the notebook on a schedule.** Friday at 6am, done.
 
-The output is one email. No attachment to open, no link to follow, no login:
+The output is one email. No attachment, no login, nothing to install:
 
 <EmailReportPreview />
 
 That's the entire deliverable. The recipient's job is to glance at it.
+
+## The one link that matters
+
+Notice the button at the bottom of that email. It's the piece people leave out,
+and it's the piece that makes the whole thing defensible.
+
+The email answers _what_. It will never answer _why_ — and the moment a number
+looks wrong or interesting, the reader has exactly one question: which country,
+which month, which customer. Without somewhere to go, that curiosity turns into
+a message to you, and you've reinvented the manual reporting request you were
+trying to kill.
+
+So end the email with a deep link into the report:
+
+```python
+REPORT_URL = "https://app.powerbi.com/groups/<workspace>/reports/<report-id>"
+
+cta = f"""
+<tr><td style="padding:20px 10px 8px;">
+  <a href="{REPORT_URL}?ctid=<tenant-id>"
+     style="background:#4f46e5;color:#fff;text-decoration:none;
+            padding:10px 16px;border-radius:6px;font-weight:600;
+            font-family:Arial,Helvetica,sans-serif;font-size:14px;">
+    Open the full report &rarr;
+  </a>
+</td></tr>"""
+```
+
+A few details that decide whether it gets used:
+
+- **Deep-link to the page, not the workspace.** `…/reports/<id>/<section-id>`
+  lands on the tab that matches the email. Dropping someone on a report's home
+  page and letting them hunt for the right tab is how a link stops being clicked.
+- **Append `?ctid=<tenant-id>`.** Without it, a reader signed into a personal
+  Microsoft account on their phone hits a permissions wall instead of the report.
+- **Carry the filter through** with `?filter=Country/Name eq 'Poland'` when the
+  email highlights something specific. The report opens pre-filtered to the thing
+  that prompted the click.
+- **Say what's behind it.** "Open the full report" earns more clicks than a bare
+  URL, and a line of context under the button earns more still.
+
+This is what keeps the email from being a walled garden. Ninety percent of the
+time the five numbers are the whole answer and nobody clicks anything. The other
+ten percent is exactly when a dashboard is the right tool — and the email is what
+delivers the reader to it, already knowing what they're looking for.
 
 ## Why not a dashboard, an alert, or a chatbot
 
@@ -238,9 +290,10 @@ without anyone forwarding you a screenshot.
 ## What this is not
 
 It isn't self-service, and it shouldn't pretend to be. There's no drilling in,
-no changing the date range, no asking a follow-up question. If the recipient
-needs any of that, they need the report — and this email is a very good place to
-put the link to it.
+no changing the date range, no asking a follow-up question. That's what the
+button is for — the email is the summary, the report is the answer to the next
+question, and pretending one can be the other is how you end up with a dashboard
+nobody opens _and_ an email nobody trusts.
 
 It also isn't free of maintenance. Add a metric and you touch the DAX, the
 metrics list and the template. That's fine at seven metrics and painful at

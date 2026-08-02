@@ -34,6 +34,7 @@ export const ru: Dictionary = {
   },
   footer: {
     available: "Открыт для новых проектов",
+    rss: "RSS-лента",
   },
   services: {
     title: "Услуги",
@@ -184,6 +185,7 @@ export const ru: Dictionary = {
     newestFirst: "Сначала новые",
     oldestFirst: "Сначала старые",
     noMatch: "Ничего не найдено по запросу",
+    tagged: "По тегу",
     backToBlog: "Назад в блог",
     older: "Раньше",
     newer: "Позже",

@@ -37,6 +37,7 @@ export const en = {
   },
   footer: {
     available: "Available for new projects",
+    rss: "RSS feed",
   },
   services: {
     title: "Services",
@@ -190,6 +191,7 @@ export const en = {
     newestFirst: "Newest first",
     oldestFirst: "Oldest first",
     noMatch: "No posts match",
+    tagged: "Tagged",
     backToBlog: "Back to blog",
     older: "Older",
     newer: "Newer",

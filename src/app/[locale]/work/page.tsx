@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/container";
 import { buildMetadata } from "@/lib/metadata";
-import { showcases } from "@/lib/work";
+import { localize, showcases } from "@/lib/work";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { ShowcaseCard } from "./showcase-card";
@@ -49,7 +49,11 @@ export default async function WorkPage({ params }: Props) {
           <ShowcaseList
             label={t.paginationAria}
             cards={showcases.map((showcase) => (
-              <ShowcaseCard key={showcase.slug} showcase={showcase} locale={l} />
+              <ShowcaseCard
+                key={showcase.slug}
+                showcase={localize(showcase, l)}
+                locale={l}
+              />
             ))}
           />
         )}

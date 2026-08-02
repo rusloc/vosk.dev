@@ -4,6 +4,7 @@ import path from "node:path";
 import matter from "gray-matter";
 import readingTime from "reading-time";
 import { z } from "zod";
+import { tagSlug } from "./tags";
 
 /**
  * Single seam for reading/validating blog MDX. Pages/sitemap/feed consume this —
@@ -18,7 +19,20 @@ const frontmatterSchema = z
     title: z.string().min(1),
     description: z.string().min(1),
     date: z.iso.date(), // "YYYY-MM-DD"
-    tags: z.array(z.string()).default([]),
+    // Lowercase words joined by single spaces or hyphens. Constrained so every
+    // tag survives the round-trip through `tagSlug` and can address a
+    // /blog/tag/<slug> page — anything else fails the build rather than
+    // silently producing a tag with no reachable URL.
+    tags: z
+      .array(
+        z
+          .string()
+          .regex(
+            /^[a-z0-9]+(?:[ -][a-z0-9]+)*$/,
+            "tags must be lowercase words separated by single spaces or hyphens",
+          ),
+      )
+      .default([]),
     cover: z.string().optional(),
     draft: z.boolean().default(false),
   })
@@ -84,4 +98,33 @@ export function getPostBySlug(slug: string): Post | null {
   const post = readPost(slug);
   if (isProd && post.draft) return null;
   return post;
+}
+
+export type TagSummary = { tag: string; slug: string; count: number };
+
+/**
+ * Every tag in use, most-used first then alphabetical. Derived from
+ * {@link getAllPosts}, so a tag that only appears on a hidden draft doesn't mint
+ * a page. Drives `generateStaticParams` for /blog/tag/[tag] and the sitemap.
+ */
+export function getAllTags(): TagSummary[] {
+  const byslug = new Map<string, TagSummary>();
+
+  for (const post of getAllPosts()) {
+    for (const tag of post.tags) {
+      const slug = tagSlug(tag);
+      const seen = byslug.get(slug);
+      if (seen) seen.count += 1;
+      else byslug.set(slug, { tag, slug, count: 1 });
+    }
+  }
+
+  return [...byslug.values()].sort(
+    (a, b) => b.count - a.count || a.slug.localeCompare(b.slug),
+  );
+}
+
+/** Posts carrying `slug`, newest first. Empty when the tag doesn't exist. */
+export function getPostsByTag(slug: string): PostMeta[] {
+  return getAllPosts().filter((p) => p.tags.some((t) => tagSlug(t) === slug));
 }

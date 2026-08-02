@@ -11,10 +11,13 @@ export const siteConfig = {
     "Freelance Business Intelligence analyst and developer. Dashboards, data pipelines, and analytics that turn raw data into decisions.",
   url: env.NEXT_PUBLIC_SITE_URL,
   locale: "en_US",
-  // Public/professional name. Legal name (Kirill Bezzubkin) stays on
-  // contracts/invoices/ID; "Vosk" ties the person to the vosk.dev brand.
+  // Public/professional name; "Vosk" ties the person to the vosk.dev brand.
+  // `legalName` is what appears on contracts/invoices/ID — shown in the footer
+  // so the brand resolves to an accountable person (and not translated: legal
+  // identity is the same string in every locale).
   author: {
     name: "Kirill Vosk",
+    legalName: "Kirill Bezzubkin",
     jobTitle: "Freelance BI Analyst & Developer",
   },
   nav: [
@@ -35,5 +38,3 @@ export const siteConfig = {
     linkedin: "https://www.linkedin.com/",
   },
 } as const;
-
-export type SiteConfig = typeof siteConfig;

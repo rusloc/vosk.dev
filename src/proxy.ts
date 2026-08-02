@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { defaultLocale, isLocale } from "@/lib/i18n/config";
+import { defaultLocale, isLocale, LOCALE_HEADER } from "@/lib/i18n/config";
 
 /**
  * Locale routing — "English at root, Russian under /ru".
@@ -10,17 +10,29 @@ import { defaultLocale, isLocale } from "@/lib/i18n/config";
  *  - `/…`     → rewritten internally to `/en/…` (URL stays unprefixed) so it
  *               resolves against the [locale] segment.
  *
+ * Named `proxy` (not `middleware`): Next 16 renamed the file convention, and
+ * keeping both names is a build error.
+ *
+ * Every forwarded request carries the resolved locale in `LOCALE_HEADER`. Pages
+ * read the `[locale]` param instead — the header exists for
+ * `app/global-not-found.tsx`, which compiles into its own entry and so never
+ * receives params. It is set unconditionally, overwriting any client value.
+ *
  * Top-level metadata routes (opengraph-image, icon, …) have no file extension,
  * so the matcher can't exclude them by dot — they're skipped explicitly here.
  */
 const METADATA_ROUTES = new Set(["/opengraph-image", "/icon", "/apple-icon"]);
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
-  if (METADATA_ROUTES.has(pathname)) return NextResponse.next();
-
   const first = pathname.split("/")[1] ?? "";
+  const locale = isLocale(first) ? first : defaultLocale;
+
+  const headers = new Headers(req.headers);
+  headers.set(LOCALE_HEADER, locale);
+  const forward = { request: { headers } };
+
+  if (METADATA_ROUTES.has(pathname)) return NextResponse.next(forward);
 
   if (isLocale(first)) {
     // Explicit default-locale prefix → redirect to the canonical unprefixed URL.
@@ -29,13 +41,13 @@ export function middleware(req: NextRequest) {
       url.pathname = pathname.slice(`/${defaultLocale}`.length) || "/";
       return NextResponse.redirect(url);
     }
-    return NextResponse.next();
+    return NextResponse.next(forward);
   }
 
   // Unprefixed path → serve the default locale without changing the URL.
   const url = req.nextUrl.clone();
   url.pathname = `/${defaultLocale}${pathname === "/" ? "" : pathname}`;
-  return NextResponse.rewrite(url);
+  return NextResponse.rewrite(url, forward);
 }
 
 export const config = {

@@ -2,7 +2,7 @@
  * i18n config — the single source of truth for which locales exist and how they
  * map to URLs. Routing is "English at root, Russian under /ru": the default
  * locale carries no prefix (so existing URLs and their SEO are preserved) and
- * every other locale is prefixed. The middleware enforces this; the [locale]
+ * every other locale is prefixed. The proxy enforces this; the [locale]
  * segment renders it.
  */
 export const locales = ["en", "ru"] as const;
@@ -10,11 +10,11 @@ export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = "en";
 
-/** Human labels for the language switcher (each shown in its own language). */
-export const localeLabels: Record<Locale, string> = {
-  en: "English",
-  ru: "Русский",
-};
+/**
+ * Request header the proxy stamps with the resolved locale, for the one place
+ * that can't read the `[locale]` param: `app/global-not-found.tsx`.
+ */
+export const LOCALE_HEADER = "x-locale";
 
 export function isLocale(value: string): value is Locale {
   return (locales as readonly string[]).includes(value);

@@ -6,6 +6,7 @@ import type { PostMeta } from "@/lib/content";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { Pagination } from "@/components/pagination";
+import { PostMetaRow } from "@/components/post-meta-row";
 import styles from "./title-bar.module.css";
 
 // Posts per page — the blog list is the benchmark for page height, so it caps at
@@ -158,25 +159,11 @@ export function BlogList({
                   {post.description}
                 </p>
 
-                {/* Date (YYYY-MM-DD); tags + pipe join it from `sm` up. */}
-                <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-2 text-xs">
-                  <time dateTime={post.date}>{post.date}</time>
-                  {post.tags.length > 0 && (
-                    <div className="hidden items-center gap-2 sm:flex">
-                      <span aria-hidden="true">|</span>
-                      <ul className="flex flex-wrap gap-2">
-                        {post.tags.map((tag) => (
-                          <li
-                            key={tag}
-                            className="border-border rounded-full border px-2.5 py-0.5"
-                          >
-                            {tag}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
+                <PostMetaRow
+                  date={post.date}
+                  tags={post.tags}
+                  locale={locale}
+                />
               </article>
             </li>
           ))}

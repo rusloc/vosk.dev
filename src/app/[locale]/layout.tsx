@@ -1,24 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
-import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import { env } from "@/lib/env";
+import { fontVariables } from "@/lib/fonts";
 import { siteConfig } from "@/lib/site";
 import { locales, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { SiteNav } from "@/components/nav";
 import { SiteFooter } from "@/components/footer";
 import { Analytics } from "@/components/analytics";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 type Props = {
   children: React.ReactNode;
@@ -41,7 +31,8 @@ export async function generateMetadata({
   const t = getDictionary(locale).meta;
 
   return {
-    metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
+    // `metadataBase` lives in the root layout — the root segment's own metadata
+    // files resolve before this one and need it already set.
     title: {
       default: t.title,
       template: `%s · ${siteConfig.name}`,
@@ -82,10 +73,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   const dict = getDictionary(locale);
 
   return (
-    <html
-      lang={locale}
-      className={`${geistSans.variable} ${geistMono.variable} h-full`}
-    >
+    <html lang={locale} className={`${fontVariables} h-full`}>
       <body className="bg-background text-foreground flex min-h-full flex-col font-sans antialiased">
         <SiteNav locale={locale as Locale} dict={dict} />
         <main className="flex-1">{children}</main>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PLATFORM_LABEL, type Showcase } from "@/lib/work";
+import { PLATFORM_LABEL, type LocalizedShowcase } from "@/lib/work";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import { ReportMock } from "./report-mock";
 import titleStyles from "../blog/title-bar.module.css";
@@ -14,7 +14,7 @@ export function ShowcaseCard({
   showcase,
   locale,
 }: {
-  showcase: Showcase;
+  showcase: LocalizedShowcase;
   locale: Locale;
 }) {
   const { slug, title, summary, platform, metric } = showcase;

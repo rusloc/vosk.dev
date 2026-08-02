@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { MDXComponents } from "mdx/types";
 import { WorkflowDiagram } from "@/components/workflow-diagram";
 import { ReportEmbed } from "@/components/report-embed";
+import { EmailReportPreview } from "@/components/email-report-preview";
 
 /**
  * Element map for rendered MDX, styled to the cream theme. Code blocks are
@@ -13,6 +14,7 @@ export const mdxComponents: MDXComponents = {
   // Custom blocks usable directly in MDX: <WorkflowDiagram />, <ReportEmbed … />
   WorkflowDiagram,
   ReportEmbed,
+  EmailReportPreview,
   h2: (props) => (
     <h2
       className="mt-10 mb-4 scroll-mt-24 text-2xl font-semibold tracking-tight"

@@ -1,41 +1,39 @@
 /**
- * Tag slugs. Lives outside `content.ts` because that module is `server-only`
- * and the tag chips render inside a client component.
+ * The closed set of blog tags: frontmatter value → display copy. Single source
+ * of truth — `content.ts` validates frontmatter against these keys with
+ * `z.enum`, so an unlisted tag fails the build rather than minting a tag page
+ * with no editorial home.
  *
- * Tags are authored in frontmatter as display text ("power bi"); the slug is the
- * routing key ("power-bi"). `content.ts` constrains the allowed characters so
- * this stays a lossless, one-way-obvious mapping.
+ * Lives outside `content.ts` because that module is `server-only` and the tag
+ * chips render inside a client component.
+ */
+export const TAGS = {
+  "power bi": "Power BI",
+  superset: "Superset",
+  sql: "SQL",
+  python: "Python",
+  js: "JS",
+} as const;
+
+export type Tag = keyof typeof TAGS;
+
+/** Non-empty tuple form, which is what `z.enum` wants. */
+export const tagValues = Object.keys(TAGS) as [Tag, ...Tag[]];
+
+/**
+ * Frontmatter value → routing key ("power bi" → "power-bi"). Every key in
+ * {@link TAGS} is lowercase alphanumerics and single spaces, so this stays a
+ * lossless, one-way-obvious mapping.
  */
 export function tagSlug(tag: string): string {
   return tag.trim().toLowerCase().replace(/\s+/g, "-");
 }
 
 /**
- * Proper casing for a tag used as page copy — an `<h1>` and a `<title>` reading
- * "power bi" is the lowercase-frontmatter convention leaking into the SERP.
- * Anything not listed is title-cased word by word ("data modeling" → "Data
- * Modeling"); acronyms and product names need an entry.
+ * Display copy for a tag — chips, the tag page `<h1>` and its `<title>`. An
+ * `<h1>` reading "power bi" is the lowercase-frontmatter convention leaking
+ * into the SERP.
  */
-const TAG_DISPLAY: Record<string, string> = {
-  "power-bi": "Power BI",
-  sql: "SQL",
-  postgresql: "PostgreSQL",
-  dax: "DAX",
-  python: "Python",
-  "microsoft-fabric": "Microsoft Fabric",
-  "data-modeling": "Data Modeling",
-  "code-quality": "Code Quality",
-  automation: "Automation",
-  workflow: "Workflow",
-};
-
 export function tagLabel(tag: string): string {
-  const slug = tagSlug(tag);
-  return (
-    TAG_DISPLAY[slug] ??
-    tag
-      .split(/\s+/)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ")
-  );
+  return TAGS[tag as Tag] ?? tag;
 }

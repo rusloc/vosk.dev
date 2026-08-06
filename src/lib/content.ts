@@ -4,7 +4,7 @@ import path from "node:path";
 import matter from "gray-matter";
 import readingTime from "reading-time";
 import { z } from "zod";
-import { tagSlug } from "./tags";
+import { tagSlug, tagValues } from "./tags";
 
 /**
  * Single seam for reading/validating blog MDX. Pages/sitemap/feed consume this —
@@ -23,20 +23,9 @@ const frontmatterSchema = z
     // `updated` that always equals `date` is a freshness lie, and it feeds
     // `dateModified`, `article:modified_time` and the sitemap `lastmod`.
     updated: z.iso.date().optional(),
-    // Lowercase words joined by single spaces or hyphens. Constrained so every
-    // tag survives the round-trip through `tagSlug` and can address a
-    // /blog/tag/<slug> page — anything else fails the build rather than
-    // silently producing a tag with no reachable URL.
-    tags: z
-      .array(
-        z
-          .string()
-          .regex(
-            /^[a-z0-9]+(?:[ -][a-z0-9]+)*$/,
-            "tags must be lowercase words separated by single spaces or hyphens",
-          ),
-      )
-      .default([]),
+    // Closed set — see `TAGS` in ./tags. A tag outside it fails the build rather
+    // than minting a /blog/tag/<slug> page with one post and no editorial home.
+    tags: z.array(z.enum(tagValues)).default([]),
     cover: z.string().optional(),
     draft: z.boolean().default(false),
   })

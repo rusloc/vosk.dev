@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Container } from "@/components/container";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -16,32 +15,6 @@ export function SiteFooter({
 
   return (
     <footer className="border-border border-t">
-      {/* Site links. The nav was the only place every page was linked from, so
-          deep pages sat one hop from a single source; a footer set doubles that
-          and puts the same links at the bottom of every scroll. */}
-      <Container className="border-border border-b py-6">
-        <nav aria-label={dict.footer.sitemap}>
-          <ul className="text-muted-foreground flex flex-wrap gap-x-6 gap-y-2 font-mono text-xs tracking-wider uppercase">
-            {[
-              { path: "/", label: dict.nav.home },
-              { path: "/work", label: dict.nav.work },
-              { path: "/blog", label: dict.nav.blog },
-              { path: "/services", label: dict.nav.services },
-              { path: "/contact", label: dict.nav.contact },
-            ].map(({ path, label }) => (
-              <li key={path}>
-                <Link
-                  href={localizedPath(locale, path)}
-                  className="hover:text-foreground transition-colors"
-                >
-                  {label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </Container>
-
       {/* Three columns so the language switch stays centered regardless of the
           side content (the availability line is hidden below `sm`). */}
       <Container className="text-muted-foreground grid grid-cols-3 items-center py-8 font-mono text-xs tracking-wider uppercase">

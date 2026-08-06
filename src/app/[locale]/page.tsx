@@ -59,31 +59,6 @@ export default async function Home({ params }: Props) {
             </Link>
           </div>
         </div>
-
-        {/* The home page previously had one heading and one link. This section
-            gives it the terms the site should be found for and a path into each
-            of the three destinations. */}
-        <section className="mt-20 max-w-4xl">
-          <h2 className="text-2xl font-semibold tracking-tight">
-            {t.whatIDo.title}
-          </h2>
-          <ul className="mt-6 grid gap-6 sm:grid-cols-3">
-            {t.whatIDo.items.map((item) => (
-              <li key={item.title}>
-                <h3 className="font-semibold tracking-tight">{item.title}</h3>
-                <p className="text-muted-foreground mt-2 text-sm">
-                  {item.body}
-                </p>
-                <Link
-                  href={localizedPath(l, item.href)}
-                  className="text-primary mt-3 inline-block text-sm font-medium hover:underline"
-                >
-                  {item.link} →
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
       </Container>
     </>
   );

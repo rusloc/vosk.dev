@@ -6,20 +6,26 @@ import { TagLink } from "@/components/tag-link";
  * were byte-identical). The tag group stays hidden below `sm` to keep the mobile
  * meta row compact — the blog index carries a full tag row that is visible at
  * every width, so the filter pages are never unreachable.
+ *
+ * `showTags={false}` drops the chips entirely; the post header passes it, the
+ * list cards want them. Tag pages keep their entry point either way, via the
+ * blog index row above.
  */
 export function PostMetaRow({
   date,
   tags,
   locale,
+  showTags = true,
 }: {
   date: string;
   tags: string[];
   locale: Locale;
+  showTags?: boolean;
 }) {
   return (
     <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-2 text-xs">
       <time dateTime={date}>{date}</time>
-      {tags.length > 0 && (
+      {showTags && tags.length > 0 && (
         <div className="hidden items-center gap-2 sm:flex">
           <span aria-hidden="true">|</span>
           <ul className="flex flex-wrap gap-2">

@@ -33,38 +33,15 @@ export const en = {
       em2: "data",
       tail: ".",
     },
-    // The headline is brand voice; this line carries what the work actually is.
-    lede: "I'm a freelance Business Intelligence analyst and developer. I build Power BI and Apache Superset dashboards, the data models and SQL pipelines underneath them, and the automation that keeps the numbers arriving without anyone asking.",
+    // The headline is brand voice and names nothing searchable; this line is the
+    // page's only body copy, so it carries the query terms on its own.
+    lede: "Full-stack BI services on a modern stack, open-source and SaaS alike — Power BI and Apache Superset dashboards, the SQL data models and pipelines beneath them, turning raw data into decisions.",
     cta: "View case studies",
     ctaSecondary: "See services & pricing",
-    whatIDo: {
-      title: "What I do",
-      items: [
-        {
-          title: "Dashboards & reports",
-          body: "Power BI and Apache Superset reports built on a data model that holds up — DAX measures that agree with each other, and drill-downs that answer the next question.",
-          href: "/work",
-          link: "See case studies",
-        },
-        {
-          title: "Data models & pipelines",
-          body: "SQL and Postgres warehousing, ETL, and the unglamorous data-quality work that decides whether anyone trusts the dashboard on top.",
-          href: "/services",
-          link: "See services",
-        },
-        {
-          title: "Automation & delivery",
-          body: "Refresh schedules, alerting, and reports that land in an inbox on their own — because the dashboard nobody opens delivered nothing.",
-          href: "/blog",
-          link: "Read the blog",
-        },
-      ],
-    },
   },
   footer: {
     available: "Available for new projects",
     rss: "RSS feed",
-    sitemap: "Site links",
   },
   services: {
     title: "Services",

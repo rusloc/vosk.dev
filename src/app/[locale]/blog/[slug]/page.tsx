@@ -20,7 +20,12 @@ import {
   getPostSlugs,
   getRelatedPosts,
 } from "@/lib/content";
-import { locales, isLocale, localizedPath, type Locale } from "@/lib/i18n/config";
+import {
+  locales,
+  isLocale,
+  localizedPath,
+  type Locale,
+} from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import styles from "../title-bar.module.css";
 
@@ -119,8 +124,14 @@ export default async function PostPage({ params }: Props) {
             <span className="relative">{post.title}</span>
           </span>
         </h1>
-        {/* Date and tags under the title — mirrors the blog list. Read time dropped. */}
-        <PostMetaRow date={post.date} tags={post.tags} locale={l} />
+        {/* Date only. The list cards keep their tag chips; on the post itself the
+            chips read as navigation the reader has already finished using. */}
+        <PostMetaRow
+          date={post.date}
+          tags={post.tags}
+          locale={l}
+          showTags={false}
+        />
       </header>
 
       <article className="mdx mt-8 max-w-2xl">{content}</article>
@@ -185,9 +196,7 @@ export default async function PostPage({ params }: Props) {
       {/* The only crawlable path from a post to a money page — posts previously
           dead-ended into prev/next. */}
       <aside className="border-border bg-muted/40 mt-12 rounded-lg border p-6">
-        <h2 className="text-base font-semibold tracking-tight">
-          {t.ctaTitle}
-        </h2>
+        <h2 className="text-base font-semibold tracking-tight">{t.ctaTitle}</h2>
         <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
           {t.ctaBody}
         </p>

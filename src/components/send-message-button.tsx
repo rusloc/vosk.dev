@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { ContactForm } from "@/components/contact-form";
+import styles from "./cta-button.module.css";
 
 /**
  * Nav CTA — opens a small popup with the same contact form as the Contacts
@@ -22,15 +23,12 @@ export function SendMessageButton({
   dict,
   className,
   label,
-  variant = "solid",
 }: {
   locale: Locale;
   dict: Dictionary;
   className?: string;
   /** Button text; defaults to the dialog's "Message" label. */
   label?: string;
-  /** "solid" = dark button (nav); "inverse" = light button on a dark surface (CTA). */
-  variant?: "solid" | "inverse";
 }) {
   const [open, setOpen] = useState(false);
 
@@ -58,13 +56,7 @@ export function SendMessageButton({
           e.preventDefault();
           setOpen(true);
         }}
-        className={cn(
-          "inline-flex h-10 cursor-pointer items-center justify-center rounded-md px-5 text-sm font-medium transition-opacity hover:opacity-90",
-          variant === "inverse"
-            ? "bg-background text-foreground"
-            : "bg-foreground text-background",
-          className,
-        )}
+        className={cn(styles.cta, className)}
       >
         {label ?? dict.sendDialog.open}
       </a>

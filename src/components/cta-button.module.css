@@ -1,0 +1,71 @@
+/* The one CTA style — nav "Message", plus the home hero pair. The nav button is
+   the benchmark: a 40px pill, cream on near-black.
+
+   Hover wipes a --primary fill in from the left. The fill's leading edge is
+   skewed -10deg so it leans the same way as the italic emphasis in the h1
+   ("money", "data") — negative, because CSS y grows downward, so a negative
+   angle pushes the top edge right of the bottom edge, which is the direction
+   an italic face leans. */
+
+.cta {
+  position: relative;
+  /* Own stacking context, so the fill's z-index: -1 puts it above this
+     element's background but still below the label. No wrapper span needed. */
+  isolation: isolate;
+  overflow: hidden; /* clips the skewed fill to the pill */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  padding: 0 1.25rem;
+  border-radius: 0.375rem;
+  background-color: var(--foreground);
+  color: var(--background);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease;
+}
+
+/* Bleeds 12px past both ends: a 10deg lean across a 40px height displaces
+   ~7px, so a flush-width fill would leave a triangular gap at one corner.
+   Fixed px rather than a percentage — the gap is set by the height, which is
+   the same on every button, while the widths differ. */
+.cta::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -12px;
+  right: -12px;
+  z-index: -1;
+  background-color: var(--primary);
+  transform: translateX(-105%) skewX(-10deg);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cta:hover::before,
+.cta:focus-visible::before {
+  transform: translateX(0) skewX(-10deg);
+}
+
+/* Same blue as the fill, so the button reads as lighting up rather than
+   gaining a second colour. */
+.cta:hover,
+.cta:focus-visible {
+  box-shadow: 0 0 14px rgba(var(--primary-rgb), 0.45);
+}
+
+.cta:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta,
+  .cta::before {
+    transition: none;
+  }
+}

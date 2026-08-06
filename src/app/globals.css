@@ -14,13 +14,12 @@ html {
   --muted-foreground: #6f6a5f;
   --border: #e7dbbe;
   /* Raw channels so callers can build rgba() at their own alpha; --primary is
-     derived from it so the hero-button glow and the emphasized words in the h1
+     derived from it so the CTA hover fill and the emphasized words in the h1
      ("money", "data") cannot drift apart. */
   --primary-rgb: 79, 70, 229;
   --primary: rgb(var(--primary-rgb));
   --primary-foreground: #ffffff;
-  /* Warm accent shared by the home backdrop bars and the hero buttons. Same
-     reasoning — the two are meant to read as the same colour. */
+  /* Warm accent behind the home backdrop bars. */
   --accent-rgb: 255, 153, 28;
 }
 

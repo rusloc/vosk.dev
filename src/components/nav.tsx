@@ -5,11 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/cn";
-import {
-  localizedPath,
-  logicalPath,
-  type Locale,
-} from "@/lib/i18n/config";
+import { localizedPath, logicalPath, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { SendMessageButton } from "@/components/send-message-button";
 import styles from "./nav.module.css";
@@ -35,7 +31,9 @@ export function SiteNav({
 
   const current = logicalPath(pathname);
   const isActive = (path: string) =>
-    path === "/" ? current === "/" : current === path || current.startsWith(`${path}/`);
+    path === "/"
+      ? current === "/"
+      : current === path || current.startsWith(`${path}/`);
 
   const homeHref = localizedPath(locale, "/");
 
@@ -68,11 +66,12 @@ export function SiteNav({
             ))}
           </ul>
 
-          <SendMessageButton
-            locale={locale}
-            dict={dict}
-            className="ml-2 hidden md:inline-flex"
-          />
+          {/* Wrapper, not a `hidden md:inline-flex` on the button itself: the
+              button's `display` now comes from an (unlayered) CSS module, which
+              would win over Tailwind's layered `hidden`. */}
+          <div className="ml-2 hidden md:block">
+            <SendMessageButton locale={locale} dict={dict} />
+          </div>
 
           <button
             type="button"
@@ -127,11 +126,7 @@ export function SiteNav({
             </li>
           ))}
           <li className="px-3 py-2">
-            <SendMessageButton
-              locale={locale}
-              dict={dict}
-              className="inline-flex w-full"
-            />
+            <SendMessageButton locale={locale} dict={dict} className="w-full" />
           </li>
         </ul>
       )}

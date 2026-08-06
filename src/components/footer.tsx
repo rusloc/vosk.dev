@@ -2,7 +2,6 @@ import { Container } from "@/components/container";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { LangSwitcher } from "@/components/lang-switcher";
-import { siteConfig } from "@/lib/site";
 
 export function SiteFooter({
   locale,
@@ -18,14 +17,9 @@ export function SiteFooter({
       {/* Three columns so the language switch stays centered regardless of the
           side content (the availability line is hidden below `sm`). */}
       <Container className="text-muted-foreground grid grid-cols-3 items-center py-8 font-mono text-xs tracking-wider uppercase">
-        {/* Legal name, not the brand name: it's the accountable person behind
-            VOSK. Same string in every locale. */}
         <p className="flex items-center justify-self-start">
           © <span className="hidden sm:inline">&nbsp;VOSK</span>
           &nbsp;{year}
-          <span className="hidden md:inline">
-            &nbsp;· {siteConfig.author.legalName}
-          </span>
         </p>
 
         <div className="justify-self-center">

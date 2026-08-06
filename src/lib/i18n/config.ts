@@ -33,10 +33,16 @@ export function localizedPath(locale: Locale, path: string): string {
 /**
  * Inverse of {@link localizedPath}: strip a leading locale prefix to recover the
  * logical path. "/ru/blog/x" → "/blog/x"; "/blog/x" → "/blog/x".
+ *
+ * The DEFAULT locale's prefix is stripped too, even though it never appears in
+ * the browser. The proxy *rewrites* an unprefixed URL to "/en/…" internally, so
+ * `usePathname()` reports "/en/blog" while a page is being prerendered — leaving
+ * "/en" attached made every nav item fail its active check and pointed the
+ * language switch at "/ru/en/blog".
  */
 export function logicalPath(pathname: string): string {
   const [, first, ...rest] = pathname.split("/");
-  if (first && isLocale(first) && first !== defaultLocale) {
+  if (first && isLocale(first)) {
     return `/${rest.join("/")}`.replace(/\/$/, "") || "/";
   }
   return pathname;

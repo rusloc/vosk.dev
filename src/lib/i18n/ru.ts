@@ -30,9 +30,9 @@ export const ru: Dictionary = {
       em2: "данные",
       tail: ".",
     },
-    lede: "Полный цикл BI-услуг на современном стеке, open-source и SaaS — дашборды в Power BI и Apache Superset, модели данных и SQL-пайплайны под ними, превращающие сырые данные в решения.",
-    cta: "Смотреть кейсы",
-    ctaSecondary: "Услуги и цены",
+    lede: "Полный цикл BI-решений на современном open-source и SaaS стеке: MS Fabric, Power BI, Apache Superset. От извлечения сырых данных до визуализации.",
+    cta: "Кейсы",
+    ctaSecondary: "Цены",
   },
   footer: {
     available: "Открыт для новых проектов",

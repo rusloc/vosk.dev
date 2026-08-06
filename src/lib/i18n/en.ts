@@ -35,9 +35,9 @@ export const en = {
     },
     // The headline is brand voice and names nothing searchable; this line is the
     // page's only body copy, so it carries the query terms on its own.
-    lede: "Full-stack BI services on a modern stack, open-source and SaaS alike — Power BI and Apache Superset dashboards, the SQL data models and pipelines beneath them, turning raw data into decisions.",
-    cta: "View case studies",
-    ctaSecondary: "See services & pricing",
+    lede: "Full-stack BI solutions based on modern open-source & SaaS stack: MS Fabric, Power BI, Apache Superset. From raw data extraction to visualization.",
+    cta: "Showcases",
+    ctaSecondary: "Pricing",
   },
   footer: {
     available: "Available for new projects",

@@ -15,6 +15,10 @@ html {
   --border: #e7dbbe;
   --primary: #4f46e5;
   --primary-foreground: #ffffff;
+  /* Warm accent shared by the home backdrop bars and the hero buttons. Raw
+     channels, not a hex, so both can build rgba() at their own alpha from one
+     value — the two are meant to read as the same colour. */
+  --accent-rgb: 255, 153, 28;
 }
 
 /* The Preset SDK injects a bare, unstyled iframe into its mount point, so it has to

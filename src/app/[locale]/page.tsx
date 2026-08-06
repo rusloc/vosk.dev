@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Container } from "@/components/container";
 import { HomeBackdrop } from "@/components/home-backdrop";
 import { CodeTyper } from "@/components/code-typer";
+import { HeroButton } from "@/components/hero-button";
 import { JsonLd } from "@/components/json-ld";
 import { homeGraph } from "@/lib/structured-data";
 import { buildMetadata } from "@/lib/metadata";
@@ -45,18 +45,11 @@ export default async function Home({ params }: Props) {
           </p>
 
           <div className="mt-10 flex flex-wrap items-center gap-4">
-            <Link
-              href={localizedPath(l, "/work")}
-              className="bg-foreground text-background inline-flex h-12 items-center justify-center gap-2 rounded-md px-7 text-sm font-medium transition-opacity hover:opacity-90"
-            >
-              {t.cta} <span aria-hidden="true">→</span>
-            </Link>
-            <Link
+            <HeroButton href={localizedPath(l, "/work")} label={t.cta} />
+            <HeroButton
               href={localizedPath(l, "/services")}
-              className="border-border hover:bg-muted inline-flex h-12 items-center justify-center gap-2 rounded-md border px-7 text-sm font-medium transition-colors"
-            >
-              {t.ctaSecondary} <span aria-hidden="true">→</span>
-            </Link>
+              label={t.ctaSecondary}
+            />
           </div>
         </div>
       </Container>

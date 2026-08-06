@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/container";
 import { ContactForm } from "@/components/contact-form";
 import { JsonLd } from "@/components/json-ld";
+import { PageHeader } from "@/components/page-header";
 import { buildMetadata } from "@/lib/metadata";
 import { contactGraph } from "@/lib/structured-data";
 import { siteConfig } from "@/lib/site";
@@ -37,8 +38,7 @@ export default async function ContactPage({ params }: Props) {
         })}
       />
 
-      <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1>
-      <p className="text-muted-foreground mt-3 max-w-xl text-sm">{t.intro}</p>
+      <PageHeader title={t.title}>{t.intro}</PageHeader>
 
       <div className="mt-6 grid gap-8 md:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="max-w-xl">

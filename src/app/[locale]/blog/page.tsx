@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
+import { PageHeader } from "@/components/page-header";
 import { buildMetadata, englishOnlyPosture } from "@/lib/metadata";
 import { collectionGraph } from "@/lib/structured-data";
 import { getAllPosts, getAllTags } from "@/lib/content";
@@ -45,8 +46,7 @@ export default async function BlogPage({ params }: Props) {
       {/* Benchmark height for the list pages: blog with three posts. Showcase and
           services stretch to the same min-height on desktop. */}
       <div className="flex flex-col lg:min-h-[660px]">
-        <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1>
-        <p className="text-muted-foreground mt-3 max-w-2xl">{t.intro}</p>
+        <PageHeader title={t.title}>{t.intro}</PageHeader>
 
         {/* Visible at every width, unlike the per-post chips — this is the only
             entry point to the filter pages on mobile (and for mobile crawlers). */}

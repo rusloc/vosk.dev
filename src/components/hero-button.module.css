@@ -22,10 +22,16 @@
   background-color: rgba(var(--accent-rgb), 0.2);
 }
 
+/* Hover blooms a wide, soft glow in --primary — the same blue as the emphasized
+   words in the h1. Two layers so the falloff is gradual rather than a hard ring:
+   a tight core and a large diffuse halo. This replaces the accent-coloured glow
+   the pattern shipped with; two differently-coloured shadows read as muddy. */
 .frame:hover,
 .frame:focus-visible {
   background-color: rgba(var(--accent-rgb), 0.7);
-  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
+  box-shadow:
+    0 0 18px rgba(var(--primary-rgb), 0.55),
+    0 0 48px 14px rgba(var(--primary-rgb), 0.4);
   outline: none;
 }
 

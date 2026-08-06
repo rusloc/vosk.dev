@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
+import { PageHeader } from "@/components/page-header";
 import { buildMetadata } from "@/lib/metadata";
 import { serviceGraph } from "@/lib/structured-data";
 import { isLocale, type Locale } from "@/lib/i18n/config";
@@ -43,8 +44,7 @@ export default async function ServicesPage({ params }: Props) {
         {/* Title matches the blog / showcase pages: plain, no highlight. The
             intro under it is the page's only prose — without it the page is nine
             price cards and nothing describing what's being sold. */}
-        <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1>
-        <p className="text-muted-foreground mt-3 max-w-2xl">{t.intro}</p>
+        <PageHeader title={t.title}>{t.intro}</PageHeader>
 
         {/* Heading for the three engagement columns. The tier names inside the
             carousels are h3s, so without this they'd skip a level straight from

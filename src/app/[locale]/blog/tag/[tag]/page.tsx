@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
+import { PageHeader } from "@/components/page-header";
 import { buildMetadata, englishOnlyPosture } from "@/lib/metadata";
 import { breadcrumbGraph, collectionGraph } from "@/lib/structured-data";
 import { getAllTags, getPostsByTag } from "@/lib/content";
@@ -73,10 +74,9 @@ export default async function TagPage({ params }: Props) {
         <p className="text-muted-foreground mt-6 font-mono text-xs tracking-wider uppercase">
           {t.tagged}
         </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">{label}</h1>
-        <p className="text-muted-foreground mt-3 max-w-2xl">
+        <PageHeader title={label} titleClassName="mt-1">
           {t.tagIntro.replace("{tag}", label)}
-        </p>
+        </PageHeader>
 
         <BlogList posts={posts} locale={l} t={t} />
       </div>

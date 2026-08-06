@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
-import { SendMessageButton } from "@/components/send-message-button";
 import { buildMetadata } from "@/lib/metadata";
 import { serviceGraph } from "@/lib/structured-data";
-import { isLocale, localizedPath, type Locale } from "@/lib/i18n/config";
+import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { ServiceCarousel } from "./service-carousel";
 
@@ -26,8 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ServicesPage({ params }: Props) {
   const { locale } = await params;
   const l = (isLocale(locale) ? locale : "en") as Locale;
-  const dict = getDictionary(l);
-  const t = dict.services;
+  const t = getDictionary(l).services;
   const aria = { prevAria: t.prevAria, nextAria: t.nextAria };
 
   return (
@@ -41,7 +38,7 @@ export default async function ServicesPage({ params }: Props) {
       />
 
       {/* Matches the blog benchmark height on desktop; the three columns and
-          their cards stretch to fill the space between the title and the CTA. */}
+          their cards stretch to fill the space below the title. */}
       <div className="flex flex-col lg:min-h-[660px]">
         {/* Title matches the blog / showcase pages: plain, no highlight. The
             intro under it is the page's only prose — without it the page is nine
@@ -101,42 +98,6 @@ export default async function ServicesPage({ params }: Props) {
             ))}
           </ul>
         </div>
-
-        {/* CTA banner — the button opens the same message popup as the nav. */}
-        <div className="bg-foreground mt-6 flex flex-col gap-4 rounded-2xl px-8 py-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="text-background text-xl font-semibold tracking-tight">
-            {t.cta.title}
-          </div>
-          <div className="mt-1 text-sm text-[#b8b0a0]">{t.cta.body}</div>
-        </div>
-        <SendMessageButton
-          locale={l}
-          dict={dict}
-          label={t.cta.button}
-          variant="inverse"
-          className="shrink-0"
-        />
-      </div>
-
-        {/* The page had no outbound internal links at all — the proof of the
-            work being sold sat two clicks away behind the nav. */}
-        <p className="text-muted-foreground mt-6 text-sm">
-          {t.seeAlso}{" "}
-          <Link
-            href={localizedPath(l, "/work")}
-            className="text-primary hover:underline"
-          >
-            {dict.nav.work}
-          </Link>
-          {" · "}
-          <Link
-            href={localizedPath(l, "/blog")}
-            className="text-primary hover:underline"
-          >
-            {dict.nav.blog}
-          </Link>
-        </p>
       </div>
     </Container>
   );

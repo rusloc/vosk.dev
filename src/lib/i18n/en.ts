@@ -51,7 +51,6 @@ export const en = {
     intro:
       "BI delivery and consulting on Power BI and Apache Superset — pick the engagement that fits. Monthly capacity for teams with an ongoing reporting load, fixed-scope projects for a specific build, and one-off urgent work when a report breaks before a deadline.",
     engagementsHeading: "Engagement models",
-    seeAlso: "See also:",
     subscription: {
       eyebrow: "Subscription",
       tiers: [
@@ -131,11 +130,6 @@ export const en = {
           unit: "/ hr",
         },
       ],
-    },
-    cta: {
-      title: "Not sure which one fits?",
-      body: "Tell me what you're working on and I'll point you to the right engagement.",
-      button: "Message me",
     },
     // Placeholder terms shown by the card's conditions popup — real copy TBD.
     conditions: {

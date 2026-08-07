@@ -21,12 +21,13 @@ const ogLocale = (locale: Locale) => (locale === "ru" ? "ru-RU" : "en-US");
  * Emit once on the home page via <JsonLd data={homeGraph(locale)} />.
  *
  * `sameAs` is intentionally omitted until real social profile URLs exist — see
- * the TODO in src/lib/site.ts. Person markup mirrors the visible name on the
- * Contacts page (required for policy compliance).
+ * the TODO in src/lib/site.ts. Person markup mirrors the byline the site shows
+ * publicly — blog authors and the per-post OG cards (required for policy
+ * compliance). The Contacts card deliberately shows the first name only; the
+ * full name is what this markup has to match, and it is visible on every post.
  */
 export function homeGraph(locale: Locale = defaultLocale): Record<string, unknown> {
-  const { name, title, description, author, contactEmail, contactPhoneHref } =
-    siteConfig;
+  const { name, title, description, author, contactEmail } = siteConfig;
 
   return {
     "@context": "https://schema.org",
@@ -41,7 +42,6 @@ export function homeGraph(locale: Locale = defaultLocale): Record<string, unknow
         areaServed: "Worldwide",
         founder: { "@id": PERSON_ID },
         email: contactEmail,
-        telephone: contactPhoneHref,
         knowsAbout: [
           "Business Intelligence",
           "Power BI",
@@ -227,12 +227,17 @@ export function serviceGraph(
   };
 }
 
-/** ContactPage + the org's ContactPoint. Both values are visible on the page. */
+/**
+ * ContactPage + the org's ContactPoint. `email` is the only channel here because
+ * it is the only one visible on the page — the phone row was removed 08-07 and
+ * `telephone` went with it, since markup that claims a channel the page does not
+ * offer is exactly the mismatch this file exists to avoid.
+ */
 export function contactGraph(
   locale: Locale,
   { name, description }: { name: string; description: string },
 ): Record<string, unknown> {
-  const { contactEmail, contactPhoneHref } = siteConfig;
+  const { contactEmail } = siteConfig;
 
   return {
     "@context": "https://schema.org",
@@ -248,7 +253,6 @@ export function contactGraph(
         "@type": "ContactPoint",
         contactType: "sales",
         email: contactEmail,
-        telephone: contactPhoneHref,
         areaServed: "Worldwide",
         availableLanguage: ["en", "ru"],
       },

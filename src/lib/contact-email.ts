@@ -164,7 +164,7 @@ export function renderAutoReplyEmail(input: {
   message: string;
 }): { html: string; text: string } {
   const { message } = input;
-  const author = siteConfig.author.name.split(" ")[0] ?? siteConfig.author.name; // "Kirill"
+  const author = siteConfig.author.firstName;
   const workUrl = `${siteConfig.url.replace(/\/$/, "")}/work`;
 
   const text = [

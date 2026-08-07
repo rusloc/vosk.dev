@@ -149,11 +149,14 @@ export const en = {
     title: "Contacts",
     metaTitle: "Contact a Freelance BI Analyst",
     metaDescription:
-      "Get in touch about a Power BI, Superset, or analytics project — by form, email, or phone. Freelance BI analyst working with clients worldwide.",
+      "Get in touch about a Power BI, Superset, or analytics project — by form or email. Freelance BI analyst working with clients worldwide.",
     intro: "Send your business related message straight into my email box.",
     labelName: "Name",
     labelEmail: "Email",
-    labelPhone: "Phone",
+    labelLinkedin: "LinkedIn",
+    labelUpwork: "Upwork",
+    // Shown in place of a profile link until siteConfig.social holds a real URL.
+    linkPending: "Coming soon",
   },
   form: {
     emailLabel: "Email",

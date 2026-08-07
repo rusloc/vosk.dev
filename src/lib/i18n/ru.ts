@@ -143,11 +143,13 @@ export const ru: Dictionary = {
     title: "Контакты",
     metaTitle: "Связаться с BI-аналитиком",
     metaDescription:
-      "Напишите о проекте на Power BI, Superset или аналитике — через форму, почту или телефон. BI-аналитик на фрилансе, работаю с клиентами по всему миру.",
+      "Напишите о проекте на Power BI, Superset или аналитике — через форму или почту. BI-аналитик на фрилансе, работаю с клиентами по всему миру.",
     intro: "Отправьте деловое сообщение прямо мне на почту.",
     labelName: "Имя",
     labelEmail: "Почта",
-    labelPhone: "Телефон",
+    labelLinkedin: "LinkedIn",
+    labelUpwork: "Upwork",
+    linkPending: "Скоро",
   },
   form: {
     emailLabel: "Почта",

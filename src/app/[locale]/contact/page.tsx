@@ -11,6 +11,29 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 
 type Props = { params: Promise<{ locale: string }> };
 
+/**
+ * A social profile row. Until `siteConfig.social` holds a real URL this renders
+ * dull, non-interactive text — linking to a platform's root would dead-end the
+ * visitor on someone else's home page, which is worse than no link. Setting the
+ * URL in site.ts is the only edit needed to make it live; `rel="me"` is the
+ * identity claim that pairs with JSON-LD `sameAs` when those URLs land.
+ */
+function Profile({ url, pending }: { url: string; pending: string }) {
+  if (!url) {
+    return <span className="text-muted-foreground/60 italic">{pending}</span>;
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="me noopener noreferrer"
+      className="text-primary hover:underline"
+    >
+      {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+    </a>
+  );
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const l = (isLocale(locale) ? locale : "en") as Locale;
@@ -45,38 +68,41 @@ export default async function ContactPage({ params }: Props) {
           <ContactForm locale={l} dict={dict} />
         </div>
 
-        <dl className="md:border-border space-y-3 text-sm md:border-l md:pl-8">
-          <div className="flex gap-2">
-            <dt className="text-muted-foreground w-16">{t.labelName}</dt>
-            <dd>
-              <span className="font-medium">{siteConfig.author.name}</span>
-              <span className="text-muted-foreground block text-xs">
-                {siteConfig.author.jobTitle}
-              </span>
-            </dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="text-muted-foreground w-16">{t.labelEmail}</dt>
-            <dd>
-              <a
-                href={`mailto:${siteConfig.contactEmail}`}
-                className="text-primary hover:underline"
-              >
-                {siteConfig.contactEmail}
-              </a>
-            </dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="text-muted-foreground w-16">{t.labelPhone}</dt>
-            <dd>
-              <a
-                href={`tel:${siteConfig.contactPhoneHref}`}
-                className="text-primary hover:underline"
-              >
-                {siteConfig.contactPhone}
-              </a>
-            </dd>
-          </div>
+        {/*
+          Two-column grid rather than per-row flex + a fixed-width `dt`: the
+          label column sizes to the longest label, so "LinkedIn" and the longer
+          Russian labels stay aligned with "Name" instead of overflowing a w-16
+          cell. `items-baseline` sits the label on the value's first baseline.
+
+          `content-start` is load-bearing: this <dl> is itself a grid item that
+          stretches to the form's height, and grid's default `align-content:
+          stretch` would hand all that slack to the four auto-sized rows — which
+          it did, spacing them ~95px apart instead of 12. The old `space-y-3`
+          block layout could not hit this.
+        */}
+        <dl className="md:border-border grid grid-cols-[auto_1fr] content-start items-baseline gap-x-6 gap-y-3 text-sm md:border-l md:pl-8">
+          <dt className="text-muted-foreground">{t.labelName}</dt>
+          <dd className="font-medium">{siteConfig.author.firstName}</dd>
+
+          <dt className="text-muted-foreground">{t.labelEmail}</dt>
+          <dd>
+            <a
+              href={`mailto:${siteConfig.contactEmail}`}
+              className="text-primary hover:underline"
+            >
+              {siteConfig.contactEmail}
+            </a>
+          </dd>
+
+          <dt className="text-muted-foreground">{t.labelLinkedin}</dt>
+          <dd>
+            <Profile url={siteConfig.social.linkedin} pending={t.linkPending} />
+          </dd>
+
+          <dt className="text-muted-foreground">{t.labelUpwork}</dt>
+          <dd>
+            <Profile url={siteConfig.social.upwork} pending={t.linkPending} />
+          </dd>
         </dl>
       </div>
     </Container>

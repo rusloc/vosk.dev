@@ -13,8 +13,12 @@ export const siteConfig = {
   url: env.NEXT_PUBLIC_SITE_URL,
   locale: "en_US",
   // Public/professional name; "Vosk" ties the person to the vosk.dev brand.
+  // `name` is the byline (blog authors, OG cards, Person JSON-LD); `firstName`
+  // is the informal form used where a full name reads stiff — the Contacts card
+  // and the auto-reply signature.
   author: {
     name: "Kirill Vosk",
+    firstName: "Kirill",
     jobTitle: "Freelance BI Analyst & Developer",
   },
   nav: [
@@ -25,14 +29,15 @@ export const siteConfig = {
     { href: "/contact", label: "Contacts" },
   ],
   contactEmail: "vosk.dev@gmail.com",
-  // Display form; `contactPhoneHref` is the tel: value (digits + leading +).
-  contactPhone: "+90 506 042 59 33",
-  contactPhoneHref: "+905060425933",
   // TODO: replace with real profile URLs, then add them to JSON-LD `sameAs`
   // in src/lib/structured-data.ts (currently omitted — no false entity signals).
+  // An empty string renders the Contacts row as a dull placeholder instead of a
+  // live link; a root URL like "https://www.linkedin.com/" would dead-end the
+  // visitor on the platform's home page, which is worse than no link at all.
   social: {
-    github: "https://github.com/",
-    linkedin: "https://www.linkedin.com/",
+    github: "",
+    linkedin: "",
+    upwork: "",
   },
 } as const;
 

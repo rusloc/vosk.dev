@@ -78,6 +78,8 @@ git push
 ## Logging (lightweight)
 
 - `.log/coms/coms {yyyy-mm-dd}.md` — append a one-line entry per user request + brief response to today's file (create it if absent; one file per day, sibling to `.log/plan/` and `.log/daily/`). Tag `#decision` / `#idea` / `#bug` inline for grep. That's the whole routine — no daily/weekly/day-close ceremony unless the user asks to expand it.
+- **Derive counters, never increment them.** Ages and tallies ("Nth day untracked", "Nth board survived") must be computed from a stated origin date/commit each time they're written. A restated number is never re-derived and always drifts — it has three times in this trail.
+- **A session that crosses midnight logs each commit to its own date, and does not close the new day.** Closing a day that is 20 minutes old leaves the calendar day with a closed daily and no plan, and pushes every board counter a day ahead.
 
 ## Core coding rules
 

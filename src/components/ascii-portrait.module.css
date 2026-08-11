@@ -1,0 +1,30 @@
+/* Decorative ASCII portrait — full-width band under the contacts grid.
+   Purely decorative: no hover, no click, no popup. Dropping all interaction is
+   what keeps this free of the z-index / pointer-events wrinkle the home-page
+   code block needed. */
+
+.wrap {
+  /* The art sizes itself against THIS box, not the viewport, so it still fills
+     the band correctly inside any container padding. */
+  container-type: inline-size;
+  overflow: hidden;
+}
+
+.art {
+  margin: 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  /* A monospace cell advances 0.6em, so N columns occupy N * 0.6 em. Dividing
+     the container width by that (--char-scale, computed once in the component)
+     yields the font-size at which the art spans the band exactly — at any
+     viewport, with no breakpoints. */
+  font-size: calc(100cqw / var(--char-scale));
+  line-height: 1;
+  white-space: pre;
+  color: var(--foreground);
+
+  /* Reserve the finished height before the first character lands. Without
+     this the page below is shoved down 60-odd rows over two seconds, which is
+     a layout shift that lands squarely in CLS. 1em resolves against the
+     font-size above, so it scales with the art. */
+  min-height: calc(var(--rows) * 1em);
+}

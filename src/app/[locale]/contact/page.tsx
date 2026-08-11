@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { AsciiPortrait } from "@/components/ascii-portrait";
 import { Container } from "@/components/container";
 import { ContactForm } from "@/components/contact-form";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader } from "@/components/page-header";
+import { PORTRAIT_CODE } from "@/lib/ascii-portrait-art";
 import { buildMetadata } from "@/lib/metadata";
 import { contactGraph } from "@/lib/structured-data";
 import { siteConfig } from "@/lib/site";
@@ -104,6 +106,16 @@ export default async function ContactPage({ params }: Props) {
             <Profile url={siteConfig.social.upwork} pending={t.linkPending} />
           </dd>
         </dl>
+      </div>
+
+      {/*
+        Decorative ASCII portrait, typed in over ~2s on load. Swap
+        PORTRAIT_CODE for PORTRAIT_BLOCKS (same module) to switch between the
+        code-glyph and block-shading renderings — both are generated in one
+        pass by scripts/portrait-to-ascii.py, so no regenerate is needed.
+      */}
+      <div className="mt-12 sm:mt-16">
+        <AsciiPortrait art={PORTRAIT_CODE} />
       </div>
     </Container>
   );

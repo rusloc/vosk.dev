@@ -216,11 +216,6 @@ export const ru: Dictionary = {
     breadcrumbHome: "Главная",
     aboutHeading: "О проекте",
     liveReportHeading: "Живой отчёт",
-    ctaTitle: "Хотите так же?",
-    ctaBody:
-      "Это и есть та работа, которую я делаю для клиентов — от модели данных до отчёта, который открывают каждое утро.",
-    ctaServices: "Услуги и цены",
-    ctaContact: "Связаться",
     metaDescription:
       "Клиентские дашборды в виде кейсов — с историей проекта и живым отчётом Power BI или Apache Superset, который можно изучить.",
     intro: {
@@ -233,7 +228,6 @@ export const ru: Dictionary = {
     empty: "Кейсы скоро появятся.",
     backToShowcase: "Назад в портфолио",
     openLiveDashboard: "Открыть живой дашборд",
-    readWriteUp: "Читать полный разбор в блоге",
     openLiveReport: "Открыть живой отчёт",
     dashboardLoading: "Загружаем живой дашборд…",
     dashboardError:

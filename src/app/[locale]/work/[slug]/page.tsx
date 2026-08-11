@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
 import { SupersetEmbed } from "@/components/superset-embed";
@@ -57,7 +56,7 @@ export default async function ShowcasePage({ params }: Props) {
   if (!source) notFound();
 
   const showcase = localize(source, l);
-  const { title, platform, details, articleSlug } = showcase;
+  const { title, platform, details } = showcase;
   const trail = [
     { name: t.breadcrumbHome, path: "/" },
     { name: t.title, path: "/work" },
@@ -91,7 +90,30 @@ export default async function ShowcasePage({ params }: Props) {
         />
       )}
 
-      <Breadcrumbs locale={l} trail={trail} />
+      {/* One way back, not a crumb trail. The breadcrumb JSON-LD above still
+          describes the same Home → Showcase → title hierarchy this link walks up. */}
+      <Link
+        href={localizedPath(l, "/work")}
+        className="text-muted-foreground hover:text-foreground group inline-flex w-fit items-center gap-2 text-sm transition-colors"
+      >
+        <span className="border-border group-hover:border-foreground flex h-8 w-8 items-center justify-center rounded-full border transition-colors">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            className="h-4 w-4"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 12H5M11 18l-6-6 6-6"
+            />
+          </svg>
+        </span>
+        {t.backToShowcase}
+      </Link>
 
       {/* Title and platform pill share one row — stacked, they cost the report
           a line of height for no added meaning. */}
@@ -134,11 +156,10 @@ export default async function ShowcasePage({ params }: Props) {
         )}
       </figure>
 
-      {/* Everything that used to run down the page, folded into one band under the
-          report: description + its two links on the left, the onward CTA on the
-          right. Case studies used to dead-end at the embed with no path to the
-          things a visitor who liked it would buy — that path survives the squeeze. */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-8">
+      {/* Description left, dashboard link right — same row, so the link sits directly
+          under the report's bottom-right corner instead of costing its own line.
+          `items-start` keeps it level with the first description line. */}
+      <div className="mt-3 flex items-start justify-between gap-6">
         <section>
           <h2 className="sr-only">{t.aboutHeading}</h2>
           <div className="text-muted-foreground space-y-1 text-sm">
@@ -146,76 +167,32 @@ export default async function ShowcasePage({ params }: Props) {
               <p key={i}>{paragraph}</p>
             ))}
           </div>
-
-          <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm font-medium">
-            {articleSlug && (
-              <Link
-                href={localizedPath(l, `/blog/${articleSlug}`)}
-                className="text-primary inline-flex items-center gap-1.5 hover:underline"
-              >
-                {t.readWriteUp}
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  className="h-4 w-4"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 12h14M13 6l6 6-6 6"
-                  />
-                </svg>
-              </Link>
-            )}
-
-            {showcase.platform === "power-bi" && (
-              <a
-                href={showcase.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary inline-flex items-center gap-1.5 hover:underline"
-              >
-                {t.openLiveDashboard}
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  className="h-4 w-4"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M7 17 17 7M9 7h8v8"
-                  />
-                </svg>
-              </a>
-            )}
-          </div>
         </section>
 
-        <aside className="border-border bg-muted/40 rounded-lg border p-4 lg:max-w-xs">
-          <h2 className="text-sm font-semibold tracking-tight">{t.ctaTitle}</h2>
-          <p className="text-muted-foreground mt-1 text-xs">{t.ctaBody}</p>
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium">
-            <Link
-              href={localizedPath(l, "/services")}
-              className="text-primary hover:underline"
+        {showcase.platform === "power-bi" && (
+          <a
+            href={showcase.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary inline-flex shrink-0 items-center gap-1.5 text-sm font-medium hover:underline"
+          >
+            {t.openLiveDashboard}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              className="h-4 w-4"
+              aria-hidden="true"
             >
-              {t.ctaServices} →
-            </Link>
-            <Link
-              href={localizedPath(l, "/contact")}
-              className="text-primary hover:underline"
-            >
-              {t.ctaContact} →
-            </Link>
-          </div>
-        </aside>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M7 17 17 7M9 7h8v8"
+              />
+            </svg>
+          </a>
+        )}
       </div>
     </Container>
   );

@@ -226,11 +226,6 @@ export const en = {
     breadcrumbHome: "Home",
     aboutHeading: "About this project",
     liveReportHeading: "The live report",
-    ctaTitle: "Want something like this?",
-    ctaBody:
-      "This is the kind of work I do for clients — from the data model up to the report they open every morning.",
-    ctaServices: "See services & pricing",
-    ctaContact: "Get in touch",
     metaDescription:
       "Client dashboards written up as case studies — each with the story and a live Power BI or Apache Superset report you can explore.",
     intro: {
@@ -243,7 +238,6 @@ export const en = {
     empty: "Case studies coming soon.",
     backToShowcase: "Back to showcase",
     openLiveDashboard: "Open live dashboard",
-    readWriteUp: "Read the full write-up on the blog",
     openLiveReport: "Open the live report",
     // Guest-token dashboards (Superset) mount client-side, so they need a wait state
     // and a visible failure — an embed that quietly renders nothing reads as a bug.

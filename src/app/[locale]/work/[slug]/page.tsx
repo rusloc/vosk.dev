@@ -65,7 +65,19 @@ export default async function ShowcasePage({ params }: Props) {
   ];
 
   return (
-    <Container className="py-16 sm:py-20">
+    /* One screen, no page scroll: viewport minus the site chrome, with the report as
+       the only child allowed to grow into what's left.
+
+       9.125rem is measured, not derived — sticky nav 57px (`h-14` + 1px border) plus
+       footer 89px (1px border + `py-8` + a 24px line). `h-full` would be the tidier
+       expression but does not work here: <main> is `flex-1` under a `min-h-full` body,
+       so its height is never definite and the percentage silently falls back to auto,
+       collapsing the report to a ~150px default iframe box. If the nav or footer
+       height changes, this number has to change with it.
+
+       Locked from `lg` up only: squeezing a BI dashboard into a phone viewport makes
+       it unreadable, so below that the page falls back to ordinary flow. */
+    <Container className="flex flex-col py-6 lg:h-[calc(100dvh-9.125rem)]">
       <JsonLd data={breadcrumbGraph(l, trail)} />
       {!showcase.noindex && (
         <JsonLd
@@ -81,62 +93,28 @@ export default async function ShowcasePage({ params }: Props) {
 
       <Breadcrumbs locale={l} trail={trail} />
 
-      <header className="mt-6">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+      {/* Title and platform pill share one row — stacked, they cost the report
+          a line of height for no added meaning. */}
+      <header className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
           {title}
         </h1>
-        <div className="text-muted-foreground mt-3 text-xs">
-          <span className="border-border rounded-full border px-2.5 py-0.5">
-            {PLATFORM_LABEL[platform]}
-          </span>
-        </div>
+        <span className="text-muted-foreground border-border rounded-full border px-2.5 py-0.5 text-xs">
+          {PLATFORM_LABEL[platform]}
+        </span>
       </header>
 
-      {/* Case-study prose. The live report below is an iframe, so this text is
-          the only thing a crawler can read about the engagement — headings
-          included, rather than an undifferentiated run of <p>s. */}
-      <section className="mt-8 max-w-2xl">
-        <h2 className="text-lg font-semibold tracking-tight">
-          {t.aboutHeading}
-        </h2>
-        <div className="text-muted-foreground mt-3 space-y-4">
-          {details.map((paragraph, i) => (
-            <p key={i}>{paragraph}</p>
-          ))}
-        </div>
-      </section>
+      {/* The report is the hero: `flex-1 min-h-0` hands it every pixel the rest of
+          the page doesn't claim, and lets it shrink instead of pushing the page
+          taller than the viewport. Both section headings are sr-only — the outline
+          still reads correctly to crawlers and screen readers, but two 1.75rem
+          headings are height the dashboard should have.
 
-      {articleSlug && (
-        <Link
-          href={localizedPath(l, `/blog/${articleSlug}`)}
-          className="text-primary mt-6 inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
-        >
-          {t.readWriteUp}
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            className="h-4 w-4"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M5 12h14M13 6l6 6-6 6"
-            />
-          </svg>
-        </Link>
-      )}
-
-      <h2 className="mt-12 text-lg font-semibold tracking-tight">
-        {t.liveReportHeading}
-      </h2>
-
-      {/* Example report — embedded live. Power BI loads a public URL straight into a lazy
-          iframe; Superset has no public URL, so the SDK mints a guest token per viewer and
-          there is no "open live dashboard" target to offer (ADR-0002). */}
-      <figure className="mt-4">
+          Power BI loads a public URL straight into a lazy iframe; Superset has no
+          public URL, so the SDK mints a guest token per viewer and there is no
+          "open live dashboard" target to offer (ADR-0002). */}
+      <h2 className="sr-only">{t.liveReportHeading}</h2>
+      <figure className="border-border bg-muted mt-3 aspect-video w-full overflow-hidden rounded-lg border lg:aspect-auto lg:min-h-0 lg:flex-1">
         {showcase.platform === "superset" ? (
           <SupersetEmbed
             slug={showcase.slug}
@@ -146,22 +124,59 @@ export default async function ShowcasePage({ params }: Props) {
             errorLabel={t.dashboardError}
           />
         ) : (
-          <>
-            <div className="border-border bg-muted aspect-video w-full overflow-hidden rounded-lg border">
-              <iframe
-                src={showcase.embedUrl}
-                title={`${title} — live ${PLATFORM_LABEL[platform]} dashboard`}
-                loading="lazy"
-                allowFullScreen
-                className="h-full w-full border-0"
-              />
-            </div>
-            <figcaption className="mt-3">
+          <iframe
+            src={showcase.embedUrl}
+            title={`${title} — live ${PLATFORM_LABEL[platform]} dashboard`}
+            loading="lazy"
+            allowFullScreen
+            className="h-full w-full border-0"
+          />
+        )}
+      </figure>
+
+      {/* Everything that used to run down the page, folded into one band under the
+          report: description + its two links on the left, the onward CTA on the
+          right. Case studies used to dead-end at the embed with no path to the
+          things a visitor who liked it would buy — that path survives the squeeze. */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-8">
+        <section>
+          <h2 className="sr-only">{t.aboutHeading}</h2>
+          <div className="text-muted-foreground space-y-1 text-sm">
+            {details.map((paragraph, i) => (
+              <p key={i}>{paragraph}</p>
+            ))}
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm font-medium">
+            {articleSlug && (
+              <Link
+                href={localizedPath(l, `/blog/${articleSlug}`)}
+                className="text-primary inline-flex items-center gap-1.5 hover:underline"
+              >
+                {t.readWriteUp}
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  className="h-4 w-4"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 12h14M13 6l6 6-6 6"
+                  />
+                </svg>
+              </Link>
+            )}
+
+            {showcase.platform === "power-bi" && (
               <a
                 href={showcase.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
+                className="text-primary inline-flex items-center gap-1.5 hover:underline"
               >
                 {t.openLiveDashboard}
                 <svg
@@ -179,33 +194,29 @@ export default async function ShowcasePage({ params }: Props) {
                   />
                 </svg>
               </a>
-            </figcaption>
-          </>
-        )}
-      </figure>
+            )}
+          </div>
+        </section>
 
-      {/* Case studies used to dead-end at the embed — no path onward to the
-          things a visitor who liked it would buy. */}
-      <aside className="border-border bg-muted/40 mt-12 rounded-lg border p-6">
-        <h2 className="text-base font-semibold tracking-tight">{t.ctaTitle}</h2>
-        <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
-          {t.ctaBody}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-4 text-sm font-medium">
-          <Link
-            href={localizedPath(l, "/services")}
-            className="text-primary hover:underline"
-          >
-            {t.ctaServices} →
-          </Link>
-          <Link
-            href={localizedPath(l, "/contact")}
-            className="text-primary hover:underline"
-          >
-            {t.ctaContact} →
-          </Link>
-        </div>
-      </aside>
+        <aside className="border-border bg-muted/40 rounded-lg border p-4 lg:max-w-xs">
+          <h2 className="text-sm font-semibold tracking-tight">{t.ctaTitle}</h2>
+          <p className="text-muted-foreground mt-1 text-xs">{t.ctaBody}</p>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium">
+            <Link
+              href={localizedPath(l, "/services")}
+              className="text-primary hover:underline"
+            >
+              {t.ctaServices} →
+            </Link>
+            <Link
+              href={localizedPath(l, "/contact")}
+              className="text-primary hover:underline"
+            >
+              {t.ctaContact} →
+            </Link>
+          </div>
+        </aside>
+      </div>
     </Container>
   );
 }

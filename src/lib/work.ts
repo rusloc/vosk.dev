@@ -80,38 +80,11 @@ export const PLATFORM_LABEL: Record<ShowcasePlatform, string> = {
 const UNSET_EMBED_ID = "REPLACE-WITH-EMBED-UUID";
 
 /**
- * DRAFT — placeholder case studies to populate the layout.
- * `embedUrl` on the first entry is Microsoft's public Power BI sample (frameable, always live).
- * Replace it with a real client report's publish-to-web `?r=…` URL, and flesh out
- * `details` with the actual story (goal → data → what the dashboard changed).
+ * The showcase entries themselves. Adding one: a real client report's publish-to-web
+ * `?r=…` URL for Power BI (or an embed UUID for Superset), plus `details` carrying the
+ * actual story — goal → data → what the dashboard changed.
  */
 const allShowcases: Showcase[] = [
-  {
-    slug: "retail-sales",
-    platform: "power-bi",
-    title: {
-      en: "Retail sales performance",
-      ru: "Результаты розничных продаж",
-    },
-    summary: {
-      en: "Revenue sliced by region, product and time. Filter, cross-highlight and drill down exactly as the client does.",
-      ru: "Выручка в разрезе региона, продукта и времени. Фильтруйте, используйте кросс-выделение и детализацию — ровно так же, как это делает клиент.",
-    },
-    metric: "$4.2M",
-    noindex: true,
-    embedUrl: "https://playground.powerbi.com/sampleReportEmbed",
-    href: "https://playground.powerbi.com/sampleReportEmbed",
-    details: {
-      en: [
-        "This is a placeholder case study. Replace it with a real engagement: the client's goal, the data sources behind it, and what the dashboard let them decide.",
-        "The report below is embedded live from the Power BI service — filter, drill down, and interact with it exactly as the client does day to day.",
-      ],
-      ru: [
-        "Это кейс-заглушка. Замените его реальным проектом: цель клиента, источники данных за ней и решения, которые дашборд позволил принять.",
-        "Отчёт ниже встроен напрямую из сервиса Power BI — фильтруйте, проваливайтесь в детали и работайте с ним так же, как клиент делает это каждый день.",
-      ],
-    },
-  },
   {
     slug: "mining-time-utilization",
     platform: "power-bi",
@@ -128,14 +101,17 @@ const allShowcases: Showcase[] = [
       "https://app.powerbi.com/view?r=eyJrIjoiY2M3YzU2MjAtNjdlOC00NGU2LThlMTItMzc2MTE2Yjk0MDlkIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9&embedImagePlaceholder=true",
     href: "https://app.powerbi.com/view?r=eyJrIjoiY2M3YzU2MjAtNjdlOC00NGU2LThlMTItMzc2MTE2Yjk0MDlkIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9&embedImagePlaceholder=true",
     articleSlug: "power-bi-time-utilization-funnel",
+    // Two short lines by design: the detail page is a one-screen layout where the
+    // live report is the hero, so `details` is a caption, not a case study. The
+    // long-form story lives in the linked `articleSlug` write-up.
     details: {
       en: [
-        'A coal-mining company needed to see, at a glance, where a heavy-loader fleet\'s time actually goes. The funnel starts at 100% of the 24/7 clock and deducts each idle category in turn, with breakpoints marking equipment-readiness stages — "ready for work," then "effective work time."',
-        "Every figure is a percentage of total available time, and a switcher flips between linear utilization and a weighted average (weighted by each excavator's ladle volume). It runs on Power BI's default stacked bar chart plus three DAX measures — all numbers here are altered to hide the client's real metrics.",
+        "Large coal mining company truck monitor.",
+        "The 24/7 clock, deducted category by category down to effective work time.",
       ],
       ru: [
-        "Угольной компании нужно было с одного взгляда понимать, куда на самом деле уходит время парка тяжёлых погрузчиков. Воронка стартует со 100% круглосуточного календарного времени и по очереди вычитает каждую категорию простоя, а контрольные точки отмечают стадии готовности техники — «готов к работе», затем «эффективное рабочее время».",
-        "Каждая величина — процент от общего доступного времени, а переключатель меняет линейное использование на средневзвешенное (по объёму ковша каждого экскаватора). Всё построено на стандартной гистограмме с накоплением в Power BI и трёх мерах DAX; все числа здесь изменены, чтобы скрыть реальные метрики клиента.",
+        "Монитор парка техники крупной угледобывающей компании.",
+        "Круглосуточное время, вычитаемое категория за категорией — до эффективного рабочего времени.",
       ],
     },
   },

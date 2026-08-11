@@ -86,7 +86,9 @@ export function SupersetEmbed({
   }, [slug, embedId, title, supersetDomain]);
 
   return (
-    <div className="border-border bg-muted relative h-[32rem] w-full overflow-hidden rounded-lg border sm:h-[42rem]">
+    /* Sized by the caller, not here: the showcase page pins the report box to the
+       leftover viewport height, so a fixed height here would fight it. */
+    <div className="relative h-full w-full">
       <div ref={ref} className="superset-container h-full w-full" />
       {status !== "ready" && (
         <p

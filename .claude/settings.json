@@ -1,6 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
+    "defaultMode": "dontAsk",
+
     "allow": [
       "Read",
       "Edit",
@@ -17,9 +19,40 @@
       "Bash",
       "PowerShell"
     ],
+
+    "ask": [
+      "Bash(rm -r *)",
+      "Bash(rm -rf *)",
+      "Bash(rm -fr *)",
+      "Bash(rm -f *)",
+      "Bash(chmod -R *)",
+      "Bash(chown -R *)",
+      "Bash(dd *)",
+      "Bash(mkfs*)",
+      "Bash(truncate *)",
+      "Bash(shred *)",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(rm *)",
+      "PowerShell(rmdir *)",
+      "PowerShell(del *)",
+      "PowerShell(Clear-Content *)",
+      "PowerShell(Format-Volume*)",
+      "PowerShell(Clear-Disk*)",
+      "PowerShell(Set-ItemProperty HKLM:*)",
+      "PowerShell(Remove-ItemProperty HKLM:*)",
+      "Bash(reg delete*)",
+      "PowerShell(reg delete*)",
+      "Bash(diskpart*)",
+      "PowerShell(diskpart*)"
+    ],
+
     "deny": [
       "Read(.env*)",
       "Read(**/.env*)",
+      "Edit(.env*)",
+      "Edit(**/.env*)",
+      "Write(.env*)",
+      "Write(**/.env*)",
       "Bash(cat .env*)",
       "Bash(head .env*)",
       "Bash(tail .env*)",
@@ -36,6 +69,8 @@
       "Bash(git stash*)",
       "Bash(git rebase*)",
       "Bash(git merge*)",
+      "Bash(git clean*)",
+      "Bash(git filter-branch*)",
       "PowerShell(git add*)",
       "PowerShell(git commit*)",
       "PowerShell(git push*)",
@@ -45,13 +80,12 @@
       "PowerShell(git stash*)",
       "PowerShell(git rebase*)",
       "PowerShell(git merge*)",
+      "PowerShell(git clean*)",
+      "PowerShell(git filter-branch*)",
 
-      "Bash(rm -rf *)",
-      "Bash(rm -fr *)",
-      "Bash(rm -r *)",
-      "Bash(rm -f /*)",
       "Bash(sudo *)",
-      "PowerShell(Remove-Item -Recurse*)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -f /*)",
 
       "Bash(vercel rm *)",
       "Bash(vercel remove *)",

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { type Conditions } from "./conditions-button";
+import { GROUP_WIDTH } from "./group-width";
 import { ServiceCarousel } from "./service-carousel";
 
 const PILL =
@@ -48,7 +49,7 @@ export function ServiceGroups({
           pill is one equal third regardless of label length. The type steps down
           below `sm` because "SUBSCRIPTION" at the eyebrow's 12px/0.12em needs
           ~107px and a third of a 360px phone is 104px — it would wrap. */}
-      <div className="mx-auto mt-5 grid w-full max-w-[26rem] grid-cols-3 gap-2 lg:hidden">
+      <div className={cn(GROUP_WIDTH, "mt-5 grid grid-cols-3 gap-2 lg:hidden")}>
         {groups.map((g, i) => (
           <button
             key={i}
@@ -62,11 +63,16 @@ export function ServiceGroups({
         ))}
       </div>
 
-      {/* The 26rem cap is what keeps the square carousel sane between `sm` and
-          `lg`, where one carousel still spans the whole column: a tablet would
-          otherwise render an ~850px box. Phones are narrower than the cap, so it
-          never touches them, and `lg` drops it for the three-column row. */}
-      <div className="mx-auto mt-4 flex w-full max-w-[26rem] flex-1 flex-col gap-6 lg:mt-6 lg:max-w-none lg:flex-row">
+      {/* GROUP_WIDTH keeps the square carousel sane between `sm` and `lg`, where
+          one carousel still spans the whole column: a tablet would otherwise
+          render an ~850px box. Phones are narrower than the cap, so it never
+          touches them, and `lg` drops it for the three-column row. */}
+      <div
+        className={cn(
+          GROUP_WIDTH,
+          "mt-4 flex flex-1 flex-col gap-6 lg:mt-6 lg:flex-row",
+        )}
+      >
         {groups.map((g, i) => (
           <ServiceCarousel
             key={i}

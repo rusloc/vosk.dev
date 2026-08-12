@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader } from "@/components/page-header";
+import { cn } from "@/lib/cn";
 import { buildMetadata } from "@/lib/metadata";
 import { serviceGraph } from "@/lib/structured-data";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { GROUP_WIDTH } from "./group-width";
 import { ServiceGroups } from "./service-groups";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -65,10 +67,16 @@ export default async function ServicesPage({ params }: Props) {
 
         {/* Splits the plan picker from the list below it. Phones only — on
             desktop the three columns already read as their own band. */}
-        <hr className="border-border mt-4 lg:hidden" />
+        <hr className={cn(GROUP_WIDTH, "border-border mt-4 lg:hidden")} />
 
-        {/* What every subscription plan covers — a boxed dot list under the plans. */}
-        <div className="border-border mt-4 rounded-2xl border bg-white p-5 sm:mt-6 sm:p-6">
+        {/* What every subscription plan covers — a boxed dot list under the
+            plans, aligned to the carousel's width rather than the container's. */}
+        <div
+          className={cn(
+            GROUP_WIDTH,
+            "border-border mt-4 rounded-2xl border bg-white p-5 sm:mt-6 sm:p-6",
+          )}
+        >
           <h2 className="text-foreground text-xs font-semibold tracking-[0.12em] uppercase">
             {t.subscription.servicesTitle}
           </h2>

@@ -7,6 +7,7 @@ import { localizedPath, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { Pagination } from "@/components/pagination";
 import { PostMetaRow } from "@/components/post-meta-row";
+import { TagLink } from "@/components/tag-link";
 import styles from "./title-bar.module.css";
 
 // Posts per page — the blog list is the benchmark for page height, so it caps at
@@ -22,10 +23,15 @@ export function BlogList({
   posts,
   locale,
   t,
+  // Chips for the filter bar. The blog index passes the full tag set; the tag
+  // page passes nothing, because a tag row on a tag page is a link back to where
+  // the visitor already is.
+  tags = [],
 }: {
   posts: PostMeta[];
   locale: Locale;
   t: Dictionary["blog"];
+  tags?: readonly { tag: string; slug: string }[];
 }) {
   const [query, setQuery] = useState("");
   const [asc, setAsc] = useState(false); // false = newest first (default)
@@ -44,10 +50,14 @@ export function BlogList({
 
   return (
     <>
-      {/* Search + sort on one row: input fills the width, sort keeps its label. */}
-      <div className="mt-4 flex items-stretch gap-2">
+      {/* One filter bar: search, sort and the tag chips. The chips had their own
+          row until the page had to fit 900px; folding them in here costs nothing
+          visually (they are 22px pills inside a 42px row) and saves the row plus
+          its margin. `flex-wrap` lets them drop to a second line on narrow
+          viewports, which is what they did before anyway. */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         {/* Search — a white pill that replaces the sub-header title. */}
-        <div className="relative flex-1">
+        <div className="relative min-w-64 flex-1">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -107,6 +117,16 @@ export function BlogList({
             />
           </svg>
         </button>
+
+        {tags.length > 0 && (
+          <ul className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
+            {tags.map(({ tag, slug }) => (
+              <li key={slug}>
+                <TagLink tag={tag} locale={locale} />
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Every post is rendered and the off-page ones are hidden with CSS rather
@@ -128,17 +148,17 @@ export function BlogList({
            off-page markup has to keep its box, because that box is what reserves
            the height. It still drops out of the a11y tree and the tab order, and
            every post stays in the served HTML for crawlers either way. */
-        <div className="mt-6 grid">
+        <div className="mt-4 grid">
           {Array.from({ length: pageCount }, (_, p) => (
             <ul
               key={p}
-              className={`col-start-1 row-start-1 space-y-3 ${
+              className={`col-start-1 row-start-1 space-y-2 ${
                 p === safePage ? "" : "invisible"
               }`}
             >
               {ordered.slice(p * PAGE_SIZE, (p + 1) * PAGE_SIZE).map((post) => (
                 <li key={post.slug}>
-                  <article className="bg-background border-border rounded-lg border p-5 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(31,27,22,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+                  <article className="bg-background border-border rounded-lg border p-4 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(31,27,22,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
                     {/* Title + arrow-link on one row, vertically centred together. */}
                     <div className="flex items-center justify-between gap-4">
                       <h2 className="min-w-0 text-xl font-semibold tracking-tight">

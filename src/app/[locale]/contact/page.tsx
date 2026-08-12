@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
-import { AsciiPortrait } from "@/components/ascii-portrait";
 import { Container } from "@/components/container";
 import { ContactForm } from "@/components/contact-form";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader } from "@/components/page-header";
-import { PORTRAIT_CODE } from "@/lib/ascii-portrait-art";
 import { buildMetadata } from "@/lib/metadata";
 import { contactGraph } from "@/lib/structured-data";
 import { siteConfig } from "@/lib/site";
@@ -109,14 +107,22 @@ export default async function ContactPage({ params }: Props) {
       </div>
 
       {/*
-        Decorative ASCII portrait, typed in over ~2s on load. Swap
-        PORTRAIT_CODE for PORTRAIT_BLOCKS (same module) to switch between the
-        code-glyph and block-shading renderings — both are generated in one
-        pass by scripts/portrait-to-ascii.py, so no regenerate is needed.
+        The decorative ASCII portrait is HIDDEN for now — unmounted, not deleted.
+        `components/ascii-portrait.tsx`, its CSS module, `lib/ascii-portrait-art.ts`
+        and `scripts/portrait-to-ascii.py` are all still in the tree; restoring it
+        is this block:
+
+          <div className="mt-12 sm:mt-16">
+            <AsciiPortrait art={PORTRAIT_CODE} />
+          </div>
+
+        plus the two imports at the top of this file. Swap PORTRAIT_CODE for
+        PORTRAIT_BLOCKS (same module) to switch between the code-glyph and
+        block-shading renderings — both are generated in one pass by the script,
+        so no regenerate is needed. Note the art shipped is still the synthetic
+        placeholder; the real source has never landed at
+        article-src/service-page/portrait.png.
       */}
-      <div className="mt-12 sm:mt-16">
-        <AsciiPortrait art={PORTRAIT_CODE} />
-      </div>
     </Container>
   );
 }

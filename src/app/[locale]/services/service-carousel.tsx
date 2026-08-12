@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type PointerEvent } from "react";
+import { cn } from "@/lib/cn";
 import { type Conditions } from "./conditions-button";
 import { ServiceCard } from "./service-card";
 import { Icon } from "./service-icons";
@@ -11,6 +12,9 @@ import { Icon } from "./service-icons";
  * ServiceCard from `tiers`. The prev/next `<` / `>` controls sit centered below
  * each card, outside the sliding track, so they stay in one fixed place; there
  * are no dots.
+ *
+ * The eyebrow is desktop-only — on mobile ServiceGroups shows one carousel at a
+ * time and its pill row already names the group.
  */
 export function ServiceCarousel({
   number,
@@ -19,6 +23,7 @@ export function ServiceCarousel({
   conditions,
   prevAria,
   nextAria,
+  className,
 }: {
   number: number;
   label: string;
@@ -26,6 +31,7 @@ export function ServiceCarousel({
   conditions: Conditions;
   prevAria: string;
   nextAria: string;
+  className?: string;
 }) {
   const [index, setIndex] = useState(0);
   const last = tiers.length - 1;
@@ -48,21 +54,21 @@ export function ServiceCarousel({
 
   return (
     <div
-      className="flex min-w-0 flex-1 flex-col"
+      className={cn("flex min-w-0 flex-1 flex-col", className)}
       onKeyDown={(e) => {
         if (e.key === "ArrowLeft") go(index - 1);
         if (e.key === "ArrowRight") go(index + 1);
       }}
     >
       {/* Heading eyebrow: "N · Label". Arrows live in each card's footer. */}
-      <div className="mb-3 flex items-center gap-3">
+      <div className="mb-3 hidden items-center gap-3 lg:flex">
         <span className="text-foreground text-xs font-semibold tracking-[0.12em] uppercase">
           {number} · {label}
         </span>
       </div>
 
       <div
-        className="relative min-h-[280px] flex-1 touch-pan-y overflow-hidden rounded-2xl"
+        className="relative min-h-[240px] flex-1 touch-pan-y overflow-hidden rounded-2xl sm:min-h-[280px]"
         onPointerDown={onDown}
         onPointerUp={onUp}
       >
@@ -85,7 +91,7 @@ export function ServiceCarousel({
       </div>
 
       {/* Stationary arrows below the card — they don't ride the sliding track. */}
-      <div className="mt-4 flex justify-center gap-1.5">
+      <div className="mt-3 flex justify-center gap-1.5 sm:mt-4">
         <button
           type="button"
           aria-label={prevAria}

@@ -10,15 +10,19 @@ import { cn } from "@/lib/cn";
  * Renders a fragment, not a wrapper: every caller has the pair as direct
  * children of a flex column, and a wrapper would collapse them into one item.
  * `titleClassName` is for a caller's own offset (the tag page sits under an
- * eyebrow) — not for restyling the type.
+ * eyebrow) — not for restyling the type. `introClassName` is the same escape
+ * hatch for the intro: services uses it to shrink the line on phones, where the
+ * page has to fit the plans and the arrows on one screen.
  */
 export function PageHeader({
   title,
   titleClassName,
+  introClassName,
   children,
 }: {
   title: string;
   titleClassName?: string;
+  introClassName?: string;
   children?: ReactNode;
 }) {
   return (
@@ -29,7 +33,11 @@ export function PageHeader({
         {title}
       </h1>
       {children ? (
-        <p className="text-muted-foreground mt-3 max-w-2xl">{children}</p>
+        <p
+          className={cn("text-muted-foreground mt-3 max-w-2xl", introClassName)}
+        >
+          {children}
+        </p>
       ) : null}
     </>
   );

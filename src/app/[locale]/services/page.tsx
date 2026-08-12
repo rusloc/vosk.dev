@@ -6,7 +6,7 @@ import { buildMetadata } from "@/lib/metadata";
 import { serviceGraph } from "@/lib/structured-data";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { ServiceCarousel } from "./service-carousel";
+import { ServiceGroups } from "./service-groups";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -26,10 +26,9 @@ export default async function ServicesPage({ params }: Props) {
   const { locale } = await params;
   const l = (isLocale(locale) ? locale : "en") as Locale;
   const t = getDictionary(l).services;
-  const aria = { prevAria: t.prevAria, nextAria: t.nextAria };
 
   return (
-    <Container className="py-10 sm:py-12">
+    <Container className="py-6 sm:py-12">
       <JsonLd
         data={serviceGraph(l, {
           name: t.title,
@@ -44,42 +43,26 @@ export default async function ServicesPage({ params }: Props) {
         {/* Title matches the blog / showcase pages: plain, no highlight. The
             intro under it is the page's only prose — without it the page is nine
             price cards and nothing describing what's being sold. */}
-        <PageHeader title={t.title}>{t.intro}</PageHeader>
+        <PageHeader title={t.title} introClassName="text-sm sm:text-base">
+          {t.intro}
+        </PageHeader>
 
         {/* Heading for the three engagement columns. The tier names inside the
             carousels are h3s, so without this they'd skip a level straight from
             the page h1. */}
         <h2 className="sr-only">{t.engagementsHeading}</h2>
 
-        {/* Three engagement models, each a single-slide carousel. */}
-        <div className="mt-6 flex flex-1 flex-col gap-6 lg:flex-row">
-          <ServiceCarousel
-            {...aria}
-            number={1}
-            label={t.subscription.eyebrow}
-            tiers={t.subscription.tiers}
-            conditions={t.conditions}
-          />
-
-          <ServiceCarousel
-            {...aria}
-            number={2}
-            label={t.project.eyebrow}
-            tiers={t.project.tiers}
-            conditions={t.conditions}
-          />
-
-          <ServiceCarousel
-            {...aria}
-            number={3}
-            label={t.other.eyebrow}
-            tiers={t.other.tiers}
-            conditions={t.conditions}
-          />
-        </div>
+        {/* Three engagement models, each a single-slide carousel. Side by side on
+            desktop; on mobile a pill row picks one at a time. */}
+        <ServiceGroups
+          groups={[t.subscription, t.project, t.other]}
+          conditions={t.conditions}
+          prevAria={t.prevAria}
+          nextAria={t.nextAria}
+        />
 
         {/* What every subscription plan covers — a boxed dot list under the plans. */}
-        <div className="border-border mt-6 rounded-2xl border bg-white p-6">
+        <div className="border-border mt-4 rounded-2xl border bg-white p-5 sm:mt-6 sm:p-6">
           <h2 className="text-foreground text-xs font-semibold tracking-[0.12em] uppercase">
             {t.subscription.servicesTitle}
           </h2>

@@ -61,6 +61,10 @@ export default async function ServicesPage({ params }: Props) {
           nextAria={t.nextAria}
         />
 
+        {/* Splits the plan picker from the list below it. Phones only — on
+            desktop the three columns already read as their own band. */}
+        <hr className="border-border mt-4 lg:hidden" />
+
         {/* What every subscription plan covers — a boxed dot list under the plans. */}
         <div className="border-border mt-4 rounded-2xl border bg-white p-5 sm:mt-6 sm:p-6">
           <h2 className="text-foreground text-xs font-semibold tracking-[0.12em] uppercase">

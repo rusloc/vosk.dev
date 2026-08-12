@@ -68,7 +68,11 @@ export function ServiceCarousel({
       </div>
 
       <div
-        className="relative min-h-[240px] flex-1 touch-pan-y overflow-hidden rounded-2xl sm:min-h-[280px]"
+        // 3:4 (w:h) on phones — a fixed portrait box, so the card's height no
+        // longer moves with the tier's description length. From `sm` up it goes
+        // back to stretching, or a tablet's full-width column would ask for a
+        // ~950px-tall card.
+        className="relative aspect-[3/4] flex-1 touch-pan-y overflow-hidden rounded-2xl sm:aspect-auto sm:min-h-[280px]"
         onPointerDown={onDown}
         onPointerUp={onUp}
       >
@@ -90,8 +94,9 @@ export function ServiceCarousel({
         </div>
       </div>
 
-      {/* Stationary arrows below the card — they don't ride the sliding track. */}
-      <div className="mt-3 flex justify-center gap-1.5 sm:mt-4">
+      {/* Stationary arrows below the card — they don't ride the sliding track.
+          Tucked up against the card's bottom edge on phones. */}
+      <div className="mt-2 flex justify-center gap-1.5 sm:mt-4">
         <button
           type="button"
           aria-label={prevAria}

@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/cn";
 import { type Conditions } from "./conditions-button";
 import { ServiceCarousel } from "./service-carousel";
+
+const PILL =
+  "cursor-pointer rounded-full border px-1.5 py-1.5 text-center text-[10px] font-semibold tracking-[0.04em] whitespace-nowrap uppercase transition-colors sm:px-3 sm:text-xs sm:tracking-[0.12em]";
+const PILL_ON = "bg-foreground text-background border-foreground";
+const PILL_OFF =
+  "border-border text-muted-foreground hover:text-foreground bg-white";
 
 export type ServiceGroup = {
   eyebrow: string;
@@ -35,19 +42,20 @@ export function ServiceGroups({
   return (
     <>
       {/* Mobile-only group switcher. Plain toggle buttons, not tabs: on desktop
-          every group is visible at once, so tab semantics would be a lie. */}
-      <div className="mt-5 flex flex-wrap gap-2 lg:hidden">
+          every group is visible at once, so tab semantics would be a lie.
+
+          A 3-column grid, so the row spans the carousel's full width and each
+          pill is one equal third regardless of label length. The type steps down
+          below `sm` because "SUBSCRIPTION" at the eyebrow's 12px/0.12em needs
+          ~107px and a third of a 360px phone is 104px — it would wrap. */}
+      <div className="mt-5 grid grid-cols-3 gap-2 lg:hidden">
         {groups.map((g, i) => (
           <button
             key={i}
             type="button"
             aria-pressed={i === active}
             onClick={() => setActive(i)}
-            className={
-              i === active
-                ? "bg-foreground text-background border-foreground cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold tracking-[0.12em] uppercase"
-                : "border-border text-muted-foreground hover:text-foreground cursor-pointer rounded-full border bg-white px-3 py-1.5 text-xs font-semibold tracking-[0.12em] uppercase transition-colors"
-            }
+            className={cn(PILL, i === active ? PILL_ON : PILL_OFF)}
           >
             {g.eyebrow}
           </button>

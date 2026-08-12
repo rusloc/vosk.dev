@@ -25,7 +25,7 @@ export default async function Home({ params }: Props) {
 
   return (
     <>
-      <JsonLd data={homeGraph(l)} />
+      <JsonLd data={homeGraph()} />
       <HomeBackdrop />
       <CodeTyper />
       <Container className="py-20 sm:py-28">

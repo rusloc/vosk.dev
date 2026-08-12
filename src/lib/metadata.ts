@@ -21,14 +21,14 @@ export const DEFAULT_OG_IMAGE = {
 
 /**
  * Build page metadata from the shared site defaults. `path` is the logical,
- * locale-agnostic path ("/blog"); `locale` decides the canonical URL and the
- * OpenGraph locale. By default every page gets `hreflang` alternates for both
- * languages plus an `x-default` pointing at English.
+ * locale-agnostic path ("/blog"); `locale` decides the canonical URL.
  *
- * `hreflang` narrows that set for paths that only genuinely exist in some
- * locales — an hreflang cluster claiming a translation that isn't there is a
- * worse signal than no cluster at all. A single-locale page gets no `languages`
- * block, only its canonical.
+ * `hreflang` defaults to every locale the site publishes and narrows for paths
+ * that only genuinely exist in some of them — an hreflang cluster claiming a
+ * translation that isn't there is a worse signal than no cluster at all. The
+ * site is currently English-only, so `locales` has one entry and no page emits a
+ * `languages` block; the machinery stays because it is what a second locale
+ * comes back through.
  *
  * `images` overrides the site-wide share card (pages with their own
  * `opengraph-image` route pass it here); `robots` is for pages that need to stay
@@ -82,7 +82,7 @@ export function buildMetadata({
       description,
       url: canonical,
       siteName: siteConfig.name,
-      locale: locale === "ru" ? "ru_RU" : "en_US",
+      locale: "en_US",
       type: "website",
       // Setting `openGraph` at all replaces the root segment's file-based card,
       // so it has to be named explicitly or every page built through here shares
@@ -95,24 +95,5 @@ export function buildMetadata({
       description,
       images: images.map((i) => i.url),
     },
-  };
-}
-
-/**
- * Indexation posture for the blog cluster (/blog, /blog/*, /blog/tag/*).
- *
- * `content/blog/*.mdx` is single-language, so the /ru routes serve English prose
- * at a Russian URL with a Russian canonical — a duplicate that also lies about
- * its language. They stay reachable (the language switcher has to keep working)
- * but out of the index, and no page in the cluster advertises a translation that
- * doesn't exist. Delete this and the `hreflang`/`locales` overrides in
- * `sitemap.ts` once the posts are genuinely translated.
- */
-export function englishOnlyPosture(locale: Locale) {
-  return {
-    hreflang: [defaultLocale] as const,
-    ...(locale === defaultLocale
-      ? {}
-      : { robots: { index: false, follow: true } }),
   };
 }

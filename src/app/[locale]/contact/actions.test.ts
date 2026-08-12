@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ContactState } from "@/lib/schema";
 import { en } from "@/lib/i18n/en";
-import { ru } from "@/lib/i18n/ru";
 import { siteConfig } from "@/lib/site";
 
 /**
@@ -351,35 +350,14 @@ describe("submitContactForm — delivery failures", () => {
   });
 });
 
+// The site is English-only. The three cases that asserted Russian responses,
+// Russian validation errors and a Russian rate-limit message were deleted with
+// the locale, not disabled — they covered behaviour that no longer exists. The
+// fallback cases below are what still matters: the hidden `locale` field is
+// visitor-supplied, so every value that is not a live locale must land on English.
 describe("submitContactForm — locale", () => {
-  it("answers in Russian when locale=ru", async () => {
-    const result = await submit(validFields({ locale: "ru" }));
-
-    expect(result.message).toBe(ru.form.success);
-    expect(result.message).not.toBe(en.form.success);
-  });
-
-  it("localises validation errors too", async () => {
-    const result = await submit(
-      validFields({ locale: "ru", email: "not-an-email" }),
-    );
-
-    expect(result.message).toBe(ru.form.errorFields);
-    expect(result.fieldErrors?.email).toContain(ru.form.invalidEmail);
-  });
-
-  it("localises the rate-limit message", async () => {
-    const action = await loadAction();
-
-    for (let i = 0; i < 5; i++) {
-      await action(IDLE, formData(validFields({ locale: "ru" })));
-    }
-    const blocked = await action(IDLE, formData(validFields({ locale: "ru" })));
-
-    expect(blocked.message).toBe(ru.form.errorRateLimit);
-  });
-
   it.each([
+    { name: "a retired locale", fields: validFields({ locale: "ru" }) },
     { name: "an unknown locale", fields: validFields({ locale: "de" }) },
     { name: "an absent locale", fields: validFields() },
     { name: "an empty locale", fields: validFields({ locale: "" }) },

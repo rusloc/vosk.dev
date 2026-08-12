@@ -6,12 +6,12 @@ import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypePrettyCode from "rehype-pretty-code";
-import { Breadcrumbs } from "@/components/breadcrumbs";
+import { BackLink } from "@/components/back-link";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
 import { mdxComponents } from "@/components/mdx-components";
 import { PostMetaRow } from "@/components/post-meta-row";
-import { buildMetadata, englishOnlyPosture } from "@/lib/metadata";
+import { buildMetadata } from "@/lib/metadata";
 import { siteConfig } from "@/lib/site";
 import { blogPostingGraph, breadcrumbGraph } from "@/lib/structured-data";
 import {
@@ -59,7 +59,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         alt: post.title,
       },
     ],
-    ...englishOnlyPosture(l),
   });
   return {
     ...base,
@@ -115,7 +114,10 @@ export default async function PostPage({ params }: Props) {
       <JsonLd data={blogPostingGraph(l, post)} />
       <JsonLd data={breadcrumbGraph(l, trail)} />
 
-      <Breadcrumbs locale={l} trail={trail} />
+      {/* One way back, not a crumb trail — same treatment the showcase page got.
+          The breadcrumb JSON-LD above still describes the full Home → Blog → title
+          hierarchy, which this link walks up one step of. */}
+      <BackLink href={localizedPath(l, "/blog")} label={t.backToBlog} />
 
       <header className="mt-6">
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">

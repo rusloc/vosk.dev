@@ -4,7 +4,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader } from "@/components/page-header";
-import { buildMetadata, englishOnlyPosture } from "@/lib/metadata";
+import { buildMetadata } from "@/lib/metadata";
 import { breadcrumbGraph, collectionGraph } from "@/lib/structured-data";
 import { getAllTags, getPostsByTag } from "@/lib/content";
 import { tagLabel } from "@/lib/tags";
@@ -37,7 +37,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: t.tagMetaDescription.replace("{tag}", label),
     path: `/blog/tag/${tag}`,
     locale: l,
-    ...englishOnlyPosture(l),
   });
 }
 

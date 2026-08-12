@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BackLink } from "@/components/back-link";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
 import { SupersetEmbed } from "@/components/superset-embed";
@@ -67,8 +67,11 @@ export default async function ShowcasePage({ params }: Props) {
     /* One screen, no page scroll: viewport minus the site chrome, with the report as
        the only child allowed to grow into what's left.
 
-       9.125rem is measured, not derived — sticky nav 57px (`h-14` + 1px border) plus
-       footer 89px (1px border + `py-8` + a 24px line). `h-full` would be the tidier
+       8.625rem is measured, not derived — sticky nav 57px (`h-14` + 1px border) plus
+       footer 81px (1px border + `py-8` + a 16px line). It was 9.125rem while the
+       footer carried the language switcher, whose `py-1` pills made that line 24px;
+       removing the switcher took 8px off the footer and this number with it.
+       Re-measured over CDP, not adjusted by arithmetic. `h-full` would be the tidier
        expression but does not work here: <main> is `flex-1` under a `min-h-full` body,
        so its height is never definite and the percentage silently falls back to auto,
        collapsing the report to a ~150px default iframe box. If the nav or footer
@@ -76,7 +79,7 @@ export default async function ShowcasePage({ params }: Props) {
 
        Locked from `lg` up only: squeezing a BI dashboard into a phone viewport makes
        it unreadable, so below that the page falls back to ordinary flow. */
-    <Container className="flex flex-col py-6 lg:h-[calc(100dvh-9.125rem)]">
+    <Container className="flex flex-col py-6 lg:h-[calc(100dvh-8.625rem)]">
       <JsonLd data={breadcrumbGraph(l, trail)} />
       {!showcase.noindex && (
         <JsonLd
@@ -92,28 +95,7 @@ export default async function ShowcasePage({ params }: Props) {
 
       {/* One way back, not a crumb trail. The breadcrumb JSON-LD above still
           describes the same Home → Showcase → title hierarchy this link walks up. */}
-      <Link
-        href={localizedPath(l, "/work")}
-        className="text-muted-foreground hover:text-foreground group inline-flex w-fit items-center gap-2 text-sm transition-colors"
-      >
-        <span className="border-border group-hover:border-foreground flex h-8 w-8 items-center justify-center rounded-full border transition-colors">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            className="h-4 w-4"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M19 12H5M11 18l-6-6 6-6"
-            />
-          </svg>
-        </span>
-        {t.backToShowcase}
-      </Link>
+      <BackLink href={localizedPath(l, "/work")} label={t.backToShowcase} />
 
       {/* Title and platform pill share one row — stacked, they cost the report
           a line of height for no added meaning. */}

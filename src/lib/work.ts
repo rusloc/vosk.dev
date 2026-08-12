@@ -46,10 +46,20 @@ type ShowcaseOf<Text, Paragraphs> =
       embedId: string;
     });
 
-/** Source entry: copy carried in every locale. Adding a locale breaks this loudly. */
+/**
+ * A locale the site no longer publishes but whose copy is kept in place. Russian
+ * was removed from `locales`; the translations below are retained so re-adding it
+ * is a one-line change in `lib/i18n/config.ts` rather than a re-translation.
+ */
+type RetiredLocale = "ru";
+
+/**
+ * Source entry: copy carried in every LIVE locale — adding a locale breaks this
+ * loudly — plus optional copy for retired ones, which `localize` never reads.
+ */
 export type Showcase = ShowcaseOf<
-  Record<Locale, string>,
-  Record<Locale, string[]>
+  Record<Locale, string> & Partial<Record<RetiredLocale, string>>,
+  Record<Locale, string[]> & Partial<Record<RetiredLocale, string[]>>
 >;
 
 /** One locale's view of an entry — what pages and cards actually render. */

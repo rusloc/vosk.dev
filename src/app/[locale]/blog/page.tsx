@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader } from "@/components/page-header";
-import { buildMetadata, englishOnlyPosture } from "@/lib/metadata";
+import { buildMetadata } from "@/lib/metadata";
 import { collectionGraph } from "@/lib/structured-data";
 import { getAllPosts, getAllTags } from "@/lib/content";
 import { TagLink } from "@/components/tag-link";
@@ -21,7 +21,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: t.metaDescription,
     path: "/blog",
     locale: l,
-    ...englishOnlyPosture(l),
   });
 }
 

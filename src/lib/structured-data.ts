@@ -1,5 +1,5 @@
 import { absoluteUrl, siteConfig } from "./site";
-import { defaultLocale, type Locale } from "./i18n/config";
+import { type Locale } from "./i18n/config";
 
 /**
  * JSON-LD builders. Every graph is emitted server-side via `<JsonLd>` and must
@@ -7,18 +7,23 @@ import { defaultLocale, type Locale } from "./i18n/config";
  * can't see is a manual-action offense, not a shortcut.
  *
  * Entity `@id`s are anchored to the English (canonical) origin so the org, the
- * person and the site resolve to one entity across both locales.
+ * person and the site resolve to one entity.
  */
 const ORG_ID = `${siteConfig.url}/#org`;
 const PERSON_ID = `${siteConfig.url}/#person`;
 const WEBSITE_ID = `${siteConfig.url}/#website`;
 
-const ogLocale = (locale: Locale) => (locale === "ru" ? "ru-RU" : "en-US");
+// The site publishes one language. This was a `locale => tag` lookup while
+// Russian existed; it is a constant now rather than a function that ignores its
+// argument. A second locale turns it back into a lookup at these four call sites.
+const IN_LANGUAGE = "en-US";
 
 /**
  * Home-page structured data: the freelancer (Person), the practice
  * (ProfessionalService) and the site (WebSite), linked by @id.
- * Emit once on the home page via <JsonLd data={homeGraph(locale)} />.
+ * Emit once on the home page via <JsonLd data={homeGraph()} />. Takes no locale:
+ * every URL in this graph is the site origin and the language is the constant
+ * above. The other builders still take one because they resolve per-page URLs.
  *
  * `sameAs` is intentionally omitted until real social profile URLs exist — see
  * the TODO in src/lib/site.ts. Person markup mirrors the byline the site shows
@@ -26,7 +31,7 @@ const ogLocale = (locale: Locale) => (locale === "ru" ? "ru-RU" : "en-US");
  * compliance). The Contacts card deliberately shows the first name only; the
  * full name is what this markup has to match, and it is visible on every post.
  */
-export function homeGraph(locale: Locale = defaultLocale): Record<string, unknown> {
+export function homeGraph(): Record<string, unknown> {
   const { name, title, description, author, contactEmail } = siteConfig;
 
   return {
@@ -66,7 +71,7 @@ export function homeGraph(locale: Locale = defaultLocale): Record<string, unknow
         "@id": WEBSITE_ID,
         url: siteConfig.url,
         name,
-        inLanguage: ogLocale(locale),
+        inLanguage: IN_LANGUAGE,
         publisher: { "@id": ORG_ID },
       },
     ],
@@ -154,7 +159,7 @@ export function collectionGraph(
     name,
     description,
     url: absoluteUrl(locale, path),
-    inLanguage: ogLocale(locale),
+    inLanguage: IN_LANGUAGE,
     isPartOf: { "@id": WEBSITE_ID },
     mainEntity: {
       "@type": "ItemList",
@@ -245,7 +250,7 @@ export function contactGraph(
     name,
     description,
     url: absoluteUrl(locale, "/contact"),
-    inLanguage: ogLocale(locale),
+    inLanguage: IN_LANGUAGE,
     isPartOf: { "@id": WEBSITE_ID },
     mainEntity: {
       "@id": ORG_ID,
@@ -254,7 +259,7 @@ export function contactGraph(
         contactType: "sales",
         email: contactEmail,
         areaServed: "Worldwide",
-        availableLanguage: ["en", "ru"],
+        availableLanguage: ["en"],
       },
     },
   };
@@ -283,7 +288,7 @@ export function showcaseGraph(
     name: showcase.title,
     description: showcase.summary,
     url,
-    inLanguage: ogLocale(locale),
+    inLanguage: IN_LANGUAGE,
     creator: { "@id": PERSON_ID },
     publisher: { "@id": ORG_ID },
     isPartOf: { "@id": WEBSITE_ID },

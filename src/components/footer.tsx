@@ -1,7 +1,6 @@
 import { Container } from "@/components/container";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
-import { LangSwitcher } from "@/components/lang-switcher";
 
 export function SiteFooter({
   locale,
@@ -14,19 +13,16 @@ export function SiteFooter({
 
   return (
     <footer className="border-border border-t">
-      {/* Three columns so the language switch stays centered regardless of the
-          side content (the availability line is hidden below `sm`). */}
-      <Container className="text-muted-foreground grid grid-cols-3 items-center py-8 font-mono text-xs tracking-wider uppercase">
-        <p className="flex items-center justify-self-start">
+      {/* Two columns since the language switch came out. The middle column it
+          used to centre is gone rather than left empty — an empty grid cell would
+          have kept the footer's old height for no content. */}
+      <Container className="text-muted-foreground flex items-center justify-between py-8 font-mono text-xs tracking-wider uppercase">
+        <p className="flex items-center">
           © <span className="hidden sm:inline">&nbsp;VOSK</span>
           &nbsp;{year}
         </p>
 
-        <div className="justify-self-center">
-          <LangSwitcher locale={locale} label={dict.langSwitcher.label} />
-        </div>
-
-        <div className="flex items-center gap-4 justify-self-end">
+        <div className="flex items-center gap-4">
           {/* Plain anchor, not `Link`: /feed.xml is a route handler, and
               prefetching it would pull the XML on hover. */}
           <a

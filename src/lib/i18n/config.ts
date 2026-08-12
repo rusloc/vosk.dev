@@ -1,11 +1,17 @@
 /**
  * i18n config — the single source of truth for which locales exist and how they
- * map to URLs. Routing is "English at root, Russian under /ru": the default
- * locale carries no prefix (so existing URLs and their SEO are preserved) and
- * every other locale is prefixed. The proxy enforces this; the [locale]
- * segment renders it.
+ * map to URLs. The default locale carries no prefix (so existing URLs and their
+ * SEO are preserved) and every other locale would be prefixed. The proxy
+ * enforces this; the [locale] segment renders it.
+ *
+ * The site is English-only. Russian was removed from `locales` rather than torn
+ * out of the codebase: `ru.ts` is intact and this list is the one edit that
+ * brings it back. Everything downstream — static params, the sitemap, hreflang
+ * alternates, the feed — derives from this array, so nothing else has to change
+ * to re-add a locale. What does NOT come back automatically is the switcher UI
+ * (deleted from the footer) and the `/ru` redirect in `proxy.ts`.
  */
-export const locales = ["en", "ru"] as const;
+export const locales = ["en"] as const;
 export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = "en";

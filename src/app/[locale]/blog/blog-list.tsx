@@ -41,7 +41,6 @@ export function BlogList({
 
   const pageCount = Math.ceil(ordered.length / PAGE_SIZE);
   const safePage = Math.min(page, Math.max(0, pageCount - 1));
-  const first = safePage * PAGE_SIZE;
 
   return (
     <>
@@ -119,62 +118,85 @@ export function BlogList({
           {t.noMatch} “{query.trim()}”.
         </p>
       ) : (
-        <ul className="mt-6 space-y-3">
-          {ordered.map((post, i) => (
-            <li
-              key={post.slug}
-              className={i >= first && i < first + PAGE_SIZE ? "" : "hidden"}
+        /* All pages are stacked into ONE grid cell, so the wrapper is always as
+           tall as the FULLEST page and the menu below sits at the same y on every
+           page. The obvious fix — `grow` on the list — does nothing here: the
+           column is already taller than its `lg:min-h-[660px]`, so there is no
+           free space to distribute and the menu still rode up 140px on page 2.
+
+           `invisible` (visibility: hidden), not `hidden` (display: none): the
+           off-page markup has to keep its box, because that box is what reserves
+           the height. It still drops out of the a11y tree and the tab order, and
+           every post stays in the served HTML for crawlers either way. */
+        <div className="mt-6 grid">
+          {Array.from({ length: pageCount }, (_, p) => (
+            <ul
+              key={p}
+              className={`col-start-1 row-start-1 space-y-3 ${
+                p === safePage ? "" : "invisible"
+              }`}
             >
-              <article className="bg-background border-border rounded-lg border p-5 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(31,27,22,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
-                {/* Title + arrow-link on one row, vertically centred together. */}
-                <div className="flex items-center justify-between gap-4">
-                  <h2 className="min-w-0 text-xl font-semibold tracking-tight">
-                    <span className="relative inline-block">
-                      <span aria-hidden="true" className={styles.titleBar} />
+              {ordered.slice(p * PAGE_SIZE, (p + 1) * PAGE_SIZE).map((post) => (
+                <li key={post.slug}>
+                  <article className="bg-background border-border rounded-lg border p-5 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(31,27,22,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+                    {/* Title + arrow-link on one row, vertically centred together. */}
+                    <div className="flex items-center justify-between gap-4">
+                      <h2 className="min-w-0 text-xl font-semibold tracking-tight">
+                        <span className="relative inline-block">
+                          <span
+                            aria-hidden="true"
+                            className={styles.titleBar}
+                          />
+                          <Link
+                            href={localizedPath(locale, `/blog/${post.slug}`)}
+                            className="hover:text-primary relative transition-colors"
+                          >
+                            {post.title}
+                          </Link>
+                        </span>
+                      </h2>
+
                       <Link
                         href={localizedPath(locale, `/blog/${post.slug}`)}
-                        className="hover:text-primary relative transition-colors"
+                        aria-label={`${post.title}`}
+                        className="bg-foreground text-background inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90"
                       >
-                        {post.title}
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          className="h-3.5 w-3.5"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 12h14M13 6l6 6-6 6"
+                          />
+                        </svg>
                       </Link>
-                    </span>
-                  </h2>
+                    </div>
 
-                  <Link
-                    href={localizedPath(locale, `/blog/${post.slug}`)}
-                    aria-label={`${post.title}`}
-                    className="bg-foreground text-background inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      className="h-3.5 w-3.5"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M5 12h14M13 6l6 6-6 6"
-                      />
-                    </svg>
-                  </Link>
-                </div>
+                    {/* `line-clamp-2` is the structural guarantee, not the copy:
+                        the descriptions are written to fit two rows at this width,
+                        but a narrow viewport would still wrap a third. Cards stay
+                        the same height either way. */}
+                    <p className="text-muted-foreground mt-2 line-clamp-2 max-w-2xl">
+                      {post.description}
+                    </p>
 
-                <p className="text-muted-foreground mt-2 max-w-2xl">
-                  {post.description}
-                </p>
-
-                <PostMetaRow
-                  date={post.date}
-                  tags={post.tags}
-                  locale={locale}
-                />
-              </article>
-            </li>
+                    <PostMetaRow
+                      date={post.date}
+                      tags={post.tags}
+                      locale={locale}
+                    />
+                  </article>
+                </li>
+              ))}
+            </ul>
           ))}
-        </ul>
+        </div>
       )}
 
       <Pagination

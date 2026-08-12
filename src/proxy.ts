@@ -2,11 +2,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import { defaultLocale, isLocale, LOCALE_HEADER } from "@/lib/i18n/config";
 
 /**
- * Locale routing — "English at root, Russian under /ru".
+ * Locale routing. The site is English-only, served unprefixed.
  *
- *  - `/ru/…`  → passed through to the [locale] route as-is.
  *  - `/en/…`  → redirected to the unprefixed URL (the default locale never shows
  *               a prefix, so there's one canonical URL per page).
+ *  - `/ru/…`  → redirected to the unprefixed URL. Russian is gone, but those URLs
+ *               were live and in the sitemap, so they are retired with a 308
+ *               rather than left to 404 — an indexed URL that starts 404ing loses
+ *               whatever equity it had and dead-ends anyone holding the link.
  *  - `/…`     → rewritten internally to `/en/…` (URL stays unprefixed) so it
  *               resolves against the [locale] segment.
  *
@@ -23,6 +26,12 @@ import { defaultLocale, isLocale, LOCALE_HEADER } from "@/lib/i18n/config";
  */
 const METADATA_ROUTES = new Set(["/opengraph-image", "/icon", "/apple-icon"]);
 
+// Locale prefixes that no longer exist but were once published. Retired with the
+// same 308 the default-locale prefix gets, to the same logical path — every /ru
+// page had an English counterpart at the unprefixed URL, so none of these lands
+// on the home page as a catch-all.
+const RETIRED_PREFIXES = ["ru"];
+
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const first = pathname.split("/")[1] ?? "";
@@ -34,17 +43,16 @@ export function proxy(req: NextRequest) {
 
   if (METADATA_ROUTES.has(pathname)) return NextResponse.next(forward);
 
-  if (isLocale(first)) {
-    // Explicit default-locale prefix → redirect to the canonical unprefixed URL.
-    if (first === defaultLocale) {
-      const url = req.nextUrl.clone();
-      url.pathname = pathname.slice(`/${defaultLocale}`.length) || "/";
-      // 308, not the default 307: this is permanent canonicalization, and a
-      // temporary redirect tells crawlers to keep the prefixed URL indexed.
-      return NextResponse.redirect(url, 308);
-    }
-    return NextResponse.next(forward);
+  // 308, not the default 307, in both branches below: this is permanent
+  // canonicalization, and a temporary redirect tells crawlers to keep the
+  // prefixed URL indexed.
+  if (first === defaultLocale || RETIRED_PREFIXES.includes(first)) {
+    const url = req.nextUrl.clone();
+    url.pathname = pathname.slice(`/${first}`.length) || "/";
+    return NextResponse.redirect(url, 308);
   }
+
+  if (isLocale(first)) return NextResponse.next(forward);
 
   // Unprefixed path → serve the default locale without changing the URL.
   const url = req.nextUrl.clone();

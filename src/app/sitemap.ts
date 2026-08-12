@@ -9,17 +9,12 @@ import { locales, type Locale } from "@/lib/i18n/config";
 // trains crawlers to ignore the signal. Blog posts use their real frontmatter date.
 const SITE_UPDATED = new Date("2026-08-02");
 
-// The blog corpus is single-language (content/blog/*.mdx carries no locale), so
-// the /ru copies are English prose at a Russian URL. They stay reachable and
-// `noindex` (see the blog pages' generateMetadata) — the sitemap only ever lists
-// indexable, canonical URLs, so they're English-only here too. Drop the override
-// on a path once its content is genuinely translated.
-const EN_ONLY: readonly Locale[] = ["en"];
-
 type Page = {
   path: string;
   lastModified: Date;
   priority?: number;
+  // Restricts a path to a subset of `locales`. Nothing sets it while the site is
+  // English-only — it is what a partially-translated path would use.
   locales?: readonly Locale[];
 };
 
@@ -30,7 +25,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/work", lastModified: SITE_UPDATED },
     { path: "/services", lastModified: SITE_UPDATED },
     { path: "/contact", lastModified: SITE_UPDATED },
-    { path: "/blog", lastModified: SITE_UPDATED, locales: EN_ONLY },
+    { path: "/blog", lastModified: SITE_UPDATED },
     ...getIndexableShowcaseSlugs().map((slug) => ({
       path: `/work/${slug}`,
       lastModified: SITE_UPDATED,
@@ -38,7 +33,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...getAllPosts().map((post) => ({
       path: `/blog/${post.slug}`,
       lastModified: new Date(post.updated ?? post.date),
-      locales: EN_ONLY,
     })),
     // A tag page is as fresh as its newest post (`getPostsByTag` is newest-first,
     // and a tag only exists here because at least one post carries it).
@@ -47,7 +41,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       return {
         path: `/blog/tag/${slug}`,
         lastModified: new Date(newest.updated ?? newest.date),
-        locales: EN_ONLY,
       };
     }),
   ];

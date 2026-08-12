@@ -48,8 +48,8 @@ export async function generateMetadata({
       siteName: siteConfig.name,
       title: t.title,
       description: t.description,
-      locale: locale === "ru" ? "ru_RU" : "en_US",
-      url: locale === "ru" ? "/ru" : "/",
+      locale: "en_US",
+      url: "/",
     },
     twitter: {
       card: "summary_large_image",

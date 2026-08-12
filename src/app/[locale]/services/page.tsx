@@ -37,8 +37,10 @@ export default async function ServicesPage({ params }: Props) {
         })}
       />
 
-      {/* Matches the blog benchmark height on desktop; the three columns and
-          their cards stretch to fill the space below the title. */}
+      {/* Floor matching the blog benchmark height on desktop. The cards no
+          longer stretch into it — they're square, sized by column width — but at
+          a ~309px column the page clears 660px on its own content, so the floor
+          is inert rather than a source of dead space. */}
       <div className="flex flex-col lg:min-h-[660px]">
         {/* Title matches the blog / showcase pages: plain, no highlight. The
             intro under it is the page's only prose — without it the page is nine

@@ -68,11 +68,12 @@ export function ServiceCarousel({
       </div>
 
       <div
-        // 3:4 (w:h) on phones — a fixed portrait box, so the card's height no
-        // longer moves with the tier's description length. From `sm` up it goes
-        // back to stretching, or a tablet's full-width column would ask for a
-        // ~950px-tall card.
-        className="relative aspect-[3/4] flex-1 touch-pan-y overflow-hidden rounded-2xl sm:aspect-auto sm:min-h-[280px]"
+        // Square at every width, so the card's height is a function of the
+        // column width alone and never of the tier's description length. No
+        // `flex-1`: growing to fill the parent would override the ratio. The
+        // width cap that keeps this from becoming an 850px box on a tablet
+        // lives in ServiceGroups, on the row.
+        className="relative aspect-square touch-pan-y overflow-hidden rounded-2xl"
         onPointerDown={onDown}
         onPointerUp={onUp}
       >

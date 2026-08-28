@@ -11,14 +11,20 @@
 > **✅ Approved by the owner 2026-08-28.** Orchestrator decided: **Supabase Cron + Edge Functions**,
 > not n8n. Build order in §8 is live; step 1 is the Supabase project and migration 001.
 >
-> **✅ Phases 0 and 1 built 2026-08-28.** Project `howpxpdnjjzdwqrgxkee`, schema and RLS live,
-> advisors clean, collector `fetch-himalayas` deployed and scheduled `*/30`, postings landing in
-> `raw_postings`. Implementation repo: **`d:\__VOSK_LEADS__\`**, managed from `D:\__VOSK__`.
+> **✅ Phases 0–3 built 2026-08-28.** Project `howpxpdnjjzdwqrgxkee`, schema and RLS live, advisors
+> clean. Three Edge Functions deployed and scheduled: `fetch-himalayas` `*/30`, `enrich` `*/15`,
+> `digest` `0 5` daily. Postings land, get scored, and arrive on Telegram unattended.
+> Implementation repo: **`d:\__VOSK_LEADS__\`**, managed from `D:\__VOSK__`.
 >
-> **Two things in this doc are superseded by what was built — read both boxes before trusting the
+> **Three things in this doc are superseded by what was built — read the boxes before trusting the
 > text around them:** §3's migration has **three corrections** (RLS-bypassing view, `is_app_admin`
-> placement, `search_path`), and **§8 Phase 1 did not ship on hh.kz** — that source returns 403 and
-> is disabled. Phase 2 (`enrich`) is next.
+> placement, `search_path`); **§8 Phase 1 did not ship on hh.kz** — that source returns 403 and is
+> disabled; and **§8 Phase 3 runs at `0 5`, not `0 6`** — cron is UTC and the owner is UTC+3.
+>
+> **⚠️ The next step is NOT Phase 4.** Phase 2 turned the single-source risk into a viability
+> finding: Himalayas is a jobs board, so `engagement_fit` correctly scores nearly everything down
+> and **not one lead so far has been a contract posting**. No amount of UI fixes a source that does
+> not carry the leads you want. **Adzuna — or another connector — comes before the UI.**
 
 ## What this delivers
 
@@ -691,13 +697,48 @@ goes straight in, no separate translation step. Writes `leads`, sets `processed_
 > table editor. Everything after this is convenience. **Stop here if you want to test the idea before
 > investing more** — and upgrade to Pro now, because from here it runs unattended.
 
-### Phase 3 — Telegram digest _(~half a day)_
+### Phase 3 — Telegram digest _(~half a day)_ ✅ **DONE 2026-08-28**
 
 Edge Function `digest`, `cron.schedule('digest', '0 6 * * *', …)`. Queries the top new leads plus any
 `next_action_at` that is due, posts one message. Also add an error branch to the fetch job: a failed
 run should notify, because **a silent scraper is worse than no scraper.**
 
 **Done when you get a message every morning without touching anything.**
+
+> **✅ Met, 2026-08-28.** `digest` v2 `ACTIVE` with `verify_jwt`, `_shared/telegram.ts` added,
+> migration `…_schedule_digest`, cron job 3 `0 5 * * *` `active = true`. Run 1 through
+> `net.http_post`: `new 4, due 0, unhealthy [], stuck 0`. Advisors still zero lints.
+>
+> **⚠️ The schedule is `0 5`, not the `0 6` sketched above.** pg_cron runs on the database clock,
+> which is UTC; the owner is UTC+3. `0 5` is 08:00 local — the hour §4's table actually asks for.
+> `0 6` would have arrived at 09:00. **To move it: local hour minus 3, and change nothing else.**
+>
+> **The 403 risk is closed by evidence, not by assumption.** The board carried
+> `403: bot can't initiate conversation with a user` as a live risk from 18:38 — chat id verified as
+> a *value*, never as a channel. The first real `sendMessage` returned 200, so `/start` had been
+> pressed and the credentials work end to end.
+>
+> **Idempotency proof, same discipline as phase 2: run 2 returned `new 0`.** "New" is a
+> `metadata.digested_at` stamp on each reported lead, not a 24-hour time window — a window would
+> silently drop whatever a missed run skipped, and a cron that did not fire is precisely when the
+> backlog matters. Stamped only *after* the send succeeds, so a Telegram outage cannot consume the
+> leads it failed to deliver.
+>
+> **⚠️ The error branch is three signals, not one, because the doc's version had a blind spot.**
+> Collectors alert on the **transition** into failure via `recordRun` — first failure and recovery
+> only, since alerting per failed run would send 48 messages a day for one source failing on a
+> half-hourly cron, and a channel that noisy gets muted. The digest then names any standing failure
+> daily. **But `enrich` never calls `recordRun`** — it has no `sources` row and no `error_count`, so
+> a broken enricher would produce a cheerful "no new leads" every morning while the queue grew
+> behind it. A stalled pipeline and a quiet market are indistinguishable from the inbox. The digest
+> therefore also counts `raw_postings` unprocessed for over an hour, which is the **only** signal
+> that would ever catch it.
+>
+> **⚠️ The digest speaks even when it has nothing to say.** Silence as a valid outcome makes a quiet
+> morning and a dead cron identical. The message is the heartbeat.
+>
+> Once a day is too rare to help §6's anti-pause problem — the `*/30` and `*/15` jobs carry that.
+> This one is for the human.
 
 ### Phase 4 — The UI _(~2 days)_
 

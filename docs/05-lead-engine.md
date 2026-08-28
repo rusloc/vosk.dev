@@ -10,6 +10,11 @@
 >
 > **✅ Approved by the owner 2026-08-28.** Orchestrator decided: **Supabase Cron + Edge Functions**,
 > not n8n. Build order in §8 is live; step 1 is the Supabase project and migration 001.
+>
+> **✅ Phase 0 built 2026-08-28.** Project `howpxpdnjjzdwqrgxkee`, schema and RLS live, advisors clean,
+> the `sources` seed row in place. Implementation repo: **`d:\__VOSK_LEADS__\`**. §3's migration has
+> **three corrections as built** — read the box in §3 before trusting the SQL there. Phase 1
+> (`fetch-hh-kz`) is next.
 
 ## What this delivers
 
@@ -173,6 +178,31 @@ design and matches this project's schema conventions. Three changes merged in:
   stage transitions as well as messages, which `touches` does not.
 - **Score is 0–100 with `score_breakdown jsonb`**, not 1–10. Scoring criteria change often; a jsonb
   breakdown avoids a column per criterion.
+
+> ### ⚠️ As built — three corrections to the SQL below _(applied 2026-08-28)_
+>
+> The migration below is **not** what is running. Read this first; the live version is in
+> `d:\__VOSK_LEADS__\supabase\migrations\`.
+>
+> **1. `v_funnel_summary` needs `with (security_invoker = on)`.** As written it is the one statement
+> here that undoes the RLS everything above it sets up. Postgres runs a view with the **definer's**
+> privileges by default, so a view owned by `postgres` over an RLS-protected `leads` reads every row —
+> and it sits in `public`, so PostgREST hands it to `anon`. Supabase's advisor rates this an ERROR.
+> Verified both ways: with a score-99 lead in the table, an anonymous client gets `[]`.
+>
+> **2. `is_app_admin()` must not live in `public`.** Every policy calls it, and PostgREST exposes
+> anything in `public` — so it was reachable at `/rest/v1/rpc/is_app_admin`. **Revoking `EXECUTE` is
+> not the fix, and this was tested rather than assumed:** revoking from `anon` alone changes nothing
+> (the default `PUBLIC` grant still applies), and revoking from `PUBLIC` turns every anonymous read
+> into `42501 permission denied for function is_app_admin` — HTTP 401 instead of zero rows. RLS policy
+> expressions are evaluated with the **caller's** privileges and genuinely need that grant. The
+> function therefore moves to a `private` schema, which PostgREST does not serve; the policies
+> reference it by OID and are unaffected. RPC now returns `PGRST202` / 404.
+>
+> **3. `set_updated_at()` needs its `search_path` pinned too.** §3 pins it on `is_app_admin` but not
+> here, and the advisor flags the omission.
+>
+> With all three applied, `get_advisors(security)` returns **zero lints**.
 
 ```sql
 -- migration 001 — lead engine. Idempotent per Supabase migration conventions.
@@ -415,6 +445,11 @@ Supabase Realtime on `leads` gives a live inbox badge without polling.
 Free-tier headroom: **500 MB database**, **500k Edge Function invocations/month**, 5 GB egress, and a
 **maximum of 2 active projects** — worth knowing before you spend one on something else.
 
+> ⚠️ **That cap is already reached.** Verified 2026-08-28: org `sudo.opc` is on the free plan, and
+> `yaga` + `vosk.dev` are both `ACTIVE_HEALTHY` — 2 of 2. `fabrigate` and `newsmate` are paused and
+> **cannot be restored without pausing one of the two live projects.** There is no headroom for a
+> third project on this plan.
+
 ### ⚠️ The one real risk, and the design already mitigates it
 
 **Supabase free projects pause after one week with no API requests** — and Supabase's wording is
@@ -480,17 +515,39 @@ assumption in §6 at the moment it would otherwise start to bite.
 
 ### Phase 0 — Foundations _(~half a day)_
 
-1. **Create the Supabase project.** Region: `eu-central-1` — closest to both KZ and EU sources.
-2. **Enable extensions:** `pg_cron`, `pg_net` (Dashboard → Database → Extensions).
-3. **Apply migration 001** — the SQL in §3, verbatim.
+1. ~~**Create the Supabase project.** Region: `eu-central-1` — closest to both KZ and EU sources.~~
+   **✅ Done 2026-08-28.** Project `vosk.dev`, ref `howpxpdnjjzdwqrgxkee`, region **`eu-west-1`** —
+   not the `eu-central-1` planned here. Region is fixed at creation and this is a batch pipeline
+   with no latency budget, so it stands as built.
+2. ~~**Enable extensions:** `pg_cron`, `pg_net` (Dashboard → Database → Extensions).~~
+   **✅ Done** — as a migration, not a Dashboard toggle, so Phase 0 is one reproducible artifact.
+   `pg_cron` → `pg_catalog`, `pg_net` → `extensions` (the bare `create extension` puts `pg_net` in
+   `public`, which the security advisor flags; it is non-relocatable, so the correction is a
+   drop/recreate — cheap before any job is scheduled, awkward after).
+3. ~~**Apply migration 001** — the SQL in §3, verbatim.~~ **✅ Done**, with the three §3 corrections
+   noted there.
 4. **Create your auth user** (magic link), then `insert into app_admins (user_id) values ('<your-uuid>')`.
-5. **Store secrets in Vault**, not in code: `ANTHROPIC_API_KEY`, `TELEGRAM_BOT_TOKEN`,
-   `TELEGRAM_CHAT_ID`, and the `service_role` key used by cron to call functions.
-6. **Seed `sources`** with one row: `('hh_kz', 'hh.kz', 'KZ', 'api')`.
+   ⏸ **Deferred — needs you.** No MCP tool creates auth users: Dashboard → Authentication → Users →
+   *Add user*. `app_admins` has no INSERT policy by design, so the row can only be written as
+   `postgres`. Nothing before the Phase 4 UI login depends on it.
+5. ~~**Store secrets in Vault**, not in code: …~~ ⏸ **Deferred — needs your values.** And this step
+   conflates two different stores. Correctly split:
+   - **Edge Function secrets:** `ANTHROPIC_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`.
+     `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are **auto-injected** — do not set them.
+   - **Vault** (only what SQL itself reads): `project_url`, and the key `pg_cron` puts in the
+     `Authorization` header. Supabase's own scheduling guide uses the **publishable** key there, not
+     `service_role` — the function authenticates itself internally, so the cron header never needs
+     the powerful key.
+6. ~~**Seed `sources`** with one row: `('hh_kz', 'hh.kz', 'KZ', 'api')`.~~ **✅ Done.**
 
 **Done when:** every table exists, RLS is on, and **an anonymous client selecting from `leads` returns
 zero rows** — not an error, zero rows. That is the RLS check that actually matters; test it before
 building anything on top.
+
+> **✅ Met, 2026-08-28.** All 7 tables + `v_funnel_summary` return `[]` / HTTP 200 to an anonymous
+> client holding the publishable key. Proven against **real rows, not an empty database** — a
+> score-99 lead and its company were inserted as `postgres`, re-queried anonymously (still `[]`), then
+> deleted. `sources` holds its seed row and also returns `[]`. Security advisors: **zero lints.**
 
 ### Phase 1 — First collector _(~1 day)_
 
@@ -512,10 +569,23 @@ select cron.schedule(
                                          where name = 'service_role_key')
       )
      ,body    := '{}'::jsonb
+     ,timeout_milliseconds := 55000       -- see the warning below; the default is 2000
   );
   $$
 );
 ```
+
+> ⚠️ **`net.http_post`'s `timeout_milliseconds` defaults to 2000 — two seconds.** Left unset (as this
+> snippet originally was), `pg_net` abandons the call long before any real fetch-normalize-upsert run
+> finishes, and the cron history will show requests that look like failures. Set it explicitly, as
+> above. The alternative — and the better shape once the jobs get heavier — is to have the function
+> acknowledge immediately and do its work inside `EdgeRuntime.waitUntil()`, so the HTTP round-trip is
+> never the thing being timed.
+>
+> Note also that the header below uses the **`service_role`** key. Supabase's own scheduling guide
+> uses the **publishable** key here: the Edge Function authenticates itself internally from its
+> auto-injected `SUPABASE_SERVICE_ROLE_KEY`, so the cron header only has to get past JWT verification
+> and never needs the powerful key sitting in a `cron.job` row.
 
 **Done when three consecutive runs insert only genuinely new rows.** Check with
 `select count(*) from raw_postings;` before and after — the unique index on

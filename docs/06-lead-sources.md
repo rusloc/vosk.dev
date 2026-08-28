@@ -7,11 +7,11 @@
 >
 > Moved from the repo root on 2026-08-28. Previously `LEADS-SRC.md`.
 
-> ## ⚠️ Verified against the live APIs, 2026-08-28 — four Tier-1 entries are wrong
+> ## ⚠️ Verified against the live APIs, 2026-08-28 — five Tier-1 entries are wrong
 >
 > Every 🟢 below was catalogued from documentation, not from a request. When Phase 1 was
-> built, **four of them did not behave as described.** Corrections are inline at each entry;
-> the summary:
+> built, **four of them did not behave as described.** A fifth (WeWorkRemotely) fell when it
+> was finally probed after Phase 3. Corrections are inline at each entry; the summary:
 >
 > | # | Source | Catalogued as | Actually, on 2026-08-28 |
 > |---|---|---|---|
@@ -19,6 +19,7 @@
 > | 5 | **RemoteOK** | "remote-only postings, tags, filter tags `bi`" | Returns the **latest 100 jobs, no filtering**. BI matches ≈ 0 |
 > | 7 | **Remotive** | "category=data, location-restriction field" | **Fixed 19-job sample; `category`, `search`, `q`, `limit` are all accepted and ignored.** Its own legal notice calls it a share feed |
 > | 8 | **Himalayas** | "public API" | ✅ **Works, and is the one that does** — 96k+ postings, cursor pagination. But **no server-side search either**; page size is hard-capped at 20 |
+> | 6 | **WeWorkRemotely** | "RSS per category: `remote-data-jobs.rss`" | **That URL 301-redirects to itself — there is no Data category.** The general feed works but is a ~10-per-category sample: **89 items, 0 BI roles** |
 > | 10 | **Arbeitsagentur** | "free public API" | **403** with and without the documented `X-API-Key` |
 >
 > **The lesson is about the test, not the sources.** Reachability (HTTP 200 + a big payload)
@@ -85,13 +86,14 @@ Access legend: 🟢 official API / feed · 🟡 structured but unofficial · �
   - Filter client-side by tags: `bi`, `analytics`, `data`, `sql`
 - **Connector notes:** Full feed each fetch; dedupe by `id`. Heavy syndication overlap with WWR/ATS boards — your pgvector dedup earns its keep here.
 
-### 6. WeWorkRemotely 🟢
+### 6. WeWorkRemotely ⛔ **verified broken 2026-08-28**
 - **Region:** Global remote
 - **What it is:** Curated remote board; paid postings, so quality per posting is higher than aggregators.
 - **Access:**
-  - RSS per category: `https://weworkremotely.com/categories/remote-data-jobs.rss` (also check the general programming/business categories for BI titles)
-  - Standard RSS: title, company, link, description snippet — fetch the linked page for full text
-- **Connector notes:** RSS gives snippets; do one polite page fetch per new item for the full description before enrichment.
+  - ~~RSS per category: `https://weworkremotely.com/categories/remote-data-jobs.rss`~~ — **301s to itself, an infinite redirect. There is no Data category.** The live category list is: Full-Stack / Back-End / Front-End Programming, DevOps and Sysadmin, Design, Product, Sales and Marketing, Management and Finance, Customer Support, All Other Remote.
+  - General feed `https://weworkremotely.com/remote-jobs.rss` returns **200 and 89 items** — but that is a **~10-per-category sample, not the board**.
+- **⛔ Probed 2026-08-28: 89 items, 0 genuine BI roles.** Two title matches were the *company* Databricks, not the stack; eleven full-text matches were all false positives (`CX Partner Manager`, `Director, GTM Finance`, `Customer Success Manager`) hit on description boilerplate.
+- **The failure is the same one the box at the top of this file is about.** This entry was catalogued as 🟢 from documentation, survived the Phase 1 audit because nobody asked it for BI jobs, and was recommended as the keyless second connector on that basis. **It took one probe to disqualify.** Reachability is not usefulness.
 
 ### 7. Remotive 🟢
 - **Region:** Global remote, EU-friendly
@@ -166,14 +168,22 @@ Access legend: 🟢 official API / feed · 🟡 structured but unofficial · �
   - **No per-site parsers:** feed raw page text to the LLM, let it extract postings — this is what makes the connector generic
 - **Connector notes:** Weekly sweep is enough. Store a page-content hash to skip unchanged pages and save LLM calls.
 
-### 14. Hacker News "Who is hiring?" + YC Work at a Startup 🟡
+### 14. Hacker News "Who is hiring?" + YC Work at a Startup 🟡 **probed 2026-08-28 — works**
 - **Region:** US-heavy startups
 - **What it is:** Monthly HN mega-thread of direct founder/team postings; YC's own job board.
 - **Why for you:** Founders answer DMs; contract arrangements are normal; postings state remote/timezone policy explicitly.
 - **Access:**
-  - **Official HN Firebase API** (`https://hacker-news.firebaseio.com/v0/`) — find the monthly thread, fetch child comments, filter for BI/data + remote/worldwide
+  - **Algolia, not Firebase, for discovery** — `search_by_date?tags=story,author_whoishiring` returns the monthly threads newest-first in one call. `hn.algolia.com/api/v1/items/{id}` then returns the entire comment tree in a single ~450KB response, so a thread costs **two requests, no paging, no key**.
+  - ⚠️ Plain `search?query=…` sorts by *relevance* and returns threads from 2013–2016. Use `search_by_date`.
   - YC Work at a Startup: public structured pages, crawl politely
-- **Connector notes:** Runs once a month (thread appears on the 1st). High signal density per run.
+- **✅ Measured on Aug 2026 (`49156683`): 240 top-level postings, 21 BI keyword hits, 23 contract-ish, 1 both.** That is roughly 3× the BI volume Himalayas has produced, at monthly cadence.
+- **⚠️ There is no structured company field, and the pipe convention cannot be trusted to supply one.** Of the 21 BI postings, 20 split into ≥2 fields on `|` — but `Data analyst | Chicago, IL or Washington DC only` leads with the **role**, and `Snout  https://snout.com/ | …` glues the URL into field 0. A splitter cannot tell those from a real company, so it writes a junk `companies` row instead of erroring. **95% "parse rate" is not 95% correct.**
+- **Consequence for the build order: this connector needs `enrich` to name the company**, since `persist()` currently hard-requires `raw_payload._company_id` from the collector. That is a Phase 2 contract change, not just a new connector — cost it accordingly.
+
+### 14b. HN "Freelancer? Seeking freelancer?" ⛔ **verified dead 2026-08-28**
+The monthly thread still exists (`author_whoishiring`, posted alongside the other two), and on paper it is the perfect source: contract work by construction, keyless, same API.
+
+**It is empty. Five months sampled — Apr–Aug 2026: 102 posts, of which 2 were SEEKING FREELANCER, of which 0 were BI.** Almost every post is a freelancer advertising *themselves*, which is the opposite side of the market. Recorded so nobody rediscovers it — the hypothesis was reasonable and the data killed it.
 
 ### 15. Wellfound (ex-AngelList Talent) 🟡
 - **Region:** US/EU startups
@@ -233,11 +243,20 @@ struck through, because the reason it changed is worth more than the order itsel
 4. **hh.kz** — moves here from day one. Blocked until an app is registered at dev.hh.ru; the
    `sources` row already carries the reason and re-enabling is one field. **Still the richest
    source for the KZ market — this is a deferral, not a demotion.**
-5. HN monthly thread · 6. Career-page crawler · 7. Telegram listener ·
+5. **HN "Who is hiring?" monthly thread** — probed and real (240 posts, 21 BI in Aug 2026), keyless,
+   two requests per thread. **Carries a Phase 2 contract change with it**: HN has no structured
+   company field and the pipe convention mis-parses roles as companies, so `enrich` must name the
+   company instead of the collector. Priced as more than "a new connector" for that reason.
+6. Career-page crawler · 7. Telegram listener ·
    8. Seek (only if Adzuna's AU/NZ coverage proves insufficient)
 
 **Dropped from the build order:** RemoteOK (latest 100, no filter), Remotive (19-job share feed),
-Arbeitsagentur (403). Not worth a connector each for what they return.
+Arbeitsagentur (403), **WeWorkRemotely (89-item sample, 0 BI)**, **HN's freelancer thread (2
+seeking-freelancer posts in 5 months, 0 BI)**. Not worth a connector each for what they return.
+
+> **⚠️ Every source above that says "probed" was probed by asking it for BI jobs and counting.
+> Every source that ever said 🟢 without that test has been wrong five times out of eleven.**
+> The test is cheap. Run it before writing a connector, not after.
 
 > ~~1. hh.kz (day one — real API, validates the pipeline)~~
 > ~~2. Greenhouse + Lever + Ashby (one shared ATS-sweep connector)~~

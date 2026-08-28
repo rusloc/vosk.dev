@@ -1,3 +1,28 @@
+> # ⛔ SUPERSEDED — 2026-08-28
+>
+> Merged into **[`05-lead-engine.md`](05-lead-engine.md)**, the single design doc. The source catalog in
+> §2 below is superseded by the fuller [`06-lead-sources.md`](06-lead-sources.md).
+>
+> **What carried forward:** the schema is the base of the merged design — uuid PKs, soft delete,
+> `metadata jsonb` on every entity, RLS in the first migration, and the `app_admins` + `is_app_admin()`
+> gate. So are the §5 compliance rules.
+>
+> **What changed:**
+> - **`pgvector` dropped for v1.** `(source_id, external_id)` unique plus the company domain catches
+>   ~95% of duplicates. Add embeddings when a real duplicate problem appears.
+> - **The Python worker box is gone.** §1 costs this against "Railway / Fly.io / cheap VPS"; the merged
+>   design runs the schedule inside Postgres with `pg_cron`, so there is no third host and no container.
+> - **The UI is a separate Vercel project**, not a route group in this site — `src/proxy.ts` would
+>   rewrite `/leads` to `/en/leads`, and the service-role key does not belong in a public marketing
+>   deployment.
+> - **This spec assumes a Supabase project and Vercel Auth that do not exist** (`:11`, `:49`). Verified
+>   08-25: no `@supabase/*`, no auth, no ORM anywhere in the repo. Standing up Supabase is step 1 of the
+>   merged build order, not a precondition it can assume.
+>
+> Preserved below _(as written, for the record)_.
+
+---
+
 # BI Lead Engine — Source Catalog & Solution Spec
 
 Remote BI/analytics leads from Europe, US + Canada, Australia + NZ, and Kazakhstan, feeding an interactive lead-funnel app embedded in your existing Vercel + Supabase site.

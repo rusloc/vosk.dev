@@ -623,10 +623,14 @@ run should notify, because **a silent scraper is worse than no scraper.**
 
 Separate Next.js app, separate Vercel project, free `*.vercel.app` URL.
 
+Layout as built — the repo is `rusloc/vosk_leads` at `D:\__VOSK_LEADS__`, **managed from
+`D:\__VOSK__`** (it carries no `CLAUDE.md`, `.claude/`, `.log/` or `docs/` of its own):
+
 ```
-vosk-leads/
+D:\__VOSK_LEADS__\
   supabase/
-    migrations/001_init.sql
+    config.toml                 ← project link, hand-written
+    migrations/*.sql            ← filenames match the versions Supabase assigned
     functions/{fetch-hh-kz,enrich,digest}/index.ts
     functions/_shared/{supabase.ts,claude.ts}
   app/                          ← Next.js App Router

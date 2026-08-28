@@ -7,9 +7,32 @@
 >
 > Moved from the repo root on 2026-08-28. Previously `LEADS-SRC.md`.
 
+> ## ⚠️ Verified against the live APIs, 2026-08-28 — four Tier-1 entries are wrong
+>
+> Every 🟢 below was catalogued from documentation, not from a request. When Phase 1 was
+> built, **four of them did not behave as described.** Corrections are inline at each entry;
+> the summary:
+>
+> | # | Source | Catalogued as | Actually, on 2026-08-28 |
+> |---|---|---|---|
+> | 1 | **hh.kz** | "anonymous search works for basics" | **403 on `/vacancies`** — needs a registered app. `/areas` and `/dictionaries` still 200, so it is the endpoint that is gated, not the client |
+> | 5 | **RemoteOK** | "remote-only postings, tags, filter tags `bi`" | Returns the **latest 100 jobs, no filtering**. BI matches ≈ 0 |
+> | 7 | **Remotive** | "category=data, location-restriction field" | **Fixed 19-job sample; `category`, `search`, `q`, `limit` are all accepted and ignored.** Its own legal notice calls it a share feed |
+> | 8 | **Himalayas** | "public API" | ✅ **Works, and is the one that does** — 96k+ postings, cursor pagination. But **no server-side search either**; page size is hard-capped at 20 |
+> | 10 | **Arbeitsagentur** | "free public API" | **403** with and without the documented `X-API-Key` |
+>
+> **The lesson is about the test, not the sources.** Reachability (HTTP 200 + a big payload)
+> is not usefulness — Remotive was recommended for Phase 1 on exactly that mistake and had to
+> be withdrawn one probe later. **Test a source by asking it for BI jobs and counting what
+> comes back.**
+>
+> **Consequence for the build order at the bottom of this file: hh.kz is not day one.**
+> Phase 1 shipped on Himalayas.
+
 Target regions: US + Canada, Europe, Australia + NZ, Kazakhstan. Each source below: what it is, why it matters for BI leads, exactly how to access the data, and connector notes.
 
-Access legend: 🟢 official API / feed · 🟡 structured but unofficial · 🔴 manual-assist only
+Access legend: 🟢 official API / feed · 🟡 structured but unofficial · 🔴 manual-assist only ·
+**⛔ verified broken 2026-08-28**
 
 ---
 
@@ -196,12 +219,28 @@ Access legend: 🟢 official API / feed · 🟡 structured but unofficial · �
 
 ## Suggested Build Order
 
-1. hh.kz (day one — real API, validates the pipeline)
-2. Greenhouse + Lever + Ashby (one shared ATS-sweep connector)
-3. RemoteOK + WWR + Remotive + Himalayas (feeds — an afternoon)
-4. Adzuna (multi-country coverage incl. AU/NZ/CA)
-5. Telegram listener
-6. Arbeitsagentur
-7. HN monthly thread
-8. Career-page crawler
-9. Seek (only if Adzuna's AU/NZ coverage proves insufficient)
+**Revised 2026-08-28 against what the APIs actually return.** The original order is kept below it,
+struck through, because the reason it changed is worth more than the order itself.
+
+1. ✅ **Himalayas — shipped as Phase 1.** The only keyless source with a real corpus (96k+) and
+   working pagination. No server-side search, so the collector pages newest-first and
+   keyword-filters itself; a run scans 200 postings and stops early once it catches up.
+2. **Adzuna** — now the highest-value next connector, not the fourth. It is the only remaining
+   candidate with genuine multi-country **search**, and it covers US/CA/AU/NZ/DE/NL/FR/PL —
+   three of the four target regions in one connector. Needs a free API key (user-gated).
+3. **Greenhouse + Lever + Ashby** (one shared ATS-sweep connector). Keyless and unlimited, but
+   per-company: needs a curated slug list before it returns anything relevant.
+4. **hh.kz** — moves here from day one. Blocked until an app is registered at dev.hh.ru; the
+   `sources` row already carries the reason and re-enabling is one field. **Still the richest
+   source for the KZ market — this is a deferral, not a demotion.**
+5. HN monthly thread · 6. Career-page crawler · 7. Telegram listener ·
+   8. Seek (only if Adzuna's AU/NZ coverage proves insufficient)
+
+**Dropped from the build order:** RemoteOK (latest 100, no filter), Remotive (19-job share feed),
+Arbeitsagentur (403). Not worth a connector each for what they return.
+
+> ~~1. hh.kz (day one — real API, validates the pipeline)~~
+> ~~2. Greenhouse + Lever + Ashby (one shared ATS-sweep connector)~~
+> ~~3. RemoteOK + WWR + Remotive + Himalayas (feeds — an afternoon)~~
+> ~~4. Adzuna (multi-country coverage incl. AU/NZ/CA)~~
+> ~~5. Telegram listener · 6. Arbeitsagentur · 7. HN monthly thread · 8. Career-page crawler · 9. Seek~~

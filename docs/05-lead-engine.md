@@ -11,10 +11,14 @@
 > **✅ Approved by the owner 2026-08-28.** Orchestrator decided: **Supabase Cron + Edge Functions**,
 > not n8n. Build order in §8 is live; step 1 is the Supabase project and migration 001.
 >
-> **✅ Phase 0 built 2026-08-28.** Project `howpxpdnjjzdwqrgxkee`, schema and RLS live, advisors clean,
-> the `sources` seed row in place. Implementation repo: **`d:\__VOSK_LEADS__\`**. §3's migration has
-> **three corrections as built** — read the box in §3 before trusting the SQL there. Phase 1
-> (`fetch-hh-kz`) is next.
+> **✅ Phases 0 and 1 built 2026-08-28.** Project `howpxpdnjjzdwqrgxkee`, schema and RLS live,
+> advisors clean, collector `fetch-himalayas` deployed and scheduled `*/30`, postings landing in
+> `raw_postings`. Implementation repo: **`d:\__VOSK_LEADS__\`**, managed from `D:\__VOSK__`.
+>
+> **Two things in this doc are superseded by what was built — read both boxes before trusting the
+> text around them:** §3's migration has **three corrections** (RLS-bypassing view, `is_app_admin`
+> placement, `search_path`), and **§8 Phase 1 did not ship on hh.kz** — that source returns 403 and
+> is disabled. Phase 2 (`enrich`) is next.
 
 ## What this delivers
 
@@ -549,8 +553,32 @@ building anything on top.
 > score-99 lead and its company were inserted as `postgres`, re-queried anonymously (still `[]`), then
 > deleted. `sources` holds its seed row and also returns `[]`. Security advisors: **zero lints.**
 
-### Phase 1 — First collector _(~1 day)_
+### Phase 1 — First collector _(~1 day)_ ✅ **DONE 2026-08-28 — but not with hh.kz**
 
+> **⚠️ hh.kz could not be built.** `GET /vacancies` returns **403** on both `api.hh.ru` and
+> `api.hh.kz`, with any User-Agent, with and without params — while `/areas` and `/dictionaries`
+> return 200 from the same client. The endpoint is gated behind a registered application; the
+> catalog's "anonymous search works for basics" is out of date. Its `sources` row is now
+> `is_enabled = false` and carries the reason and the unblock step.
+>
+> **Phase 1 shipped on Himalayas instead** — the only keyless source that survived testing with a
+> real corpus (96k+ postings, working cursor pagination). `06-lead-sources.md` carries the full
+> verification table; three other Tier-1 🟢 entries also failed.
+>
+> **Delivered:** Edge Function `fetch-himalayas` (v1, `verify_jwt`), migrations
+> `…_phase1_himalayas_source` and `…_schedule_fetch_himalayas`, cron job `fetch-himalayas`
+> `*/30 * * * *` active, Vault secrets `project_url` + `edge_invoke_key`.
+>
+> **Two design details the source forced, both worth keeping:**
+> - **No server-side search anywhere.** Every filter param Himalayas accepts is ignored, so the
+>   collector pages newest-first and keyword-filters itself, stopping early once a page yields no
+>   new postings. Run 1: 10 pages / 200 scanned / 6 inserted in 4.6s. Runs 2–4: 3 pages / 0
+>   inserted in ~1s. **That early stop is what makes a `*/30` schedule cheap.**
+> - **No company domain.** The schema's designed dedup anchor is unavailable, but Himalayas
+>   publishes a stable `companySlug`. A partial UNIQUE index on
+>   `(metadata->>'himalayas_slug')` makes duplicate companies impossible rather than unlikely.
+
+The original plan, for the record — build it when the hh.ru app exists:
 Edge Function `fetch-hh-kz`: query `https://api.hh.ru/vacancies?text=…&area=40`, page through results,
 upsert `companies` on domain, insert `raw_postings` with `external_id = <hh id>`.
 
@@ -586,6 +614,14 @@ select cron.schedule(
 > uses the **publishable** key here: the Edge Function authenticates itself internally from its
 > auto-injected `SUPABASE_SERVICE_ROLE_KEY`, so the cron header only has to get past JWT verification
 > and never needs the powerful key sitting in a `cron.job` row.
+
+> **✅ Met, 2026-08-28.** Run 1: `pages 10, scanned 200, matched 6, inserted 6`. Runs 2 and 3:
+> `inserted 0`, stopping at 3 pages with *"caught up — page held no new postings."* A fourth run
+> was fired **through the cron body itself** — `net.http_post` from inside Postgres, resolving both
+> Vault secrets — and returned `status_code 200, timed_out false, inserted 0`. That last one is the
+> real proof: it exercises pg_cron → Vault → pg_net → Edge Function → Postgres end to end, rather
+> than just the function. All 6 landed rows are genuine BI/analytics roles (including ZoomInfo's
+> *Principal Business Intelligence Analyst*) — no false positives.
 
 **Done when three consecutive runs insert only genuinely new rows.** Check with
 `select count(*) from raw_postings;` before and after — the unique index on

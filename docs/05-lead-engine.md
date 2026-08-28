@@ -630,18 +630,62 @@ select cron.schedule(
 Inspect run history in `cron.job_run_details` — this is your job log, and it is the thing people forget
 exists when they miss n8n's execution UI.
 
-### Phase 2 — Enrichment _(~1 day)_
+### Phase 2 — Enrichment _(~1 day)_ ✅ **DONE 2026-08-28**
 
 Edge Function `enrich`, scheduled `*/15`. Takes N rows where `processed_at is null`, sends each to
-**`claude-haiku-4-5-20251001`** with one prompt that translates, extracts and scores in a single call
-— Russian text goes straight in, no separate translation step. Writes `leads`, sets `processed_at`.
+**Claude Haiku** with one prompt that translates, extracts and scores in a single call — Russian text
+goes straight in, no separate translation step. Writes `leads`, sets `processed_at`.
 
 - Force JSON out and validate it before writing. A model returning prose into a `numeric` column is
   the most likely runtime failure here.
 - `score < 40` → `stage = 'dead'` with a `rejected_reason`.
 - **Batch and exit.** N rows per invocation keeps it timeout-proof and idempotent on retry.
 
+> **Delivered:** Edge Function `enrich` (v3, `verify_jwt`), `_shared/claude.ts`, migration
+> `…_schedule_enrich`, cron job `enrich` `*/15 * * * *` active. **6 postings → 6 leads, 3 `inbox`,
+> 3 `dead`, 0 failures**, fired through the cron body itself. Advisors still zero lints.
+>
+> **⚠️ Model id: `claude-haiku-4-5`, not the `claude-haiku-4-5-20251001` written above.** Dated
+> suffixes are no longer appended to model ids; the unsuffixed alias is the current documented form.
+>
+> **Four decisions the build forced, all worth keeping:**
+>
+> - **The server computes the score; the model only returns four components** — `role_fit` (0-40),
+>   `engagement_fit` (0-25), `remote_fit` (0-20), `stack_fit` (0-15), stored in `score_breakdown`.
+>   Asking the model for the total as well would add a failure mode — components that don't sum to
+>   it — with nothing to gain. `engagement_fit` is what encodes "freelance, not employment", and it
+>   is doing the real work: every rejection so far is a permanent FTE or management role.
+> - **Structured output is a `strict: true` tool with a forced `tool_choice`**, then every field is
+>   re-validated in TypeScript before it reaches a typed column. Components outside their cap are
+>   **rejected, not clamped** — a clamp would hide a misread rubric behind a plausible score.
+> - **`BATCH_SIZE` is bounded by the caller's timeout, and was measured, not chosen.** 6 postings ran
+>   inside the 55s `pg_net` window → ~9s each (one sequential Haiku call per posting). At 10 the
+>   worst case is ~90s, which would sever the connection while the function completed server-side —
+>   a logged timeout on a run that worked. **Set to 5.** Raise it only with `EdgeRuntime.waitUntil()`.
+> - **A failed row retries, but not forever.** The batch is oldest-first, so a permanently
+>   un-enrichable posting would sit at the head of every batch and starve everything behind it.
+>   Attempts are counted in `raw_payload._enrich_attempts`; after 3 the posting is stamped processed
+>   with `_enrich_error` recorded. A rate limit breaks the batch instead of burning every row's
+>   attempts on one throttle.
+>
+> **⚠️ A defect the first run exposed, kept here because the shape recurs: a constrained enum with no
+> escape hatch does not produce an error, it produces a confident wrong answer.** `region` offered
+> `KZ / US_CA / EU / AU_NZ / GLOBAL`, so an India-based posting and a US agency were both filed as
+> **`KZ`** — and `region` is the denormalized column §3 added *for fast filtering*, so a KZ filter
+> would have surfaced two leads from neither country. Fixed by adding `OTHER`; both rows were reset
+> and re-scored rather than hand-corrected, so the model made the call with the right options.
+
 **Done when new postings are scored within 15 minutes with nobody watching.**
+
+> **✅ Met, 2026-08-28.** Run 1 through `net.http_post`: `considered 6, inbox 3, dead 3, failed 0`.
+> The 15:30 cron tick fired `fetch-himalayas` and `enrich` together, both `succeeded`, with enrich
+> returning `considered 0, "nothing to enrich"` — **the idempotency proof: a second pass over an
+> already-processed queue does nothing and costs nothing.**
+>
+> ⚠️ **Volume, not correctness, is now the limit.** Himalayas is a jobs board, so nearly everything
+> on it is permanent full-time — exactly what `engagement_fit` scores down. 3 of 6 cleared 40, and
+> none was a contract posting. **The pipeline works; the source is wrong for freelance leads.** That
+> is a much stronger argument for Adzuna than the single-point-of-failure risk was.
 
 > **This is the minimum useful system.** Leads arrive, get scored, and are readable in the Supabase
 > table editor. Everything after this is convenience. **Stop here if you want to test the idea before

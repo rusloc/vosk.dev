@@ -31,11 +31,11 @@ export default async function BlogPage({ params }: Props) {
   const tags = getAllTags();
 
   return (
-    /* Tighter than the other list pages' `py-10 sm:py-12`: this page carries three
-       cards plus a filter bar and a page menu, and at 1440x900 that overflowed by
-       122px. See the trims in blog-list.tsx — together they bring the floor to the
-       same 900px /services holds. */
-    <Container className="py-6 sm:py-8">
+    /* Same padding as /work, /services and /contact so the title and intro land at
+       one height across the list pages. The 1440x900 fit is held by the trims in
+       blog-list.tsx (tag chips folded into the filter bar, `mt-4` on the list
+       grid), which stay. */
+    <Container className="py-10 sm:py-12">
       <JsonLd
         data={collectionGraph(l, {
           name: t.metaTitle,

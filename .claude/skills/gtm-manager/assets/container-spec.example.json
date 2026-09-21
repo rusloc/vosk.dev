@@ -1,0 +1,280 @@
+{
+  "$comment": "GA4 baseline for a web container. Replace G-XXXXXXXXXX. Apply with: python scripts/gtm_client.py apply --workspace <ws path> --spec this.json [--dry-run]. All cross-references are by NAME.",
+
+  "builtInVariables": [
+    "pageUrl", "pageHostname", "pagePath", "referrer", "event",
+    "clickElement", "clickText", "clickUrl", "clickClasses", "clickId",
+    "historySource", "environmentName", "debugMode"
+  ],
+
+  "folders": [
+    { "name": "GA4" },
+    { "name": "Config" },
+    { "name": "Clicks" }
+  ],
+
+  "variables": [
+    {
+      "name": "C - GA4 Measurement ID",
+      "type": "c",
+      "folder": "Config",
+      "notes": "Single source of truth for the GA4 property. Change here, not in tags.",
+      "parameter": [ { "type": "TEMPLATE", "key": "value", "value": "G-XXXXXXXXXX" } ]
+    },
+    {
+      "name": "LT - Environment by hostname",
+      "type": "smm",
+      "folder": "Config",
+      "parameter": [
+        { "type": "TEMPLATE", "key": "input", "value": "{{Page Hostname}}" },
+        { "type": "LIST", "key": "map", "list": [
+          { "type": "MAP", "map": [
+            { "type": "TEMPLATE", "key": "key", "value": "www.example.com" },
+            { "type": "TEMPLATE", "key": "value", "value": "production" } ] },
+          { "type": "MAP", "map": [
+            { "type": "TEMPLATE", "key": "key", "value": "staging.example.com" },
+            { "type": "TEMPLATE", "key": "value", "value": "staging" } ] }
+        ] },
+        { "type": "BOOLEAN", "key": "setDefaultValue", "value": "true" },
+        { "type": "TEMPLATE", "key": "defaultValue", "value": "development" }
+      ]
+    },
+    {
+      "name": "DLV - page_title",
+      "type": "v",
+      "folder": "GA4",
+      "parameter": [
+        { "type": "TEMPLATE", "key": "name", "value": "page_title" },
+        { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }
+      ]
+    },
+    {
+      "name": "DLV - user_id",
+      "type": "v",
+      "folder": "GA4",
+      "parameter": [
+        { "type": "TEMPLATE", "key": "name", "value": "user_id" },
+        { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }
+      ]
+    },
+    {
+      "name": "DLV - ecommerce.value",
+      "type": "v",
+      "folder": "GA4",
+      "parameter": [
+        { "type": "TEMPLATE", "key": "name", "value": "ecommerce.value" },
+        { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }
+      ]
+    },
+    {
+      "name": "DLV - ecommerce.currency",
+      "type": "v",
+      "folder": "GA4",
+      "parameter": [
+        { "type": "TEMPLATE", "key": "name", "value": "ecommerce.currency" },
+        { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" },
+        { "type": "BOOLEAN", "key": "setDefaultValue", "value": "true" },
+        { "type": "TEMPLATE", "key": "defaultValue", "value": "USD" }
+      ]
+    },
+    {
+      "name": "AEV - data-track",
+      "type": "aev",
+      "folder": "Clicks",
+      "parameter": [
+        { "type": "TEMPLATE", "key": "varType", "value": "ATTRIBUTE" },
+        { "type": "TEMPLATE", "key": "attribute", "value": "data-track" },
+        { "type": "BOOLEAN", "key": "setDefaultValue", "value": "true" },
+        { "type": "TEMPLATE", "key": "defaultValue", "value": "(none)" }
+      ]
+    },
+    {
+      "name": "CJS - clean page path",
+      "type": "jsm",
+      "folder": "GA4",
+      "notes": "Strips trailing slashes so /pricing and /pricing/ report as one page.",
+      "parameter": [
+        { "type": "TEMPLATE", "key": "javascript",
+          "value": "function () {\n  try {\n    var p = document.location.pathname.replace(/\\/+$/, '');\n    return p || '/';\n  } catch (e) {\n    return undefined;\n  }\n}" }
+      ]
+    },
+    {
+      "name": "ES - default event settings",
+      "type": "gtes",
+      "folder": "GA4",
+      "notes": "Shared parameters for every GA4 event.",
+      "parameter": [
+        { "type": "LIST", "key": "eventSettingsTable", "list": [
+          { "type": "MAP", "map": [
+            { "type": "TEMPLATE", "key": "parameter", "value": "environment" },
+            { "type": "TEMPLATE", "key": "parameterValue", "value": "{{LT - Environment by hostname}}" } ] },
+          { "type": "MAP", "map": [
+            { "type": "TEMPLATE", "key": "parameter", "value": "page_path_clean" },
+            { "type": "TEMPLATE", "key": "parameterValue", "value": "{{CJS - clean page path}}" } ] }
+        ] },
+        { "type": "LIST", "key": "userProperties", "list": [
+          { "type": "MAP", "map": [
+            { "type": "TEMPLATE", "key": "name", "value": "user_id" },
+            { "type": "TEMPLATE", "key": "value", "value": "{{DLV - user_id}}" } ] }
+        ] }
+      ]
+    }
+  ],
+
+  "triggers": [
+    {
+      "name": "CE - virtual_page_view",
+      "type": "CUSTOM_EVENT",
+      "folder": "GA4",
+      "notes": "SPA route change. Frontend pushes {event:'virtual_page_view', page_title}.",
+      "customEventFilter": [
+        { "type": "EQUALS", "parameter": [
+          { "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" },
+          { "type": "TEMPLATE", "key": "arg1", "value": "virtual_page_view" } ] }
+      ]
+    },
+    {
+      "name": "CE - GA4 ecommerce events",
+      "type": "CUSTOM_EVENT",
+      "folder": "GA4",
+      "customEventFilter": [
+        { "type": "MATCH_REGEX", "parameter": [
+          { "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" },
+          { "type": "TEMPLATE", "key": "arg1", "value": "^(view_item_list|select_item|view_item|add_to_cart|remove_from_cart|view_cart|begin_checkout|add_shipping_info|add_payment_info|purchase|refund)$" } ] }
+      ]
+    },
+    {
+      "name": "CE - sign_up",
+      "type": "CUSTOM_EVENT",
+      "folder": "GA4",
+      "customEventFilter": [
+        { "type": "EQUALS", "parameter": [
+          { "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" },
+          { "type": "TEMPLATE", "key": "arg1", "value": "sign_up" } ] }
+      ]
+    },
+    {
+      "name": "Click - data-track elements",
+      "type": "CLICK",
+      "folder": "Clicks",
+      "filter": [
+        { "type": "CSS_SELECTOR", "parameter": [
+          { "type": "TEMPLATE", "key": "arg0", "value": "{{Click Element}}" },
+          { "type": "TEMPLATE", "key": "arg1", "value": "[data-track], [data-track] *" } ] }
+      ]
+    },
+    {
+      "name": "Exception - internal / debug traffic",
+      "type": "CUSTOM_EVENT",
+      "folder": "Config",
+      "notes": "Universal blocking trigger: attach to every tag. Blocks when Debug Mode is on.",
+      "customEventFilter": [
+        { "type": "MATCH_REGEX", "parameter": [
+          { "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" },
+          { "type": "TEMPLATE", "key": "arg1", "value": ".*" } ] }
+      ],
+      "filter": [
+        { "type": "EQUALS", "parameter": [
+          { "type": "TEMPLATE", "key": "arg0", "value": "{{Debug Mode}}" },
+          { "type": "TEMPLATE", "key": "arg1", "value": "true" } ] }
+      ]
+    }
+  ],
+
+  "tags": [
+    {
+      "name": "GT - Google tag",
+      "type": "googtag",
+      "folder": "GA4",
+      "notes": "GA4 config. send_page_view=false because page views are sent by the SPA tag below.",
+      "parameter": [
+        { "type": "TEMPLATE", "key": "tagId", "value": "{{C - GA4 Measurement ID}}" },
+        { "type": "LIST", "key": "configSettingsTable", "list": [
+          { "type": "MAP", "map": [
+            { "type": "TEMPLATE", "key": "parameter", "value": "send_page_view" },
+            { "type": "TEMPLATE", "key": "parameterValue", "value": "false" } ] }
+        ] },
+        { "type": "TEMPLATE", "key": "eventSettingsVariable", "value": "{{ES - default event settings}}" }
+      ],
+      "firingTriggers": ["Initialization - All Pages"],
+      "tagFiringOption": "ONCE_PER_EVENT"
+    },
+    {
+      "name": "GA4 - Event - page_view",
+      "type": "gaawe",
+      "folder": "GA4",
+      "parameter": [
+        { "type": "TEMPLATE", "key": "measurementIdOverride", "value": "{{C - GA4 Measurement ID}}" },
+        { "type": "TEMPLATE", "key": "eventName", "value": "page_view" },
+        { "type": "LIST", "key": "eventSettingsTable", "list": [
+          { "type": "MAP", "map": [
+            { "type": "TEMPLATE", "key": "parameter", "value": "page_location" },
+            { "type": "TEMPLATE", "key": "parameterValue", "value": "{{Page URL}}" } ] },
+          { "type": "MAP", "map": [
+            { "type": "TEMPLATE", "key": "parameter", "value": "page_title" },
+            { "type": "TEMPLATE", "key": "parameterValue", "value": "{{DLV - page_title}}" } ] },
+          { "type": "MAP", "map": [
+            { "type": "TEMPLATE", "key": "parameter", "value": "page_referrer" },
+            { "type": "TEMPLATE", "key": "parameterValue", "value": "{{Referrer}}" } ] }
+        ] },
+        { "type": "TEMPLATE", "key": "eventSettingsVariable", "value": "{{ES - default event settings}}" }
+      ],
+      "firingTriggers": ["All Pages", "CE - virtual_page_view"],
+      "blockingTriggers": ["Exception - internal / debug traffic"],
+      "tagFiringOption": "ONCE_PER_EVENT"
+    },
+    {
+      "name": "GA4 - Event - ecommerce (all)",
+      "type": "gaawe",
+      "folder": "GA4",
+      "notes": "One tag for every GA4 ecommerce event; event name comes from the data layer.",
+      "parameter": [
+        { "type": "TEMPLATE", "key": "measurementIdOverride", "value": "{{C - GA4 Measurement ID}}" },
+        { "type": "TEMPLATE", "key": "eventName", "value": "{{Event}}" },
+        { "type": "BOOLEAN", "key": "sendEcommerceData", "value": "true" },
+        { "type": "TEMPLATE", "key": "getEcommerceDataFrom", "value": "dataLayer" },
+        { "type": "TEMPLATE", "key": "eventSettingsVariable", "value": "{{ES - default event settings}}" }
+      ],
+      "firingTriggers": ["CE - GA4 ecommerce events"],
+      "blockingTriggers": ["Exception - internal / debug traffic"],
+      "tagFiringOption": "ONCE_PER_EVENT"
+    },
+    {
+      "name": "GA4 - Event - sign_up",
+      "type": "gaawe",
+      "folder": "GA4",
+      "parameter": [
+        { "type": "TEMPLATE", "key": "measurementIdOverride", "value": "{{C - GA4 Measurement ID}}" },
+        { "type": "TEMPLATE", "key": "eventName", "value": "sign_up" },
+        { "type": "TEMPLATE", "key": "eventSettingsVariable", "value": "{{ES - default event settings}}" }
+      ],
+      "firingTriggers": ["CE - sign_up"],
+      "blockingTriggers": ["Exception - internal / debug traffic"],
+      "tagFiringOption": "ONCE_PER_EVENT"
+    },
+    {
+      "name": "GA4 - Event - ui_click",
+      "type": "gaawe",
+      "folder": "Clicks",
+      "parameter": [
+        { "type": "TEMPLATE", "key": "measurementIdOverride", "value": "{{C - GA4 Measurement ID}}" },
+        { "type": "TEMPLATE", "key": "eventName", "value": "ui_click" },
+        { "type": "LIST", "key": "eventSettingsTable", "list": [
+          { "type": "MAP", "map": [
+            { "type": "TEMPLATE", "key": "parameter", "value": "click_label" },
+            { "type": "TEMPLATE", "key": "parameterValue", "value": "{{AEV - data-track}}" } ] },
+          { "type": "MAP", "map": [
+            { "type": "TEMPLATE", "key": "parameter", "value": "click_text" },
+            { "type": "TEMPLATE", "key": "parameterValue", "value": "{{Click Text}}" } ] },
+          { "type": "MAP", "map": [
+            { "type": "TEMPLATE", "key": "parameter", "value": "click_url" },
+            { "type": "TEMPLATE", "key": "parameterValue", "value": "{{Click URL}}" } ] }
+        ] },
+        { "type": "TEMPLATE", "key": "eventSettingsVariable", "value": "{{ES - default event settings}}" }
+      ],
+      "firingTriggers": ["Click - data-track elements"],
+      "blockingTriggers": ["Exception - internal / debug traffic"],
+      "tagFiringOption": "ONCE_PER_EVENT"
+    }
+  ]
+}

@@ -3,6 +3,20 @@
     "supabase": {
       "type": "http",
       "url": "https://mcp.supabase.com/mcp?project_ref=howpxpdnjjzdwqrgxkee&features=database,development,functions,debugging,docs"
+    },
+    "vercel": {
+      "type": "http",
+      "url": "https://mcp.vercel.com/yaga/vosk-dev"
+    },
+    "fallow": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "-p", "fallow", "fallow-mcp"],
+      "env": {
+        "FALLOW_TIMEOUT_SECS": "300"
+      }
     }
   }
 }
+
+

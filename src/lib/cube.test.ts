@@ -133,6 +133,34 @@ describe("parseCubeSqlResponse", () => {
     ]);
   });
 
+  it("accepts column descriptors carrying the member's format and currency", async () => {
+    // Cube adds `format` / `currency` to a descriptor when the member declares one
+    // (SchemaColumn in cubejs-backend-native). `revenue` is `format: currency` in
+    // cube/model/sales.yml, so every real query's schema line looks like this — a strict
+    // descriptor failed the production build on it, 2026-09-22.
+    const { parseCubeSqlResponse } = await loadCube();
+    const text = ndjson(
+      {
+        schema: [
+          { name: "_channel", column_type: "String" },
+          { name: "_revenue", column_type: "Double", format: "currency" },
+          {
+            name: "_gross_margin",
+            column_type: "Double",
+            format: { type: "currency" },
+            currency: "USD",
+          },
+        ],
+        lastRefreshTime: "2026-09-21T21:07:30.955Z",
+      },
+      { data: [["Direct", "199621.45", "80412.10"]] },
+    );
+
+    expect(parseCubeSqlResponse(text)).toEqual([
+      { _channel: "Direct", _revenue: 199621.45, _gross_margin: 80412.1 },
+    ]);
+  });
+
   it("keeps null as null whatever the column type", async () => {
     const { parseCubeSqlResponse } = await loadCube();
     const text = ndjson(

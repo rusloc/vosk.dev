@@ -91,14 +91,18 @@ export function mintCubeToken(): string {
 // extra field must not turn Cube's own message into a generic "unrecognised line". The
 // schema line really does carry more than `schema` — the live deployment sends
 // `"lastRefreshTime"` beside it (observed 2026-09-22) — and refusing a line over envelope
-// metadata would fail every build for a field that is not data. What IS data stays pinned:
-// the column descriptors here, and every row in lib/sales-dashboard.ts.
+// metadata would fail every build for a field that is not data.
+//
+// The same goes one level down. A column descriptor gains `format` (and `currency`) whenever
+// the member declares one — `format: currency` on `revenue` in cube/model/sales.yml put
+// `"format":"currency"` on every query's schema line, and a strict descriptor failed the
+// build over it (2026-09-22). That is presentation metadata: the parser reads `name` and
+// `column_type`, both still required, and zod strips the rest. What IS data stays pinned:
+// every row in lib/sales-dashboard.ts.
 const lineSchema = z.union([
   z.object({ error: z.string() }),
   z.object({
-    schema: z.array(
-      z.object({ name: z.string(), column_type: z.string() }).strict(),
-    ),
+    schema: z.array(z.object({ name: z.string(), column_type: z.string() })),
   }),
   z.object({ data: z.array(z.array(z.unknown())) }),
 ]);

@@ -155,6 +155,9 @@ export const en = {
     labelEmail: "Email",
     labelLinkedin: "LinkedIn",
     labelUpwork: "Upwork",
+    // Link text for a profile row — the same for every platform; the row label
+    // names it, and the link's aria-label joins the two.
+    linkProfile: "see profile",
     // Shown in place of a profile link until siteConfig.social holds a real URL.
     linkPending: "Coming soon",
   },
@@ -245,6 +248,39 @@ export const en = {
     dashboardError:
       "The dashboard couldn't be loaded. Try refreshing the page.",
     paginationAria: "Showcase pages",
+  },
+  // The Cube-backed online-sales dashboard (components/sales-dashboard.tsx). `{period}` is
+  // filled in by the component: "2025", or "Jan–Aug 2025" while the selected year is partial.
+  salesDashboard: {
+    filtersAria: "Dashboard filters",
+    yearLabel: "Year",
+    allYears: "All",
+    channelLabel: "Channel",
+    allChannels: "All channels",
+    viewLabel: "View",
+    viewCharts: "Charts",
+    viewTables: "Tables",
+    kpiRevenue: "Revenue",
+    kpiOrders: "Orders",
+    kpiAov: "Average order value",
+    kpiMargin: "Gross margin",
+    vsPrior: "vs {period}",
+    noPriorYear: "No prior year to compare",
+    revenueByMonth: "Revenue by month",
+    ordersByMonth: "Orders by month",
+    channelShare: "Channel share of revenue",
+    revenueByCategory: "Revenue by category",
+    topProducts: "Top 10 products by revenue",
+    revenueByCountry: "Revenue by country",
+    colMonth: "Month",
+    colCategory: "Category",
+    colProduct: "Product",
+    colCountry: "Country",
+    colRevenue: "Revenue",
+    colOrders: "Orders",
+    colUnits: "Units",
+    footnote:
+      "Completed orders only. Synthetic data, queried through a Cube semantic layer.",
   },
   notFound: {
     code: "404",

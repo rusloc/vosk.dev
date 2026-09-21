@@ -25,8 +25,8 @@ const IN_LANGUAGE = "en-US";
  * every URL in this graph is the site origin and the language is the constant
  * above. The other builders still take one because they resolve per-page URLs.
  *
- * `sameAs` is intentionally omitted until real social profile URLs exist — see
- * the TODO in src/lib/site.ts. Person markup mirrors the byline the site shows
+ * `sameAs` is every non-empty `siteConfig.social` URL — the same profiles the
+ * Contacts card links with `rel="me"`. Person markup mirrors the byline the site shows
  * publicly — blog authors and the per-post OG cards (required for policy
  * compliance). The Contacts card deliberately shows the first name only; the
  * full name is what this markup has to match, and it is visible on every post.
@@ -64,6 +64,7 @@ export function homeGraph(): Record<string, unknown> {
         name: author.name,
         jobTitle: author.jobTitle,
         url: siteConfig.url,
+        sameAs: Object.values(siteConfig.social).filter(Boolean),
         worksFor: { "@id": ORG_ID },
       },
       {

@@ -16,9 +16,23 @@ type Props = { params: Promise<{ locale: string }> };
  * dull, non-interactive text — linking to a platform's root would dead-end the
  * visitor on someone else's home page, which is worse than no link. Setting the
  * URL in site.ts is the only edit needed to make it live; `rel="me"` is the
- * identity claim that pairs with JSON-LD `sameAs` when those URLs land.
+ * identity claim that pairs with the Person's JSON-LD `sameAs`.
+ *
+ * Every row shares one link text, so the `aria-label` prefixes the platform —
+ * out of context (a screen reader's links list) two bare "see profile" entries
+ * are indistinguishable. It still contains the visible text, per WCAG 2.5.3.
  */
-function Profile({ url, pending }: { url: string; pending: string }) {
+function Profile({
+  url,
+  platform,
+  text,
+  pending,
+}: {
+  url: string;
+  platform: string;
+  text: string;
+  pending: string;
+}) {
   if (!url) {
     return <span className="text-muted-foreground/60 italic">{pending}</span>;
   }
@@ -27,9 +41,10 @@ function Profile({ url, pending }: { url: string; pending: string }) {
       href={url}
       target="_blank"
       rel="me noopener noreferrer"
+      aria-label={`${platform}: ${text}`}
       className="text-primary hover:underline"
     >
-      {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+      {text}
     </a>
   );
 }
@@ -96,12 +111,22 @@ export default async function ContactPage({ params }: Props) {
 
           <dt className="text-muted-foreground">{t.labelLinkedin}</dt>
           <dd>
-            <Profile url={siteConfig.social.linkedin} pending={t.linkPending} />
+            <Profile
+              url={siteConfig.social.linkedin}
+              platform={t.labelLinkedin}
+              text={t.linkProfile}
+              pending={t.linkPending}
+            />
           </dd>
 
           <dt className="text-muted-foreground">{t.labelUpwork}</dt>
           <dd>
-            <Profile url={siteConfig.social.upwork} pending={t.linkPending} />
+            <Profile
+              url={siteConfig.social.upwork}
+              platform={t.labelUpwork}
+              text={t.linkProfile}
+              pending={t.linkPending}
+            />
           </dd>
         </dl>
       </div>

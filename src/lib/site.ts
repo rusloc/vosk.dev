@@ -3,7 +3,6 @@ import { localizedPath, type Locale } from "./i18n/config";
 
 /**
  * Central site config — brand, nav, contact. Single source for metadata and UI.
- * TODO: replace placeholder social URLs with real profiles.
  */
 export const siteConfig = {
   name: "VOSK",
@@ -29,15 +28,15 @@ export const siteConfig = {
     { href: "/contact", label: "Contacts" },
   ],
   contactEmail: "vosk.dev@gmail.com",
-  // TODO: replace with real profile URLs, then add them to JSON-LD `sameAs`
-  // in src/lib/structured-data.ts (currently omitted — no false entity signals).
-  // An empty string renders the Contacts row as a dull placeholder instead of a
-  // live link; a root URL like "https://www.linkedin.com/" would dead-end the
-  // visitor on the platform's home page, which is worse than no link at all.
+  // Real profile URLs only. The non-empty ones are also the Person's JSON-LD
+  // `sameAs` in src/lib/structured-data.ts. An empty string renders the Contacts
+  // row as a dull placeholder instead of a live link; a root URL like
+  // "https://www.linkedin.com/" would dead-end the visitor on the platform's
+  // home page, which is worse than no link at all.
   social: {
     github: "",
-    linkedin: "",
-    upwork: "",
+    linkedin: "https://www.linkedin.com/in/kirill-vosk/",
+    upwork: "https://www.upwork.com/freelancers/~01a960a706057bdf85",
   },
 } as const;
 

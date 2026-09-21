@@ -19,6 +19,7 @@
   "dependencies": {
     "@next/third-parties": "16.2.10",
     "@superset-ui/embedded-sdk": "^0.4.0",
+    "chart.js": "^4.5.1",
     "gray-matter": "^4.0.3",
     "next": "16.2.10",
     "next-mdx-remote": "^6.0.0",

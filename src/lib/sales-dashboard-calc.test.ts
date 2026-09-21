@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   channelMix,
+  channelShares,
   computeKpis,
   filterOptions,
   filterRows,
@@ -298,6 +299,30 @@ describe("channelMix", () => {
       months: ["2026-01", "2026-02"],
       series: [{ channel: "Email", revenue: [150, 0] }],
     });
+  });
+});
+
+describe("channelShares", () => {
+  it("turns each month's revenue into fractions that add up to 1", () => {
+    // 2026-01: 150 + 450 = 600 → 0.25 / 0.75. 2026-02: Email is quiet → 0 / 1.
+    expect(
+      channelShares(channelMix(MONTHLY, { year: 2026, channel: "all" })),
+    ).toEqual({
+      months: ["2026-01", "2026-02"],
+      series: [
+        { channel: "Email", share: [0.25, 0] },
+        { channel: "Paid Search", share: [0.75, 1] },
+      ],
+    });
+  });
+
+  it("gives zeros, not NaN, for a month with no revenue", () => {
+    expect(
+      channelShares({
+        months: ["2026-01"],
+        series: [{ channel: "Email", revenue: [0] }],
+      }),
+    ).toEqual({ months: ["2026-01"], series: [{ channel: "Email", share: [0] }] });
   });
 });
 

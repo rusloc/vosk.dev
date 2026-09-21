@@ -98,6 +98,12 @@ export type ChannelMix = {
   series: { channel: string; revenue: number[] }[];
 };
 
+/** Same alignment as {@link ChannelMix}; `share` is a fraction of that month's revenue. */
+export type ChannelShares = {
+  months: string[];
+  series: { channel: string; share: number[] }[];
+};
+
 export type CategoryRevenue = { category: string; revenue: number };
 
 export type ProductRevenue = {
@@ -289,6 +295,24 @@ export function channelMix(
     series: [...series]
       .sort(([a], [b]) => compareText(a, b))
       .map(([channel, revenue]) => ({ channel, revenue })),
+  };
+}
+
+/**
+ * Each channel's share of its month's revenue (0.25 = 25%), for the 100% stacked bar. The
+ * absolute stack would only repeat the revenue-by-month chart; the share is what shows the
+ * mix moving. A month with no revenue is all zeros, not NaN.
+ */
+export function channelShares(mix: ChannelMix): ChannelShares {
+  const totals = mix.months.map((_, i) =>
+    sum(mix.series, (entry) => entry.revenue[i] ?? 0),
+  );
+  return {
+    months: mix.months,
+    series: mix.series.map(({ channel, revenue }) => ({
+      channel,
+      share: revenue.map((value, i) => ratio(value, totals[i] ?? 0) ?? 0),
+    })),
   };
 }
 

@@ -1,0 +1,234 @@
+# Online-sales semantic model — docs/08-cube-sales-showcase.md §6.
+#
+# SOURCE OF RECORD. The copy in Cube Cloud is a deployment of this file; edit here, then push up.
+#
+# Shape: four cubes mirroring the four demo_sales tables, all `public: false`, and ONE public
+# view — `sales_overview` — which is the only object the site queries. The view is the contract;
+# the cubes can change shape behind it.
+#
+# Every measure that counts or sums business outcomes is filtered to completed orders. A returned
+# or cancelled order is not revenue, and leaving that to each query is how two charts on one
+# dashboard end up disagreeing.
+
+cubes:
+  - name: order_lines
+    sql_table: demo_sales.fact_order_line
+    public: false
+
+    joins:
+      - name: products
+        sql: "{CUBE}.product_key = {products}.product_key"
+        relationship: many_to_one
+
+      - name: customers
+        sql: "{CUBE}.customer_key = {customers}.customer_key"
+        relationship: many_to_one
+
+      - name: channels
+        sql: "{CUBE}.channel_key = {channels}.channel_key"
+        relationship: many_to_one
+
+    dimensions:
+      - name: order_line_key
+        sql: order_line_key
+        type: number
+        primary_key: true
+
+      # Degenerate dimension — there is no orders table; the id on the line IS the order.
+      - name: order_id
+        sql: order_id
+        type: number
+
+      - name: ordered_at
+        sql: ordered_at
+        type: time
+
+      - name: order_status
+        sql: order_status
+        type: string
+
+      - name: is_first_order
+        sql: is_first_order
+        type: boolean
+
+    measures:
+      # --- additive: safe to re-sum on the client across any dimension -------------------
+      - name: revenue
+        sql: net_amount
+        type: sum
+        format: currency
+        filters:
+          - sql: "{CUBE}.order_status = 'completed'"
+
+      - name: units
+        sql: quantity
+        type: sum
+        filters:
+          - sql: "{CUBE}.order_status = 'completed'"
+
+      - name: gross_margin
+        sql: "{CUBE}.net_amount - {CUBE}.cost_amount"
+        type: sum
+        format: currency
+        filters:
+          - sql: "{CUBE}.order_status = 'completed'"
+
+      - name: discounts
+        sql: discount_amount
+        type: sum
+        format: currency
+        filters:
+          - sql: "{CUBE}.order_status = 'completed'"
+
+      # --- additive ONLY across order-level attributes (time, channel, customer, status) --
+      # An order spans products, so summing these across category or product over-counts.
+      # That is why the dashboard filters by year and channel and never by category.
+      - name: orders
+        sql: order_id
+        type: count_distinct
+        filters:
+          - sql: "{CUBE}.order_status = 'completed'"
+
+      - name: orders_placed
+        sql: order_id
+        type: count_distinct
+
+      - name: orders_returned
+        sql: order_id
+        type: count_distinct
+        filters:
+          - sql: "{CUBE}.order_status = 'returned'"
+
+      - name: new_customer_orders
+        sql: order_id
+        type: count_distinct
+        filters:
+          - sql: "{CUBE}.order_status = 'completed' and {CUBE}.is_first_order"
+
+      # --- ratios: never summed, always recomputed from their parts ----------------------
+      - name: aov
+        sql: "{revenue} / nullif({orders}, 0)"
+        type: number
+        format: currency
+
+      - name: margin_rate
+        sql: "{gross_margin} / nullif({revenue}, 0)"
+        type: number
+        format: percent
+
+      - name: return_rate
+        sql: "1.0 * {orders_returned} / nullif({orders_placed}, 0)"
+        type: number
+        format: percent
+
+  - name: products
+    sql_table: demo_sales.dim_product
+    public: false
+
+    dimensions:
+      - name: product_key
+        sql: product_key
+        type: number
+        primary_key: true
+
+      - name: sku
+        sql: sku
+        type: string
+
+      - name: product_name
+        sql: product_name
+        type: string
+
+      - name: category
+        sql: category
+        type: string
+
+      - name: subcategory
+        sql: subcategory
+        type: string
+
+  - name: customers
+    sql_table: demo_sales.dim_customer
+    public: false
+
+    dimensions:
+      - name: customer_key
+        sql: customer_key
+        type: number
+        primary_key: true
+
+      - name: country_code
+        sql: country_code
+        type: string
+
+      - name: country_name
+        sql: country_name
+        type: string
+
+      - name: region
+        sql: region
+        type: string
+
+      - name: segment
+        sql: segment
+        type: string
+
+  - name: channels
+    sql_table: demo_sales.dim_channel
+    public: false
+
+    dimensions:
+      - name: channel_key
+        sql: channel_key
+        type: number
+        primary_key: true
+
+      - name: channel_name
+        sql: channel_name
+        type: string
+
+      - name: channel_group
+        sql: channel_group
+        type: string
+
+views:
+  - name: sales_overview
+    description: >
+      Online-sales facade for the vosk.dev showcase. Synthetic data. Revenue, units, margin and
+      order counts are completed orders only.
+
+    cubes:
+      - join_path: order_lines
+        includes:
+          - ordered_at
+          - order_status
+          - is_first_order
+          - revenue
+          - units
+          - gross_margin
+          - discounts
+          - orders
+          - orders_placed
+          - orders_returned
+          - new_customer_orders
+          - aov
+          - margin_rate
+          - return_rate
+
+      - join_path: order_lines.products
+        includes:
+          - product_name
+          - category
+          - subcategory
+
+      - join_path: order_lines.customers
+        includes:
+          - country_code
+          - country_name
+          - region
+          - segment
+
+      - join_path: order_lines.channels
+        includes:
+          - channel_name
+          - channel_group

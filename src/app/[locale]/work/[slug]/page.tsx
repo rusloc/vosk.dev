@@ -3,8 +3,11 @@ import { notFound } from "next/navigation";
 import { BackLink } from "@/components/back-link";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
+import { SalesDashboard } from "@/components/sales-dashboard";
 import { SupersetEmbed } from "@/components/superset-embed";
+import { cn } from "@/lib/cn";
 import { buildMetadata } from "@/lib/metadata";
+import { getSalesDashboardData } from "@/lib/sales-dashboard";
 import { breadcrumbGraph, showcaseGraph } from "@/lib/structured-data";
 import {
   PLATFORM_LABEL,
@@ -21,6 +24,12 @@ import {
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
+
+// ISR, for the Cube showcase: queried at build, re-queried at most once a day and in the
+// background — a visitor is always served the cached page, so Cube's free tier (1,000
+// requests/day, cold start after 30 idle minutes) is never visitor-facing (docs/08 §3).
+// The iframe showcases fetch nothing, so for them this is a no-op rebuild.
+export const revalidate = 86400;
 
 export function generateStaticParams() {
   return locales.flatMap((locale) =>
@@ -51,7 +60,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ShowcasePage({ params }: Props) {
   const { locale, slug } = await params;
   const l = (isLocale(locale) ? locale : "en") as Locale;
-  const t = getDictionary(l).work;
+  const dict = getDictionary(l);
+  const t = dict.work;
   const source = getShowcase(slug);
   if (!source) notFound();
 
@@ -62,6 +72,23 @@ export default async function ShowcasePage({ params }: Props) {
     { name: t.title, path: "/work" },
     { name: title },
   ];
+
+  // A native dashboard, not an iframe: it has its own intrinsic height and reads in
+  // ordinary page flow, so the one-screen lock below does not apply to it — and its
+  // caption goes ABOVE it, because "synthetic data, real stack" is context a visitor
+  // needs before the numbers, not a screen and a half after them.
+  const isNative = platform === "cube";
+
+  const about = (
+    <section>
+      <h2 className="sr-only">{t.aboutHeading}</h2>
+      <div className="text-muted-foreground space-y-1 text-sm">
+        {details.map((paragraph, i) => (
+          <p key={i}>{paragraph}</p>
+        ))}
+      </div>
+    </section>
+  );
 
   return (
     /* One screen, no page scroll: viewport minus the site chrome, with the report as
@@ -79,7 +106,12 @@ export default async function ShowcasePage({ params }: Props) {
 
        Locked from `lg` up only: squeezing a BI dashboard into a phone viewport makes
        it unreadable, so below that the page falls back to ordinary flow. */
-    <Container className="flex flex-col py-6 lg:h-[calc(100dvh-8.625rem)]">
+    <Container
+      className={cn(
+        "flex flex-col py-6",
+        !isNative && "lg:h-[calc(100dvh-8.625rem)]",
+      )}
+    >
       <JsonLd data={breadcrumbGraph(l, trail)} />
       {!showcase.noindex && (
         <JsonLd
@@ -116,40 +148,46 @@ export default async function ShowcasePage({ params }: Props) {
 
           Power BI loads a public URL straight into a lazy iframe; Superset has no
           public URL, so the SDK mints a guest token per viewer and there is no
-          "open live dashboard" target to offer (ADR-0002). */}
+          "open live dashboard" target to offer (ADR-0002).
+
+          Cube is neither: the rows are queried right here, server-side, and handed to a
+          client component as plain props — the browser never sees Cube or its token. */}
+      {isNative && <div className="mt-3">{about}</div>}
       <h2 className="sr-only">{t.liveReportHeading}</h2>
-      <figure className="border-border bg-muted mt-3 aspect-video w-full overflow-hidden rounded-lg border lg:aspect-auto lg:min-h-0 lg:flex-1">
-        {showcase.platform === "superset" ? (
-          <SupersetEmbed
-            slug={showcase.slug}
-            embedId={showcase.embedId}
-            title={`${title} — live ${PLATFORM_LABEL[platform]} dashboard`}
-            loadingLabel={t.dashboardLoading}
-            errorLabel={t.dashboardError}
+      {showcase.platform === "cube" ? (
+        <div className="mt-4">
+          <SalesDashboard
+            data={await getSalesDashboardData()}
+            labels={dict.salesDashboard}
           />
-        ) : (
-          <iframe
-            src={showcase.embedUrl}
-            title={`${title} — live ${PLATFORM_LABEL[platform]} dashboard`}
-            loading="lazy"
-            allowFullScreen
-            className="h-full w-full border-0"
-          />
-        )}
-      </figure>
+        </div>
+      ) : (
+        <figure className="border-border bg-muted mt-3 aspect-video w-full overflow-hidden rounded-lg border lg:aspect-auto lg:min-h-0 lg:flex-1">
+          {showcase.platform === "superset" ? (
+            <SupersetEmbed
+              slug={showcase.slug}
+              embedId={showcase.embedId}
+              title={`${title} — live ${PLATFORM_LABEL[platform]} dashboard`}
+              loadingLabel={t.dashboardLoading}
+              errorLabel={t.dashboardError}
+            />
+          ) : (
+            <iframe
+              src={showcase.embedUrl}
+              title={`${title} — live ${PLATFORM_LABEL[platform]} dashboard`}
+              loading="lazy"
+              allowFullScreen
+              className="h-full w-full border-0"
+            />
+          )}
+        </figure>
+      )}
 
       {/* Description left, dashboard link right — same row, so the link sits directly
           under the report's bottom-right corner instead of costing its own line.
           `items-start` keeps it level with the first description line. */}
       <div className="mt-3 flex items-start justify-between gap-6">
-        <section>
-          <h2 className="sr-only">{t.aboutHeading}</h2>
-          <div className="text-muted-foreground space-y-1 text-sm">
-            {details.map((paragraph, i) => (
-              <p key={i}>{paragraph}</p>
-            ))}
-          </div>
-        </section>
+        {!isNative && about}
 
         {showcase.platform === "power-bi" && (
           <a

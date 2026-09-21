@@ -1,3 +1,4 @@
+import { isCubeConfigured } from "./cube";
 import { env } from "./env";
 import type { Locale } from "./i18n/config";
 
@@ -7,12 +8,18 @@ import type { Locale } from "./i18n/config";
  * CMS/MDX swap is cheap. The list page shows concise cards; each links to a detail
  * page (/work/[slug]) with the write-up and the live report embedded.
  *
- * Two platforms, and they embed differently enough to be separate shapes (ADR-0002):
+ * Three platforms, and they render differently enough to be separate shapes (ADR-0002):
  *  - Power BI  → a public "publish to web" URL, dropped into an iframe as-is.
  *  - Superset  → no public URL at all; an embed UUID for which the server mints a
  *                short-lived guest token per viewer (see lib/superset.ts).
+ *  - Cube      → not an embed at all: the page queries Cube server-side and draws the
+ *                dashboard itself with Chart.js (docs/08-cube-sales-showcase.md).
+ *
+ * Server-only in effect: lib/cube.ts is, and this imports it. Every importer is a Server
+ * Component, a Route Handler or the sitemap — a client component reaching for this file
+ * now fails the build, which is the right answer.
  */
-export type ShowcasePlatform = "power-bi" | "superset";
+export type ShowcasePlatform = "power-bi" | "superset" | "cube";
 
 type ShowcaseBase<Text, Paragraphs> = {
   slug: string;
@@ -44,7 +51,10 @@ type ShowcaseOf<Text, Paragraphs> =
   | (ShowcaseBase<Text, Paragraphs> & {
       platform: "superset";
       embedId: string;
-    });
+    })
+  // No fields of its own: there is one Cube dashboard and the detail page renders it by
+  // name. A report id earns its place when a second one exists.
+  | (ShowcaseBase<Text, Paragraphs> & { platform: "cube" });
 
 /**
  * A locale the site no longer publishes but whose copy is kept in place. Russian
@@ -76,14 +86,20 @@ export function localize(s: Showcase, locale: Locale): LocalizedShowcase {
     articleSlug: s.articleSlug,
     noindex: s.noindex,
   };
-  return s.platform === "power-bi"
-    ? { ...base, platform: "power-bi", embedUrl: s.embedUrl, href: s.href }
-    : { ...base, platform: "superset", embedId: s.embedId };
+  switch (s.platform) {
+    case "power-bi":
+      return { ...base, platform: s.platform, embedUrl: s.embedUrl, href: s.href };
+    case "superset":
+      return { ...base, platform: s.platform, embedId: s.embedId };
+    case "cube":
+      return { ...base, platform: s.platform };
+  }
 }
 
 export const PLATFORM_LABEL: Record<ShowcasePlatform, string> = {
   "power-bi": "Power BI",
   superset: "Superset",
+  cube: "Cube + Chart.js",
 };
 
 /** Placeholder marker — an entry still carrying this is not publishable. */
@@ -149,19 +165,53 @@ const allShowcases: Showcase[] = [
       ],
     },
   },
+  {
+    slug: "online-sales-cube",
+    platform: "cube",
+    title: {
+      en: "Online sales on a semantic layer",
+      ru: "Онлайн-продажи на семантическом слое",
+    },
+    summary: {
+      en: "Revenue, orders, margin and channel mix for an online shop — a Postgres star schema, measures defined once in a Cube semantic layer, and a custom Chart.js front end instead of a BI tool.",
+      ru: "Выручка, заказы, маржа и структура каналов интернет-магазина — схема «звезда» в Postgres, меры, один раз определённые в семантическом слое Cube, и собственный фронтенд на Chart.js вместо BI-инструмента.",
+    },
+    metric: "$4.77M",
+    // Until the owner has signed off the write-up (docs/08 §9, phase 4).
+    noindex: true,
+    details: {
+      en: [
+        "Postgres star schema → Cube semantic layer → this page. Every figure is a governed measure — revenue, orders and margin are defined once in the model, not re-derived per chart.",
+        "Synthetic data, real stack. The page queries Cube on the server and caches the result for a day, so it shows governed numbers, not a live feed.",
+      ],
+      ru: [
+        "Схема «звезда» в Postgres → семантический слой Cube → эта страница. Каждая цифра — управляемая мера: выручка, заказы и маржа определены один раз в модели, а не пересчитываются в каждом графике.",
+        "Данные синтетические, стек настоящий. Страница запрашивает Cube на сервере и кэширует результат на сутки — это управляемые показатели, а не поток в реальном времени.",
+      ],
+    },
+  },
 ];
 
 /**
  * Superset entries are hidden until the instance is configured and the entry carries a
  * real embed UUID — an unconfigured embed would render a dead frame on a page whose whole
- * job is to demonstrate competence. Filtering here (rather than at the call site) keeps
- * the list page, generateStaticParams, the sitemap and the 404 path automatically in sync.
+ * job is to demonstrate competence. Cube entries are hidden until CUBE_API_URL and
+ * CUBE_API_SECRET are both set: without them the detail page cannot be built at all.
+ * Filtering here (rather than at the call site) keeps the list page, generateStaticParams,
+ * the sitemap and the 404 path automatically in sync.
  */
-export const showcases: Showcase[] = allShowcases.filter(
-  (s) =>
-    s.platform !== "superset" ||
-    (!!env.NEXT_PUBLIC_SUPERSET_DOMAIN && s.embedId !== UNSET_EMBED_ID),
-);
+export const showcases: Showcase[] = allShowcases.filter((s) => {
+  switch (s.platform) {
+    case "superset":
+      return (
+        !!env.NEXT_PUBLIC_SUPERSET_DOMAIN && s.embedId !== UNSET_EMBED_ID
+      );
+    case "cube":
+      return isCubeConfigured();
+    default:
+      return true;
+  }
+});
 
 export function getShowcaseSlugs(): string[] {
   return showcases.map((s) => s.slug);

@@ -1,6 +1,11 @@
 # 08 — Online-sales showcase: Supabase → Cube → Chart.js
 
-> **Status: PHASE 1 (data) BUILT AND VERIFIED 2026-09-21 · phases 2–4 not started.** Supersedes the
+> **Status 2026-09-21: PHASE 1 (data) built and verified · PHASE 2 (Cube) deployed by the owner at
+> `accessible-bonobo.aws-eu-central-1.cubecloudapp.dev` — reachable, `/cubesql` routed, **not yet
+> queried with a token** · PHASE 3 (site) built and verified end to end against a local mock of
+> `/cubesql` fed with real `demo_sales` aggregates — **never yet against the live deployment**: the
+> secret is in neither `.env.local` nor Vercel, so the entry is hidden everywhere · PHASE 4 (copy)
+> drafted, `noindex` until signed off.** Supersedes the
 > unexecuted research of 08-27 (`coms 2026-08-27.md`; its plan file lived outside the repo on
 > another machine — this document is the in-repo record that one never had).
 >
@@ -56,7 +61,9 @@ has no runtime: with `revalidate = 86400` Cube sees **~4 queries a day**, regard
 1,000/day cap is unreachable by visitors, the cold start lands on a background revalidation (the
 visitor is served the cached page), and the data is static so there is nothing to pre-aggregate.
 
-**API.** `POST {CUBE_API_URL}/cubejs-api/v1/cubesql` — SQL over HTTP, newline-delimited JSON: one
+**API.** `POST {CUBE_API_URL}/cubesql` — where **`CUBE_API_URL` is pasted exactly as Cube Cloud shows
+it, already ending in `/cubejs-api/v1`** (a bare origin gives a loud 404, not a retry). SQL over HTTP,
+newline-delimited JSON: one
 `{"schema":[…]}` line, then `{"data":[[…]]}` chunks. The 08-27 research chose it over `/v1/load`
 because Cube's CEO called the JSON REST API feature-frozen (2026-05-14); today's docs mark neither
 as deprecated. ⚠️ **Unverified: that `/v1/cubesql` is enabled on the Free tier.** Phase 2's gate
@@ -183,7 +190,8 @@ real rows — not read off an ACL.
 |---|---|---|
 | `demo_sales.*` | `select` all 4 tables · **write nothing** | ✅ by design |
 | `public.*` — the lead engine, 8 relations | **nothing.** `select … from public.leads` → `42501 permission denied`. No `PUBLIC` select on any table, and RLS on all seven behind that | ✅ |
-| `cron`, `vault`, `auth`, `storage`, `extensions` | nothing — no schema `USAGE` | ✅ |
+| `vault`, `auth`, `storage` | nothing — no schema `USAGE`, no table grants | ✅ |
+| `cron.job`, `cron.job_run_details`, `extensions.pg_stat_statements(_info)` | **nothing — but only because the schema is closed.** Each carries a `PUBLIC` select grant; the role has no `USAGE` on either schema, so every query dies at `42501 permission denied for schema`. **Cube's table picker lists them anyway** — it reads `information_schema`, which ignores schema-level access. Cosmetic, tested 09-21. ⚠️ One `grant usage on schema cron to public` from live: never issue it | ✅ |
 | **`net._http_response`, `net.http_request_queue`** | **`select` *and* write** — `PUBLIC` holds **all** privileges, no RLS. 36 rows readable at test time | ⚠️ residue |
 | **`net.http_get` / `http_post` / `http_delete`** | **execute** — outbound HTTP from the database's address | ⚠️ residue |
 
@@ -278,11 +286,24 @@ site repo as the source of record, deployed with `npx cubejs-cli deploy`
 | `gross_margin` | `sum(net_amount - cost_amount)`, completed | yes |
 | `orders` | `count_distinct(order_id)`, completed | **only across order-level attributes** |
 | `aov` | `revenue / nullif(orders, 0)` | no — recomputed, never summed |
-| `margin_pct`, `return_rate` | ratios of the above | no |
+| `margin_rate`, `return_rate` | ratios of the above, as fractions (0.48, not 48) | no |
 
-Connection: Supavisor **session-mode pooler** (the direct host is IPv6-only on the free plan), user
-`cube_reader.howpxpdnjjzdwqrgxkee`, database `postgres`, SSL on. Host string is copied from the
-Supabase dashboard → Connect; no MCP tool returns it.
+Connection — Supavisor **session-mode pooler**, verified 2026-09-21:
+
+| Field | Value |
+|---|---|
+| Host | **`aws-1-eu-west-1.pooler.supabase.com`** |
+| Port | `5432` (session mode — not `6543`) |
+| Database | `postgres` |
+| Username | `cube_reader.howpxpdnjjzdwqrgxkee` |
+| SSL | on |
+
+**Not** `db.howpxpdnjjzdwqrgxkee.supabase.co` — the direct host has **no IPv4 record at all**
+(`ENODATA`; one AAAA), and Cube Cloud connects over IPv4. **Not** `aws-0-…` either: the prefix is
+per-project and `aws-0` answers `tenant/user not found`. Both were settled by a passwordless
+Postgres startup handshake — the right pooler replies with a SCRAM-SHA-256 challenge, the wrong one
+with an error — which also proved that Supavisor accepts a **custom role** as `role.project-ref`,
+an assumption this plan had been carrying unverified. No MCP tool returns the host.
 
 ## 7. The dashboard
 
@@ -294,11 +315,29 @@ them over-counts. A BI showcase that gets that wrong is advertising the opposite
 | | Visual | Query grain |
 |---|---|---|
 | Tiles | Revenue · Orders · AOV · Gross margin % (each with vs-prior-year) | Q1 |
-| 1 | Revenue + orders by month — bar/line combo | **Q1** month × channel (~190 rows) |
-| 2 | Channel mix over time — stacked bar | Q1 |
-| 3 | Revenue by category — horizontal bar | **Q2** category × year × channel (~110) |
-| 4 | Top 10 products — horizontal bar | **Q3** product × year × channel (~1,100) |
-| 5 | Revenue by country — horizontal bar | **Q4** country × year × channel (~300) |
+| 1 | Revenue by month — columns | **Q1** month × channel (~190 rows) |
+| 2 | Orders by month — line | Q1 |
+| 3 | Channel share of revenue — 100% stacked columns | Q1 |
+| 4 | Revenue by category — horizontal bar | **Q2** category × year × channel (~110) |
+| 5 | Top 10 products — horizontal bar | **Q3** product × year × channel (~1,100) |
+| 6 | Revenue by country — horizontal bar, top 8 + Other | **Q4** country × year × channel (~300) |
+
+**Two changes from the first draft of this table, both made at build time:**
+
+- **The "revenue + orders bar/line combo" is two charts.** A combo needs two y-scales, and how two
+  scales line up is arbitrary — so the chart manufactures a correlation the data does not contain.
+  Two plots over one month axis say the same thing honestly. For a BI showcase this is the same
+  class of mistake as filtering `orders` by category.
+- **Channel mix is a 100% stack, and ignores the channel filter.** Stacked in absolute dollars its
+  outline is chart 1 again; as shares it shows the mix moving, which is the planted story (the
+  paid-search cut of 2025-06/07 is unmissable). Narrowed to one channel it would be a wall of 100%,
+  so it always shows all six and **greys the other five** when the filter picks one.
+
+Every chart has a table twin (one `Charts | Tables` switch in the filter row): three of the six
+channel hues sit below 3:1 on the cream surface, which makes a non-colour route to every value a
+requirement, not a nicety. Palette validated with the `dataviz` skill's script against `#fff8e7` —
+worst adjacent pair ΔE 9.1 under simulated CVD, 19.6 normal vision. Colour is assigned per channel,
+never per rank, so a filter cannot repaint a survivor.
 
 Four queries, < 60 KB raw. One of them, as the site will send it:
 
@@ -322,18 +361,36 @@ order by 1, 2
 | File | Change |
 |---|---|
 | `package.json` | + `chart.js` |
-| `src/lib/env.ts` | + `CUBE_API_URL`, `CUBE_API_SECRET` — **optional**, as `NEXT_PUBLIC_SUPERSET_DOMAIN` is: absent ⇒ the entry is hidden and the build passes |
+| ~~`src/lib/env.ts`~~ | **Untouched — this row was wrong.** `env.ts` is bundled into client components and says itself that server credentials do not live there. `CUBE_API_URL` + `CUBE_API_SECRET` are validated inside `cube.ts`, as `SUPERSET_SVC_*` are inside `superset.ts`. Still optional: absent ⇒ entry hidden, build passes; `""` reads as unset |
 | `src/lib/cube.ts` | new, `server-only` — mint JWT, `POST /v1/cubesql`, parse NDJSON, cast by `column_type` |
 | `src/lib/sales-dashboard.ts` | new — the four named queries + a **Zod `.strict()` schema per result row**. Cube's response is external input; a renamed measure fails the build, not the chart |
-| `src/lib/work.ts` | + `platform: "cube"` arm with `reportId`; extend the hide-until-configured filter; `PLATFORM_LABEL` |
-| `src/app/[locale]/work/[slug]/page.tsx` | + the `cube` branch; `revalidate = 86400` |
-| `src/components/sales-dashboard.tsx` | new, `'use client'` — filters, tiles, five canvases; registers only the Chart.js controllers it uses |
+| `src/lib/sales-dashboard-calc.ts` | + `channelShares` (2 tests) — the one piece of arithmetic the 100% stack needed |
+| `src/lib/work.ts` | + `platform: "cube"` arm, **no `reportId`** — there is one Cube dashboard and the page renders it by name; an id earns its place with a second one. Hide-until-configured via `isCubeConfigured()`; `PLATFORM_LABEL`. Importing `cube.ts` makes `work.ts` server-only in effect — all five importers already are |
+| `src/app/[locale]/work/[slug]/page.tsx` | + the `cube` branch; `revalidate = 86400`. **The one-screen lock does not apply to it**: a native dashboard has intrinsic height, so the page flows, and the caption moves *above* the dashboard |
+| `src/components/chart-canvas.tsx` | new, `'use client'` — the Chart.js ↔ React seam: create, `update()` on config change, destroy. Registers only the controllers used |
+| `src/components/sales-dashboard.tsx` | new, `'use client'` — filters, tiles, six canvases, table twins |
+| `next.config.ts` | `staticPageGenerationTimeout: 130` |
 | `src/lib/i18n/en.ts` (+ `ru.ts`, kept in step) | showcase copy |
 | `CLAUDE.md` | D1 amendment; table names; this doc in the pointers |
 
 **No `/api/cube` route.** The 08-27 note that a third in-memory rate-limit `Map` would trigger
 extracting `lib/rate-limit.ts` does not fire. A proxy route — browser names a report, server runs
 it — is phase 2, and only if drill-down outgrows a pre-aggregated payload.
+
+**⚠️ The fetch must carry NO `cache` option.** This plan first said `cache: "no-store"`, "because ISR
+does the caching". On Next 16.2.10 that is backwards: an explicit `no-store` sets the fetch's
+revalidate to 0 and **de-opts the whole page from ISR to dynamic** — every visitor would run four
+Cube queries, the exact outcome §3 exists to prevent. Reproduced by `nerd` in a two-page probe app
+(`ƒ /explicit-no-store` vs `○ /no-cache-option  1d`). A POST with `Authorization` is already "auto
+no cache", which Next exempts. A test asserts the init has no `cache` key; do not tidy it back.
+
+**Build-time budget.** Worst case per query is 60 s + one 60 s retry, but Next's
+`staticPageGenerationTimeout` defaults to **60 s** — a cold Cube would get the page attempt killed
+before the retry runs. **Done: `staticPageGenerationTimeout: 130`.** `maxDuration` was **not**
+exported: the plan's limit depends on whether the Vercel project runs Fluid compute, no MCP read
+returns that, and a value above the limit fails the deploy outright. It is also not needed — a
+background revalidation that times out on a sleeping Cube leaves the cached page in place, and that
+same request is what wakes Cube for the next attempt.
 
 **One open design question.** A build while Cube is asleep eats the cold start; a build while Cube
 is *down* fails. Recommendation: 60 s timeout, one retry, then **fail loudly** — production keeps its
@@ -347,9 +404,23 @@ committed snapshot fallback only if it actually bites.
 |---|---|---|---|
 | **0** | D1–D5 answered | owner | — |
 | **1 · Data** ✅ **done 09-21** | `data/sales/001`–`004`, applied via MCP | build | ✅ `003-verify` clean, fingerprint `b7e0006d…` · ✅ §5 acceptance A–D · ✅ advisors zero lints. **Owner still to run** `alter role cube_reader login password …` |
-| **2 · Cube** ~1 h | account, deployment, pooler connection, model, view | **owner signs up (~15 min)** + build | Playground returns revenue by month · `curl /v1/cubesql` returns NDJSON, else switch to `/v1/load` |
-| **3 · Site** ~3 h | §8 | build (nerd reviews) | `pnpm typecheck && pnpm lint && pnpm build` · env unset ⇒ entry hidden, build green · Vercel preview renders · figures match `003-verify` to the cent |
-| **4 · Copy** ~0.5 h | real write-up; `noindex` until it is | owner + build | the entry says what it is: synthetic data, real stack |
+| **2 · Cube** — deployed 09-21 | account, deployment, pooler connection, model, view | **owner** | ⏳ Playground figures not reported back · ⏳ `/v1/cubesql` answers `403 Authorization header isn't set` unauthenticated, so the route exists — **an authenticated query has not been run** |
+| **3 · Site** — built 09-21 | §8 | build | ✅ `typecheck` · `lint` · 133 tests · `build` · ✅ env unset ⇒ entry hidden, build green · ✅ full pipeline against a local `/cubesql` mock: page prerenders as ISR (`● 1d`), all-years totals **$4.77M / 34,293 orders** match §4 · ✅ rendered and inspected over CDP — six states incl. hover, table view and 390 px; console clean, no hydration error · ⏳ **live Cube, Vercel preview, figures to the cent** — blocked on the secret |
+| **4 · Copy** — drafted 09-21 | real write-up; `noindex` until it is | owner + build | the entry says what it is: synthetic data, real stack. **`noindex: true` stays until the owner signs the copy off** |
+
+**To unblock the ⏳ rows — owner, ~5 min.** Create `.env.local` (the assistant is denied `.env*`, by
+design) and add the same two variables in Vercel → vosk-dev → Settings → Environment Variables,
+Production + Preview, the secret marked *Sensitive*:
+
+```
+CUBE_API_URL=https://accessible-bonobo.aws-eu-central-1.cubecloudapp.dev/cubejs-api/v1
+CUBE_API_SECRET=<Cube Cloud → deployment → Settings → API secret>
+```
+
+Then `pnpm build`. What can still fail, all loudly and all by design (`lib/cube.ts`): `/cubesql`
+not enabled on the Free tier (→ switch to `/v1/load`); `column_type` strings the numeric cast does
+not recognise; the raw-token `Authorization` form; a waking deployment answering
+`200 {"error":"Continue wait"}`, which is not retried today.
 
 **Today is feasible through phase 3** if the two owner steps land early: the `create role` line and
 the Cube signup. Both are gated on a person, not on code. Load the `dataviz` and `ui-ux-designer`

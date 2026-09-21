@@ -105,7 +105,9 @@ public/images/    → work/<slug>/… and blog/<slug>/… assets
 
 - **`src/lib/content.ts`** is the single seam for reading/listing/validating MDX — pages consume it, never touch the filesystem directly (keeps a future CMS swap cheap).
 - **`/work` is not MDX.** Showcases are entries in **`src/lib/work.ts`** — a discriminated union by
-  `platform` (`power-bi` | `superset`, `cube` planned), per `ADR-0002`. There is no `content/work/`.
+  `platform` (`power-bi` | `superset` | `cube`), per `ADR-0002`. There is no `content/work/`.
+  The `cube` entry is not an embed: the page queries Cube server-side and draws the dashboard
+  itself (`components/sales-dashboard.tsx`); it is hidden until `CUBE_API_URL` + `CUBE_API_SECRET` are set.
 - All pages are Server Components / statically rendered. `[slug]` routes use `generateStaticParams()`. Client components are the exception (contact form, theme toggle, mobile menu) — mark them `'use client'`.
 
 ## Structure — the lead engine (`D:\__VOSK_LEADS__`)

@@ -417,10 +417,43 @@ CUBE_API_URL=https://accessible-bonobo.aws-eu-central-1.cubecloudapp.dev/cubejs-
 CUBE_API_SECRET=<Cube Cloud → deployment → Settings → API secret>
 ```
 
-Then `pnpm build`. What can still fail, all loudly and all by design (`lib/cube.ts`): `/cubesql`
-not enabled on the Free tier (→ switch to `/v1/load`); `column_type` strings the numeric cast does
-not recognise; the raw-token `Authorization` form; a waking deployment answering
-`200 {"error":"Continue wait"}`, which is not retried today.
+⚠️ **`CUBE_API_SECRET` is the signing secret, not a token.** Cube Cloud's own "REST API" curl snippet
+puts a ready-made **JWT** in the `Authorization` header; the site mints its own 5-minute JWTs and
+needs the key they are signed with — `CUBEJS_API_SECRET`, under the deployment's Settings →
+Environment variables (label from Cube's docs, not observed). A JWT pasted into `CUBE_API_SECRET`
+gives `403 Invalid token` on every query.
+
+Then `node scripts/cube-handshake.mjs` — one command, reads `.env.local` itself, mints a token the
+way `lib/cube.ts` does, checks `/load` and `/cubesql` against the two seed figures and says which
+half is wrong. Then `pnpm build`.
+
+**Settled against the live deployment, 2026-09-22** (three read-only calls):
+
+| Unknown | Answer |
+|---|---|
+| `/cubesql` on the Free tier | ✅ enabled — `200` in 3.2 s |
+| `Authorization` form | ✅ raw JWT, no `Bearer` |
+| `date_trunc(…)` on the time dimension, `date '…'` literal in the filter | ✅ both accepted |
+| `column_type` strings | ✅ `Timestamp` · `String` · `Double` · `Int64`, numbers as strings, timestamps `2024-01-01T00:00:00.000` — all already handled |
+| **Envelope shape** | ❌ **was wrong.** The schema line is `{"schema":[…],"lastRefreshTime":"…"}`; the parser's `.strict()` envelope rejected it and the first live build would have died on *"Unrecognised Cube response line"*. Envelope loosened, column descriptors and rows still strict; the verbatim line is now a test |
+| A deployment waking from suspension | ⏳ not observed — it was awake. `{"error":"Continue wait"}` is still not retried by `cube.ts` (the handshake script does poll for it) |
+| **Figures to the cent** (§9 gate) | ✅ **09-22, after the owner merged `sales.yml` to `master`:** the site's four queries, verbatim, against live `/cubesql` — 192 / 108 / 1,080 / 180 rows, 0 NULLs, 0.8–3.4 s — each sums to **4,766,371.12**, both order-bearing ones to **34,293**. The model compiled as written |
+
+⚠️ **First production build with the env vars set: `ERROR` — `Cube responded 403: {"error":"Invalid
+token"}`.** Not the envelope bug: the request never reached the parser. The value in Vercel's
+`CUBE_API_SECRET` is not the key Cube verifies with. Visitors were unaffected — the previous `READY`
+deployment kept serving, entry hidden, which is the fail-loud design doing its job. Remedy is to
+*set* the secret rather than find it: one fresh value into Cube's `CUBEJS_API_SECRET`, Vercel's
+`CUBE_API_SECRET` and `.env.local`; prove it with `scripts/cube-handshake.mjs`; then push.
+
+⚠️ **That same snippet queries `sales_view.count` — the wizard's generated view, not
+`sales_overview`.** Cube builds its example from whatever the production model contains, so either
+the generated files were never replaced with `cube/model/sales.yml`, or the replacement sits in
+Dev Mode and was not merged to `master`. The site queries `sales_overview` only. **Confirmed
+09-22 by `/meta`: production exposes exactly one object, `sales_view`.** The owner is on branch
+`sales-model` in Dev Mode; what is left is *Save all → Commit & Sync → Merge*. Adding
+`model/sales.yml` beside the generated files is enough — no name collides — and deleting the
+generated ones is optional tidy-up.
 
 **Today is feasible through phase 3** if the two owner steps land early: the `create role` line and
 the Cube signup. Both are gated on a person, not on code. Load the `dataviz` and `ui-ux-designer`

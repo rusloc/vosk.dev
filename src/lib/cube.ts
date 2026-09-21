@@ -14,8 +14,11 @@ import { z } from "zod";
  * newline-delimited JSON: one `{"schema":[…]}` line, then `{"data":[[…]]}` chunks, or an
  * `{"error":"…"}` line in place of either.
  *
- * ⚠️ Written from Cube's docs, not yet exercised against the live deployment. Everything
- * the docs left open is asserted rather than assumed, so a wrong guess fails loudly.
+ * Checked against the live Free-tier deployment on 2026-09-22: `/cubesql` is enabled, the
+ * raw-token `Authorization` form is right, and columns come back typed `Timestamp` /
+ * `String` / `Double` / `Int64` with numbers as strings. Not yet observed: what a deployment
+ * waking from suspension answers. Everything still open is asserted rather than assumed, so
+ * a wrong guess fails loudly.
  */
 const TOKEN_TTL_S = 5 * 60;
 
@@ -84,18 +87,20 @@ export function mintCubeToken(): string {
   return `${unsigned}.${signature}`;
 }
 
-// The error arm is deliberately NOT strict: it throws either way, and an extra field on it
-// must not turn Cube's own message into a generic "unrecognised line".
+// The ENVELOPE of a line is deliberately not strict. The error arm throws either way, and an
+// extra field must not turn Cube's own message into a generic "unrecognised line". The
+// schema line really does carry more than `schema` — the live deployment sends
+// `"lastRefreshTime"` beside it (observed 2026-09-22) — and refusing a line over envelope
+// metadata would fail every build for a field that is not data. What IS data stays pinned:
+// the column descriptors here, and every row in lib/sales-dashboard.ts.
 const lineSchema = z.union([
   z.object({ error: z.string() }),
-  z
-    .object({
-      schema: z.array(
-        z.object({ name: z.string(), column_type: z.string() }).strict(),
-      ),
-    })
-    .strict(),
-  z.object({ data: z.array(z.array(z.unknown())) }).strict(),
+  z.object({
+    schema: z.array(
+      z.object({ name: z.string(), column_type: z.string() }).strict(),
+    ),
+  }),
+  z.object({ data: z.array(z.array(z.unknown())) }),
 ]);
 
 // Anchored with a trailing `\b` so `Interval(…)` does not pass for an `Int`.

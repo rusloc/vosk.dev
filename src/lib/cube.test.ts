@@ -106,6 +106,33 @@ describe("parseCubeSqlResponse", () => {
     expect(parseCubeSqlResponse(text)).toEqual([{ _v: expected }]);
   });
 
+  it("accepts the schema line exactly as the live deployment sends it", async () => {
+    // Verbatim shape from Cube Cloud Free, 2026-09-22 — note `lastRefreshTime` riding beside
+    // `schema`. A strict envelope rejected this line and would have failed the first live build.
+    const { parseCubeSqlResponse } = await loadCube();
+    const text = ndjson(
+      {
+        schema: [
+          { name: "_year", column_type: "Timestamp" },
+          { name: "_channel", column_type: "String" },
+          { name: "_net_amount", column_type: "Double" },
+          { name: "_orders", column_type: "Int64" },
+        ],
+        lastRefreshTime: "2026-09-21T21:07:30.955Z",
+      },
+      { data: [["2024-01-01T00:00:00.000", "Direct", "199621.45", "1440"]] },
+    );
+
+    expect(parseCubeSqlResponse(text)).toEqual([
+      {
+        _year: "2024-01-01T00:00:00.000",
+        _channel: "Direct",
+        _net_amount: 199621.45,
+        _orders: 1440,
+      },
+    ]);
+  });
+
   it("keeps null as null whatever the column type", async () => {
     const { parseCubeSqlResponse } = await loadCube();
     const text = ndjson(

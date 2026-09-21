@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-<!-- next-id: PG-004 -->
+<!-- next-id: PG-005 -->
 
 # Platform Gotchas (PG-NNN)
 
@@ -72,4 +72,29 @@ not-found) is still OPEN with no maintainer commitment as of 2026-07.
 **Confidence:** high — reproduced.
 **Last-verified:** 2026-08-01
 **Related:** PG-001, PG-002
+**Status:** active
+
+---
+
+### PG-004 · `cache: "no-store"` on a fetch de-opts an ISR page to fully dynamic · 2026-09-21
+
+**Symptom:** A page with `export const revalidate = 86400` builds as `ƒ` (Dynamic) instead of
+`○`/`●` with a Revalidate column — every visitor request re-renders and re-fetches. No warning.
+**Cause:** `next/dist/server/lib/patch-fetch.js:344-361` turns an explicit `no-store`/`no-cache`
+into `revalidate: 0`; `:502-549` then calls `markCurrentScopeAsDynamic`, which in a
+`prerender-legacy` store throws `DynamicServerError`. The page-level `revalidate` does NOT win.
+"ISR does the caching, so the fetch can be no-store" is exactly backwards.
+**Fix:** Omit the `cache` option. A POST / a fetch carrying `Authorization` then falls under
+"auto no cache" (`:387-398`), which the same block explicitly exempts ("we don't consider
+autoNoCache to switch to dynamic for ISR") — fetched fresh per revalidation, page stays ISR.
+Alternative `dynamic = "force-static"` on the page also suppresses the bail-out, but couples
+every caller to a segment export. Applied in `src/lib/cube.ts` (`post`), guarded by a test
+asserting the fetch init has no `cache` key.
+**Seen:** reproduced on Next 16.2.10 (webpack build) with a two-page probe, identical fetches:
+`/explicit-no-store` → `ƒ`; `/no-cache-option` → `○ 1d 1y`. Same trap is latent anywhere
+`lib/superset.ts`-style `cache: "no-store"` is copied out of a `force-dynamic` Route Handler
+(where it is harmless) into code reachable from a static page.
+**Confidence:** high — reproduced both directions.
+**Last-verified:** 2026-09-21
+**Related:** PG-002 (same family: one dynamic signal taints the whole prerender)
 **Status:** active

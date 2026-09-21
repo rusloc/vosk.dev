@@ -107,3 +107,65 @@ explains nothing) — these are the months worth talking through on a demo call:
    change shape without editing every chart.
 4. Grant the **`EmbeddedGuest`** role datasource access to that dataset, or the embed will
    load with every chart in an error state (`docs/03-vps-deployment.md` §3).
+
+---
+
+# Demo warehouse 2 — synthetic online sales (`data/sales/`)
+
+Backs the **Cube** showcase on `/work`. Design, decisions and the isolation finding:
+[`docs/08-cube-sales-showcase.md`](../docs/08-cube-sales-showcase.md). **Every figure is synthetic**,
+and there is **no personal data even synthetic** — a customer is a code, a country and a segment.
+
+Unlike the P&L warehouse above, this one **is deployed**: schema `demo_sales` in Supabase project
+`howpxpdnjjzdwqrgxkee` — the lead engine's project, because the free plan has no spare slot. It is
+isolated by schema and by role, not by project. Nothing here touches `public`.
+
+```
+data/sales/
+  001-create-schema.sql   → drops + rebuilds `demo_sales`: 3 dims, 1 fact, RLS on, no policy yet
+  002-seed.sql            → deterministic seed, 2024-01-01 → 2026-08-31, truncates first
+  003-verify.sql          → integrity, KPIs, story beats, channel drift, fingerprint
+  004-cube-role.sql       → `cube_reader` (NOLOGIN), grants, policies, acceptance tests
+```
+
+## Rebuild
+
+**Applied through the Supabase MCP `execute_sql`, in file order — not psql, and not
+`apply_migration`.** It is deliberately *not* a tracked migration: `schema_migrations` in that
+project belongs to the `vosk_leads` repo, and a reproducible seed is not an evolving schema.
+
+`001` drops the schema, which takes `cube_reader`'s grants and policies with it — **always re-run
+`004` after `001`.** `execute_sql` returns only the last statement's rows, so `003` and the tests
+in `004` are run one block at a time. After any rebuild: `get_advisors(security)` → zero lints.
+
+The role's password is **never** in this repo or in chat. `004` creates the role `NOLOGIN`; the
+owner enables it once in the Supabase SQL editor (`alter role cube_reader login password '…'`).
+
+## Model
+
+Star schema, **grain = one order line**. 65,117 lines · 37,524 orders · 11,389 customers · 60
+products · 6 channels · ~14 MB. Completed revenue **$4,766,371.12**.
+
+- `dim_product` — 6 categories × 2 subcategories × 5 products; `list_price` is *today's* price.
+- `dim_customer` — numbered in acquisition order; country, region, segment, `first_order_date`.
+- `dim_channel` — 6 channels grouped paid / owned / earned.
+- `fact_order_line` — `order_id` as a degenerate dimension; `unit_price` is what was *charged*;
+  a `check` enforces `net_amount = quantity * unit_price - discount_amount`.
+
+**No `dim_date`** — Cube's `time` dimension derives every grain from `ordered_at`.
+**No order-level amounts on the fact** — at line grain they fan out and double-count.
+**Status, channel and customer are order-level facts** stored per line; `003` proves they never
+disagree within an order, which is what lets `count(distinct order_id)` stay additive across them.
+
+## Story beats
+
+| Period | What happens | What the dashboard shows |
+| --- | --- | --- |
+| 2025-06-01 → 07-31 | paid-search budget cut | that channel's orders 302 → **99 → 92** → 304; total volume dips with it |
+| 2025-11-20 → 12-10 | best-seller out of stock | **zero** units through Black Friday week, rebound to 61 the week after |
+| whole period | mix drifts paid → owned | email 11.9% → 16.0%, paid search 27.7% → 21.5% |
+| whole period | paid social returns at 2× | overall return rate eases 6.1% → 5.3% as its share shrinks |
+
+Determinism works as above: `demo_sales.rnd(seed)`, created and dropped inside `002`.
+Fingerprint `b7e0006d6eeff87791ee0a70ed17e371` — change the generator and the copy that quotes
+these figures changes with it.

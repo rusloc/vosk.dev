@@ -16,9 +16,9 @@ Two codebases, two GitHub repos, two deployments — **one place they are driven
 | Local root | **`D:\__VOSK__`** ← you are here | `D:\__VOSK_LEADS__` |
 | GitHub | `rusloc/vosk.dev` | `rusloc/vosk_leads` |
 | What it is | Public marketing site | Private lead gen + funnel tracker |
-| Database | **none** — MDX + Resend | Supabase `howpxpdnjjzdwqrgxkee` |
+| Database | **none it connects to** — MDX + Resend; showcase figures arrive via Cube | Supabase `howpxpdnjjzdwqrgxkee` |
 | Deploy | Vercel, `vosk.dev` | Vercel, separate project |
-| Design doc | — | `docs/05-lead-engine.md` (**here**) |
+| Design doc | `docs/08-cube-sales-showcase.md` (the Cube showcase) | `docs/05-lead-engine.md` (**here**) |
 
 - **Sessions run from `D:\__VOSK__`.** Don't open a second instance in the leads folder — edit its
   files by absolute path from here.
@@ -30,17 +30,34 @@ Two codebases, two GitHub repos, two deployments — **one place they are driven
 - **⚠️ Commits never span the two repos.** Every change belongs to exactly one. Emit a separate
   `git add` / `commit` block per repo; `.log/` and `docs/` updates always ride with `d:/__VOSK__`.
 
-### Supabase — leads only
+### Supabase — one project, two tenants, separated by schema and role
 
 One project, ref **`howpxpdnjjzdwqrgxkee`**, region `eu-west-1`, org `sudo.opc` (free plan).
+_Amended 2026-09-21: it was "leads only" until the Cube showcase needed a Postgres and the free plan
+had no slot for one._
 
-- **⚠️ It is *named* `vosk.dev` in the dashboard but contains only lead-engine tables.** The site
-  stores nothing there. Don't infer from the name that it backs the website — it doesn't. Its GitHub
-  integration points at `rusloc/vosk_leads`.
+| Schema | Owner | What | Reached by |
+|---|---|---|---|
+| `public` | **lead engine** | `raw_postings`, `leads`, `companies`, `sources`, `contacts`, `activities`, `app_admins` | Edge Functions; phase-4 admin UI via RLS |
+| `demo_sales` | **site showcase** | synthetic online-sales star schema — `docs/08-cube-sales-showcase.md` | **only** role `cube_reader`, **only** from Cube |
+
+- **The rule that survives: lead data must never be reachable from the public site.** The site holds
+  **no Supabase credential at all** — it talks to Cube, Cube talks to Postgres as `cube_reader`, and
+  `cube_reader` can read `demo_sales` and nothing in `public` (`42501`, proven by `set role`).
+  **Never grant `cube_reader` anything outside `demo_sales`. Never expose `demo_sales` to the Data API.**
+- **⚠️ It is *named* `vosk.dev` in the dashboard.** Its GitHub integration points at
+  `rusloc/vosk_leads`, and its migration history is the lead engine's alone.
 - ⚠️ **Free plan allows 2 active projects and both slots are used** (`yaga` + this one). `fabrigate`
   and `newsmate` are paused and can't be restored without pausing one.
-- Migrations live in `D:\__VOSK_LEADS__\supabase\migrations\` and are applied via the Supabase MCP
-  (`apply_migration`), never by hand. No CLI, no Docker.
+- **Lead-engine migrations** live in `D:\__VOSK_LEADS__\supabase\migrations\` and are applied via the
+  Supabase MCP (`apply_migration`), never by hand. No CLI, no Docker.
+- **`demo_sales` is deliberately *not* a migration.** It is a drop-and-rebuild seed in
+  `data/sales/*.sql` (site repo), applied via MCP `execute_sql` — so `schema_migrations` stays the
+  lead engine's. Re-run `004` after `001`; details in `data/README.md`.
+- **⚠️ Never `revoke … on schema net from public`.** `pg_net` grants `PUBLIC` everything on `net`, and
+  it looks like a hole — but the three crons run as `postgres`, which reaches `net.http_post` *only*
+  through that grant. A revoke that worked would stop the engine. It is documented residue
+  (`docs/08` §5), not a to-do.
 
 ## Project identity — the site
 
@@ -55,9 +72,12 @@ One project, ref **`howpxpdnjjzdwqrgxkee`**, region `eu-west-1`, org `sudo.opc` 
 - **Single app at repo root** — NOT a monorepo. No `apps/*`, no `packages/*`.
 - **Content**: local **MDX** files in `content/` (no CMS, no database).
 - **Contact form**: Server Action + **Resend** (transactional email). No DB persistence at v1.
-- **No** Supabase / auth / ORM / component library **in this app** unless a new need is explicitly
-  agreed. The lead engine's Supabase belongs to `vosk_leads`; it must never leak into this deployment
-  — that separation is the whole reason the two are split.
+- **No** Supabase client / auth / ORM / component library **in this app** unless a new need is
+  explicitly agreed. **No Supabase URL or key may appear in this deployment's env** — the lead
+  engine's data must never be reachable from here; that separation is the whole reason the two are
+  split. The Cube showcase honours it: the app holds a Cube URL + secret, never a database credential.
+- **Agreed additions (2026-09-21):** `chart.js` for the Cube showcase. Not `react-chartjs-2`, not
+  `@cubejs-client/*` — a canvas wrapper and native `fetch` cover both.
 
 ## Stack — the lead engine
 
@@ -72,16 +92,20 @@ One project, ref **`howpxpdnjjzdwqrgxkee`**, region `eu-west-1`, org `sudo.opc` 
 
 ```
 src/
-  app/            → routes (home, work, services, contact, blog) + layout, sitemap, robots
+  app/            → routes under [locale]/ (home, work, services, contact, blog) + layout, sitemap, robots
+  app/api/        → superset/guest-token — the one Route Handler
+  proxy.ts        → locale rewriting middleware; excludes /api/*
   components/     → shared UI (nav, footer, cards, contact-form, mdx-components, primitives)
-  lib/            → content.ts (MDX seam), schema.ts (Zod), env.ts, site.ts, metadata.ts
+  lib/            → content.ts (MDX seam), work.ts (showcase registry), schema.ts (Zod), env.ts, site.ts, metadata.ts
 content/
-  work/*.mdx      → case studies
   blog/*.mdx      → articles
+data/             → synthetic demo warehouses as plain SQL: P&L (Superset), sales/ (Cube)
 public/images/    → work/<slug>/… and blog/<slug>/… assets
 ```
 
 - **`src/lib/content.ts`** is the single seam for reading/listing/validating MDX — pages consume it, never touch the filesystem directly (keeps a future CMS swap cheap).
+- **`/work` is not MDX.** Showcases are entries in **`src/lib/work.ts`** — a discriminated union by
+  `platform` (`power-bi` | `superset`, `cube` planned), per `ADR-0002`. There is no `content/work/`.
 - All pages are Server Components / statically rendered. `[slug]` routes use `generateStaticParams()`. Client components are the exception (contact form, theme toggle, mobile menu) — mark them `'use client'`.
 
 ## Structure — the lead engine (`D:\__VOSK_LEADS__`)
@@ -156,7 +180,12 @@ git push
   Verify RLS by querying the REST API anonymously with the publishable key: **zero rows, not an error.**
   **Do that against real rows** — an empty table returns `[]` whether RLS works or not, so insert a row
   as `postgres`, re-query anonymously, then delete it.
-- Cron job history is `cron.job_run_details`. It is the only job log there is.
+- Cron job history is `cron.job_run_details` — **and `succeeded` there only means the HTTP call was
+  queued.** On 2026-09-20 `enrich` failed for 36 hours (Anthropic credits) behind `succeeded` crons
+  and HTTP `200`s. Engine health is three reads, not one: (1) `cron.job_run_details` for non-`succeeded`;
+  (2) `net._http_response` — the **body's `ok` flag**, not the status code, ~6 h retention;
+  (3) `raw_postings where processed_at is not null and lead_id is null` — **must be 0**, and is the
+  only one of the three that would have caught it.
 
 ## Logging (lightweight)
 

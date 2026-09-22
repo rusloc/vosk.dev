@@ -1,0 +1,144 @@
+---
+title: "Your own BI front-end: any backend, Cube in the middle, any chart library"
+description: "Keep the data where it is, put Cube's semantic layer in front of it, and draw the dashboard with any chart library. The stack behind my online-sales showcase."
+date: "2026-09-22"
+tags: ["sql", "js"]
+draft: false
+---
+
+> **In short.** You don't need a BI product to build a BI front-end. Leave the
+> data in whatever database it already lives in, let [Cube](https://cube.dev)
+> define what the numbers mean, and draw the charts with any library you like.
+> Three layers, one query language, and the front-end is entirely yours.
+
+Every BI tool eventually asks you to live inside it: its look, its licence, its
+idea of what a dashboard is. That's fine until you want the dashboard to feel
+like *your* product — your fonts, your interactions, one page that loads like a
+page. Then the question flips: what's the smallest stack that gives me real BI
+semantics *and* a front-end I fully control?
+
+This is the one I landed on. It's what runs the
+[online-sales showcase](/work/online-sales-cube) on this site.
+
+<BiStackDiagram />
+
+## The plan
+
+**1. Backend — where the data already lives.** Here it's Postgres, but this is
+the layer you get to be unfussy about: Cube reads about thirty sources —
+MySQL, SQL Server, BigQuery, Snowflake, Databricks, ClickHouse, DuckDB, even a
+folder of Parquet. Give it a read-only role that sees one schema, and that's
+the entire backend integration. Nothing is copied, nothing is moved.
+
+**2. Cube — the semantic layer.** This is the piece that earns the post. Cube
+sits between the database and everything that wants numbers, and it does four
+jobs at once: it holds the *model* (what a measure is, how tables join), it
+serves *APIs* (SQL, REST, GraphQL), it *caches* (pre-aggregations refreshed in
+the background), and it enforces *access* (row-level, per tenant, from a JWT).
+Every consumer — your app, a spreadsheet, a BI tool, an AI agent — goes through
+the same door and gets the same answer.
+
+**3. Front-end — yours.** A page that asks Cube a handful of aggregate
+questions and hands the rows to a chart library. Any chart library. I used
+Chart.js because it's small and I already knew it; ECharts, D3 or Recharts
+would slot in just the same. The dashboard is a component like any other on the
+site, styled by the same CSS as the rest of it.
+
+## What Cube actually does for you
+
+**The model is the contract.** It's a YAML file, in git, and it's where "revenue"
+gets defined exactly once — completed orders only, in this case. No chart can
+disagree with another, because no chart defines anything:
+
+```yaml
+cubes:
+  - name: order_lines
+    sql_table: demo_sales.fact_order_line
+
+    measures:
+      - name: revenue
+        sql: net_amount
+        type: sum
+        filters:
+          - sql: "{CUBE}.order_status = 'completed'"
+
+    dimensions:
+      - name: ordered_at
+        sql: ordered_at
+        type: time
+```
+
+Cubes stay private; a *view* exposes the curated, query-ready surface. The view
+is what the front-end talks to, so the tables underneath can change shape
+without anyone noticing.
+
+**You ask in SQL.** Cube's SQL API speaks the Postgres protocol, so anything
+that can query Postgres can query the model — over the wire, or over plain HTTP
+as I do. The one new word to learn is `measure()`; it tells Cube "apply the
+definition from the model, don't make me re-type it":
+
+```sql
+select
+     date_trunc('month', s.ordered_at)    _month
+    ,s.channel_name                       _channel
+    ,measure(s.revenue)                   _revenue
+    ,measure(s.orders)                    _orders
+from sales_overview s
+where 1=1
+    and s.ordered_at >= date '2024-01-01'
+group by 1, 2
+order by 1, 2
+```
+
+Note there's no `sum()` and no `where order_status = 'completed'` in that
+query. The model already knows. Rename a column in Postgres tomorrow, and the
+query above still runs.
+
+**It answers small.** Aggregated rows, not tables — a couple of hundred lines
+of JSON for a year of monthly figures, which is exactly the size a browser is
+happy to filter and re-slice on its own.
+
+## The front-end, honestly
+
+- **Fetch on the server, draw on the client.** The page runs its four queries
+  at build time and again on a daily revalidation, then hands plain rows to the
+  component. Visitors never touch Cube, so the API sees a handful of requests a
+  day whatever the traffic — which is also what makes Cube Cloud's free tier
+  (it naps after 30 idle minutes) perfectly adequate here.
+- **Filter in the browser, but only where it's safe.** Sums re-add across any
+  dimension. Ratios don't — average order value is recomputed from its parts
+  after every filter, never averaged. And `count distinct` of orders is only
+  additive across *order-level* attributes, which is why the dashboard filters
+  by year and channel and never by product category.
+- **No client SDK.** Native `fetch`, a token signed with Node's `crypto`, a
+  thirty-line parser for the newline-delimited JSON. Less to install, less to
+  explain.
+
+That's the whole front-end story. Everything hard — the joins, the definitions,
+the caching, who may see which rows — lives one layer down, where it belongs.
+
+## Why Cube earns its place
+
+The features that made the difference, in the order I felt them:
+
+- **Open source at the core.** Cube Core is Apache-2.0; Cube Cloud adds hosting
+  and a free tier to start on. You're not renting the semantic layer.
+- **A data model you version.** Cubes and views in YAML or JavaScript, reviewed
+  like any other code. The view is a public contract; the tables behind it are
+  an implementation detail.
+- **One definition, every consumer.** The same model answers SQL
+  (Postgres-compatible, with `measure()`), REST and GraphQL — so your app,
+  Excel or Google Sheets, and any Postgres-speaking BI tool all show the same
+  number.
+- **Caching and pre-aggregations.** Rollups declared in the model and refreshed
+  in the background by Cube Store, so a dashboard stays fast without you
+  touching the source database.
+- **Access control at the layer.** Row-level and multi-tenant rules, driven by
+  the token, applied identically no matter who's asking.
+- **Around thirty data sources.** Swap Postgres for a warehouse next year; the
+  model, the queries and the front-end don't change.
+- **Built for AI agents too.** An MCP server and a Chat API sit on the same
+  model — which is precisely what keeps an LLM's numbers honest.
+
+Your data, your model, your design. Cube is the small piece in the middle that
+makes the other two negotiable.

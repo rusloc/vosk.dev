@@ -2,62 +2,144 @@
 title: "Fastest way to deliver data without dashboard or AI"
 description: "Your CEO won't open the dashboard. Fabric can query the semantic model from a notebook and email a formatted HTML table straight to their phone."
 date: "2026-08-02"
+updated: "2026-09-22"
 tags: ["power bi", "python"]
 draft: false
 ---
 
-> **In short.** Nobody opens the dashboard. So don't make them: have a Fabric
-> notebook query the semantic model you already built, format the numbers into an
-> HTML table, and email it on a schedule. The KPIs land on a phone screen before
-> anyone thinks to ask for them, and a single button in that email opens the full
-> report for whoever wants to dig. Roughly 120 lines of Python, no new platform,
-> no licence, no AI in the loop.
+The model is clean, the measures are right — and three people opened the
+dashboard last month. That's not a dashboard problem, it's a format problem: an
+executive wants five numbers on a Friday morning, on a phone, without logging
+into anything. So stop asking them to come to the data. Send it.
 
-There's a particular kind of silence that follows a dashboard launch. The model
-is clean, the measures are right, the visuals are tight — and the traffic log
-says three people opened it last month, two of whom were you.
+## What you get
 
-This isn't a failure of the dashboard. It's a mismatch of format. An executive
-who wants five numbers on a Friday morning is not going to unlock a laptop, load
-a workspace, wait for a report to render, and click into a slicer. They will,
-however, read an email on a phone while the coffee is brewing.
-
-So stop asking them to come to the data. Send it.
-
-## The shape of the thing
-
-Everything below runs inside Microsoft Fabric — no extra infrastructure, no
-server to babysit, no AI in the loop:
-
-1. **Your semantic model stays exactly as it is.** The one already feeding the
-   Power BI report. It's the source of truth, and nothing here forks it.
-2. **A Fabric notebook queries that model directly** over Semantic Link, using
-   the same DAX you'd write in the report.
-3. **Python assembles the metrics** — current period, prior year, the variance
-   between them.
-4. **The numbers get formatted into an HTML table** built for email clients,
-   which means inline styles and tables-as-layout, like it's 2006.
-5. **Microsoft Graph sends it** from a real mailbox to a real distribution list.
-6. **A Fabric Pipeline runs the notebook on a schedule.** Friday at 6am, done.
-
-The output is one email. No attachment, no login, nothing to install:
+One email. No attachment, no login, nothing to install:
 
 <EmailReportPreview />
 
-That's the entire deliverable. The recipient's job is to glance at it.
+- **It arrives before anyone asks.** Friday, 6 am, every week — whether or not
+  someone happened to be curious.
+- **It's the official number.** Computed by the same DAX that backs the report,
+  so there's nothing to reconcile when it's quoted in a meeting.
+- **It reads in seconds.** A mail preview on a phone, not a workspace load.
+- **It has one button.** _Open the full report_ — deep-linked and pre-filtered,
+  for the one reader in ten who wants the _why_.
+- **It costs about 120 lines of Python.** No new platform, no licence, no AI
+  in the loop.
 
-## The one link that matters
+## The building blocks
 
-Notice the button at the bottom of that email. It's the piece people leave out,
-and it's the piece that makes the whole thing defensible.
+Everything runs inside Microsoft Fabric. Six steps, one code block each.
 
-The email answers _what_. It will never answer _why_ — and the moment a number
-looks wrong or interesting, the reader has exactly one question: which country,
-which month, which customer. Without somewhere to go, that curiosity turns into
-a message to you, and you've reinvented the manual reporting request you were
-trying to kill.
+### 1. Pick a source — anything Fabric can reach
 
-So end the email with a deep link into the report:
+The semantic model is the obvious one: it's already behind the report, and
+Semantic Link runs DAX against it and hands back a DataFrame. But the notebook
+doesn't care where the number comes from:
+
+```python
+from sempy.fabric import evaluate_dax
+import com.microsoft.spark.fabric   # Warehouse connector, preinstalled
+
+# Semantic model — DAX in, DataFrame out
+kpi = evaluate_dax("<semantic-model>", "EVALUATE { [Revenue] }")
+
+# Warehouse, or a lakehouse's SQL analytics endpoint
+wh = spark.read.synapsesql("<warehouse>.dbo.fact_sales")
+
+# Lakehouse table
+lh = spark.sql("select sum(amount) _revenue from fact_sales")
+
+# OneLake files
+files = spark.read.parquet("Files/exports/sales_2026.parquet")
+```
+
+Pick one. Everything below stays the same: a number in, a display string out.
+
+### 2. Query it
+
+A two-method wrapper. The `1×1 → scalar` unwrap is what keeps the rest
+readable — most of these queries return exactly one number.
+
+```python
+from sempy.fabric import evaluate_dax
+
+class Engine:
+    def __init__(self, model):
+        self.model = model
+
+    def dax(self, query):
+        df = evaluate_dax(self.model, query)
+        # A 1×1 result is a single KPI — unwrap it instead of returning a frame.
+        return df.iat[0, 0] if df.shape == (1, 1) else df
+
+query = Engine(model="<your-semantic-model-id>")
+```
+
+### 3. Collect the metrics
+
+Ordinary DAX, one scalar per call, current period and prior year. Compute the
+period boundaries **once**, at the top of the notebook, from a single reference
+date — then "what does MTD mean on the 3rd" is answered in one place, not in
+fourteen filters.
+
+```python
+REVENUE = """
+EVALUATE
+{ CALCULATE(
+    SUM('Fact'[Amount]),
+    'Fact'[Measure] = "Revenue",
+    ALL('Fact'[Date]),
+    'Fact'[Date] >= {start},
+    'Fact'[Date] <= {end}
+) }
+"""
+
+rev_ytd    = query.dax(REVENUE.format(start="DATE(2026,1,1)",  end="DATE(2026,7,31)"))
+rev_ytd_py = query.dax(REVENUE.format(start="DATE(2025,1,1)",  end="DATE(2025,7,31)"))
+
+metrics = [{
+    "name":   "Revenue",
+    "change": f"{(rev_ytd - rev_ytd_py) / rev_ytd_py:.1%}",
+    "ytd":    f"{rev_ytd:,.0f}",
+    "ytd_py": f"{rev_ytd_py:,.0f}",
+}]
+```
+
+Format here, not in the template. By the time a value reaches the HTML it's
+already a display string, so the template only ever does layout.
+
+### 4. Format it — for a phone
+
+Email HTML is 2006 forever: tables for layout, inline styles on every cell,
+web-safe fonts, no `<style>` block. Colour the variance here — green and red are
+a presentation decision, and the metrics list stays plain and testable.
+
+```python
+def kpi_table(metrics):
+    rows = "".join(
+        f"""<tr>
+              <td style="padding:12px 10px;font-size:14px;color:#666;">{m['name']}</td>
+              <td style="padding:12px 10px;text-align:right;font-weight:600;
+                         color:{'#2e7d32' if not m['change'].startswith('-') else '#c62828'};">
+                  {m['change']}</td>
+              <td style="padding:12px 10px;text-align:right;">{m['ytd']}</td>
+              <td style="padding:12px 10px;text-align:right;color:#666;">{m['ytd_py']}</td>
+            </tr>"""
+        for m in metrics
+    )
+    return f"""
+    <body style="margin:0;padding:16px 12px;font-family:Arial,Helvetica,sans-serif;">
+      <h2 style="margin:0;font-size:20px;">Executive overview</h2>
+      <table cellspacing="0" width="100%" style="border-collapse:collapse;background:#fff;">
+        {rows}
+      </table>
+    </body>"""
+```
+
+**End with the button.** The email answers _what_; the report answers _why_.
+Without a link, every "wait, which country?" becomes a message to you.
 
 ```python
 REPORT_URL = "https://app.powerbi.com/groups/<workspace>/reports/<report-id>"
@@ -73,54 +155,18 @@ cta = f"""
 </td></tr>"""
 ```
 
-A few details that decide whether it gets used:
+- **Link the page, not the workspace** — `…/reports/<id>/<section-id>` lands on
+  the tab that matches the email.
+- **Keep `?ctid=<tenant-id>`** — or a phone signed into a personal Microsoft
+  account hits a permissions wall.
+- **Carry the filter** — `?filter=Country/Name eq 'Poland'` opens the report
+  already pointed at the thing that prompted the click.
 
-- **Deep-link to the page, not the workspace.** `…/reports/<id>/<section-id>`
-  lands on the tab that matches the email. Dropping someone on a report's home
-  page and letting them hunt for the right tab is how a link stops being clicked.
-- **Append `?ctid=<tenant-id>`.** Without it, a reader signed into a personal
-  Microsoft account on their phone hits a permissions wall instead of the report.
-- **Carry the filter through** with `?filter=Country/Name eq 'Poland'` when the
-  email highlights something specific. The report opens pre-filtered to the thing
-  that prompted the click.
-- **Say what's behind it.** "Open the full report" earns more clicks than a bare
-  URL, and a line of context under the button earns more still.
+### 5. Send it
 
-This is what keeps the email from being a walled garden. Ninety percent of the
-time the five numbers are the whole answer and nobody clicks anything. The other
-ten percent is exactly when a dashboard is the right tool — and the email is what
-delivers the reader to it, already knowing what they're looking for.
-
-## Why not a dashboard, an alert, or a chatbot
-
-Worth being honest about the alternatives, because each one is genuinely better
-in some other situation.
-
-**Power BI subscriptions** already email a report snapshot on a schedule, and if
-a rendered page of visuals is what you want, use them — they're less work than
-this. What they won't do is give you full control of the layout, mix in numbers
-from outside the report page, or fit comfortably in a phone's mail preview. A
-subscription sends you a picture of a report. This sends you the answer.
-
-**Data alerts** fire when a threshold trips. That's a different job — exception
-reporting, not the routine pulse.
-
-**And AI?** Asking a copilot for last month's gross profit means someone has to
-be curious at the right moment, phrase the question, and trust the answer. A
-scheduled email removes all three steps. The numbers show up whether or not
-anyone thought to ask, and they're computed by the same DAX that backs the
-official report — so there's nothing to reconcile when someone quotes the email
-in a meeting.
-
-## The code
-
-Four blocks, trimmed to the load-bearing parts.
-
-### 1 — Send mail through Graph
-
-A thin wrapper over the Microsoft Graph API: fetch a token with the client
-credentials flow, then `POST` to `/sendMail`. Register an app in Entra ID, grant
-it `Mail.Send`, and it sends as the mailbox you name in `sender_upn`.
+A thin wrapper over Microsoft Graph: client-credentials token, then `POST` to
+`/sendMail`. Register an app in Entra ID, grant it `Mail.Send`, and it sends as
+the mailbox in `sender_upn`.
 
 ```python
 import json, urllib.request, urllib.parse
@@ -161,119 +207,44 @@ class Emailer:
         )
         with urllib.request.urlopen(req) as r:
             return r.getcode() in (200, 202, 204)
-```
-
-Keep the secret in a Key Vault and read it through `notebookutils.credentials`.
-Don't do what the first draft always does and paste it into the cell.
-
-### 2 — Query the semantic model
-
-Semantic Link (`sempy`) runs DAX against a published model and hands back a
-DataFrame. That's the whole integration — the model is already there, and the
-notebook is just another consumer of it.
-
-```python
-from sempy.fabric import evaluate_dax
-
-class Engine:
-    def __init__(self, model):
-        self.model = model
-
-    def dax(self, query):
-        df = evaluate_dax(self.model, query)
-        # A 1×1 result is a single KPI — unwrap it instead of returning a frame.
-        return df.iat[0, 0] if df.shape == (1, 1) else df
-
-query = Engine(model="<your-semantic-model-id>")
-```
-
-The `1×1 → scalar` unwrap is the small convenience that makes the rest read
-cleanly. Most of these queries return exactly one number, and `EVALUATE { … }`
-around a `CALCULATE` is the shortest path to it.
-
-### 3 — Collect the metrics
-
-Now it's ordinary DAX. One scalar per call, current period and prior year, with
-the date boundaries injected from Python so the same query serves any window.
-
-```python
-REVENUE = """
-EVALUATE
-{ CALCULATE(
-    SUM('Fact'[Amount]),
-    'Fact'[Measure] = "Revenue",
-    ALL('Fact'[Date]),
-    'Fact'[Date] >= {start},
-    'Fact'[Date] <= {end}
-) }
-"""
-
-rev_ytd    = query.dax(REVENUE.format(start="DATE(2026,1,1)",  end="DATE(2026,7,31)"))
-rev_ytd_py = query.dax(REVENUE.format(start="DATE(2025,1,1)",  end="DATE(2025,7,31)"))
-
-metrics = [{
-    "name":   "Revenue",
-    "change": f"{(rev_ytd - rev_ytd_py) / rev_ytd_py:.1%}",
-    "ytd":    f"{rev_ytd:,.0f}",
-    "ytd_py": f"{rev_ytd_py:,.0f}",
-}]
-```
-
-Two things worth stealing here. **Formatting belongs in Python, not in the HTML
-builder** — by the time a value reaches the template it's already a display
-string, so the template only ever does layout. And **the period boundaries are
-computed once**, at the top of the notebook, from a single reference date. Every
-query reads from that one dictionary, so "what does MTD mean on the 3rd of the
-month" is answered in exactly one place rather than re-litigated in fourteen
-DAX filters.
-
-That last point sounds pedantic until the first time the report is opened on the
-2nd and everyone argues about whether MTD should mean "two days" or "all of last
-month."
-
-### 4 — Build the HTML and send it
-
-Email HTML is its own small discipline. Gmail and Outlook strip `<style>` blocks
-and ignore most of flexbox, so: tables for layout, inline styles on every cell,
-web-safe fonts, no external CSS.
-
-```python
-def kpi_table(metrics):
-    rows = "".join(
-        f"""<tr>
-              <td style="padding:12px 10px;font-size:14px;color:#666;">{m['name']}</td>
-              <td style="padding:12px 10px;text-align:right;font-weight:600;
-                         color:{'#2e7d32' if not m['change'].startswith('-') else '#c62828'};">
-                  {m['change']}</td>
-              <td style="padding:12px 10px;text-align:right;">{m['ytd']}</td>
-              <td style="padding:12px 10px;text-align:right;color:#666;">{m['ytd_py']}</td>
-            </tr>"""
-        for m in metrics
-    )
-    return f"""
-    <body style="margin:0;padding:16px 12px;font-family:Arial,Helvetica,sans-serif;">
-      <h2 style="margin:0;font-size:20px;">Executive overview</h2>
-      <table cellspacing="0" width="100%" style="border-collapse:collapse;background:#fff;">
-        {rows}
-      </table>
-    </body>"""
 
 mailer = Emailer(tenant="…", client_id="…", client_secret="…", sender_upn="…")
 mailer.send_html(["ceo@company.com"], kpi_table(metrics), subject="Group KPI, daily")
 ```
 
-Colour-coding the variance in the builder rather than the data is deliberate:
-green and red are a _presentation_ decision, and keeping them here means the
-metrics list stays plain and testable.
+Keep the secret in a Key Vault and read it through `notebookutils.credentials`.
+Never in the cell.
 
-### 5 — Schedule it
+### 6. Trigger it — from Fabric, or from anywhere
 
-A Fabric Pipeline with a single Notebook activity and a schedule trigger. No
-Functions app, no cron box, no orchestration layer. If the notebook runs, the
-email sends.
+Mark one notebook cell as **parameters** — recipients, reference date, model id —
+and every trigger below can override them without touching the code.
 
-One guard rail worth adding inside the notebook — send only on the days you mean
-to, so a manual run while debugging doesn't reach the CEO:
+- **On a schedule.** A Fabric Pipeline: one Notebook activity, one schedule
+  trigger. Friday, 6 am. No Functions app, no cron box.
+- **On demand.** _Run_ in the notebook or the pipeline. Same code, same email.
+- **From outside Fabric.** One `POST` to the Job Scheduler API — from a ticket,
+  a chat bot, a month-end script, anything holding a token:
+
+```python
+FABRIC = "https://api.fabric.microsoft.com/v1"
+NOTEBOOK = f"{FABRIC}/workspaces/<workspace-id>/items/<notebook-id>"
+
+# fabric_token: the Emailer's client-credentials flow again,
+# with scope "https://api.fabric.microsoft.com/.default"
+req = urllib.request.Request(
+    f"{NOTEBOOK}/jobs/RunNotebook/instances",
+    data=json.dumps({"executionData": {"parameters": {
+        "recipients": {"value": "cfo@company.com", "type": "string"},
+    }}}).encode(),
+    headers={"Authorization": f"Bearer {fabric_token}",
+             "Content-Type": "application/json"},
+)
+urllib.request.urlopen(req)   # 202 Accepted — poll the Location header
+```
+
+And one guard rail inside the notebook, so a debugging run never reaches the
+CEO:
 
 ```python
 from datetime import datetime
@@ -283,33 +254,13 @@ if now.weekday() == 4 and now.day > 2:      # Fridays, skipping the 1st/2nd
     mailer.send_html(recipients, html, subject="Group KPI, daily")
 ```
 
-Also log every send. A tiny table holding the timestamp and the metrics payload
-as JSON costs nothing and answers "what did the email actually say on the 14th"
-without anyone forwarding you a screenshot.
+Log every send — timestamp plus the metrics as JSON. It answers "what did the
+email say on the 14th" without anyone forwarding a screenshot.
 
-## What this is not
+## Why it works
 
-It isn't self-service, and it shouldn't pretend to be. There's no drilling in,
-no changing the date range, no asking a follow-up question. That's what the
-button is for — the email is the summary, the report is the answer to the next
-question, and pretending one can be the other is how you end up with a dashboard
-nobody opens _and_ an email nobody trusts.
-
-It also isn't free of maintenance. Add a metric and you touch the DAX, the
-metrics list and the template. That's fine at seven metrics and painful at
-seventy, which is a useful forcing function: an executive summary that grows to
-seventy rows has stopped being an executive summary.
-
-## The bottom line
-
-The gap between "the data exists" and "the decision-maker saw it" is where most
-BI work quietly dies. A dashboard closes that gap only for people willing to
-open dashboards.
-
-This closes it for everyone else. The model you already built, queried by a
-notebook you can read in one sitting, formatted into something that renders on a
-phone, delivered on a schedule nobody has to remember. No new platform, no
-licence, no chatbot in the middle.
-
-The boss doesn't open a report, doesn't ask an AI, doesn't go looking. They open
-their inbox, and the numbers are already there.
+Instant access without a dashboard in the way: the numbers are in the inbox,
+readable in the seconds it takes to unlock a phone, in a format that needs no
+legend. And it's a funnel, not a wall — the button under the table takes anyone
+who wants to dig into the real report, already filtered to the number they just
+read.

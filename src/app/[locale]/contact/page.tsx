@@ -128,6 +128,16 @@ export default async function ContactPage({ params }: Props) {
               pending={t.linkPending}
             />
           </dd>
+
+          <dt className="text-muted-foreground">{t.labelGithub}</dt>
+          <dd>
+            <Profile
+              url={siteConfig.social.github}
+              platform={t.labelGithub}
+              text={t.linkProfile}
+              pending={t.linkPending}
+            />
+          </dd>
         </dl>
       </div>
 

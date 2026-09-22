@@ -86,7 +86,7 @@ export function BiStackDiagram() {
         <text x="400" y="114" fontSize="13" fontWeight="600">Data model</text>
         <text x="400" y="129" fontSize="10.5" opacity="0.9">measures · dimensions · joins — YAML, in git</text>
         <text x="400" y="168" fontSize="13" fontWeight="600">APIs</text>
-        <text x="400" y="183" fontSize="10.5" opacity="0.9">SQL (Postgres protocol or HTTP) · REST · GraphQL</text>
+        <text x="400" y="183" fontSize="10.5" opacity="0.9">SQL (Postgres wire or HTTP) · REST · GraphQL</text>
         <text x="400" y="222" fontSize="13" fontWeight="600">Cache &amp; pre-aggregations</text>
         <text x="400" y="237" fontSize="10.5" opacity="0.9">the same question, answered once</text>
         <text x="400" y="276" fontSize="13" fontWeight="600">Access control</text>

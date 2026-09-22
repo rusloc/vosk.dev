@@ -149,6 +149,7 @@ export const ru: Dictionary = {
     labelEmail: "Почта",
     labelLinkedin: "LinkedIn",
     labelUpwork: "Upwork",
+    labelGithub: "GitHub",
     linkProfile: "смотреть профиль",
     linkPending: "Скоро",
   },

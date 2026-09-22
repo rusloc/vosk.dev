@@ -155,6 +155,7 @@ export const en = {
     labelEmail: "Email",
     labelLinkedin: "LinkedIn",
     labelUpwork: "Upwork",
+    labelGithub: "GitHub",
     // Link text for a profile row — the same for every platform; the row label
     // names it, and the link's aria-label joins the two.
     linkProfile: "see profile",

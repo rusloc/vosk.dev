@@ -34,7 +34,7 @@ export const siteConfig = {
   // "https://www.linkedin.com/" would dead-end the visitor on the platform's
   // home page, which is worse than no link at all.
   social: {
-    github: "",
+    github: "https://github.com/rusloc",
     linkedin: "https://www.linkedin.com/in/kirill-vosk/",
     upwork: "https://www.upwork.com/freelancers/~01a960a706057bdf85",
   },

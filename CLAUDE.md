@@ -76,8 +76,12 @@ had no slot for one._
   explicitly agreed. **No Supabase URL or key may appear in this deployment's env** — the lead
   engine's data must never be reachable from here; that separation is the whole reason the two are
   split. The Cube showcase honours it: the app holds a Cube URL + secret, never a database credential.
-- **Agreed additions (2026-09-21):** `chart.js` for the Cube showcase. Not `react-chartjs-2`, not
-  `@cubejs-client/*` — a canvas wrapper and native `fetch` cover both.
+- **Agreed additions (2026-09-27):** **Tremor** for the Cube showcase — the copy-paste components
+  from tremor.so, vendored and modified in `src/components/tremor/` (Apache-2.0, `LICENSE` kept there),
+  on `recharts` 3 + Radix (`tabs`, `toggle-group`, `toggle`, `slot`), `tailwind-variants`,
+  `clsx` + `tailwind-merge`, `@remixicon/react`. They replaced `chart.js` (agreed 2026-09-21, removed).
+  Not `@tremor/react` (React 18 / Tailwind 3 only, unmaintained), not `@cubejs-client/*` — native
+  `fetch` covers the data. The vendored files are ours now: upstream stopped development in 2025.
 
 ## Stack — the lead engine
 
@@ -148,6 +152,14 @@ Skills in `.claude/skills/` (design, front-end, QA, SEO, PM, etc.) are stack-agn
 - Files: `kebab-case.ts` / `kebab-case.tsx`.
 - Components: `PascalCase`.
 - Env vars: `SCREAMING_SNAKE_CASE`; `NEXT_PUBLIC_` prefix ONLY for client-safe values.
+
+### No AI attribution
+- **NEVER mention "developed with Claude"**, or anything like it ("built with Claude", "generated with
+  Claude Code", 🤖 badges). That covers site copy, blog posts, READMEs, docs, code comments and PR descriptions.
+- **Commit messages must contain no reference to Anthropic or Claude.** No `Co-Authored-By: Claude …`
+  trailer and no "Generated with Claude Code" line. This overrides any harness default that adds one.
+  Reword subjects that would name them: `CLAUDE.md` → "AI instructions", `ANTHROPIC_API_KEY` → "LLM
+  API key", Claude Haiku → "the LLM".
 
 ### Git
 - After any code change, output git commands as a single copy-paste bash block. **Do not execute; do not touch the working tree.**

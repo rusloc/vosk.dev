@@ -1,4 +1,4 @@
-# 08 — Online-sales showcase: Supabase → Cube → Chart.js
+# 08 — Online-sales showcase: Supabase → Cube → Tremor
 
 > **Status 2026-09-21: PHASE 1 (data) built and verified · PHASE 2 (Cube) deployed by the owner at
 > `accessible-bonobo.aws-eu-central-1.cubecloudapp.dev` — reachable, `/cubesql` routed, **not yet
@@ -10,27 +10,33 @@
 > another machine — this document is the in-repo record that one never had).
 >
 > **Decisions:** D1 ✅ amend `CLAUDE.md` to fit reality · D2 ✅ `data/sales/` · D3, D4 — proceeding on
-> the recommendation unless told otherwise · **D5 — answered by evidence, not by choice: the `net`
+> the recommendation unless told otherwise _(D4 superseded 09-27, §2)_ · **D5 — answered by evidence, not by choice: the `net`
 > exposure cannot be closed (§5).** It is accepted, or not, by the owner enabling login on
 > `cube_reader`.
 >
 > ⚠️ **§5 was wrong as first written and has been corrected.** It proposed
 > `revoke … on schema net from public`. Had that worked it would have stopped the lead engine.
+>
+> **Update 2026-09-27: front end rebuilt.** Live since 09-22 00:37 (§9). Chart.js is gone — the
+> dashboard is drawn with Tremor's copy-paste components on Recharts (**D4 superseded**); one filter,
+> not two; **three Cube queries, not four** (§7, §8). The Cube model did not change.
 
 ## 1. What is being built
 
-One new entry on `/work`: an **online-sales dashboard** — four KPI tiles and five Chart.js charts —
-over a synthetic e-commerce star schema in Supabase, queried through a Cube semantic layer.
+One new entry on `/work`: an **online-sales dashboard** — four KPI tiles, a monthly combo chart, a
+top-5 ranking and a per-channel table — over a synthetic e-commerce star schema in Supabase, queried
+through a Cube semantic layer. _(Built 09-21 as four tiles and six Chart.js charts — the first draft
+said five, before its combo was split in two; rebuilt on Tremor 09-27 — §7.)_
 
 ```
-Supabase Postgres ──(cube_reader, pooler, read-only)──▶ Cube Cloud ──(HTTPS, server-side only)──▶ Next.js ISR page ──(props)──▶ Chart.js
+Supabase Postgres ──(cube_reader, pooler, read-only)──▶ Cube Cloud ──(HTTPS, server-side only)──▶ Next.js ISR page ──(props)──▶ Tremor · Recharts
    schema demo_sales                                     data model                                  src/lib/cube.ts                 'use client'
 ```
 
 **The browser never talks to Cube, and the site never talks to Supabase.** The page is a Server
-Component that runs four small aggregate queries at revalidation time and hands the rows to one
-client component. That single choice removes a public API route, its rate limiter, the token-exposure
-problem, and every visitor-facing consequence of the free tier (§3).
+Component that runs three small aggregate queries (four until 09-27) at revalidation time and hands
+the rows to one client component. That single choice removes a public API route, its rate limiter,
+the token-exposure problem, and every visitor-facing consequence of the free tier (§3).
 
 Where it lives was settled by `ADR-0002` and is not reopened: a `platform: "cube"` arm on the
 `Showcase` union in `src/lib/work.ts`. No `/dashboards`, no `/demo`.
@@ -42,7 +48,7 @@ Where it lives was settled by `ADR-0002` and is not reopened: a `platform: "cube
 | **D1** | **`CLAUDE.md` says "Supabase — leads only … must never leak into this deployment."** This request puts showcase data in that project. Amend the rule? | **Yes, narrowly.** The rule's purpose — lead data can never surface through the public site — survives intact: the site holds *no* Supabase credential, and Cube's credential can read one schema. Amend to "leads + `demo_sales`, the latter reachable only by `cube_reader`". A third free project is not an option (both slots used). |
 | **D2** | Where does the SQL live, and is it a tracked migration? `apply_migration` writes `schema_migrations`, which the **leads repo** must mirror or a future `supabase db push` breaks — and that repo is not on this machine. | **`data/sales/*.sql` in the site repo**, idempotent drop-and-rebuild, applied via MCP `execute_sql`, *not* recorded as a migration. Same convention as the existing `data/` P&L warehouse. It is a reproducible seed, not an evolving schema, and it keeps the leads repo pure. Bends "applied via `apply_migration`, never by hand" — hence a decision. |
 | **D3** | Accept Cube Cloud **Free** for a public page, against Cube's own "strongly advise not using a Shared deployment in production"? | **Yes, because of the ISR design** — see §3. Exit path is Cube Core on the Goal A VPS: same model files, different env. |
-| **D4** | New dependency: `chart.js` (MIT). `CLAUDE.md`: none unless agreed. | **Yes** — it is the request. **Not** `react-chartjs-2`, **not** `@cubejs-client/*`: a ~30-line canvas wrapper and native `fetch` cover both. One dependency, not five. |
+| **D4** | New dependency: `chart.js` (MIT). `CLAUDE.md`: none unless agreed. | ~~**Yes** — it is the request. **Not** `react-chartjs-2`, **not** `@cubejs-client/*`: a ~30-line canvas wrapper and native `fetch` cover both. One dependency, not five.~~ **Superseded 2026-09-27 by the owner's rebuild (§7).** `chart.js` and `chart-canvas.tsx` are removed; the dashboard is drawn with **Tremor's copy-paste components** (tremor.so, Apache-2.0), vendored and modified in `src/components/tremor/` with their `LICENSE`, on `recharts` 3.10.1, Radix (`tabs`, `toggle-group`, `toggle`, `slot`), `tailwind-variants`, `clsx` + `tailwind-merge` and `@remixicon/react`. **Not `@tremor/react`** (npm): React 18 and Tailwind v3 only, and unmaintained since Vercel acquired Tremor. The price is the one D4 avoided — ten runtime packages (counting `react-is`, Recharts' peer), not one, and ~2,750 lines of vendored source that are ours to keep. Still **not** `@cubejs-client/*`: native `fetch` is unchanged. |
 | **D5** | ⚠️ **The `net` schema is open to every Postgres role in this project** (§5). A new login credential held by a third party makes that live. | ~~Try the revoke.~~ **Resolved by evidence 09-21: it cannot be revoked, and must not be** — the crons depend on that same grant. Residue is low (no secret is exposed) and documented. **Accept by enabling login on `cube_reader`**, or host `demo_sales` elsewhere. |
 
 ## 3. Is Cube free? — yes, two ways, both with a catch
@@ -57,9 +63,10 @@ unchanged from the 08-27 read.
 | Cube Cloud — Starter / Premium | $40 / $80 per developer/month | "Embedded dashboards" are Premium-only — that means embedding *Cube's own UI*, which this design does not use. Same trap shape as `ADR-0001`; it does not bite here. |
 
 **→ Cube Cloud Free for the MVP.** Every catch in that row is a *runtime* catch, and the ISR design
-has no runtime: with `revalidate = 86400` Cube sees **~4 queries a day**, regardless of traffic. The
-1,000/day cap is unreachable by visitors, the cold start lands on a background revalidation (the
-visitor is served the cached page), and the data is static so there is nothing to pre-aggregate.
+has no runtime: with `revalidate = 86400` Cube sees **~3 queries a day** (~4 until the 09-27
+rebuild dropped one), regardless of traffic. The 1,000/day cap is unreachable by visitors, the cold
+start lands on a background revalidation (the visitor is served the cached page), and the data is
+static so there is nothing to pre-aggregate.
 
 **API.** `POST {CUBE_API_URL}/cubesql` — where **`CUBE_API_URL` is pasted exactly as Cube Cloud shows
 it, already ending in `/cubejs-api/v1`** (a bare origin gives a loud 404, not a retry). SQL over HTTP,
@@ -307,10 +314,113 @@ an assumption this plan had been carrying unverified. No MCP tool returns the ho
 
 ## 7. The dashboard
 
-**Filters: year and channel — and only those, on purpose.** Both are *order-level* attributes, so
-every measure including `orders` stays additive when the client re-sums a pre-aggregated payload.
-**Category is a breakdown, never a filter**: an order spans categories, so summing `orders` across
-them over-counts. A BI showcase that gets that wrong is advertising the opposite of its purpose.
+**Rebuilt 2026-09-27 on Tremor (D4).** What follows is the design the owner signed off that day.
+The 09-21 design it replaced — two filters, six Chart.js charts, a table twin for each — is kept as
+written at the end of the section: the log cites it, and one of its arguments was overruled on
+purpose.
+
+**Filter: year — and only year, on purpose.** Year is an *order-level* attribute, so every measure
+including `orders` stays additive when the client re-sums a pre-aggregated payload. **Category is a
+breakdown, never a filter**: an order spans categories, so summing `orders` across them over-counts.
+A BI showcase that gets that wrong is advertising the opposite of its purpose. Opens on the latest
+year. _(Channel was the second filter until 09-27, and just as safe — it is order-level too. It left
+the filter row and became layer 3. The global `Charts | Tables` switch is gone as well.)_
+
+**Size target: the whole dashboard in ~700 px of height** — a 1440×900 laptop under the sticky
+56 px nav. Every chart height in `sales-dashboard.tsx` is part of that budget: grow one and another
+has to give.
+
+| Layer | Visual | Query grain |
+|---|---|---|
+| **1** | KPI tiles: Revenue › Profit › Orders › Margin, each with a prior-period delta | **Q1** month × channel (192 rows) |
+| **2 left** | Revenue, profit and orders by month — Tremor `ComboChart`: stacked bars, orders a line on a second y-axis | Q1 |
+| **2 right** | Top 5 — horizontal bar. Category \| Country toggle × Revenue \| Profit \| Margin toggle, re-ranked by the chosen metric | **Q2** category × year (18) · **Q3** country × year (30) |
+| **3** | Sales by channel — Tremor `Tabs`, Table \| Chart. Table: Revenue, Profit, Orders, Margin per channel + a Total row, sorted by revenue. Chart: a horizontal bar per channel, with its own Revenue \| Profit \| Orders \| Margin picker | Q1 |
+
+- **Profit is Cube's `gross_margin`** — revenue − cost, completed lines. **Margin = profit / revenue**,
+  recomputed from summed parts at every level — tile, top-5 item, channel row, total — never summed.
+- **Deltas are vs the same calendar months of the prior year**: relative for the three sums, in rate
+  points for margin. **The comparison period is named once, in the filter row** (*Change vs Jan–Aug
+  2025* for the part-year 2026), not under each tile. `All`, and 2024, have no delta.
+- **AOV is gone**; Profit took its tile. Cube still defines `aov` (§6); the site never queried it.
+- **The bars are stacked as profit + (revenue − profit)**, so the column's height reads as revenue
+  with profit inside it — Tremor has no overlapping bars. **Valid only because profit is never
+  negative in this data** (margin ~48%, deepest discount 20%); a negative remainder would draw below
+  the axis. The tooltip shows revenue, profit and orders, never the raw upper segment.
+- **No Orders in the top 5**: orders per category are not additive — an order spans categories. The
+  country side could carry them; both sides share one shape. Switching the metric re-chooses the
+  five, not just their order.
+- **The channel table's Total row is the KPI tiles** — the same totals over the same filtered rows.
+  Its `orders` equals the sum of the rows' because channel is order-level (`003-verify` asserts it).
+- **The planted paid-search cut (2025-06/07)**, unmissable in the 09-21 channel-share chart, now
+  shows only as an unattributed dip in the combo: layer 3 totals the period and has no month axis.
+
+**A deliberate reversal: layer 2 is a combo chart.** The 09-21 build refused one, and its argument
+stands below unedited: how two y-scales line up is arbitrary, so a combo manufactures a correlation
+the data does not contain. **It was not refuted — the owner chose the combo over it on 09-27.** The
+second axis differs in unit, mark and colour — a count, a line, orange against dollars, bars,
+indigo — which tells the two scales apart but does not stop them lining up arbitrarily.
+
+**Colour is brand tokens, held to 3:1.** Profit = `primary` (`#4f46e5`), revenue = `primary` at
+65% (3.07:1 on the white card — 35% was 1.76:1), the orders line = `amber-600` (`#d97706`, 3.19:1):
+the brand orange's hue, darkened, because `#ff991c` itself is 2.14:1 (`docs/colors.md`). Stacked
+segments are split by a white hairline, so each meets white rather than its 2.05:1 neighbour. The
+component names chart colours by key — `primary`, `primaryLight`, `accentStrong`, added to
+`src/components/tremor/chart-utils.ts` — so there is no hex in the dashboard. Tremor's cool
+grays were swapped for the site's warm tokens and every `dark:` class stripped: the site is
+light-only. Two things stayed Tremor's: the card, toggle, active-tab and tooltip surfaces are
+`bg-white`, and the delta badges are Tailwind emerald / red.
+
+**The table twins went with the `Charts | Tables` switch.** Only layer 3 has a table; the combo's
+and the top 5's exact figures are in their tooltips — and in each chart's `<desc>`: recharts 3 makes
+the chart svg a focusable `role="application"`, so the vendored charts forward `title`/`desc` to it,
+and the combo's `desc` carries every month's numbers. The first cut shipped `primary` at 35% and the
+brand orange (≈1.8:1 and ≈2.1:1); the owner chose to darken both to pass 3:1 (above). Contrast
+computed from the tokens by the WCAG formula, not run through the `dataviz` validator.
+
+**Three queries, 240 rows between them** (1,560 before 09-27):
+
+| Query | Grain | Measures | Rows |
+|---|---|---|---|
+| **Q1** `monthly` | month × channel | revenue, orders, units, gross_margin, orders_placed, orders_returned, new_customer_orders | 192 |
+| **Q2** `byCategory` | category × year | revenue, units, gross_margin — **no `orders`** | 18 |
+| **Q3** `byCountry` | country (+ code) × year | revenue, orders, gross_margin | 30 |
+
+Changed 09-27 — and **`cube/model/sales.yml` did not change, so no Cube Cloud redeploy**:
+
+- **`byProduct` dropped** (product × year × channel, 1,080 rows) — it fed the top-10 products chart.
+- **`_channel` dropped from Q2 and Q3** (were 108 and 180 rows): year is the only filter, so a
+  channel split there would be shipped only to be summed away. Q1 keeps it — layer 3 is built from
+  month × channel.
+- **Q3 gained `gross_margin`** — the country side of the top 5 ranks by profit and margin.
+
+Still selected, read by nothing: `units` (Q1, Q2) and `orders_placed` / `orders_returned` /
+`new_customer_orders` (Q1). They are contract-checked on every revalidation; no visual uses them.
+
+Q1, as the site sends it:
+
+```sql
+select
+     date_trunc('month', s.ordered_at)    _month
+    ,s.channel_name                       _channel
+    ,measure(s.revenue)                   _revenue
+    ,measure(s.orders)                    _orders
+    ,measure(s.units)                     _units
+    ,measure(s.gross_margin)              _gross_margin
+    ,measure(s.orders_placed)             _orders_placed
+    ,measure(s.orders_returned)           _orders_returned
+    ,measure(s.new_customer_orders)       _new_customer_orders
+from sales_overview s
+where 1=1
+    and s.ordered_at >= date '2024-01-01'
+group by 1, 2
+order by 1, 2
+```
+
+### As built 09-21 — superseded 09-27
+
+_Live from 09-22 until the rebuild. Filters were year and channel, both order-level. Its Q3 was
+products and its Q4 countries. Kept as written, bar the sample query._
 
 | | Visual | Query grain |
 |---|---|---|
@@ -339,39 +449,26 @@ requirement, not a nicety. Palette validated with the `dataviz` skill's script a
 worst adjacent pair ΔE 9.1 under simulated CVD, 19.6 normal vision. Colour is assigned per channel,
 never per rank, so a filter cannot repaint a survivor.
 
-Four queries, < 60 KB raw. One of them, as the site will send it:
-
-```sql
-select
-     date_trunc('month', s.ordered_at)    _month
-    ,s.channel_name                       _channel
-    ,measure(s.revenue)                   _revenue
-    ,measure(s.orders)                    _orders
-    ,measure(s.units)                     _units
-    ,measure(s.gross_margin)              _gross_margin
-from sales_overview s
-where 1=1
-    and s.ordered_at >= date '2024-01-01'
-group by 1, 2
-order by 1, 2
-```
+Four queries, < 60 KB raw. _(Its sample query — Q1 — now stands above, verbatim from the code.)_
 
 ## 8. Site changes — `vosk.dev` repo only
 
 | File | Change |
 |---|---|
-| `package.json` | + `chart.js` |
+| `package.json` | ~~+ `chart.js`~~ **09-27:** − `chart.js`; + `recharts` 3.10.1 and its peer `react-is`, `@radix-ui/react-{tabs,toggle-group,toggle,slot}`, `tailwind-variants`, `clsx`, `tailwind-merge`, `@remixicon/react` (D4) |
 | ~~`src/lib/env.ts`~~ | **Untouched — this row was wrong.** `env.ts` is bundled into client components and says itself that server credentials do not live there. `CUBE_API_URL` + `CUBE_API_SECRET` are validated inside `cube.ts`, as `SUPERSET_SVC_*` are inside `superset.ts`. Still optional: absent ⇒ entry hidden, build passes; `""` reads as unset |
 | `src/lib/cube.ts` | new, `server-only` — mint JWT, `POST /v1/cubesql`, parse NDJSON, cast by `column_type` |
-| `src/lib/sales-dashboard.ts` | new — the four named queries + a **Zod `.strict()` schema per result row**. Cube's response is external input; a renamed measure fails the build, not the chart |
-| `src/lib/sales-dashboard-calc.ts` | + `channelShares` (2 tests) — the one piece of arithmetic the 100% stack needed |
+| `src/lib/sales-dashboard.ts` | new — the ~~four~~ named queries (**three since 09-27**, §7) + a **Zod `.strict()` schema per result row**. Cube's response is external input; a renamed measure fails the build, not the chart |
+| `src/lib/sales-dashboard-calc.ts` | ~~+ `channelShares` (2 tests) — the one piece of arithmetic the 100% stack needed~~ **09-27:** `channelShares` went with the 100% stack. Year-only `SalesFilter`; `computeKpis` (Profit in AOV's place, margin delta in points), `monthlyCombo`, `topItems`, `channelMatrix` |
 | `src/lib/work.ts` | + `platform: "cube"` arm, **no `reportId`** — there is one Cube dashboard and the page renders it by name; an id earns its place with a second one. Hide-until-configured via `isCubeConfigured()`; `PLATFORM_LABEL`. Importing `cube.ts` makes `work.ts` server-only in effect — all five importers already are |
 | `src/app/[locale]/work/[slug]/page.tsx` | + the `cube` branch; `revalidate = 86400`. **The one-screen lock does not apply to it**: a native dashboard has intrinsic height, so the page flows, and the caption moves *above* the dashboard |
-| `src/components/chart-canvas.tsx` | new, `'use client'` — the Chart.js ↔ React seam: create, `update()` on config change, destroy. Registers only the controllers used |
-| `src/components/sales-dashboard.tsx` | new, `'use client'` — filters, tiles, six canvases, table twins |
+| ~~`src/components/chart-canvas.tsx`~~ | ~~new, `'use client'` — the Chart.js ↔ React seam: create, `update()` on config change, destroy. Registers only the controllers used~~ **Deleted 09-27** with `chart.js` |
+| `src/components/sales-dashboard.tsx` | new, `'use client'` — ~~filters, tiles, six canvases, table twins~~ **09-27:** year picker, four tiles, `ComboChart` + top-5 `BarChart`, the channel `Tabs` (table \| bar chart) |
+| `src/components/tremor/` | **new 09-27** — Tremor's copy-paste components, vendored with their Apache-2.0 `LICENSE`: `bar-chart`, `combo-chart`, `card`, `badge`, `table`, `tabs`, `toggle`, `chart-utils`, `utils`, `use-on-window-resize`. Each file's header names its Tremor version and every local change — Recharts 3 fixes, grays → site tokens, `dark:` stripped, brand chart-colour keys |
+| `src/app/[locale]/work/[slug]/page.tsx` | **09-27:** the Cube page drops its About paragraphs (header only, owner's call) and loads `SalesDashboard` via `next/dynamic`, so the iframe showcases no longer download recharts |
 | `next.config.ts` | `staticPageGenerationTimeout: 130` |
-| `src/lib/i18n/en.ts` (+ `ru.ts`, kept in step) | showcase copy |
-| `CLAUDE.md` | D1 amendment; table names; this doc in the pointers |
+| `src/lib/i18n/en.ts` (+ `ru.ts`, kept in step) | showcase copy; `salesDashboard` labels reworked 09-27 |
+| `CLAUDE.md` | D1 amendment; table names; this doc in the pointers · 09-27: agreed additions, `chart.js` → Tremor |
 
 **No `/api/cube` route.** The 08-27 note that a third in-memory rate-limit `Map` would trigger
 extracting `lib/rate-limit.ts` does not fire. A proxy route — browser names a report, server runs
@@ -380,7 +477,7 @@ it — is phase 2, and only if drill-down outgrows a pre-aggregated payload.
 **⚠️ The fetch must carry NO `cache` option.** This plan first said `cache: "no-store"`, "because ISR
 does the caching". On Next 16.2.10 that is backwards: an explicit `no-store` sets the fetch's
 revalidate to 0 and **de-opts the whole page from ISR to dynamic** — every visitor would run four
-Cube queries, the exact outcome §3 exists to prevent. Reproduced by `nerd` in a two-page probe app
+Cube queries (three since 09-27), the exact outcome §3 exists to prevent. Reproduced by `nerd` in a two-page probe app
 (`ƒ /explicit-no-store` vs `○ /no-cache-option  1d`). A POST with `Authorization` is already "auto
 no cache", which Next exempts. A test asserts the init has no `cache` key; do not tidy it back.
 
@@ -439,7 +536,7 @@ half is wrong. Then `pnpm build`.
 | **Descriptor shape** | ❌ **was wrong too — found by the third red build, 09-22 00:29** (`f24be02`, the envelope fix itself). A column descriptor gains **`format`** (and `currency`) whenever the member declares one — `SchemaColumn` in `cubejs-backend-native/src/node_export.rs`. `revenue` is `format: currency` in `cube/model/sales.yml`, so all four site queries send `{"name":"_revenue","column_type":"Double","format":"currency"}` and the still-strict descriptor refused it. The "verbatim" fixture above never met it: it came from a query on `_net_amount`, a member with no format — **a fixture is verbatim only for the query it came from.** Vercel's log cut the line at 200 chars, exactly at `_re`; the cause was read from Cube's source, not guessed. Descriptor loosened (`81a4c9d`): `name` + `column_type` stay required — all the parser reads — and the row contracts in `sales-dashboard.ts` stay strict. Not "strict + optional `format`": that is the same failure on Cube's next metadata key, and a Cube Cloud upgrade must not be able to block every site deploy |
 | **First green build with Cube configured** | ✅ **09-22 00:37**, `81a4c9d`, `READY`. Owner confirmed the page visible and the data loaded |
 | A deployment waking from suspension | ⏳ not observed — it was awake. `{"error":"Continue wait"}` is still not retried by `cube.ts` (the handshake script does poll for it) |
-| **Figures to the cent** (§9 gate) | ✅ **09-22, after the owner merged `sales.yml` to `master`:** the site's four queries, verbatim, against live `/cubesql` — 192 / 108 / 1,080 / 180 rows, 0 NULLs, 0.8–3.4 s — each sums to **4,766,371.12**, both order-bearing ones to **34,293**. The model compiled as written |
+| **Figures to the cent** (§9 gate) | ✅ **09-22, after the owner merged `sales.yml` to `master`:** the site's four queries, verbatim, against live `/cubesql` — 192 / 108 / 1,080 / 180 rows, 0 NULLs, 0.8–3.4 s — each sums to **4,766,371.12**, both order-bearing ones to **34,293**. The model compiled as written. _(Four queries then; three since 09-27 — 192 / 18 / 30 rows, §7.)_ |
 
 ⚠️ **First production build with the env vars set: `ERROR` — `Cube responded 403: {"error":"Invalid
 token"}`.** Not the envelope bug: the request never reached the parser. The value in Vercel's
@@ -469,8 +566,8 @@ skills before the first chart — the detail page is a one-screen layout (`8.625
 - **Free-tier ToS drift.** "Testing and learning only" is advice today. If it becomes enforcement,
   the exit is Cube Core on the VPS; the model files move unchanged.
 - **Shared instance.** The demo and the lead engine share one free-tier Postgres. Mitigated by
-  ~4 queries/day, the statement timeout and the connection limit — but it is a coupling `CLAUDE.md`
-  was written to prevent, accepted here with eyes open (D1).
+  ~3 queries/day (~4 before 09-27), the statement timeout and the connection limit — but it is a
+  coupling `CLAUDE.md` was written to prevent, accepted here with eyes open (D1).
 - **The engine is currently down** (board fourteen §T.2). Unrelated to this build, same database:
   phase 1 touches the project while 101 abandoned rows wait for a re-queue. Do not mix the two in
   one session's writes.

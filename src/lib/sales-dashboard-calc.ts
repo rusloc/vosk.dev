@@ -7,10 +7,14 @@
  * the payload; this file is everything that happens to it afterwards.
  *
  * Two rules carry the whole design:
- *  - Filters are year and channel ONLY. Both are order-level attributes, so every measure —
- *    `orders` included — stays additive when pre-aggregated rows are re-summed here.
- *    Category and product are breakdowns, never filters: an order spans them.
- *  - Ratios are never summed. AOV and margin rate are recomputed from their summed parts.
+ *  - Year is the ONLY filter. It is an order-level attribute, so every measure — `orders`
+ *    included — stays additive when pre-aggregated rows are re-summed here. Category is a
+ *    breakdown, never a filter: an order spans categories.
+ *  - Ratios are never summed. Margin is recomputed from its summed parts at every level —
+ *    tile, top-N item, channel row and total alike.
+ *
+ * "Profit" is Cube's `gross_margin` (revenue − cost, completed orders). Rows keep the
+ * warehouse's name, `grossMargin`; everything computed here calls it `profit`.
  *
  * Months are "YYYY-MM" strings and are only ever compared and sliced as strings — no Date,
  * so the server render and the browser cannot disagree over a timezone.
@@ -29,98 +33,89 @@ export type MonthlyRow = {
   newCustomerOrders: number;
 };
 
-/** Q2 — category × year × channel. No `orders`: not additive across categories. */
+/** Q2 — category × year. No `orders`: not additive across categories. */
 export type CategoryRow = {
   category: string;
   year: number;
-  channel: string;
   revenue: number;
   units: number;
   grossMargin: number;
 };
 
-/** Q3 — product × category × year × channel. No `orders`, same reason. */
-export type ProductRow = {
-  product: string;
-  category: string;
-  year: number;
-  channel: string;
-  revenue: number;
-  units: number;
-};
-
-/** Q4 — country × year × channel. Country is a customer attribute, so `orders` is additive. */
+/** Q3 — country × year. Country is a customer attribute, so `orders` is additive. */
 export type CountryRow = {
   country: string;
   countryCode: string;
   year: number;
-  channel: string;
   revenue: number;
   orders: number;
+  grossMargin: number;
 };
 
 /** What the ISR page hands the client component. Plain JSON — safe across the RSC boundary. */
 export type SalesDashboardData = {
   monthly: MonthlyRow[];
   byCategory: CategoryRow[];
-  byProduct: ProductRow[];
   byCountry: CountryRow[];
 };
 
 export type SalesFilter = {
   year: number | "all";
-  channel: string | "all";
 };
 
 export type Kpi<Value = number> = {
   value: Value;
   /**
    * Versus the same calendar months of the prior year. Relative (0.12 = +12%) for revenue,
-   * orders and AOV; in rate POINTS (0.021 = +2.1 pp) for margin rate. `undefined` when
+   * profit and orders; in rate POINTS (0.021 = +2.1 pp) for margin. `undefined` when
    * `year` is "all" or the prior period has nothing to compare against.
    */
   change: number | undefined;
 };
 
-/** The two ratios are `null` on a zero denominator — render "—", never "$0". */
+/** `margin` is `null` on zero revenue — render "—", never "0%". */
 export type Kpis = {
   revenue: Kpi;
+  profit: Kpi;
   orders: Kpi;
-  aov: Kpi<number | null>;
-  marginRate: Kpi<number | null>;
+  margin: Kpi<number | null>;
 };
 
-export type MonthlyPoint = { month: string; revenue: number; orders: number };
-
-/** Chart-ready: `series[n].revenue[i]` belongs to `months[i]`, zero-filled. */
-export type ChannelMix = {
-  months: string[];
-  series: { channel: string; revenue: number[] }[];
-};
-
-/** Same alignment as {@link ChannelMix}; `share` is a fraction of that month's revenue. */
-export type ChannelShares = {
-  months: string[];
-  series: { channel: string; share: number[] }[];
-};
-
-export type CategoryRevenue = { category: string; revenue: number };
-
-export type ProductRevenue = {
-  product: string;
-  category: string;
+/** Summed parts, plus the one ratio recomputed from them. */
+export type Totals = {
   revenue: number;
-  units: number;
+  profit: number;
+  orders: number;
+  margin: number | null;
 };
 
-/** `countryCode` is `null` on the trailing "Other" bucket — that is how to recognise it. */
-export type CountryRevenue = {
-  country: string;
-  countryCode: string | null;
+export type MonthlyPoint = {
+  month: string;
   revenue: number;
+  profit: number;
+  orders: number;
 };
 
-type Filterable = { channel: string } & ({ year: number } | { month: string });
+export type TopKind = "category" | "country";
+export type TopMetric = "revenue" | "profit" | "margin";
+
+/** No `orders`: the category side cannot have it, and both sides share one shape. */
+export type TopItem = {
+  name: string;
+  revenue: number;
+  profit: number;
+  margin: number | null;
+};
+
+export type ChannelRow = { channel: string } & Totals;
+
+/** `rows` largest revenue first; `total` is the whole filtered period. */
+export type ChannelMatrix = {
+  rows: ChannelRow[];
+  total: Totals;
+};
+
+type Filterable = { year: number } | { month: string };
 
 const yearOf = (row: Filterable): number =>
   "year" in row ? row.year : Number(row.month.slice(0, 4));
@@ -133,36 +128,29 @@ const compareText = (a: string, b: string): number =>
 const sum = <T>(rows: readonly T[], pick: (row: T) => number): number =>
   rows.reduce((total, row) => total + pick(row), 0);
 
-/** Largest revenue first; ties fall back to the label so the order never depends on input order. */
-function rank<T extends { revenue: number }>(
+/** Largest score first; ties fall back to the label so the order never depends on input order. */
+function rank<T>(
   rows: T[],
+  score: (row: T) => number,
   label: (row: T) => string,
 ): T[] {
   return rows.sort(
-    (a, b) => b.revenue - a.revenue || compareText(label(a), label(b)),
+    (a, b) => score(b) - score(a) || compareText(label(a), label(b)),
   );
 }
 
 export function filterRows<T extends Filterable>(
   rows: readonly T[],
-  { year, channel }: SalesFilter,
+  { year }: SalesFilter,
 ): T[] {
-  return rows.filter(
-    (row) =>
-      (year === "all" || yearOf(row) === year) &&
-      (channel === "all" || row.channel === channel),
-  );
+  return rows.filter((row) => year === "all" || yearOf(row) === year);
 }
 
-/** Choices for the two filter controls, in display order. */
+/** Choices for the year control, in display order. */
 export function filterOptions(monthly: readonly MonthlyRow[]): {
   years: number[];
-  channels: string[];
 } {
-  return {
-    years: [...new Set(monthly.map(yearOf))].sort((a, b) => a - b),
-    channels: [...new Set(monthly.map((row) => row.channel))].sort(compareText),
-  };
+  return { years: [...new Set(monthly.map(yearOf))].sort((a, b) => a - b) };
 }
 
 /** `null`, not 0 or Infinity, when there is nothing to divide by. */
@@ -170,47 +158,72 @@ export function ratio(numerator: number, denominator: number): number | null {
   return denominator === 0 ? null : numerator / denominator;
 }
 
-function totals(rows: readonly MonthlyRow[]) {
+function totals(rows: readonly MonthlyRow[]): Totals {
   const revenue = sum(rows, (row) => row.revenue);
-  const orders = sum(rows, (row) => row.orders);
+  const profit = sum(rows, (row) => row.grossMargin);
   return {
     revenue,
-    orders,
-    aov: ratio(revenue, orders),
-    marginRate: ratio(
-      sum(rows, (row) => row.grossMargin),
-      revenue,
-    ),
+    profit,
+    orders: sum(rows, (row) => row.orders),
+    margin: ratio(profit, revenue),
   };
+}
+
+/** "2025-12" → "2026-01". String arithmetic, for the same reason as everything else here. */
+function nextMonth(month: string): string {
+  const year = Number(month.slice(0, 4));
+  const next = Number(month.slice(5, 7)) + 1;
+  return next > 12
+    ? `${year + 1}-01`
+    : `${year}-${String(next).padStart(2, "0")}`;
+}
+
+/**
+ * The x-axis: every calendar month from the first to the last one the year filter admits.
+ * A month with no rows at all is ON the axis — skipping it would silently set two months a
+ * quarter apart side by side. Never padded past the last month: 2026 stops at August.
+ */
+function monthAxis(
+  monthly: readonly MonthlyRow[],
+  year: SalesFilter["year"],
+): string[] {
+  const months = filterRows(monthly, { year })
+    .map((row) => row.month)
+    .sort(compareText);
+  const first = months[0];
+  const last = months.at(-1);
+  if (first === undefined || last === undefined) return [];
+
+  const axis: string[] = [];
+  for (let month = first; month <= last; month = nextMonth(month)) {
+    axis.push(month);
+  }
+  return axis;
 }
 
 /**
  * The prior year, cut down to the calendar months the selected year actually covers.
  * 2026 stops at August; set against all of 2025 it would read as a collapse.
  *
- * Coverage is taken across ALL channels, not the filtered one: a channel that went quiet
- * for a month must still be compared against that month last year, not have it dropped.
+ * Coverage is the month AXIS, not the months that happen to have rows: a month with no
+ * sales inside the period is a real zero, and must still be compared against that month
+ * last year, not have it dropped.
  */
 function priorYearRows(
   monthly: readonly MonthlyRow[],
-  { year, channel }: SalesFilter,
+  { year }: SalesFilter,
 ): MonthlyRow[] {
   if (year === "all") return [];
   const covered = new Set(
-    monthly
-      .filter((row) => yearOf(row) === year)
-      .map((row) => row.month.slice(5)),
+    monthAxis(monthly, year).map((month) => month.slice(5)),
   );
-  return filterRows(monthly, { year: year - 1, channel }).filter((row) =>
+  return filterRows(monthly, { year: year - 1 }).filter((row) =>
     covered.has(row.month.slice(5)),
   );
 }
 
-function relativeChange(
-  current: number | null,
-  prior: number | null,
-): number | undefined {
-  return current === null || !prior ? undefined : (current - prior) / prior;
+function relativeChange(current: number, prior: number): number | undefined {
+  return prior === 0 ? undefined : (current - prior) / prior;
 }
 
 export function computeKpis(
@@ -218,165 +231,136 @@ export function computeKpis(
   filter: SalesFilter,
 ): Kpis {
   const current = totals(filterRows(monthly, filter));
-  // No prior rows → zero revenue and orders, null ratios → every `change` is undefined.
+  // No prior rows → zero sums and a null margin → every `change` is undefined.
   const prior = totals(priorYearRows(monthly, filter));
   return {
     revenue: {
       value: current.revenue,
       change: relativeChange(current.revenue, prior.revenue),
     },
+    profit: {
+      value: current.profit,
+      change: relativeChange(current.profit, prior.profit),
+    },
     orders: {
       value: current.orders,
       change: relativeChange(current.orders, prior.orders),
     },
-    aov: { value: current.aov, change: relativeChange(current.aov, prior.aov) },
-    marginRate: {
-      value: current.marginRate,
+    margin: {
+      value: current.margin,
       change:
-        current.marginRate === null || prior.marginRate === null
+        current.margin === null || prior.margin === null
           ? undefined
-          : current.marginRate - prior.marginRate,
+          : current.margin - prior.margin,
     },
   };
 }
 
-/**
- * The x-axis: every month the year filter admits, whichever channel is selected — a
- * channel with an empty month must plot a zero there, not silently close the gap.
- */
-function monthAxis(
-  monthly: readonly MonthlyRow[],
-  year: SalesFilter["year"],
-): string[] {
-  const rows = filterRows(monthly, { year, channel: "all" });
-  return [...new Set(rows.map((row) => row.month))].sort(compareText);
-}
-
-/** Revenue + orders per month, for the bar/line combo. */
-export function monthlySeries(
+/** Revenue, profit and orders per month, for the combo chart. Zero-filled along the axis. */
+export function monthlyCombo(
   monthly: readonly MonthlyRow[],
   filter: SalesFilter,
 ): MonthlyPoint[] {
   const points = new Map<string, MonthlyPoint>(
     monthAxis(monthly, filter.year).map((month) => [
       month,
-      { month, revenue: 0, orders: 0 },
+      { month, revenue: 0, profit: 0, orders: 0 },
     ]),
   );
   for (const row of filterRows(monthly, filter)) {
     const point = points.get(row.month);
     if (!point) continue;
     point.revenue += row.revenue;
+    point.profit += row.grossMargin;
     point.orders += row.orders;
   }
   return [...points.values()];
 }
 
-/** Revenue per channel per month, for the stacked bar. Channels in name order, so stable. */
-export function channelMix(
-  monthly: readonly MonthlyRow[],
+/**
+ * The top-N card: categories or countries, ranked by the metric the reader picked — so
+ * switching the metric re-chooses the `n` shown, not just their order. Fewer than `n`
+ * items → all of them. Margin is recomputed per item from its own summed parts.
+ */
+export function topItems(
+  kind: TopKind,
+  data: SalesDashboardData,
   filter: SalesFilter,
-): ChannelMix {
-  const months = monthAxis(monthly, filter.year);
-  const index = new Map(months.map((month, i) => [month, i]));
-  const series = new Map<string, number[]>();
+  metric: TopMetric,
+  n = 5,
+): TopItem[] {
+  // One shape for both sides. A country is keyed by code and labelled by name, as Cube
+  // returns it; a category is its own key.
+  const parts =
+    kind === "category"
+      ? filterRows(data.byCategory, filter).map((row) => ({
+          key: row.category,
+          name: row.category,
+          revenue: row.revenue,
+          profit: row.grossMargin,
+        }))
+      : filterRows(data.byCountry, filter).map((row) => ({
+          key: row.countryCode,
+          name: row.country,
+          revenue: row.revenue,
+          profit: row.grossMargin,
+        }));
 
-  for (const row of filterRows(monthly, filter)) {
-    const i = index.get(row.month);
-    if (i === undefined) continue;
-    const revenue =
-      series.get(row.channel) ?? new Array<number>(months.length).fill(0);
-    revenue[i] = (revenue[i] ?? 0) + row.revenue;
-    series.set(row.channel, revenue);
+  const items = new Map<string, TopItem>();
+  for (const { key, name, revenue, profit } of parts) {
+    const item = items.get(key) ?? {
+      name,
+      revenue: 0,
+      profit: 0,
+      margin: null,
+    };
+    item.revenue += revenue;
+    item.profit += profit;
+    items.set(key, item);
+  }
+  for (const item of items.values()) {
+    item.margin = ratio(item.profit, item.revenue);
   }
 
-  return {
-    months,
-    series: [...series]
-      .sort(([a], [b]) => compareText(a, b))
-      .map(([channel, revenue]) => ({ channel, revenue })),
-  };
+  // `?? -Infinity` sinks a null margin below every number, negative margins included. Two
+  // nulls subtract to NaN, which `rank`'s `||` reads as a tie — so they fall back to the name.
+  return rank(
+    [...items.values()],
+    (item) => item[metric] ?? -Infinity,
+    (item) => item.name,
+  ).slice(0, n);
 }
 
 /**
- * Each channel's share of its month's revenue (0.25 = 25%), for the 100% stacked bar. The
- * absolute stack would only repeat the revenue-by-month chart; the share is what shows the
- * mix moving. A month with no revenue is all zeros, not NaN.
+ * The channel card: one row per channel, largest revenue first, plus the period's total —
+ * which IS the KPI tiles, both being {@link totals} over the same filtered rows.
+ *
+ * The total's `orders` equals the sum of the rows' because channel is an ORDER-level fact:
+ * every line of an order carries the same channel (data/sales/003-verify.sql asserts it —
+ * `orders_mixing_status_channel_or_customer` must be 0; data/README.md). So the per-channel
+ * distinct counts partition the orders instead of counting one twice. Margin is never
+ * summed: each row's and the total's comes from its own revenue and profit.
  */
-export function channelShares(mix: ChannelMix): ChannelShares {
-  const totals = mix.months.map((_, i) =>
-    sum(mix.series, (entry) => entry.revenue[i] ?? 0),
-  );
+export function channelMatrix(
+  monthly: readonly MonthlyRow[],
+  filter: SalesFilter,
+): ChannelMatrix {
+  const rows = filterRows(monthly, filter);
+  const byChannel = new Map<string, MonthlyRow[]>();
+  for (const row of rows) {
+    const group = byChannel.get(row.channel) ?? [];
+    group.push(row);
+    byChannel.set(row.channel, group);
+  }
   return {
-    months: mix.months,
-    series: mix.series.map(({ channel, revenue }) => ({
-      channel,
-      share: revenue.map((value, i) => ratio(value, totals[i] ?? 0) ?? 0),
-    })),
+    rows: rank(
+      [...byChannel].map(([channel, group]) => ({
+        channel,
+        ...totals(group),
+      })),
+      (row) => row.revenue,
+      (row) => row.channel,
+    ),
+    total: totals(rows),
   };
-}
-
-export function revenueByCategory(
-  byCategory: readonly CategoryRow[],
-  filter: SalesFilter,
-): CategoryRevenue[] {
-  const totalsByCategory = new Map<string, CategoryRevenue>();
-  for (const { category, revenue } of filterRows(byCategory, filter)) {
-    const entry = totalsByCategory.get(category) ?? { category, revenue: 0 };
-    entry.revenue += revenue;
-    totalsByCategory.set(category, entry);
-  }
-  return rank([...totalsByCategory.values()], (row) => row.category);
-}
-
-export function topProducts(
-  byProduct: readonly ProductRow[],
-  filter: SalesFilter,
-  limit = 10,
-): ProductRevenue[] {
-  const totalsByProduct = new Map<string, ProductRevenue>();
-  for (const row of filterRows(byProduct, filter)) {
-    const entry = totalsByProduct.get(row.product) ?? {
-      product: row.product,
-      category: row.category,
-      revenue: 0,
-      units: 0,
-    };
-    entry.revenue += row.revenue;
-    entry.units += row.units;
-    totalsByProduct.set(row.product, entry);
-  }
-  return rank([...totalsByProduct.values()], (row) => row.product).slice(
-    0,
-    limit,
-  );
-}
-
-/** The `top` largest countries, then everything else rolled into one trailing "Other". */
-export function revenueByCountry(
-  byCountry: readonly CountryRow[],
-  filter: SalesFilter,
-  top = 8,
-): CountryRevenue[] {
-  const totalsByCountry = new Map<string, CountryRevenue>();
-  for (const row of filterRows(byCountry, filter)) {
-    const entry = totalsByCountry.get(row.countryCode) ?? {
-      country: row.country,
-      countryCode: row.countryCode,
-      revenue: 0,
-    };
-    entry.revenue += row.revenue;
-    totalsByCountry.set(row.countryCode, entry);
-  }
-  const ranked = rank([...totalsByCountry.values()], (row) => row.country);
-  const rest = ranked.slice(top);
-  if (rest.length === 0) return ranked;
-  return [
-    ...ranked.slice(0, top),
-    {
-      country: "Other",
-      countryCode: null,
-      revenue: sum(rest, (row) => row.revenue),
-    },
-  ];
 }

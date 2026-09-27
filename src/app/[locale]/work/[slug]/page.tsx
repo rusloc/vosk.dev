@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { BackLink } from "@/components/back-link";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
-import { SalesDashboard } from "@/components/sales-dashboard";
+import { SalesDashboardLazy } from "@/components/sales-dashboard-lazy";
 import { SupersetEmbed } from "@/components/superset-embed";
 import { cn } from "@/lib/cn";
 import { buildMetadata } from "@/lib/metadata";
@@ -74,9 +74,9 @@ export default async function ShowcasePage({ params }: Props) {
   ];
 
   // A native dashboard, not an iframe: it has its own intrinsic height and reads in
-  // ordinary page flow, so the one-screen lock below does not apply to it — and its
-  // caption goes ABOVE it, because "synthetic data, real stack" is context a visitor
-  // needs before the numbers, not a screen and a half after them.
+  // ordinary page flow, so the one-screen lock below does not apply to it. It also gets
+  // no About text (owner's call, 09-27): the header alone sits above it so the whole
+  // dashboard fits a laptop screen, and its own footnote says "synthetic data".
   const isNative = platform === "cube";
 
   const about = (
@@ -152,11 +152,10 @@ export default async function ShowcasePage({ params }: Props) {
 
           Cube is neither: the rows are queried right here, server-side, and handed to a
           client component as plain props — the browser never sees Cube or its token. */}
-      {isNative && <div className="mt-3">{about}</div>}
       <h2 className="sr-only">{t.liveReportHeading}</h2>
       {showcase.platform === "cube" ? (
         <div className="mt-4">
-          <SalesDashboard
+          <SalesDashboardLazy
             data={await getSalesDashboardData()}
             labels={dict.salesDashboard}
           />
@@ -186,34 +185,36 @@ export default async function ShowcasePage({ params }: Props) {
       {/* Description left, dashboard link right — same row, so the link sits directly
           under the report's bottom-right corner instead of costing its own line.
           `items-start` keeps it level with the first description line. */}
-      <div className="mt-3 flex items-start justify-between gap-6">
-        {!isNative && about}
+      {!isNative && (
+        <div className="mt-3 flex items-start justify-between gap-6">
+          {about}
 
-        {showcase.platform === "power-bi" && (
-          <a
-            href={showcase.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary inline-flex shrink-0 items-center gap-1.5 text-sm font-medium hover:underline"
-          >
-            {t.openLiveDashboard}
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              className="h-4 w-4"
-              aria-hidden="true"
+          {showcase.platform === "power-bi" && (
+            <a
+              href={showcase.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary inline-flex shrink-0 items-center gap-1.5 text-sm font-medium hover:underline"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M7 17 17 7M9 7h8v8"
-              />
-            </svg>
-          </a>
-        )}
-      </div>
+              {t.openLiveDashboard}
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M7 17 17 7M9 7h8v8"
+                />
+              </svg>
+            </a>
+          )}
+        </div>
+      )}
     </Container>
   );
 }

@@ -13,7 +13,7 @@ import type { Locale } from "./i18n/config";
  *  - Superset  → no public URL at all; an embed UUID for which the server mints a
  *                short-lived guest token per viewer (see lib/superset.ts).
  *  - Cube      → not an embed at all: the page queries Cube server-side and draws the
- *                dashboard itself with Chart.js (docs/08-cube-sales-showcase.md).
+ *                dashboard itself with Tremor charts (docs/08-cube-sales-showcase.md).
  *
  * Server-only in effect: lib/cube.ts is, and this imports it. Every importer is a Server
  * Component, a Route Handler or the sitemap — a client component reaching for this file
@@ -88,7 +88,12 @@ export function localize(s: Showcase, locale: Locale): LocalizedShowcase {
   };
   switch (s.platform) {
     case "power-bi":
-      return { ...base, platform: s.platform, embedUrl: s.embedUrl, href: s.href };
+      return {
+        ...base,
+        platform: s.platform,
+        embedUrl: s.embedUrl,
+        href: s.href,
+      };
     case "superset":
       return { ...base, platform: s.platform, embedId: s.embedId };
     case "cube":
@@ -99,7 +104,7 @@ export function localize(s: Showcase, locale: Locale): LocalizedShowcase {
 export const PLATFORM_LABEL: Record<ShowcasePlatform, string> = {
   "power-bi": "Power BI",
   superset: "Superset",
-  cube: "Cube + Chart.js",
+  cube: "Cube + Tremor",
 };
 
 /** Placeholder marker — an entry still carrying this is not publishable. */
@@ -173,12 +178,14 @@ const allShowcases: Showcase[] = [
       ru: "Онлайн-продажи на семантическом слое",
     },
     summary: {
-      en: "Revenue, orders, margin and channel mix for an online shop — a Postgres star schema, measures defined once in a Cube semantic layer, and a custom Chart.js front end instead of a BI tool.",
-      ru: "Выручка, заказы, маржа и структура каналов интернет-магазина — схема «звезда» в Postgres, меры, один раз определённые в семантическом слое Cube, и собственный фронтенд на Chart.js вместо BI-инструмента.",
+      en: "Revenue, orders, margin and channel mix for an online shop — a Postgres star schema, measures defined once in a Cube semantic layer, and a custom Tremor front end instead of a BI tool.",
+      ru: "Выручка, заказы, маржа и структура каналов интернет-магазина — схема «звезда» в Postgres, меры, один раз определённые в семантическом слое Cube, и собственный фронтенд на Tremor вместо BI-инструмента.",
     },
     metric: "$4.77M",
     // Until the owner has signed off the write-up (docs/08 §9, phase 4).
     noindex: true,
+    // Not rendered: since 09-27 the Cube page shows its header only (page.tsx). Kept
+    // because the union requires it and the copy may return.
     details: {
       en: [
         "Postgres star schema → Cube semantic layer → this page. Every figure is a governed measure — revenue, orders and margin are defined once in the model, not re-derived per chart.",
@@ -203,9 +210,7 @@ const allShowcases: Showcase[] = [
 export const showcases: Showcase[] = allShowcases.filter((s) => {
   switch (s.platform) {
     case "superset":
-      return (
-        !!env.NEXT_PUBLIC_SUPERSET_DOMAIN && s.embedId !== UNSET_EMBED_ID
-      );
+      return !!env.NEXT_PUBLIC_SUPERSET_DOMAIN && s.embedId !== UNSET_EMBED_ID;
     case "cube":
       return isCubeConfigured();
     default:

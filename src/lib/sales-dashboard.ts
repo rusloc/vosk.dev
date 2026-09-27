@@ -5,12 +5,11 @@ import type {
   CategoryRow,
   CountryRow,
   MonthlyRow,
-  ProductRow,
   SalesDashboardData,
 } from "./sales-dashboard-calc";
 
 /**
- * The four queries behind the online-sales dashboard, and the contract on what comes back
+ * The three queries behind the online-sales dashboard, and the contract on what comes back
  * (docs/08-cube-sales-showcase.md §7). The only object queried is the `sales_overview` view.
  *
  * Cube's response is external input, so every row goes through a `.strict()` schema: a
@@ -18,11 +17,14 @@ import type {
  * its last good page — instead of rendering a chart of `undefined`.
  *
  * What is deliberately NOT selected:
- *  - `aov`, `margin_rate`, `return_rate` — ratios. Recomputed from their parts after
- *    filtering (lib/sales-dashboard-calc.ts), never summed.
- *  - `orders` in Q2/Q3 — an order spans products, so it is not additive across category or
- *    product. It IS additive across month, channel and country, which is why the
- *    dashboard filters on year + channel only.
+ *  - `aov`, `margin_rate`, `return_rate` — ratios, never summed. The one the dashboard
+ *    shows, margin, is recomputed from its parts after filtering (lib/sales-dashboard-calc.ts).
+ *  - `orders` in the category query — an order spans products, so it is not additive
+ *    across category. It IS additive across month, channel and country, which is why the
+ *    dashboard filters on year only, and ranks categories by revenue, profit or margin.
+ *  - `channel` in the category and country queries — year is the only filter, so a
+ *    channel split there would be shipped only to be summed away. `monthly` keeps it:
+ *    the channel card is built from month × channel.
  *
  * Aliases start with `_` (house SQL style), so rows come back keyed `_month`, `_revenue`, …
  * and are mapped to camelCase here.
@@ -49,49 +51,34 @@ order by 1, 2`,
 select
      s.category                           _category
     ,date_trunc('year', s.ordered_at)     _year
-    ,s.channel_name                       _channel
     ,measure(s.revenue)                   _revenue
     ,measure(s.units)                     _units
     ,measure(s.gross_margin)              _gross_margin
 from sales_overview s
 where 1=1
     and s.ordered_at >= date '2024-01-01'
-group by 1, 2, 3
-order by 1, 2, 3`,
-
-  byProduct: `
-select
-     s.product_name                       _product
-    ,s.category                           _category
-    ,date_trunc('year', s.ordered_at)     _year
-    ,s.channel_name                       _channel
-    ,measure(s.revenue)                   _revenue
-    ,measure(s.units)                     _units
-from sales_overview s
-where 1=1
-    and s.ordered_at >= date '2024-01-01'
-group by 1, 2, 3, 4
-order by 1, 2, 3, 4`,
+group by 1, 2
+order by 1, 2`,
 
   byCountry: `
 select
      s.country_name                       _country
     ,s.country_code                       _country_code
     ,date_trunc('year', s.ordered_at)     _year
-    ,s.channel_name                       _channel
     ,measure(s.revenue)                   _revenue
     ,measure(s.orders)                    _orders
+    ,measure(s.gross_margin)              _gross_margin
 from sales_overview s
 where 1=1
     and s.ordered_at >= date '2024-01-01'
-group by 1, 2, 3, 4
-order by 1, 2, 3, 4`,
+group by 1, 2, 3
+order by 1, 2, 3`,
 } as const;
 
 const label = z.string().min(1);
 
 // A filtered sum over a group with no completed lines is SQL NULL — and that is a zero,
-// not a fault: a product whose only orders in a channel-year were returned is a real row.
+// not a fault: a country whose only orders in a year were returned is a real row.
 const measure = z
   .number()
   .nullable()
@@ -131,7 +118,6 @@ const categoryRow = z
   .object({
     _category: label,
     _year: year,
-    _channel: label,
     _revenue: measure,
     _units: measure,
     _gross_margin: measure,
@@ -140,29 +126,9 @@ const categoryRow = z
   .transform((row): CategoryRow => ({
     category: row._category,
     year: row._year,
-    channel: row._channel,
     revenue: row._revenue,
     units: row._units,
     grossMargin: row._gross_margin,
-  }));
-
-const productRow = z
-  .object({
-    _product: label,
-    _category: label,
-    _year: year,
-    _channel: label,
-    _revenue: measure,
-    _units: measure,
-  })
-  .strict()
-  .transform((row): ProductRow => ({
-    product: row._product,
-    category: row._category,
-    year: row._year,
-    channel: row._channel,
-    revenue: row._revenue,
-    units: row._units,
   }));
 
 const countryRow = z
@@ -170,18 +136,18 @@ const countryRow = z
     _country: label,
     _country_code: label,
     _year: year,
-    _channel: label,
     _revenue: measure,
     _orders: measure,
+    _gross_margin: measure,
   })
   .strict()
   .transform((row): CountryRow => ({
     country: row._country,
     countryCode: row._country_code,
     year: row._year,
-    channel: row._channel,
     revenue: row._revenue,
     orders: row._orders,
+    grossMargin: row._gross_margin,
   }));
 
 async function run<Row>(
@@ -204,13 +170,12 @@ async function run<Row>(
   );
 }
 
-/** Everything the dashboard needs, in one JSON-serialisable payload. Four queries, in parallel. */
+/** Everything the dashboard needs, in one JSON-serialisable payload. Three queries, in parallel. */
 export async function getSalesDashboardData(): Promise<SalesDashboardData> {
-  const [monthly, byCategory, byProduct, byCountry] = await Promise.all([
+  const [monthly, byCategory, byCountry] = await Promise.all([
     run("monthly", monthlyRow),
     run("byCategory", categoryRow),
-    run("byProduct", productRow),
     run("byCountry", countryRow),
   ]);
-  return { monthly, byCategory, byProduct, byCountry };
+  return { monthly, byCategory, byCountry };
 }

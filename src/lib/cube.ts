@@ -204,7 +204,7 @@ async function post(url: string, query: string): Promise<string> {
     // explicit no-store gives the fetch `revalidate: 0`, which Next counts as dynamic usage
     // and answers by de-opting the calling ISR page to per-request rendering
     // (next/dist/server/lib/patch-fetch.js → markCurrentScopeAsDynamic): every visitor
-    // would then run four Cube queries, which is the one thing docs/08 §3 rules out.
+    // would then run three Cube queries, which is the one thing docs/08 §3 rules out.
     // Left unset, a POST with an Authorization header is "auto no cache" — fetched fresh
     // on each revalidation, not stored, and the page's own `revalidate` stays in charge.
     signal: AbortSignal.timeout(TIMEOUT_MS),

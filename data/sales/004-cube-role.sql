@@ -32,7 +32,7 @@ $$;
 comment on role cube_reader is
     'Read-only reader of schema demo_sales for the Cube semantic layer (vosk.dev showcase). NOLOGIN until the owner sets a password. Must never be granted anything in public.';
 
--- A public demo shares a free-tier instance with three production crons. At ~4 queries a day
+-- A public demo shares a free-tier instance with three production crons. At ~3 queries a day
 -- none of this matters; if the design ever changes, it will.
 alter role cube_reader connection limit 5;
 alter role cube_reader set statement_timeout = '15s';

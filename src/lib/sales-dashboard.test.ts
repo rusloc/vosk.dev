@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({ cubeSql: vi.fn() }));
 // Hoisted above the imports by Vitest, so the static import above already sees the mock.
 vi.mock("./cube", () => ({ cubeSql: mocks.cubeSql }));
 
-type QueryName = "monthly" | "byCategory" | "byProduct" | "byCountry";
+type QueryName = "monthly" | "byCategory" | "byCountry";
 
 const MONTHLY: CubeRow = {
   _month: "2025-06-01T00:00:00.000",
@@ -27,44 +27,32 @@ const MONTHLY: CubeRow = {
   _new_customer_orders: 4,
 };
 
-const PRODUCT: CubeRow = {
-  _product: "Desk Lamp",
-  _category: "Home",
+const CATEGORY: CubeRow = {
+  _category: "Audio",
   _year: "2025-01-01T00:00:00.000",
-  _channel: "Email",
-  _revenue: 120,
-  _units: 3,
+  _revenue: 900,
+  _units: 9,
+  _gross_margin: 300,
+};
+
+const COUNTRY: CubeRow = {
+  _country: "Germany",
+  _country_code: "DE",
+  _year: "2025-01-01T00:00:00.000",
+  _revenue: 500,
+  _orders: 5,
+  _gross_margin: 210,
 };
 
 const GOOD: Record<QueryName, CubeRow[]> = {
   monthly: [MONTHLY],
-  byCategory: [
-    {
-      _category: "Audio",
-      _year: "2025-01-01T00:00:00.000",
-      _channel: "Email",
-      _revenue: 900,
-      _units: 9,
-      _gross_margin: 300,
-    },
-  ],
-  byProduct: [PRODUCT],
-  byCountry: [
-    {
-      _country: "Germany",
-      _country_code: "DE",
-      _year: "2025-01-01T00:00:00.000",
-      _channel: "Email",
-      _revenue: 500,
-      _orders: 5,
-    },
-  ],
+  byCategory: [CATEGORY],
+  byCountry: [COUNTRY],
 };
 
-/** Tells the four queries apart by an alias only that one selects. */
+/** Tells the three queries apart by an alias only that one selects. */
 function queryName(sql: string): QueryName {
   if (sql.includes("_month")) return "monthly";
-  if (sql.includes("_product")) return "byProduct";
   if (sql.includes("_country")) return "byCountry";
   return "byCategory";
 }
@@ -86,7 +74,7 @@ beforeEach(() => {
 });
 
 describe("getSalesDashboardData — payload", () => {
-  it("maps the four result sets to clean camelCase rows", async () => {
+  it("maps the three result sets to clean camelCase rows", async () => {
     await expect(getSalesDashboardData()).resolves.toEqual({
       monthly: [
         {
@@ -105,20 +93,9 @@ describe("getSalesDashboardData — payload", () => {
         {
           category: "Audio",
           year: 2025, // a number, not "2025"
-          channel: "Email",
           revenue: 900,
           units: 9,
           grossMargin: 300,
-        },
-      ],
-      byProduct: [
-        {
-          product: "Desk Lamp",
-          category: "Home",
-          year: 2025,
-          channel: "Email",
-          revenue: 120,
-          units: 3,
         },
       ],
       byCountry: [
@@ -126,13 +103,13 @@ describe("getSalesDashboardData — payload", () => {
           country: "Germany",
           countryCode: "DE",
           year: 2025,
-          channel: "Email",
           revenue: 500,
           orders: 5,
+          grossMargin: 210,
         },
       ],
     });
-    expect(mocks.cubeSql).toHaveBeenCalledTimes(4);
+    expect(mocks.cubeSql).toHaveBeenCalledTimes(3);
   });
 
   it("is plain JSON — it has to survive the server → client boundary", async () => {
@@ -142,11 +119,19 @@ describe("getSalesDashboardData — payload", () => {
   });
 
   it("reads a NULL measure as zero — a group with no completed lines is a real row", async () => {
-    answerWith({ byProduct: [{ ...PRODUCT, _revenue: null, _units: null }] });
+    answerWith({
+      byCountry: [
+        { ...COUNTRY, _revenue: null, _orders: null, _gross_margin: null },
+      ],
+    });
 
-    const { byProduct } = await getSalesDashboardData();
+    const { byCountry } = await getSalesDashboardData();
 
-    expect(byProduct[0]).toMatchObject({ revenue: 0, units: 0 });
+    expect(byCountry[0]).toMatchObject({
+      revenue: 0,
+      orders: 0,
+      grossMargin: 0,
+    });
   });
 
   it.each([
@@ -188,6 +173,28 @@ describe("getSalesDashboardData — a broken contract fails loudly", () => {
     await expect(getSalesDashboardData()).rejects.toThrow(message);
   });
 
+  it("holds a country row to its gross_margin — the top-5 card ranks on it", async () => {
+    answerWith({ byCountry: [without(COUNTRY, "_gross_margin")] });
+
+    await expect(getSalesDashboardData()).rejects.toThrow(
+      /"byCountry".*_gross_margin/,
+    );
+  });
+
+  it.each<[QueryName, CubeRow]>([
+    ["byCategory", { ...CATEGORY, _channel: "Email" }],
+    ["byCountry", { ...COUNTRY, _channel: "Email" }],
+  ])(
+    "rejects a channel column on %s — that split is no longer asked for",
+    async (name, row) => {
+      answerWith({ [name]: [row] });
+
+      await expect(getSalesDashboardData()).rejects.toThrow(
+        new RegExp(`"${name}".*_channel`),
+      );
+    },
+  );
+
   it("rejects an empty result — the warehouse is static and never empty", async () => {
     answerWith({ byCountry: [] });
 
@@ -198,8 +205,8 @@ describe("getSalesDashboardData — a broken contract fails loudly", () => {
 
   it("keeps the error short when every row is wrong", async () => {
     answerWith({
-      byProduct: Array.from({ length: 1000 }, () => ({
-        ...PRODUCT,
+      byCountry: Array.from({ length: 1000 }, () => ({
+        ...COUNTRY,
         _revenue: "x",
       })),
     });
@@ -209,7 +216,7 @@ describe("getSalesDashboardData — a broken contract fails loudly", () => {
     );
 
     expect(error).toBeInstanceOf(Error);
-    expect((error as Error).message).toContain('"byProduct"');
+    expect((error as Error).message).toContain('"byCountry"');
     expect((error as Error).message.length).toBeLessThan(600);
   });
 
@@ -232,17 +239,51 @@ describe("the SQL that goes out", () => {
     }
   });
 
-  it("never selects a ratio, and never selects orders across category or product", async () => {
+  it("never selects a ratio, and never selects orders across category", async () => {
     await getSalesDashboardData();
     const queries = sentQueries();
 
     for (const sql of queries) {
       expect(sql).not.toMatch(/aov|margin_rate|return_rate/);
     }
-    const acrossProducts = queries.filter((sql) => sql.includes("s.category"));
-    expect(acrossProducts).toHaveLength(2); // Q2 + Q3
-    for (const sql of acrossProducts) {
+    const acrossCategories = queries.filter((sql) =>
+      sql.includes("s.category"),
+    );
+    expect(acrossCategories).toHaveLength(1);
+    for (const sql of acrossCategories) {
       expect(sql).not.toContain("measure(s.orders");
+    }
+  });
+
+  it("sends three queries: products are gone, countries carry gross_margin", async () => {
+    await getSalesDashboardData();
+    const queries = sentQueries();
+
+    expect(queries).toHaveLength(3);
+    for (const sql of queries) expect(sql).not.toContain("product");
+    expect(queries.find((sql) => sql.includes("_country"))).toContain(
+      "\n    ,measure(s.gross_margin)              _gross_margin\n",
+    );
+  });
+
+  it("splits by channel in the monthly query only, and groups by exactly the dimensions", async () => {
+    await getSalesDashboardData();
+
+    for (const sql of sentQueries()) {
+      const lines = sql.split("\n");
+      const columns = lines.slice(
+        1,
+        lines.findIndex((line) => line.startsWith("from ")),
+      );
+      const dimensions = columns.filter((line) => !line.includes("measure("));
+      // monthly: month, channel · byCategory: category, year · byCountry: name, code, year
+      const positions = dimensions.map((_, i) => i + 1).join(", ");
+
+      expect(sql.includes("s.channel_name")).toBe(queryName(sql) === "monthly");
+      expect(lines.slice(-2)).toEqual([
+        `group by ${positions}`,
+        `order by ${positions}`,
+      ]);
     }
   });
 

@@ -2,7 +2,7 @@
 name: db-chef
 description: PostgreSQL/Supabase schema architect. Use whenever the user wants to design, review, refactor, or evolve a DB schema — tables, RLS policies, JSONB flex points, multi-tenancy, soft deletes, migrations, BLOB storage, materialized views. Triggers — "design a schema", "RLS policy", "should I use JSONB", "where to store files", "multi-tenant", "schema migration". Defers to `pg-sql-dev` for query writing and optimization. Short name to use in communication is "chef".
 tools: Bash, Edit, Glob, Grep, Read, Write, WebFetch, WebSearch, mcp__supabase__list_tables, mcp__supabase__list_migrations, mcp__supabase__list_extensions, mcp__supabase__list_branches, mcp__supabase__list_projects, mcp__supabase__list_organizations, mcp__supabase__list_edge_functions, mcp__supabase__get_project, mcp__supabase__get_project_url, mcp__supabase__get_organization, mcp__supabase__get_logs, mcp__supabase__get_advisors, mcp__supabase__get_edge_function, mcp__supabase__get_publishable_keys, mcp__supabase__create_branch, mcp__supabase__rebase_branch, mcp__supabase__generate_typescript_types, mcp__supabase__search_docs
-model: opus
+model: fable
 color: yellow
 memory: project
 skills:

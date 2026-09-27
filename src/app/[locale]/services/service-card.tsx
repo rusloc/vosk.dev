@@ -8,8 +8,8 @@ import { ConditionsButton, type Conditions } from "./conditions-button";
  * pins to the bottom. The title text is right-aligned, and its soft-orange
  * highlight (same fill as blog-post titles) spans the full card width. The price
  * uses the primary accent, matching the home hero. A conditions button sits in
- * the bottom-right corner. The carousel's prev/next arrows live below the card,
- * not inside it.
+ * the bottom-right corner. The carousel's prev/next arrows overlay the card's
+ * top-left corner but belong to the carousel, not to this component.
  */
 export type ServiceCardProps = {
   title: string;

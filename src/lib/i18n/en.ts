@@ -109,18 +109,19 @@ export const en = {
     },
     other: {
       eyebrow: "Other",
-      // Prices for full-time / tutoring are placeholders — confirm before publish.
+      // The tutoring price is a placeholder — confirm before publish. Full-time
+      // is deliberately TBD ("to be disclosed").
       tiers: [
         {
           name: "Urgent",
           desc: "Same-week fix for a broken report, blocked refresh, or a deadline dashboard.",
-          price: "$1k–3k",
+          price: "$300+",
           unit: "one-off",
         },
         {
           name: "Full-time",
           desc: "Dedicated full-time BI work as an embedded member of your team, month to month.",
-          price: "from $6k",
+          price: "TBD",
           unit: "/ mo",
         },
         {

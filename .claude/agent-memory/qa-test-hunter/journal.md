@@ -1,3 +1,4 @@
 # QA Journal
 
 2026-08-01 — bootstrapped Vitest 4 + first suite for `submitContactForm` (29 tests, all green) — 4 findings (1 security, 3 candidates) — updated test-infra-quirks, mock-conventions, security-findings, candidates, coverage-map — IDs: INFRA-001, MOCK-001, SEC-001, CAND-001..003
+2026-09-27 16:46 — read-only hunt: Cube sales dashboard (`lib/sales-dashboard.ts`, `lib/sales-dashboard-calc.ts`, `components/sales-dashboard.tsx`; 61 tests in 2 suites, 146 repo-wide, all green) — 2 reachable defects (English months in `ru`, delta badge tone from unrounded value), 3 speculative calc asymmetries (leading-gap month, partial prior vs full current, caption gated on one tile), 1 contract leniency (tz-shifted `date_trunc`), 4 test-quality notes — updated defect-patterns (new), candidates, coverage-map, project_test_bootstrap — IDs: DEF-001 (CAND-002 promoted), GAP-001, CAND-004, CAND-005

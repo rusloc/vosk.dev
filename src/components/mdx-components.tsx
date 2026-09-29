@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { MDXComponents } from "mdx/types";
 import { WorkflowDiagram } from "@/components/workflow-diagram";
 import { BiStackDiagram } from "@/components/bi-stack-diagram";
+import { TwoFrontDoorsDiagram } from "@/components/two-front-doors-diagram";
 import { ReportEmbed } from "@/components/report-embed";
 import { EmailReportPreview } from "@/components/email-report-preview";
 
@@ -15,6 +16,7 @@ export const mdxComponents: MDXComponents = {
   // Custom blocks usable directly in MDX: <WorkflowDiagram />, <ReportEmbed … />
   WorkflowDiagram,
   BiStackDiagram,
+  TwoFrontDoorsDiagram,
   ReportEmbed,
   EmailReportPreview,
   h2: (props) => (

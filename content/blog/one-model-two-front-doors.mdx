@@ -12,13 +12,14 @@ cells, tack on a helper column, pivot something and get on with their day. The
 report is where they look. Excel is where they work.
 
 The usual fix is "Export data" or "Analyze in Excel". Both work, and both leave
-you with no say over what lands in the sheet. Column names, column order, which
-columns at all: decided per user, per export, per mood. Six weeks later there are
-nine versions of "the tracker", and none of them match.
+you with no centralized control of what lands in Excel. Column names, column
+order, which columns at all: decided per user, per export, per mood. Six weeks
+later there are nine versions of "the tracker", and none of them match.
 
-Here is the setup I use instead. One place holds the code, one semantic model
-holds the data, and there are two front doors: Power BI for reading, Excel for
-working. Both open on the same default view, and I control it.
+I went with centralized control of what the end-user gets as a "base"
+distribution dataset. One place holds the code, one semantic model holds the
+data, and there are two front doors: Power BI for reading, Excel for working.
+Both open on the same default view, and I control it.
 
 ## The shape of it
 
@@ -105,14 +106,9 @@ let
     _src      = AnalysisServices.Database(_server, _db, [
         Query          = _dax,
         Implementation = "2.0"
-    ]),
-
-    // tidy up: DAX returns "[Col]" headers, datetimes become dates
-    _names    = Table.TransformColumnNames(_src, (x) => Text.Remove(x, {"[", "]"})),
-    _dt_cols  = Table.SelectRows(Table.Schema(_names), (x) => x[Kind] = "datetime")[Name],
-    _result   = Table.TransformColumnTypes(_names, List.Transform(_dt_cols, (x) => {x, type date}))
+    ])
 in
-    _result
+    _src
 ```
 
 Load it to a sheet as a table. That's it. No DAX in the workbook, no column list

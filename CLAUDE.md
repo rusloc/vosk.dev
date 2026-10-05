@@ -164,20 +164,17 @@ Skills in `.claude/skills/` (design, front-end, QA, SEO, PM, etc.) are stack-agn
 ### Git
 - After any code change, output git commands as a single copy-paste bash block. **Do not execute; do not touch the working tree.**
 - **⚠️ Two repos — never one commit across both.** Decide which repo each changed file belongs to,
-  then emit one `cd` + `add` + `commit` group per repo, in one block. `.log/` and `docs/` always ride
-  with `d:/__VOSK__`, even when the work itself was in the leads folder.
+  then emit one `add` + `commit` + `push` block per repo, each under a plain-text line naming the repo
+  (**vosk.dev** / **vosk_leads**). `.log/` and `docs/` always ride with the site repo, even when the
+  work itself was in the leads folder.
+- **⛔ Never put a folder-change command in a git snippet** — no `cd`, no `pushd`, no `git -C`. The
+  user runs each block from that repo's root themselves; a `cd` line only breaks the paste.
 ```bash
-cd "d:/__VOSK__"
-git add "<paths>"
-git commit -m "<type>: <message>"
-git push
-
-cd "d:/__VOSK_LEADS__"
 git add "<paths>"
 git commit -m "<type>: <message>"
 git push
 ```
-- Omit a group entirely when that repo has nothing to commit.
+- Omit a block entirely when that repo has nothing to commit.
 - Wrap file paths in double quotes.
 
 ### Branching / deploy

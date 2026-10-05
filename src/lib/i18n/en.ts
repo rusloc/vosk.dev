@@ -143,7 +143,6 @@ export const en = {
         "Nothing here is binding yet; this text is a stand-in until the final conditions are provided.",
       ],
     },
-    prevAria: "Previous",
     nextAria: "Next",
   },
   contact: {

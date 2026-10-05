@@ -2,10 +2,9 @@
  * Inline chevrons for the service carousel controls — kept as SVG so we add no
  * icon dependency.
  */
-export type IconName = "chevron-left" | "chevron-right" | "document";
+export type IconName = "chevron-right" | "document";
 
 const paths: Record<IconName, React.ReactNode> = {
-  "chevron-left": <path d="m15 18-6-6 6-6" />,
   "chevron-right": <path d="m9 18 6-6-6-6" />,
   document: (
     <>

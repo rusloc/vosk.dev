@@ -38,7 +38,7 @@ export function ConditionsButton({ aria, title, close, body }: Conditions) {
         type="button"
         aria-label={aria}
         onClick={() => setOpen(true)}
-        className="text-muted-foreground hover:text-foreground inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors"
+        className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-(--moonlight)/60 transition-colors hover:text-(--moonlight)"
       >
         <Icon name="document" className="h-5 w-5" />
       </button>

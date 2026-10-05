@@ -30,12 +30,10 @@ export type ServiceGroup = {
 export function ServiceGroups({
   groups,
   conditions,
-  prevAria,
   nextAria,
 }: {
   groups: ServiceGroup[];
   conditions: Conditions;
-  prevAria: string;
   nextAria: string;
 }) {
   const [active, setActive] = useState(0);
@@ -80,7 +78,6 @@ export function ServiceGroups({
             label={g.eyebrow}
             tiers={g.tiers}
             conditions={conditions}
-            prevAria={prevAria}
             nextAria={nextAria}
             className={i === active ? undefined : "hidden lg:flex"}
           />

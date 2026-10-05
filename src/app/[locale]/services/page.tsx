@@ -61,7 +61,6 @@ export default async function ServicesPage({ params }: Props) {
         <ServiceGroups
           groups={[t.subscription, t.project, t.other]}
           conditions={t.conditions}
-          prevAria={t.prevAria}
           nextAria={t.nextAria}
         />
 

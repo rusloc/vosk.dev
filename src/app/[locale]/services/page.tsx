@@ -2,12 +2,10 @@ import type { Metadata } from "next";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader } from "@/components/page-header";
-import { cn } from "@/lib/cn";
 import { buildMetadata } from "@/lib/metadata";
 import { serviceGraph } from "@/lib/structured-data";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { GROUP_WIDTH } from "./group-width";
 import { ServiceGroups } from "./service-groups";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -39,10 +37,9 @@ export default async function ServicesPage({ params }: Props) {
         })}
       />
 
-      {/* Floor matching the blog benchmark height on desktop. The cards no
-          longer stretch into it — they're square, sized by column width — but at
-          a ~309px column the page clears 660px on its own content, so the floor
-          is inert rather than a source of dead space. */}
+      {/* Floor matching the blog benchmark height on desktop. The featured
+          card's content alone takes the page past 660px, so the floor is inert
+          rather than a source of dead space. */}
       <div className="flex flex-col lg:min-h-[660px]">
         {/* Title matches the blog / showcase pages: plain, no highlight. The
             intro under it is the page's only prose — without it the page is nine
@@ -56,44 +53,14 @@ export default async function ServicesPage({ params }: Props) {
             the page h1. */}
         <h2 className="sr-only">{t.engagementsHeading}</h2>
 
-        {/* Three engagement models, each a single-slide carousel. Side by side on
-            desktop; on mobile a pill row picks one at a time. */}
+        {/* Three engagement models, each a single-slide carousel: on desktop a
+            featured subscription card with the other two stacked beside it; on
+            mobile a pill row picks one at a time. */}
         <ServiceGroups
           groups={[t.subscription, t.project, t.other]}
           conditions={t.conditions}
           nextAria={t.nextAria}
         />
-
-        {/* Splits the plan picker from the list below it. Phones only — on
-            desktop the three columns already read as their own band. */}
-        <hr className={cn(GROUP_WIDTH, "border-border mt-4 lg:hidden")} />
-
-        {/* What every subscription plan covers — a boxed dot list under the
-            plans, aligned to the carousel's width rather than the container's. */}
-        <div
-          className={cn(
-            GROUP_WIDTH,
-            "border-border mt-4 rounded-2xl border bg-white p-5 sm:mt-6 sm:p-6",
-          )}
-        >
-          <h2 className="text-foreground text-xs font-semibold tracking-[0.12em] uppercase">
-            {t.subscription.servicesTitle}
-          </h2>
-          <ul className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-            {t.subscription.services.map((s, i) => (
-              <li
-                key={i}
-                className="text-muted-foreground flex items-start gap-2.5 text-sm"
-              >
-                <span
-                  aria-hidden="true"
-                  className="bg-primary mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full"
-                />
-                {s}
-              </li>
-            ))}
-          </ul>
-        </div>
       </div>
     </Container>
   );

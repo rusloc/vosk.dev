@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { cn } from "@/lib/cn";
 import { Icon } from "./service-icons";
 
 export type Conditions = {
@@ -12,11 +13,18 @@ export type Conditions = {
 };
 
 /**
- * Terms/conditions button pinned to a service card's bottom-right corner. Opens
- * a portal modal listing the plan's conditions. Same modal mechanics as
+ * Terms/conditions button in a service card's top row, beside the arrow. Opens
+ * a portal modal listing the plan's conditions. `className` sets its colour,
+ * which differs between the maroon card and the light ones. Same modal mechanics as
  * SendMessageButton — Escape to close, body scroll lock, backdrop click.
  */
-export function ConditionsButton({ aria, title, close, body }: Conditions) {
+export function ConditionsButton({
+  aria,
+  title,
+  close,
+  body,
+  className,
+}: Conditions & { className?: string }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -38,7 +46,10 @@ export function ConditionsButton({ aria, title, close, body }: Conditions) {
         type="button"
         aria-label={aria}
         onClick={() => setOpen(true)}
-        className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-(--moonlight)/60 transition-colors hover:text-(--moonlight)"
+        className={cn(
+          "inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors",
+          className,
+        )}
       >
         <Icon name="document" className="h-5 w-5" />
       </button>

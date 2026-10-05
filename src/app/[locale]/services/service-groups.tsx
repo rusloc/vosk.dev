@@ -14,14 +14,18 @@ const PILL_OFF =
 
 export type ServiceGroup = {
   eyebrow: string;
+  badge?: string;
   tiers: { name: string; desc: string; price: string; unit: string }[];
+  servicesTitle?: string;
+  services?: readonly string[];
 };
 
 /**
- * The three engagement models. Desktop keeps all three side by side, each with
- * its own "N · Label" eyebrow. Mobile shows a pill row instead and reveals a
- * single carousel at a time — three stacked carousels don't fit a phone screen,
- * and the pills double as the labels the eyebrows carry on desktop.
+ * The three engagement models. On desktop the first (subscription) is the
+ * featured card — big, maroon, spanning two rows with its "every plan includes"
+ * list — and the other two stack beside it. Mobile shows a pill row instead and
+ * reveals a single card at a time — three stacked cards don't fit a phone
+ * screen, and the pills double as the labels the eyebrows carry on desktop.
  *
  * The carousels are rendered once and hidden with `hidden lg:flex` rather than
  * duplicated into a mobile-only tree, so there's one copy of the nine tier
@@ -61,14 +65,15 @@ export function ServiceGroups({
         ))}
       </div>
 
-      {/* GROUP_WIDTH keeps the square carousel sane between `sm` and `lg`, where
-          one carousel still spans the whole column: a tablet would otherwise
-          render an ~850px box. Phones are narrower than the cap, so it never
-          touches them, and `lg` drops it for the three-column row. */}
+      {/* GROUP_WIDTH keeps the square cards sane between `sm` and `lg`, where
+          one card still spans the whole column: a tablet would otherwise render
+          an ~850px box. Phones are narrower than the cap, so it never touches
+          them, and `lg` drops it for the grid. Two equal rows, so the stacked
+          cards split the featured card's height between them. */}
       <div
         className={cn(
           GROUP_WIDTH,
-          "mt-4 flex flex-1 flex-col gap-6 lg:mt-6 lg:flex-row",
+          "mt-4 flex flex-col lg:mt-8 lg:grid lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] lg:grid-rows-2 lg:gap-6",
         )}
       >
         {groups.map((g, i) => (
@@ -76,10 +81,20 @@ export function ServiceGroups({
             key={i}
             number={i + 1}
             label={g.eyebrow}
+            badge={g.badge}
             tiers={g.tiers}
+            includes={
+              g.servicesTitle && g.services
+                ? { title: g.servicesTitle, items: g.services }
+                : undefined
+            }
+            feature={i === 0}
             conditions={conditions}
             nextAria={nextAria}
-            className={i === active ? undefined : "hidden lg:flex"}
+            className={cn(
+              i === active ? undefined : "hidden lg:flex",
+              i === 0 && "lg:row-span-2",
+            )}
           />
         ))}
       </div>

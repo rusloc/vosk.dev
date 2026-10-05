@@ -7,36 +7,45 @@ import {
   type TransitionEvent,
 } from "react";
 import { cn } from "@/lib/cn";
-import { type Conditions } from "./conditions-button";
+import { ConditionsButton, type Conditions } from "./conditions-button";
 import { ServiceCard } from "./service-card";
 import { Icon } from "./service-icons";
 
 /**
- * One service column: a numbered heading above a single-slide carousel. This
- * component owns the index, the sliding track, and swipe, and builds each
- * ServiceCard from `tiers`. One `>` control sits in the card's top-left corner,
- * level with the title, but outside the sliding track so it stays in one fixed
- * place; there are no dots and no way back — the carousel only moves forward,
- * and endlessly.
+ * One engagement model as a card: a stationary top row (eyebrow, badge,
+ * conditions, `>`) over a single-slide track of ServiceCards. Only the tiers
+ * slide; everything that describes the whole group stays put. There are no dots
+ * and no way back — the carousel only moves forward, and endlessly.
  *
  * Endless: the first tier is cloned after the last. Sliding onto the clone looks
  * like wrapping to the start; once that slide lands, the track snaps back to the
  * real first tier with the transition off, so the jump can't be seen.
  *
- * The eyebrow is desktop-only — on mobile ServiceGroups shows one carousel at a
- * time and its pill row already names the group.
+ * `feature` is the subscription card, and it carries the "every plan includes"
+ * list. On desktop the card and the list share one maroon shell (this outer
+ * element); on mobile the shell is transparent and they are two maroon boxes, so
+ * the card can stay square like the other two. One list in the DOM either way.
+ *
+ * The eyebrow is desktop-only — on mobile ServiceGroups shows one card at a time
+ * and its pill row already names the group.
  */
 export function ServiceCarousel({
   number,
   label,
+  badge,
   tiers,
+  includes,
+  feature = false,
   conditions,
   nextAria,
   className,
 }: {
   number: number;
   label: string;
+  badge?: string;
   tiers: { name: string; desc: string; price: string; unit: string }[];
+  includes?: { title: string; items: readonly string[] };
+  feature?: boolean;
   conditions: Conditions;
   nextAria: string;
   className?: string;
@@ -53,7 +62,7 @@ export function ServiceCarousel({
     setIndex(index + 1);
   };
 
-  // Children's transitions (the conditions button's colour) bubble up here too.
+  // Transitions inside the slides would bubble up here too.
   const onTransitionEnd = (e: TransitionEvent) => {
     if (e.target !== e.currentTarget || index !== tiers.length) return;
     setAnimate(false);
@@ -69,76 +78,152 @@ export function ServiceCarousel({
     if (e.clientX - startX.current < -40) next();
   };
 
+  // The track window bleeds into the card's side padding so slides clip at the
+  // card edge, not inside it; the slides put the padding back.
+  const pad = feature ? "px-6 lg:px-9" : "px-6 lg:px-7";
+  const bleed = feature ? "-mx-6 lg:-mx-9" : "-mx-6 lg:-mx-7";
+
   return (
-    <div
-      className={cn("flex min-w-0 flex-1 flex-col", className)}
+    <section
+      className={cn(
+        "flex min-w-0 flex-col",
+        feature && "lg:bg-maroon lg:rounded-2xl",
+        className,
+      )}
       onKeyDown={(e) => {
         if (e.key === "ArrowRight") next();
       }}
     >
-      {/* Heading eyebrow: "N · Label". The arrow lives in the card's top-left corner. */}
-      <div className="mb-3 hidden items-center gap-3 lg:flex">
-        <span className="text-foreground text-xs font-semibold tracking-[0.12em] uppercase">
-          {number} · {label}
-        </span>
-      </div>
-
       <div
-        // Square at every width, so the card's height is a function of the
-        // column width alone and never of the tier's description length. No
-        // `flex-1`: growing to fill the parent would override the ratio. The
-        // width cap that keeps this from becoming an 850px box on a tablet
-        // lives in ServiceGroups, on the row.
-        className="relative aspect-square touch-pan-y overflow-hidden rounded-2xl"
-        onPointerDown={onDown}
-        onPointerUp={onUp}
+        // Square on mobile, so the card's height depends on its width alone and
+        // never on the tier's description length. On desktop the grid row sets
+        // the height instead.
+        className={cn(
+          "flex aspect-square flex-col overflow-hidden rounded-2xl py-6 lg:aspect-auto lg:flex-1",
+          pad,
+          feature
+            ? "bg-maroon lg:bg-transparent lg:pt-9 lg:pb-8"
+            : "border-border border bg-white lg:py-7",
+        )}
       >
-        <div
-          className={cn(
-            "flex h-full",
-            animate && "transition-transform duration-500 ease-out",
-          )}
-          style={{ transform: `translateX(-${index * 100}%)` }}
-          onTransitionEnd={onTransitionEnd}
-        >
-          {slides.map((tier, i) => (
-            <div
-              key={i}
-              className="h-full w-full shrink-0 basis-full"
-              // The clone is a visual stand-in: keep its duplicate heading and
-              // button out of the accessibility tree and the tab order.
-              aria-hidden={i === tiers.length || undefined}
-              inert={i === tiers.length}
+        <div className="flex min-h-8 items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              className={cn(
+                "hidden text-xs font-semibold tracking-[0.14em] whitespace-nowrap uppercase lg:block",
+                feature ? "text-accent" : "text-maroon-soft",
+              )}
             >
-              <ServiceCard
-                title={tier.name}
-                desc={tier.desc}
-                price={tier.price}
-                unit={tier.unit}
-                conditions={conditions}
+              {number} · {label}
+            </span>
+            {badge && (
+              <span
+                className={cn(
+                  "truncate rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
+                  feature
+                    ? "border-cream/30 text-cream/90"
+                    : "border-accent/50 bg-accent/10 text-maroon-soft",
+                )}
+              >
+                {badge}
+              </span>
+            )}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1.5">
+            <ConditionsButton
+              {...conditions}
+              className={
+                feature
+                  ? "text-cream/55 hover:text-cream"
+                  : "text-muted-foreground hover:text-foreground"
+              }
+            />
+            {/* The pulse is the footer's "available" ping, slowed to one blink
+                every 2s. */}
+            <button
+              type="button"
+              aria-label={nextAria}
+              onClick={next}
+              className={cn(
+                "relative inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90",
+                feature
+                  ? "bg-cream text-maroon"
+                  : "bg-foreground text-background",
+              )}
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "motion-safe:animate-blink absolute inset-0 rounded-full opacity-75",
+                  feature ? "bg-cream" : "bg-foreground",
+                )}
               />
-            </div>
-          ))}
+              <Icon name="chevron-right" className="relative h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
 
-        {/* Stationary arrow over the card — a sibling of the track, so it
-            doesn't ride it. `top-7 left-6` is the card's 1px border + p-6, with
-            the 20px button centred on the title's 28px line. The title is
-            right-aligned, so the left end of its row is free. The pulse is the
-            footer's "available" ping, slowed to one blink every 2s. */}
-        <button
-          type="button"
-          aria-label={nextAria}
-          onClick={next}
-          className="bg-foreground text-background absolute top-7 left-6 z-10 inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90"
+        <div
+          className={cn(
+            "mt-5 flex-1 touch-pan-y overflow-hidden",
+            feature && "lg:mt-7",
+            bleed,
+          )}
+          onPointerDown={onDown}
+          onPointerUp={onUp}
         >
-          <span
-            aria-hidden="true"
-            className="bg-foreground motion-safe:animate-blink absolute inset-0 rounded-full opacity-75"
-          />
-          <Icon name="chevron-right" className="relative h-3 w-3" />
-        </button>
+          <div
+            className={cn(
+              "flex h-full",
+              animate && "transition-transform duration-500 ease-out",
+            )}
+            style={{ transform: `translateX(-${index * 100}%)` }}
+            onTransitionEnd={onTransitionEnd}
+          >
+            {slides.map((tier, i) => (
+              <div
+                key={i}
+                className={cn("h-full w-full shrink-0 basis-full", pad)}
+                // The clone is a visual stand-in: keep its duplicate heading out
+                // of the accessibility tree.
+                aria-hidden={i === tiers.length || undefined}
+                inert={i === tiers.length}
+              >
+                <ServiceCard
+                  title={tier.name}
+                  desc={tier.desc}
+                  price={tier.price}
+                  unit={tier.unit}
+                  feature={feature}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+
+      {includes && (
+        <div className="bg-maroon lg:border-cream/15 mt-4 rounded-2xl p-6 lg:mx-9 lg:mt-0 lg:rounded-none lg:border-t lg:bg-transparent lg:px-0 lg:pt-7 lg:pb-9">
+          <h3 className="text-cream/80 text-xs font-semibold tracking-[0.14em] uppercase">
+            {includes.title}
+          </h3>
+          <ul className="mt-4 grid gap-x-6 gap-y-2.5 sm:grid-cols-2">
+            {includes.items.map((s, i) => (
+              <li
+                key={i}
+                className="text-cream/85 flex items-start gap-2.5 text-sm"
+              >
+                <Icon
+                  name="check"
+                  className="text-accent mt-0.5 h-4 w-4 shrink-0"
+                />
+                {s}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
   );
 }

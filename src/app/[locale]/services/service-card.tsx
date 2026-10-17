@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import styles from "../blog/title-bar.module.css";
 
 /**
  * One service tier — the part of a card that slides. The card frame, the group
@@ -35,10 +36,31 @@ export function ServiceCard({
         <h3
           className={cn(
             "text-2xl font-semibold tracking-tight",
-            feature ? "text-cream lg:text-5xl" : "text-foreground",
+            "text-foreground",
+            feature && "lg:text-5xl",
           )}
         >
-          {title}
+          {/* Same blurred orange highlight as the blog and showcase titles,
+              hugging the title text. On the maroon card its transparent end
+              would leave dark text on maroon, so there it turns cream within
+              the first 15% (before the text starts) — the text stays dark and
+              readable along the whole bar, and the bar still fades in.
+              Inline, because the module's unlayered rule beats any utility. */}
+          <span className="relative inline-block">
+            <span
+              aria-hidden="true"
+              className={styles.titleBar}
+              style={
+                feature
+                  ? {
+                      background:
+                        "linear-gradient(to right, transparent, var(--color-cream) 15%, rgba(var(--accent-rgb), 0.9))",
+                    }
+                  : undefined
+              }
+            />
+            <span className="relative">{title}</span>
+          </span>
         </h3>
         <p
           className={cn(

@@ -184,9 +184,13 @@ export function ServiceCarousel({
             {slides.map((tier, i) => (
               <div
                 key={i}
-                className={cn("h-full w-full shrink-0 basis-full", pad)}
-                // The clone is a visual stand-in: keep its duplicate heading out
-                // of the accessibility tree.
+                className={cn(
+                  "h-full w-full shrink-0 basis-full overflow-hidden",
+                  pad,
+                )}
+                // Clipped, so a title bar's blur can't peek in from the
+                // neighbouring slide. The clone is a visual stand-in: keep its
+                // duplicate heading out of the accessibility tree.
                 aria-hidden={i === tiers.length || undefined}
                 inert={i === tiers.length}
               >

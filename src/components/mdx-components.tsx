@@ -3,6 +3,7 @@ import type { MDXComponents } from "mdx/types";
 import { WorkflowDiagram } from "@/components/workflow-diagram";
 import { BiStackDiagram } from "@/components/bi-stack-diagram";
 import { TwoFrontDoorsDiagram } from "@/components/two-front-doors-diagram";
+import { AgentEyesDiagram } from "@/components/agent-eyes-diagram";
 import { ReportEmbed } from "@/components/report-embed";
 import { EmailReportPreview } from "@/components/email-report-preview";
 
@@ -17,6 +18,7 @@ export const mdxComponents: MDXComponents = {
   WorkflowDiagram,
   BiStackDiagram,
   TwoFrontDoorsDiagram,
+  AgentEyesDiagram,
   ReportEmbed,
   EmailReportPreview,
   h2: (props) => (
@@ -45,6 +47,21 @@ export const mdxComponents: MDXComponents = {
     />
   ),
   hr: (props) => <hr className="border-border my-10" {...props} />,
+  // GFM tables. The wrapper scrolls sideways so a wide table can't widen the page on a phone.
+  table: (props) => (
+    <div className="my-6 overflow-x-auto">
+      <table className="w-full border-collapse text-sm" {...props} />
+    </div>
+  ),
+  th: (props) => (
+    <th
+      className="border-border border-b-2 px-3 py-2 text-left font-semibold"
+      {...props}
+    />
+  ),
+  td: (props) => (
+    <td className="border-border border-b px-3 py-2 align-top" {...props} />
+  ),
   pre: (props) => (
     <pre
       className="border-border my-6 overflow-x-auto rounded-lg border p-4 text-sm"

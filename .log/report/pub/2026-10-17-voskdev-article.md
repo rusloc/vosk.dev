@@ -1,0 +1,88 @@
+# Give the agent eyes: a personal MCP, a 2,200-line query, and a refresh that went from 5 minutes to 15 seconds
+
+> [VIDEO PLACEHOLDER: setup walkthrough, the prompts, and building a local personal MCP from an empty folder to the first tool call.]
+
+## The monster
+
+I run a Power BI stack on top of PostgreSQL. Every table in the semantic model is fed by one SQL query. The biggest, the PO view, started life as an MVP and never stopped being one. Edited and re-deployed more than a hundred times. Joins bolted on the moment a stakeholder needed one more column. Somewhere past 1,500 lines it stopped being a query and became a place. It ended at 2,200 lines, 29 tables, hand-written, with the only map living in my head. Every refresh ran it for about five minutes, and everyone had learned to live with that.
+
+## Setup, part one: SQL as deployable files
+
+Each query lives in its own `.sql` file. The file puts the query into a session variable with dollar quoting, then writes that variable into a `sql_source` table keyed by report and page. The model reads one row.
+
+```sql
+set dev.po_view =
+$sql$
+    ...2,000 lines of query...
+$sql$;
+
+update sql_source
+set  _code    = current_setting ( 'dev.po_view' )
+    ,_updated = now()
+where 1=1
+    and _report = 'TRACKER'
+    and _page   = 'PO VIEW';
+```
+
+No escaping, ever. The database is the deploy target, git is the mirror, the file name tells you which model table consumes it. One rule keeps it honest: editing the file changes nothing on its own. Edit, run the file, refresh, commit. Editing the database without the file is how the monster grew. The mirror came after the pain.
+
+## Setup, part two: the standard toolbelt
+
+Microsoft's Power BI modeling MCP for the model, the report CLI for PBIR pages and publishing, the Fabric CLI for items and workspaces, `sqlcmd` for the warehouse side, and the skills Microsoft publishes on GitHub to teach the agent all of it. Good hands. But none of them can see the database behind the model: table sizes, statistics, what the planner thinks, what last night's refresh actually cost. An agent that cannot see guesses.
+
+## Setup, part three: my own tools
+
+### Why build one
+
+Every session the agent did the same dance: write a probe script against the catalog, run it, read raw output, write the query, forget everything. Next session, the same script again, slightly different. The opposite of DRY, paid in tokens nobody wants to read twice.
+
+So I gave it `sqldev-mcp`. Read-only, on purpose. Six tools: `connection_info` (who am I, which guards are on), `schema_overview` (tables with estimated rows and sizes), `describe_table` (columns with planner statistics, keys, indexes and their usage), `describe_routine` (functions and triggers with source), `query_stats` (recorded run times from `pg_stat_statements`, the "before" number without running anything) and `explain_query` (the plan, digested; with `analyze: true` it runs the statement once in a read-only transaction, under its own timeout, and rolls back).
+
+Version 0.2 took one evening. Version 0.3, with `query_stats` and `explain_query`, took the same evening, because the idea came up halfway through the optimization and I could not wait.
+
+### Under the hood
+
+- Plain ESM JavaScript with JSDoc types, no build step. The official MCP SDK plus zod for the schemas, stdio transport.
+- One `bin` file is both CLI and server: a human runs `sqldev-mcp check`, the agent runs `sqldev-mcp mcp`.
+- A dialect module per engine (PostgreSQL, SQL Server and Fabric, DuckDB) behind the same six tools. Catalog queries are `.sql` files, one per question per dialect.
+- Every PostgreSQL call is `begin transaction read only`, `set local` timeouts, the work, `rollback`. Local, never session-level, because a pooler would leak them.
+- A 10-minute cache with a disk snapshot: a repeated call costs zero queries.
+- Compact text output. A 216-node plan comes back as the top ten nodes plus findings; the full plan goes to disk. Digest, not dump.
+- Tests run offline against PostgreSQL compiled to WebAssembly, plus a stdio smoke run with a query budget per call.
+
+### Zip and go
+
+`npm pack` produces one tarball; version 0.3 was 93 KB and 58 files. On another machine: copy, `npm install -g <file>.tgz`, register `cmd /c sqldev-mcp mcp --connection <name>`, restart the client. No credentials inside. Connections are `.env` files under `~/.sqldev-mcp/connections/`, one per database, one read-only login per person. Same package for every colleague and every project.
+
+### Python or Node
+
+The first tool of this kind was Python, standard library only, because application control on the work machine blocked the pip shims. I rebuilt it in Node: Node is already there wherever Microsoft's Power BI MCP runs, `npm install -g` gives a PATH command without shims, and one runtime for all my tools means one layout and one test runner. Both versions matched to the row. Python is fine if it is already on every machine you care about. The environment decided, not taste.
+
+## The case
+
+I pointed the agent at the PO view and asked for a plan, not an edit. What the tool showed, catalog only, no data read, in a handful of calls: 29 tables behind one `select`. A 2.4 GB cost table with 6.6 million rows, aggregated for every shipment in every domain, when the report needed 3,600 rows. A 1.2 GB attachments table grouped in full for one yes/no flag. A port lookup table scanned once per output row, twice. Shipment JSON blobs, 17 KB each, decompressed roughly 250 times per row through 286 separate reads. A 652 MB materialized view read twice.
+
+What changed: costs aggregated only for the shipments in scope. Each JSON parsed once into a CTE, then hash joins instead of lateral unions. Shipments and the tracker view read once, for the relevant serials. Port names through one join instead of a scan per row. The SLA map built once per company instead of once per row. No index, no `work_mem`, no caching games. Same columns, same rows, checked one to one against the old output.
+
+Measured today, back to back, same server, one run each, read-only and rolled back:
+
+| | before | after |
+|---|---|---|
+| PO view, execution | 4 min 54 s | 15 s |
+| PO view, planner estimate at the window step | 14 trillion rows | 600 million rows |
+| EK view (sibling, same recipe) | 6 min 53 s mean over 152 runs | 2.6 s, 1,336 rows, 0 differences |
+| Shipments view (sibling) | 57 s mean | 3.3 s solo, 8.2 s live mean |
+
+Two honest footnotes. The biggest waste in the old query was not the big tables but the two per-row port lookups: 73 percent of the time, hundreds of gigabytes of buffer traffic over a table that fits in memory, and the digest pointed straight at it. And most of the remaining 15 seconds is one 1.3 GB scan of the attachments table I chose to leave alone. The agent now points at it every time it reads the plan. The next fix is already named.
+
+## The loop
+
+Two siblings came out of the same mould: `pbi-profiler`, which reads model sizes, cardinality and dead measures straight from Power BI Desktop, and `fab-admin-mcp`, which handles workspace inventory, refreshes and deployment pipelines with a dry run by default. Same skeleton, same tarball, same evening-sized effort.
+
+That is the part I did not expect. The AI helps me build a tool in an evening. The tool makes the AI materially better at my actual job. Repeat. The agent was never smarter. It could see.
+
+## Links
+
+- The tool: [GitHub repo]
+- The anonymized 2,200-line query, before and after: [public SQL repo]
+- The LinkedIn version of this piece: [LinkedIn article]

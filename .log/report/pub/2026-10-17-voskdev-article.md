@@ -1,7 +1,5 @@
 # Give the agent eyes: a personal MCP, a 2,200-line query, and a refresh that went from 5 minutes to 15 seconds
 
-> [VIDEO PLACEHOLDER: setup walkthrough, the prompts, and building a local personal MCP from an empty folder to the first tool call.]
-
 ## The monster
 
 I run a Power BI stack on top of PostgreSQL. Every table in the semantic model is fed by one SQL query. The biggest, the PO view, started life as an MVP and never stopped being one. Edited and re-deployed more than a hundred times. Joins bolted on the moment a stakeholder needed one more column. Somewhere past 1,500 lines it stopped being a query and became a place. It ended at 2,200 lines, 29 tables, hand-written, with the only map living in my head. Every refresh ran it for about five minutes, and everyone had learned to live with that.
@@ -83,6 +81,6 @@ That is the part I did not expect. The AI helps me build a tool in an evening. T
 
 ## Links
 
-- The tool: [GitHub repo]
-- The anonymized 2,200-line query, before and after: [public SQL repo]
-- The LinkedIn version of this piece: [LinkedIn article]
+- The anonymized PO view, as it runs today: https://github.com/rusloc/SQL/blob/main/SQL/PO_VIEW.sql
+- What changed and the before/after numbers at a glance: https://rusloc.github.io/SQL/
+- The LinkedIn version of this piece: https://www.linkedin.com/pulse/task-specific-mcps-give-ai-agents-eyes-sql-refresh-went-kirill-vosk-3fxrf/

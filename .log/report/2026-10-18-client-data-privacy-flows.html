@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Client Data Flows</title>
+<meta name="description" content="How to work with clients' data under a high privacy bar, with an agentic dev process (Claude Code, Codex, local models). Findings of 2026-10-18.">
+<style>
+  :root {
+    --bg: #faf8f3; --fg: #1f1b16; --muted: #6f6a5f; --line: #e2dccd;
+    --card: #ffffff; --accent: #4f46e5; --accent-soft: #eceafd; --warn: #b4531c; --warn-soft: #fdf0e6;
+    --ok: #0f6e56; --code-bg: #f1ede3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151412; --fg: #ece8df; --muted: #a29d91; --line: #2d2a25;
+      --card: #1d1b18; --accent: #a5a0ff; --accent-soft: #24223d; --warn: #f0a46c; --warn-soft: #36251a;
+      --ok: #5fd0a8; --code-bg: #24211d;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151412; --fg: #ece8df; --muted: #a29d91; --line: #2d2a25;
+    --card: #1d1b18; --accent: #a5a0ff; --accent-soft: #24223d; --warn: #f0a46c; --warn-soft: #36251a;
+    --ok: #5fd0a8; --code-bg: #24211d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 48px 16px 80px; }
+  h1 { font-size: 2rem; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.01em; }
+  h2 { font-size: 1.3rem; margin: 44px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+  h3 { font-size: 1.05rem; margin: 24px 0 6px; }
+  p.lead { color: var(--muted); font-size: 1.08rem; margin: 0 0 24px; }
+  .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 28px; }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; background: var(--code-bg);
+         padding: 0.1em 0.35em; border-radius: 4px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; margin: 14px 0; }
+  .warn { background: var(--warn-soft); border-color: var(--warn); }
+  .warn strong:first-child { color: var(--warn); }
+  .rule { background: var(--accent-soft); border-color: var(--accent); font-size: 1.05rem; }
+  ol, ul { padding-left: 1.3rem; } li { margin: 4px 0; }
+  .table-wrap { overflow-x: auto; margin: 12px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.93rem; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { border-bottom: 2px solid var(--line); font-weight: 600; }
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0; }
+  .step { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .step b { display: block; color: var(--accent); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .step span { font-size: 0.9rem; }
+  @media (max-width: 640px) { .flow { grid-template-columns: 1fr 1fr; } h1 { font-size: 1.6rem; } }
+  .sources li { font-size: 0.9rem; }
+  .tag { display: inline-block; font-size: 0.75rem; color: var(--muted); border: 1px solid var(--line);
+         border-radius: 999px; padding: 0 8px; margin-left: 6px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Working with clients' data, privacy first</h1>
+<p class="lead">How to run an agentic dev process (Claude Code, Codex, local models) on clients' databases
+without the data ending up in places the client never agreed to.</p>
+<p class="meta">Findings of 2026-10-18 · VOSK.DEV internal · not legal advice: have a lawyer write the DPA.</p>
+
+<div class="card">
+<strong>The starting plan</strong> (the owner's): the client provides limited, anonymized tables, schemas or
+views → I query, transform and merge them → I ship the solution to the client's cloud as files or publish
+it to a workspace or account the client manages (MS Fabric, Google BigQuery).
+<br><br>
+<strong>Verdict:</strong> the right default. It has three gaps, and closing them is most of the work.
+</div>
+
+<h2>1. The three gaps</h2>
+<ol>
+  <li><strong>"Anonymized" is usually pseudonymized.</strong> Masked or hashed data that can be linked back
+    to a person is still personal data under GDPR. Merging sources makes it <em>more</em> identifiable:
+    every join adds context.</li>
+  <li><strong>The plan covers what the client hands you, not the copies your tools make.</strong> With
+    agents, that's the main exposure:
+    <ul>
+      <li>every query result the agent reads goes to the model provider;</li>
+      <li>it is written to a plaintext transcript in <code>~/.claude/projects/</code> (kept 30 days by default);</li>
+      <li>it sits in dbt <code>target/</code>, DuckDB files, CSV extracts and the PBIP <code>.pbi/cache.abf</code>;</li>
+      <li>OneDrive or another sync tool copies all of it off the machine.</li>
+    </ul></li>
+  <li><strong>The paperwork.</strong> If personal data reaches Anthropic or OpenAI, they become your
+    subprocessors, and the client has to authorize that in writing.</li>
+</ol>
+
+<h2>2. The core rule</h2>
+<div class="card rule"><strong>The agent sees code, schema and aggregates. It never sees rows.</strong></div>
+<p>The <code>sqldev-mcp</code> case already proves it works: a 2,200-line query was optimized from
+catalog data, planner statistics and plans alone, with no data read.</p>
+<div class="table-wrap"><table>
+  <tr><th>The agent may see</th><th>The agent never sees</th></tr>
+  <tr><td>DDL, column types, row counts, sizes, planner statistics</td><td>Row-level values of real client data</td></tr>
+  <tr><td>Query plans, run times</td><td><code>select *</code> output, samples, extracts</td></tr>
+  <tr><td>Aggregates with a minimum group size</td><td>Small groups that single out a person</td></tr>
+  <tr><td>Synthetic or fully masked data</td><td>The contents of <code>cache.abf</code>, <code>target/</code>, <code>.duckdb</code></td></tr>
+</table></div>
+
+<h2>3. Four access levels, one chosen per client and written into the contract</h2>
+<div class="table-wrap"><table>
+  <tr><th>Level</th><th>What you get</th><th>Good for</th></tr>
+  <tr><td><strong>0 · Metadata</strong></td><td>Schema, statistics, plans. A read-only login with no <code>select</code> on data tables</td><td>Optimization, modeling, reviewing SQL and DAX</td></tr>
+  <tr><td><strong>1 · Synthetic</strong></td><td>Fake data generated locally from that schema and its statistics</td><td>dbt and SQL dev, PBIP layouts, tests</td></tr>
+  <tr><td><strong>2 · Client-masked views</strong><span class="tag">the owner's plan</span></td><td>A dedicated dataset or schema the client masks at the source</td><td>Joins and logic that need realistic values</td></tr>
+  <tr><td><strong>3 · Inside their tenant</strong></td><td>A guest account or their VM; data never leaves</td><td>Final checks against real data, then shipping</td></tr>
+</table></div>
+
+<h3>Level 2: how the client masks at the source</h3>
+<ul>
+  <li><strong>BigQuery:</strong> authorized views plus policy tags. These drive column-level access and dynamic masking,
+    and access is managed per tag tier.</li>
+  <li><strong>Fabric Warehouse:</strong> dynamic data masking, row- and column-level security, and a Viewer role
+    (T-SQL reads only, not raw OneLake files).</li>
+  <li><strong>Join keys: keyed hashing (HMAC), with the key kept by the client.</strong> The same customer gets the same
+    token in every source, so merges still work, but the tokens can't be reversed.</li>
+</ul>
+<div class="card warn"><strong>Caveat:</strong> masking and row-level security have known bypasses. Treat them as defense
+in depth, not as a guarantee.</div>
+<h3>Level 3</h3>
+<p>This is where real data meets your code. You work in their Fabric workspace or BigQuery project, under their
+identity provider, which they can switch off on the last day.</p>
+
+<h2>4. Agent setup: one isolated project per client</h2>
+<h3>Vendor terms (as read on 2026-10-18)</h3>
+<div class="table-wrap"><table>
+  <tr><th>Route</th><th>Training</th><th>Retention</th><th>Note</th></tr>
+  <tr><td>Claude Code, consumer (Pro / Max)</td><td>Only if the personal setting is on</td><td>5 years if on, 30 days if off</td><td>Not for client work</td></tr>
+  <tr><td>Claude Code, commercial (Team, Enterprise, API)</td><td>No</td><td>30 days</td><td>ZDR only on Enterprise, enabled per organization by the account team after an eligibility check</td></tr>
+  <tr><td>Claude via Microsoft Foundry, Hosted on Azure</td><td>No</td><td>Prompts and completions stay in Azure</td><td>The cleanest story for a Fabric client</td></tr>
+  <tr><td>Claude via Google's cloud platform / Bedrock</td><td>No</td><td>Provider terms; customer-managed keys available</td><td>Run in the client's own project or account</td></tr>
+  <tr><td>OpenAI Codex, Business / Enterprise</td><td>No, by default</td><td>30 days; ZDR depends on the contract</td><td>Secondary sources only; the CLI needs <code>disable_response_storage = true</code> for ZDR</td></tr>
+  <tr><td><code>/feedback</code>, <code>/bug</code>, <code>/share</code></td><td>Used to improve the product</td><td><strong>5 years</strong></td><td>Never use them in a client session</td></tr>
+</table></div>
+
+<h3>Per-project <code>.claude/settings.json</code></h3>
+<ul>
+  <li><strong>Deny reads</strong> of <code>*.csv</code>, <code>*.parquet</code>, <code>*.duckdb</code>, <code>**/.pbi/cache.abf</code>,
+    <code>target/**</code>, <code>.env*</code>.</li>
+  <li><strong>Deny direct</strong> <code>psql</code>, <code>bq query</code>, <code>sqlcmd</code>, so every query goes through the MCP.</li>
+  <li>Set <code>cleanupPeriodDays</code> low, and set <code>CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1</code>.</li>
+</ul>
+
+<h3><code>sqldev-mcp</code> as the enforcement point</h3>
+<p>It is already read-only, returns digests instead of dumps, and keeps one connection per database. Add a
+<strong>"no rows" mode per connection</strong>: catalog and plan tools only, a cap on result size, and refusal of small
+groups. Then the access level is enforced by the tool, not by discipline.</p>
+
+<h3>Local models (Ollama and similar)</h3>
+<p>They are for the jobs that have to touch rows: detecting personal-data columns, masking, profiling. The frontier
+models write the code; the local model handles the data.</p>
+
+<h3>The PC</h3>
+<ul>
+  <li>One folder, one repo and one credentials set per client. A dev container or a separate Windows user is better.</li>
+  <li>BitLocker on. Client folders outside OneDrive.</li>
+  <li>A documented wipe at the end of the engagement.</li>
+</ul>
+
+<h2>5. Mixing cloud and local data</h2>
+<ul>
+  <li><strong>Never copy client production data to the PC to develop against it.</strong></li>
+  <li>One set of dbt models, two targets:
+    <ul>
+      <li><code>dev</code>: DuckDB on the PC, fed with synthetic or level-2 seeds;</li>
+      <li><code>prod</code>: their BigQuery or Fabric (<code>dbt-bigquery</code> / <code>dbt-fabric</code>).</li>
+    </ul></li>
+  <li><strong>dbt contracts and tests</strong>, so a model that passes on synthetic data is checked against real data in their tenant.</li>
+  <li><strong>Mix in one direction only.</strong> Your reference data (calendars, mappings, FX rates) goes up into their tenant;
+    their data never comes down to be merged with yours.</li>
+</ul>
+
+<h2>6. Shipping</h2>
+<ul>
+  <li>Code goes into a <strong>repo the client owns</strong> (their GitHub or Azure DevOps). Deploy through Fabric Git integration
+    or deployment pipelines, under their service principal.</li>
+  <li><strong>PBIP:</strong> keep <code>.pbi/cache.abf</code> ignored. PBIP's default <code>.gitignore</code> does this, but a file
+    committed before the rule existed stays tracked (<code>git rm --cached</code>). Watch for "Enter data" tables, which keep their
+    rows inside the model files. Never ship a PBIX: it contains the data.</li>
+  <li><strong>A pre-ship scan in CI:</strong> gitleaks, plus checks for data-file extensions, emails and the client's ID patterns.</li>
+</ul>
+
+<h2>7. Paperwork, once per client</h2>
+<ul>
+  <li><strong>A data processing agreement (DPA):</strong> you as processor, your AI vendors listed as subprocessors with the
+    hosting region, the access level, a deletion date with written confirmation.</li>
+  <li><strong>A client-facing one-page data-handling policy.</strong> Also a selling point for the site: "your data never leaves your
+    tenant; my AI tools see your schema, not your customers."</li>
+</ul>
+
+<h2>8. The default flow</h2>
+<div class="flow">
+  <div class="step"><b>Level 0–1</b><span>Schema, statistics, synthetic data. Local agent.</span></div>
+  <div class="step"><b>Level 2</b><span>Only when real values matter: client-masked views, HMAC keys, read-only via <code>sqldev-mcp</code>.</span></div>
+  <div class="step"><b>Level 3</b><span>Validate and ship in their tenant, their repo, their service principal.</span></div>
+  <div class="step"><b>Close</b><span>Documented wipe, deletion confirmation, credentials revoked.</span></div>
+</div>
+
+<h2>9. Next pieces (offered, not started)</h2>
+<ol>
+  <li>A per-client project template: settings, deny rules, dev container.</li>
+  <li>A "no rows" mode for <code>sqldev-mcp</code>.</li>
+  <li>The client-facing data-handling policy page.</li>
+</ol>
+
+<h2>Sources</h2>
+<ul class="sources">
+  <li><a href="https://code.claude.com/docs/en/data-usage">Claude Code: data usage (Anthropic)</a></li>
+  <li><a href="https://platform.claude.com/docs/en/manage-claude/api-and-data-retention">Claude API data retention</a></li>
+  <li><a href="https://forge.lthn.ai/core/core-agent-ide/raw/commit/7d734bff658ec290aa70d4eefe74c331df27ee40/docs/zdr.md">Codex ZDR notes (third party)</a></li>
+  <li><a href="https://yage.ai/share/ai-coding-data-policy-survey-en-20260309.html">AI coding data-policy survey, 2026-03</a></li>
+  <li><a href="https://intuitionlabs.ai/insights/guides/zero-data-retention-chatgpt-openai-api-life-sciences">ZDR guide (IntuitionLabs)</a></li>
+  <li><a href="https://learn.microsoft.com/fabric/data-warehouse/security">Fabric Warehouse security (Microsoft Learn)</a></li>
+  <li><a href="https://community.fabric.microsoft.com/t5/Data-Engineering/Options-for-non-personalized-external-data-sharing/m-p/5042695">Fabric external sharing (community)</a></li>
+  <li><a href="https://community.fabric.microsoft.com/t5/Fabric-platform/Dynamic-Data-Masking-Using-SQL-Endpoint-and-One-Lake-Security/m-p/4832516">Fabric masking and OneLake security modes (community)</a></li>
+  <li><a href="https://mbvyn.substack.com/p/understanding-microsoft-fabric-how">Fabric security layers (blog)</a></li>
+  <li><a href="https://docs.cloud.google.com/bigquery/docs/best-practices-policy-tags?authuser=0">BigQuery policy-tag best practices</a></li>
+  <li><a href="https://www.ssw.com.au/rules/do-you-know-powerbi-version-control-features/">PBIP version control and cache.abf (SSW)</a></li>
+  <li><a href="https://community.fabric.microsoft.com/t5/Developer/bpip-changes-in-git/m-p/4683327/highlight/true">PBIP in git (Fabric community)</a></li>
+</ul>
+
+</main>
+</body>
+</html>

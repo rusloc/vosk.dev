@@ -117,8 +117,8 @@ Backs the **Cube** showcase on `/work`. Design, decisions and the isolation find
 and there is **no personal data even synthetic** — a customer is a code, a country and a segment.
 
 Unlike the P&L warehouse above, this one **is deployed**: schema `demo_sales` in Supabase project
-`howpxpdnjjzdwqrgxkee` — the lead engine's project, because the free plan has no spare slot. It is
-isolated by schema and by role, not by project. Nothing here touches `public`.
+`howpxpdnjjzdwqrgxkee`, shared with the QBO P&L warehouse (schema `qbo`), because the free plan has no
+spare slot. It is isolated by schema and by role, not by project. Nothing here touches another schema.
 
 ```
 data/sales/
@@ -132,7 +132,7 @@ data/sales/
 
 **Applied through the Supabase MCP `execute_sql`, in file order — not psql, and not
 `apply_migration`.** It is deliberately *not* a tracked migration: `schema_migrations` in that
-project belongs to the `vosk_leads` repo, and a reproducible seed is not an evolving schema.
+project belongs to the `rusloc/qbo` repo, and a reproducible seed is not an evolving schema.
 
 `001` drops the schema, which takes `cube_reader`'s grants and policies with it — **always re-run
 `004` after `001`.** `execute_sql` returns only the last statement's rows, so `003` and the tests

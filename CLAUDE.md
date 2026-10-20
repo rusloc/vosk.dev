@@ -1,63 +1,40 @@
 # VOSK.DEV — AI Coding Instructions
 
-> For AI coding assistants working on VOSK.DEV **and** the lead engine it manages.
-> Pointers, communication rules, conventions. Keep it lean.
+> For AI coding assistants working on VOSK.DEV. Pointers, communication rules, conventions. Keep it lean.
 >
-> **This folder is the control root and the knowledge base.** `CLAUDE.md`, `.claude/`, `.log/`,
-> `docs/` and `.mcp.json` live here and govern **both** projects. Read the next section before
-> touching either.
-
-## Two projects, one control root
-
-Two codebases, two GitHub repos, two deployments — **one place they are driven from: this folder.**
-
-| | **`vosk.dev`** — the site | **`vosk_leads`** — the lead engine |
-|---|---|---|
-| Local root | **`D:\__VOSK__`** ← you are here | `D:\__VOSK_LEADS__` |
-| GitHub | `rusloc/vosk.dev` | `rusloc/vosk_leads` |
-| What it is | Public marketing site | Private lead gen + funnel tracker |
-| Database | **none it connects to** — MDX + Resend; showcase figures arrive via Cube | Supabase `howpxpdnjjzdwqrgxkee` |
-| Deploy | Vercel, `vosk.dev` | Vercel, separate project |
-| Design doc | `docs/08-cube-sales-showcase.md` (the Cube showcase) | `docs/05-lead-engine.md` (**here**) |
-
-- **Sessions run from `D:\__VOSK__`.** Don't open a second instance in the leads folder — edit its
-  files by absolute path from here.
-- **The knowledge base is here and is not duplicated.** `CLAUDE.md`, `.claude/agents/`,
-  `.claude/skills/`, `.claude/agent-memory/`. **`D:\__VOSK_LEADS__` gets no `CLAUDE.md` and no
-  `.claude/`** — one source of truth. Two would be `CAND-002` again.
-- **`.log/` and `docs/` also stay here**, covering both projects. One trail, not two.
-- **`.mcp.json` is here**, scoped to the lead engine's Supabase project — see *Supabase* below.
-- **⚠️ Commits never span the two repos.** Every change belongs to exactly one. Emit a separate
-  `git add` / `commit` block per repo; `.log/` and `docs/` updates always ride with `d:/__VOSK__`.
+> _Amended 2026-10-20: the lead engine (`vosk_leads`) is **terminated**. Its Supabase objects, crons,
+> Edge Functions, extensions and migration history were removed, and its docs left this repo (git
+> history keeps them). Its companies list survives in `.log/report/2026-10-20-lead-engine-companies-export.html`.
+> Leads are tracked by hand now; there is no second project driven from this folder._
 
 ### Supabase — one project, two tenants, separated by schema and role
 
-One project, ref **`howpxpdnjjzdwqrgxkee`**, region `eu-west-1`, org `sudo.opc` (free plan).
-_Amended 2026-09-21: it was "leads only" until the Cube showcase needed a Postgres and the free plan
-had no slot for one._
+One project, ref **`howpxpdnjjzdwqrgxkee`**, region `eu-west-1`, org `sudo.opc` (free plan),
+**named `vosk.dev` in the dashboard**. The site itself never connects to it.
+_Amended 2026-10-20: the lead engine's `public` tables are gone; `qbo` is the second tenant._
 
 | Schema | Owner | What | Reached by |
 |---|---|---|---|
-| `public` | **lead engine** | `raw_postings`, `leads`, `companies`, `sources`, `contacts`, `activities`, `app_admins` | Edge Functions; phase-4 admin UI via RLS |
 | `demo_sales` | **site showcase** | synthetic online-sales star schema — `docs/08-cube-sales-showcase.md` | **only** role `cube_reader`, **only** from Cube |
+| `qbo` | **QBO P&L** — repo `rusloc/qbo`, `C:\__PBI\QBO` | QuickBooks P&L warehouse; that repo's `CLAUDE.md` and ADR-0008 | roles `qbo_etl` (ETL, dbt) and `qbo_reader` (Power BI) |
 
-- **The rule that survives: lead data must never be reachable from the public site.** The site holds
-  **no Supabase credential at all** — it talks to Cube, Cube talks to Postgres as `cube_reader`, and
-  `cube_reader` can read `demo_sales` and nothing in `public` (`42501`, proven by `set role`).
-  **Never grant `cube_reader` anything outside `demo_sales`. Never expose `demo_sales` to the Data API.**
-- **⚠️ It is *named* `vosk.dev` in the dashboard.** Its GitHub integration points at
-  `rusloc/vosk_leads`, and its migration history is the lead engine's alone.
+- **The site holds no Supabase credential at all.** It talks to Cube, Cube talks to Postgres as
+  `cube_reader`, and `cube_reader` can read `demo_sales` and nothing else. **Never grant
+  `cube_reader` anything outside `demo_sales`. Never expose `demo_sales` or `qbo` to the Data API**
+  (`anon` / `authenticated` have no `USAGE` on either — keep it that way). `public` is empty.
+- **`qbo` is driven from its own repo and its own VS Code window, not from here.** Its migrations live
+  in `C:\__PBI\QBO\supabase\migrations\`, and the project's migration history is `qbo`'s alone.
+  Before a real client's books go in, `qbo` moves to a project of its own (`.log/report/2026-10-18-client-data-privacy-flows.html`).
+- **`.mcp.json` is here**, scoped to this project — for the `demo_sales` seed and read-only checks.
 - ⚠️ **Free plan allows 2 active projects and both slots are used** (`yaga` + this one). `fabrigate`
   and `newsmate` are paused and can't be restored without pausing one.
-- **Lead-engine migrations** live in `D:\__VOSK_LEADS__\supabase\migrations\` and are applied via the
-  Supabase MCP (`apply_migration`), never by hand. No CLI, no Docker.
 - **`demo_sales` is deliberately *not* a migration.** It is a drop-and-rebuild seed in
-  `data/sales/*.sql` (site repo), applied via MCP `execute_sql` — so `schema_migrations` stays the
-  lead engine's. Re-run `004` after `001`; details in `data/README.md`.
-- **⚠️ Never `revoke … on schema net from public`.** `pg_net` grants `PUBLIC` everything on `net`, and
-  it looks like a hole — but the three crons run as `postgres`, which reaches `net.http_post` *only*
-  through that grant. A revoke that worked would stop the engine. It is documented residue
-  (`docs/08` §5), not a to-do.
+  `data/sales/*.sql` (site repo), applied via MCP `execute_sql` — so `schema_migrations` stays
+  `qbo`'s. Re-run `004` after `001`; details in `data/README.md`.
+- **`pg_net` and `pg_cron` were dropped on 2026-10-20** (only the lead engine used them), and with
+  `pg_net` went the `PUBLIC` grant on `net` that `docs/08` §5 documents. Re-enabling `pg_net` brings
+  that grant back — re-read §5 first.
+- After any DDL here, run MCP `get_advisors(security)` — it must come back **zero lints**.
 
 ## Project identity — the site
 
@@ -73,24 +50,15 @@ had no slot for one._
 - **Content**: local **MDX** files in `content/` (no CMS, no database).
 - **Contact form**: Server Action + **Resend** (transactional email). No DB persistence at v1.
 - **No** Supabase client / auth / ORM / component library **in this app** unless a new need is
-  explicitly agreed. **No Supabase URL or key may appear in this deployment's env** — the lead
-  engine's data must never be reachable from here; that separation is the whole reason the two are
-  split. The Cube showcase honours it: the app holds a Cube URL + secret, never a database credential.
+  explicitly agreed. **No Supabase URL or key may appear in this deployment's env** — the shared
+  project holds a client product's warehouse (`qbo`), which must never be reachable from here.
+  The Cube showcase honours it: the app holds a Cube URL + secret, never a database credential.
 - **Agreed additions (2026-09-27):** **Tremor** for the Cube showcase — the copy-paste components
   from tremor.so, vendored and modified in `src/components/tremor/` (Apache-2.0, `LICENSE` kept there),
   on `recharts` 3 + Radix (`tabs`, `toggle-group`, `toggle`, `slot`), `tailwind-variants`,
   `clsx` + `tailwind-merge`, `@remixicon/react`. They replaced `chart.js` (agreed 2026-09-21, removed).
   Not `@tremor/react` (React 18 / Tailwind 3 only, unmaintained), not `@cubejs-client/*` — native
   `fetch` covers the data. The vendored files are ours now: upstream stopped development in 2025.
-
-## Stack — the lead engine
-
-- **Supabase** as the entire backend: Postgres + RLS + Auth, `pg_cron` for scheduling, Edge Functions
-  (Deno/TypeScript) for the jobs. No worker box, no container, no always-on host.
-- **Next.js admin UI** on its own Vercel project (phase 4, not built yet) — browser uses the
-  publishable key, RLS does authorization. The service-role key never reaches a client bundle.
-- **Claude Haiku** for translate/extract/score. Nothing is ever sent to a lead without explicit approval.
-- Full design, schema and phased build order: `docs/05-lead-engine.md`.
 
 ## Structure — the site
 
@@ -114,20 +82,6 @@ public/images/    → work/<slug>/… and blog/<slug>/… assets
   itself (`components/sales-dashboard.tsx`); it is hidden until `CUBE_API_URL` + `CUBE_API_SECRET` are set.
 - All pages are Server Components / statically rendered. `[slug]` routes use `generateStaticParams()`. Client components are the exception (contact form, theme toggle, mobile menu) — mark them `'use client'`.
 
-## Structure — the lead engine (`D:\__VOSK_LEADS__`)
-
-```
-supabase/
-  config.toml              → project link (hand-written; no CLI needed)
-  migrations/*.sql         → applied via MCP; filenames match the versions Supabase assigned
-  functions/               → Edge Functions (phase 1+)
-README.md                  → points back here for the design
-```
-
-- **No `CLAUDE.md`, no `.claude/`, no `.log/`, no `docs/` in that folder** — they live here.
-- Migration filenames are kept in sync with `supabase_migrations.schema_migrations` so a future
-  `supabase db push` doesn't re-apply them.
-
 ## Available agents & skills
 
 Sub-agents (`.claude/agents/`) are reusable helpers — route to them when useful, don't force it on a solo static site:
@@ -135,8 +89,8 @@ Sub-agents (`.claude/agents/`) are reusable helpers — route to them when usefu
 - **nerd** (nextjs-react-nerd-reviewer) — React/Next.js implementation, review, perf.
 - **hunter** (qa-test-hunter) — tests, security, edge cases. Now also RLS policy audits.
 - **papa** (product-manager) — scope / prioritization.
-- **chef** (db-chef) — **awake since 2026-08-28**: the lead engine has a real Postgres schema. Use for
-  schema/RLS/migration work on `vosk_leads`. Still irrelevant to the site, which has no database.
+- **chef** (db-chef) — Postgres schema / RLS / grants on the shared Supabase project: the
+  `demo_sales` seed and `cube_reader`. The site has no database; `qbo` has its own chef in its repo.
 
 Skills in `.claude/skills/` (design, front-end, QA, SEO, PM, etc.) are stack-agnostic — use them freely.
 
@@ -163,10 +117,8 @@ Skills in `.claude/skills/` (design, front-end, QA, SEO, PM, etc.) are stack-agn
 
 ### Git
 - After any code change, output git commands as a single copy-paste bash block. **Do not execute; do not touch the working tree.**
-- **⚠️ Two repos — never one commit across both.** Decide which repo each changed file belongs to,
-  then emit one `add` + `commit` + `push` block per repo, each under a plain-text line naming the repo
-  (**vosk.dev** / **vosk_leads**). `.log/` and `docs/` always ride with the site repo, even when the
-  work itself was in the leads folder.
+- **⚠️ Never one commit across two repos.** If a session also touches another repo (e.g. `rusloc/qbo`),
+  emit one `add` + `commit` + `push` block per repo, each under a plain-text line naming the repo.
 - **⛔ Never put a folder-change command in a git snippet** — no `cd`, no `pushd`, no `git -C`. The
   user runs each block from that repo's root themselves; a `cd` line only breaks the paste.
 ```bash
@@ -178,30 +130,22 @@ git push
 - Wrap file paths in double quotes.
 
 ### Branching / deploy
-- `main` → production on Vercel; PRs → preview deploys. **Both repos**, two separate Vercel projects.
+- `main` → production on Vercel; PRs → preview deploys.
 - Site runtime env: `NEXT_PUBLIC_SITE_URL`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL` — validated in `src/lib/env.ts` (build fails if missing).
-- Lead engine env: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` in the UI only.
-  `ANTHROPIC_API_KEY` and the Telegram pair are **Edge Function secrets**, not repo env;
-  `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` are auto-injected — never set them.
 
 ### Testing / verification
 - **Site**: run `pnpm typecheck && pnpm lint && pnpm build` before considering a change done. Manual /
   browser verification on the Vercel preview deploy (parity with production), not just `localhost`.
-- **Lead engine**: after any DDL, run MCP `get_advisors(security)` — it must come back **zero lints**.
-  Verify RLS by querying the REST API anonymously with the publishable key: **zero rows, not an error.**
-  **Do that against real rows** — an empty table returns `[]` whether RLS works or not, so insert a row
-  as `postgres`, re-query anonymously, then delete it.
-- Cron job history is `cron.job_run_details` — **and `succeeded` there only means the HTTP call was
-  queued.** On 2026-09-20 `enrich` failed for 36 hours (Anthropic credits) behind `succeeded` crons
-  and HTTP `200`s. Engine health is three reads, not one: (1) `cron.job_run_details` for non-`succeeded`;
-  (2) `net._http_response` — the **body's `ok` flag**, not the status code, ~6 h retention;
-  (3) `raw_postings where processed_at is not null and lead_id is null` — **must be 0**, and is the
-  only one of the three that would have caught it.
+- **Access checks on real rows.** An empty table returns `[]` whether a grant or RLS works or not —
+  prove a denial against data (`set role …` → `42501`), never against an empty relation.
+- **"Succeeded" is not health.** A scheduler's `succeeded` can mean only "the call was queued": on
+  2026-09-20 the lead engine's enrichment failed for 36 hours behind green runs. Check the rows that
+  should exist, not the job status.
 
 ## Logging (lightweight)
 
-**One trail for both projects, and it lives here in `D:\__VOSK__\.log\`.** The leads folder gets no
-log of its own — which repo a change landed in is a detail of the entry, not a reason to split the trail.
+**The trail lives in `.log/` at this repo's root.** Work in another repo (e.g. QBO) is logged in that
+repo's own trail; it appears here only when it touches the shared Supabase project.
 
 - `.log/coms/coms {yyyy-mm-dd}.md` — append a one-line entry per user request + brief response to today's file (create it if absent; one file per day, sibling to `.log/plan/` and `.log/daily/`). Tag `#decision` / `#idea` / `#bug` inline for grep. That's the whole routine — no daily/weekly/day-close ceremony unless the user asks to expand it.
 - **Derive counters, never increment them.** Ages and tallies ("Nth day untracked", "Nth board survived") must be computed from a stated origin date/commit each time they're written. A restated number is never re-derived and always drifts — it has three times in this trail.

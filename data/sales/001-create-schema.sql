@@ -4,10 +4,10 @@
 -- is SYNTHETIC and generated from this directory; no client data, and no personal data even
 -- synthetic — a customer is a code, a country and a segment.
 --
--- Target: schema `demo_sales` in Supabase project howpxpdnjjzdwqrgxkee — the lead engine's
--- project, which has no free sibling to move to. Isolation is by schema and by role: nothing
--- here touches `public`, the schema is NOT exposed to the Data API, and the only reader is
--- `cube_reader` (004-cube-role.sql).
+-- Target: schema `demo_sales` in Supabase project howpxpdnjjzdwqrgxkee, shared with the QBO
+-- P&L warehouse (schema `qbo`); the free plan has no sibling to move to. Isolation is by schema
+-- and by role: nothing here touches another schema, the schema is NOT exposed to the Data API,
+-- and the only reader is `cube_reader` (004-cube-role.sql).
 --
 -- Grain: one row per ORDER LINE. `order_id` rides on the fact as a degenerate dimension.
 --
@@ -19,8 +19,8 @@
 --   uuid / deleted_at / metadata jsonb / updated_at — those serve mutable OLTP entities.
 --                     This warehouse's only lifecycle is drop-and-rebuild.
 --
--- NOT a tracked migration (docs/08 §2, D2): applied via MCP `execute_sql`, so the lead
--- engine's `schema_migrations` history stays the lead engine's.
+-- NOT a tracked migration (docs/08 §2, D2): applied via MCP `execute_sql`, so the project's
+-- `schema_migrations` history stays the QBO warehouse's.
 --
 -- Idempotent: drops and rebuilds. That also drops cube_reader's grants and policies —
 -- re-run 004-cube-role.sql after every rebuild.

@@ -1,5 +1,10 @@
 # 08 — Online-sales showcase: Supabase → Cube → Tremor
 
+> **Update 2026-10-20: the lead engine was terminated.** Its `public` tables, crons and Edge
+> Functions are gone, and `pg_net` / `pg_cron` were dropped — so the §5 `net` residue is **closed**,
+> not accepted. The project's other tenant is now the QBO P&L warehouse (schema `qbo`, its own
+> roles; `cube_reader` has no access to it). Mentions of the lead engine below are history.
+
 > **Status 2026-09-21: PHASE 1 (data) built and verified · PHASE 2 (Cube) deployed by the owner at
 > `accessible-bonobo.aws-eu-central-1.cubecloudapp.dev` — reachable, `/cubesql` routed, **not yet
 > queried with a token** · PHASE 3 (site) built and verified end to end against a local mock of

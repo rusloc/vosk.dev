@@ -10,16 +10,10 @@
 --
 --     Running that line is also the acceptance of the residue documented below.
 --
--- ⚠️  RESIDUE THAT CANNOT BE CLOSED FROM INSIDE THIS PROJECT (docs/08 §5, proven 2026-09-21):
---     pg_net grants PUBLIC all privileges on net._http_response and net.http_request_queue,
---     and EXECUTE on net.http_get/post/delete. `postgres` is neither their owner nor holds
---     grant option, so it cannot revoke — and must not want to: the lead engine's three crons
---     run as `postgres` and reach net.http_post ONLY through that PUBLIC grant. A revoke that
---     worked would stop the engine.
---     So whoever holds this role's password can read ~6 h of cron response bodies and make
---     outbound HTTP calls from the database. It captures no secret: the bearer the crons send
---     is the anon/publishable key (vault: edge_invoke_key), public by design.
---     DO NOT "fix" this with `revoke ... on schema net from public`.
+-- RESIDUE — CLOSED 2026-10-20 (docs/08 §5): pg_net granted PUBLIC all privileges on the `net`
+--     schema, so this role could read cron response bodies and make outbound HTTP calls. The
+--     extension was dropped with the lead engine on 2026-10-20 and the grant went with it.
+--     Re-enabling pg_net brings the grant back — re-read docs/08 §5 first.
 
 do $$
 begin
@@ -32,7 +26,7 @@ $$;
 comment on role cube_reader is
     'Read-only reader of schema demo_sales for the Cube semantic layer (vosk.dev showcase). NOLOGIN until the owner sets a password. Must never be granted anything in public.';
 
--- A public demo shares a free-tier instance with three production crons. At ~3 queries a day
+-- A public demo shares a free-tier instance with the QBO warehouse. At ~3 queries a day
 -- none of this matters; if the design ever changes, it will.
 alter role cube_reader connection limit 5;
 alter role cube_reader set statement_timeout = '15s';

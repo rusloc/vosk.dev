@@ -6,9 +6,10 @@ import styles from "../blog/title-bar.module.css";
  * eyebrow, the badge and the controls stay put in ServiceCarousel; only this
  * moves. Fills the slide's height so the price pins to the bottom.
  *
- * `feature` is the subscription card: cream on maroon, and on desktop the price
- * moves to the right of the description at display size, the way the big card
- * has room for. Everywhere else the price sits under the description.
+ * `feature` is the subscription card: cream on maroon, and on desktop the title
+ * and the price move to the right of the description at display size, the
+ * title right-aligned just above the price, the way the big card has room for.
+ * Everywhere else the price sits under the description.
  */
 export type ServiceCardProps = {
   title: string;
@@ -29,15 +30,20 @@ export function ServiceCard({
     <div
       className={cn(
         "flex h-full flex-col",
-        feature && "lg:flex-row lg:items-end lg:justify-between lg:gap-10",
+        // Desktop feature: a grid, description on the left, title over price
+        // on the right. The wrapper below dissolves (`contents`) so the title
+        // and the description can sit in different columns.
+        feature &&
+          "lg:grid lg:grid-cols-[minmax(0,28rem)_auto] lg:grid-rows-[1fr_auto] lg:justify-between lg:gap-x-10",
       )}
     >
-      <div className={cn(feature && "lg:max-w-md lg:self-start")}>
+      <div className={cn(feature && "lg:contents")}>
         <h3
           className={cn(
             "pl-[0.6em] text-2xl font-semibold tracking-tight",
             "text-foreground",
-            feature && "lg:text-5xl",
+            feature &&
+              "[--lead:0.6em] lg:col-start-2 lg:row-start-1 lg:self-end lg:pr-[0.6em] lg:pl-0 lg:text-right lg:text-5xl lg:[--lead:2em]",
           )}
         >
           {/* Same blurred orange highlight as the blog and showcase titles,
@@ -45,12 +51,14 @@ export function ServiceCard({
               each side (title-bar.module.css); the heading is indented by that
               much, so the bar starts on the card's content column — flush with
               the eyebrow and the description — instead of running into the
-              slide's clip.
+              slide's clip. Right-aligned on the desktop feature card, the
+              indent moves to the right, flush with the price.
 
               On the maroon card the bar's transparent end is maroon, and dark
-              text on maroon is unreadable, so there the fade is over within the
-              overhang (0.4em, plus the blur) and the text sits on the solid
-              orange: 6.7:1 against the foreground, ≥5:1 under the first glyph.
+              text on maroon is unreadable (1.3:1), so there the bar reaches
+              further left (--lead: 0.6em, 2em on desktop where the right
+              column has room) and the fade runs out before the text starts:
+              the first glyph sits on 75% orange (5:1), the last on 90% (6.7:1).
               Inline, because the module's unlayered rule beats any utility. */}
           <span className="relative inline-block">
             <span
@@ -59,8 +67,9 @@ export function ServiceCard({
               style={
                 feature
                   ? {
+                      left: "calc(-1 * var(--lead))",
                       background:
-                        "linear-gradient(to right, transparent, rgba(var(--accent-rgb), 0.9) 0.4em)",
+                        "linear-gradient(to right, transparent, rgba(var(--accent-rgb), 0.75) var(--lead), rgba(var(--accent-rgb), 0.9))",
                     }
                   : undefined
               }
@@ -72,7 +81,7 @@ export function ServiceCard({
           className={cn(
             "mt-3 text-sm leading-relaxed",
             feature
-              ? "text-cream/75 lg:mt-4 lg:text-base"
+              ? "text-cream/75 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:mt-0 lg:self-end lg:text-base"
               : "text-muted-foreground",
           )}
         >
@@ -83,7 +92,8 @@ export function ServiceCard({
       <div
         className={cn(
           "mt-auto flex items-baseline gap-2 pt-4",
-          feature && "lg:shrink-0 lg:flex-col lg:items-end lg:gap-1 lg:pt-0",
+          feature &&
+            "lg:col-start-2 lg:row-start-2 lg:flex-col lg:items-end lg:gap-1 lg:pt-3",
         )}
       >
         <span

@@ -35,16 +35,22 @@ export function ServiceCard({
       <div className={cn(feature && "lg:max-w-md lg:self-start")}>
         <h3
           className={cn(
-            "text-2xl font-semibold tracking-tight",
+            "pl-[0.6em] text-2xl font-semibold tracking-tight",
             "text-foreground",
             feature && "lg:text-5xl",
           )}
         >
           {/* Same blurred orange highlight as the blog and showcase titles,
-              hugging the title text. On the maroon card its transparent end
-              would leave dark text on maroon, so there it turns cream within
-              the first 15% (before the text starts) — the text stays dark and
-              readable along the whole bar, and the bar still fades in.
+              hugging the title text. The bar overhangs the text by 0.6em on
+              each side (title-bar.module.css); the heading is indented by that
+              much, so the bar starts on the card's content column — flush with
+              the eyebrow and the description — instead of running into the
+              slide's clip.
+
+              On the maroon card the bar's transparent end is maroon, and dark
+              text on maroon is unreadable, so there the fade is over within the
+              overhang (0.4em, plus the blur) and the text sits on the solid
+              orange: 6.7:1 against the foreground, ≥5:1 under the first glyph.
               Inline, because the module's unlayered rule beats any utility. */}
           <span className="relative inline-block">
             <span
@@ -54,7 +60,7 @@ export function ServiceCard({
                 feature
                   ? {
                       background:
-                        "linear-gradient(to right, transparent, var(--color-cream) 15%, rgba(var(--accent-rgb), 0.9))",
+                        "linear-gradient(to right, transparent, rgba(var(--accent-rgb), 0.9) 0.4em)",
                     }
                   : undefined
               }

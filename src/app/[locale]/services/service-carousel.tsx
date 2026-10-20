@@ -166,8 +166,8 @@ export function ServiceCarousel({
 
         <div
           className={cn(
-            "mt-5 flex-1 touch-pan-y overflow-hidden",
-            feature && "lg:mt-7",
+            "flex-1 touch-pan-y overflow-hidden",
+            feature && "lg:mt-2",
             bleed,
           )}
           onPointerDown={onDown}
@@ -185,12 +185,17 @@ export function ServiceCarousel({
               <div
                 key={i}
                 className={cn(
-                  "h-full w-full shrink-0 basis-full overflow-hidden",
+                  "h-full w-full shrink-0 basis-full overflow-hidden pt-5",
                   pad,
                 )}
                 // Clipped, so a title bar's blur can't peek in from the
-                // neighbouring slide. The clone is a visual stand-in: keep its
-                // duplicate heading out of the accessibility tree.
+                // neighbouring slide. The top padding (taken from the window's
+                // margin, so the row keeps its height) is the room that same
+                // blur needs above the slide's own title: the bar overhangs the
+                // heading by 0.1em and blurs 7.5px past that, and the heading
+                // is the first thing in the slide. The clone is a visual
+                // stand-in: keep its duplicate heading out of the
+                // accessibility tree.
                 aria-hidden={i === tiers.length || undefined}
                 inert={i === tiers.length}
               >

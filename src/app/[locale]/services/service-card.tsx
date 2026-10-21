@@ -6,10 +6,15 @@ import styles from "../blog/title-bar.module.css";
  * eyebrow, the badge and the controls stay put in ServiceCarousel; only this
  * moves. Fills the slide's height so the price pins to the bottom.
  *
- * `feature` is the subscription card: cream on maroon, and on desktop the title
- * and the price move to the right of the description at display size, the
- * title right-aligned just above the price, the way the big card has room for.
- * Everywhere else the price sits under the description.
+ * The title is right-aligned on every card, over a blurred orange bar that
+ * spans the card edge to edge: `titleBleed` is the slide's own negative margin
+ * + padding, so the heading box is the card's full width and the text still
+ * lines up with the content column.
+ *
+ * `feature` is the subscription card: cream on maroon. On desktop the title
+ * runs across both columns at display size, with the description on the left
+ * and the price on the right under it. Everywhere else the price sits under
+ * the description.
  */
 export type ServiceCardProps = {
   title: string;
@@ -17,6 +22,18 @@ export type ServiceCardProps = {
   price: string;
   unit: string;
   feature?: boolean;
+  titleBleed: string;
+};
+
+// Same orange as the blog bars, fading in from the card's own background
+// (transparent) at its left edge. The text is right-aligned, so it always sits
+// in the solid end: on the maroon card dark text on bare maroon is 1.3:1, and
+// from 45% on the bar is ≥ 75% orange (≥ 5:1), wider than any title.
+const BAR_STYLE = {
+  inset: "-0.1em 0",
+  borderRadius: 0,
+  background:
+    "linear-gradient(to right, transparent, rgba(var(--accent-rgb), 0.75) 45%, rgba(var(--accent-rgb), 0.9))",
 };
 
 export function ServiceCard({
@@ -25,14 +42,15 @@ export function ServiceCard({
   price,
   unit,
   feature,
+  titleBleed,
 }: ServiceCardProps) {
   return (
     <div
       className={cn(
         "flex h-full flex-col",
-        // Desktop feature: a grid, description on the left, title over price
-        // on the right. The wrapper below dissolves (`contents`) so the title
-        // and the description can sit in different columns.
+        // Desktop feature: a grid, the title across both columns, then the
+        // description on the left and the price on the right. The wrapper
+        // below dissolves (`contents`) so all three are grid items.
         feature &&
           "lg:grid lg:grid-cols-[minmax(0,28rem)_auto] lg:grid-rows-[1fr_auto] lg:justify-between lg:gap-x-10",
       )}
@@ -40,48 +58,24 @@ export function ServiceCard({
       <div className={cn(feature && "lg:contents")}>
         <h3
           className={cn(
-            "pl-[0.6em] text-2xl font-semibold tracking-tight",
-            "text-foreground",
-            feature &&
-              "[--lead:0.6em] lg:col-start-2 lg:row-start-1 lg:self-end lg:pr-[0.6em] lg:pl-0 lg:text-right lg:text-5xl lg:[--lead:2em]",
+            "text-foreground relative text-right text-2xl font-semibold tracking-tight",
+            titleBleed,
+            feature && "lg:col-span-2 lg:row-start-1 lg:self-end lg:text-5xl",
           )}
         >
-          {/* Same blurred orange highlight as the blog and showcase titles,
-              hugging the title text. The bar overhangs the text by 0.6em on
-              each side (title-bar.module.css); the heading is indented by that
-              much, so the bar starts on the card's content column — flush with
-              the eyebrow and the description — instead of running into the
-              slide's clip. Right-aligned on the desktop feature card, the
-              indent moves to the right, flush with the price.
-
-              On the maroon card the bar's transparent end is maroon, and dark
-              text on maroon is unreadable (1.3:1), so there the bar reaches
-              further left (--lead: 0.6em, 2em on desktop where the right
-              column has room) and the fade runs out before the text starts:
-              the first glyph sits on 75% orange (5:1), the last on 90% (6.7:1).
-              Inline, because the module's unlayered rule beats any utility. */}
-          <span className="relative inline-block">
-            <span
-              aria-hidden="true"
-              className={styles.titleBar}
-              style={
-                feature
-                  ? {
-                      left: "calc(-1 * var(--lead))",
-                      background:
-                        "linear-gradient(to right, transparent, rgba(var(--accent-rgb), 0.75) var(--lead), rgba(var(--accent-rgb), 0.9))",
-                    }
-                  : undefined
-              }
-            />
-            <span className="relative">{title}</span>
-          </span>
+          {/* Inline, because the module's unlayered rule beats any utility. */}
+          <span
+            aria-hidden="true"
+            className={styles.titleBar}
+            style={BAR_STYLE}
+          />
+          <span className="relative">{title}</span>
         </h3>
         <p
           className={cn(
             "mt-3 text-sm leading-relaxed",
             feature
-              ? "text-cream/75 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:mt-0 lg:self-end lg:text-base"
+              ? "text-cream/75 lg:col-start-1 lg:row-start-2 lg:mt-0 lg:self-end lg:text-base"
               : "text-muted-foreground",
           )}
         >

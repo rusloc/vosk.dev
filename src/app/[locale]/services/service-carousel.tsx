@@ -205,6 +205,7 @@ export function ServiceCarousel({
                   price={tier.price}
                   unit={tier.unit}
                   feature={feature}
+                  titleBleed={cn(bleed, pad)}
                 />
               </div>
             ))}

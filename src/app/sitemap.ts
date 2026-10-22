@@ -7,7 +7,7 @@ import { locales, type Locale } from "@/lib/i18n/config";
 // Single manual lastmod for the static marketing routes. Bump when content
 // meaningfully changes — a per-request `new Date()` here is a lastmod lie that
 // trains crawlers to ignore the signal. Blog posts use their real frontmatter date.
-const SITE_UPDATED = new Date("2026-08-02");
+const SITE_UPDATED = new Date("2026-10-22");
 
 type Page = {
   path: string;
@@ -19,13 +19,20 @@ type Page = {
 };
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  // The blog index changes with every post, so it is as fresh as the newest one.
+  const newestPost = getAllPosts()[0];
   // Logical, locale-agnostic paths — each is emitted once per locale below.
   const pages: Page[] = [
     { path: "/", lastModified: SITE_UPDATED, priority: 1 },
     { path: "/work", lastModified: SITE_UPDATED },
     { path: "/services", lastModified: SITE_UPDATED },
     { path: "/contact", lastModified: SITE_UPDATED },
-    { path: "/blog", lastModified: SITE_UPDATED },
+    {
+      path: "/blog",
+      lastModified: newestPost
+        ? new Date(newestPost.updated ?? newestPost.date)
+        : SITE_UPDATED,
+    },
     ...getIndexableShowcaseSlugs().map((slug) => ({
       path: `/work/${slug}`,
       lastModified: SITE_UPDATED,

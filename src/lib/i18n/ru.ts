@@ -240,6 +240,7 @@ export const ru: Dictionary = {
     backToShowcase: "Назад в портфолио",
     openLiveDashboard: "Открыть живой дашборд",
     openLiveReport: "Открыть живой отчёт",
+    writeUp: "Разбор",
     dashboardLoading: "Загружаем живой дашборд…",
     dashboardError:
       "Не удалось загрузить дашборд. Попробуйте обновить страницу.",

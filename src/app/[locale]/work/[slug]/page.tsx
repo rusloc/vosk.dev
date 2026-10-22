@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/back-link";
 import { Container } from "@/components/container";
@@ -6,6 +7,7 @@ import { JsonLd } from "@/components/json-ld";
 import { SalesDashboardLazy } from "@/components/sales-dashboard-lazy";
 import { SupersetEmbed } from "@/components/superset-embed";
 import { cn } from "@/lib/cn";
+import { getPostBySlug } from "@/lib/content";
 import { buildMetadata } from "@/lib/metadata";
 import { getSalesDashboardData } from "@/lib/sales-dashboard";
 import { breadcrumbGraph, showcaseGraph } from "@/lib/structured-data";
@@ -49,6 +51,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: showcase.summary,
     path: `/work/${slug}`,
     locale: l,
+    // The showcase's own card from ./opengraph-image.tsx, as posts do: showcase links
+    // are what profiles and outreach share, and the generic card says nothing.
+    images: [
+      {
+        url: `/work/${slug}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: showcase.title,
+      },
+    ],
     // Reachable but unindexed while the write-up is still placeholder copy —
     // see the `noindex` flag in lib/work.ts.
     ...(showcase.noindex
@@ -67,6 +79,10 @@ export default async function ShowcasePage({ params }: Props) {
 
   const showcase = localize(source, l);
   const { title, platform, details } = showcase;
+  // The long-form story. Null for a draft or a missing post, so no dead link ships.
+  const article = showcase.articleSlug
+    ? getPostBySlug(showcase.articleSlug)
+    : null;
   const trail = [
     { name: t.breadcrumbHome, path: "/" },
     { name: t.title, path: "/work" },
@@ -86,6 +102,19 @@ export default async function ShowcasePage({ params }: Props) {
         {details.map((paragraph, i) => (
           <p key={i}>{paragraph}</p>
         ))}
+        {/* The report is an iframe crawlers can't read; the write-up is the page's
+            real text, so it gets a link with its title as the anchor. */}
+        {article && (
+          <p>
+            {t.writeUp}:{" "}
+            <Link
+              href={localizedPath(l, `/blog/${article.slug}`)}
+              className="text-primary font-medium hover:underline"
+            >
+              {article.title}
+            </Link>
+          </p>
+        )}
       </div>
     </section>
   );
@@ -121,6 +150,7 @@ export default async function ShowcasePage({ params }: Props) {
             summary: showcase.summary,
             platform,
             platformLabel: PLATFORM_LABEL[platform],
+            articleSlug: article?.slug,
           })}
         />
       )}

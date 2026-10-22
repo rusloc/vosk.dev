@@ -279,6 +279,7 @@ export function showcaseGraph(
     summary: string;
     platform: string;
     platformLabel: string;
+    articleSlug?: string; // only when the page links the write-up
   },
 ): Record<string, unknown> {
   const url = absoluteUrl(locale, `/work/${showcase.slug}`);
@@ -289,6 +290,7 @@ export function showcaseGraph(
     name: showcase.title,
     description: showcase.summary,
     url,
+    image: `${url}/opengraph-image`,
     inLanguage: IN_LANGUAGE,
     creator: { "@id": PERSON_ID },
     publisher: { "@id": ORG_ID },
@@ -297,5 +299,13 @@ export function showcaseGraph(
     keywords: [showcase.platformLabel, "dashboard", "business intelligence"].join(
       ", ",
     ),
+    ...(showcase.articleSlug
+      ? {
+          subjectOf: {
+            "@type": "BlogPosting",
+            url: absoluteUrl(locale, `/blog/${showcase.articleSlug}`),
+          },
+        }
+      : {}),
   };
 }

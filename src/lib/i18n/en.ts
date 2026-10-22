@@ -253,6 +253,7 @@ export const en = {
     backToShowcase: "Back to showcase",
     openLiveDashboard: "Open live dashboard",
     openLiveReport: "Open the live report",
+    writeUp: "Write-up",
     // Guest-token dashboards (Superset) mount client-side, so they need a wait state
     // and a visible failure — an embed that quietly renders nothing reads as a bug.
     dashboardLoading: "Loading the live dashboard…",

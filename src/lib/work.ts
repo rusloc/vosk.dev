@@ -25,7 +25,7 @@ type ShowcaseBase<Text, Paragraphs> = {
   slug: string;
   title: Text;
   summary: Text; // concise — the list-card blurb
-  details: Paragraphs; // paragraphs shown on the detail page, above the report
+  details: Paragraphs; // the detail page's text, under the button that opens the report
   metric?: string; // headline figure for the list-card report illustration (e.g. "$4.2M")
   articleSlug?: string; // optional /blog/<slug> write-up linked from the detail page
   // Reachable, but kept out of the index: an entry whose copy still says it's a
@@ -132,17 +132,20 @@ const allShowcases: Showcase[] = [
       "https://app.powerbi.com/view?r=eyJrIjoiY2M3YzU2MjAtNjdlOC00NGU2LThlMTItMzc2MTE2Yjk0MDlkIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9&embedImagePlaceholder=true",
     href: "https://app.powerbi.com/view?r=eyJrIjoiY2M3YzU2MjAtNjdlOC00NGU2LThlMTItMzc2MTE2Yjk0MDlkIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9&embedImagePlaceholder=true",
     articleSlug: "power-bi-time-utilization-funnel",
-    // Two short lines by design: the detail page is a one-screen layout where the
-    // live report is the hero, so `details` is a caption, not a case study. The
-    // long-form story lives in the linked `articleSlug` write-up.
+    // The page's own text (the report is an iframe in a popup, opaque to crawlers):
+    // short on purpose. The long-form story is the linked `articleSlug` write-up.
     details: {
       en: [
-        "Large coal mining company truck monitor.",
-        "The 24/7 clock, deducted category by category down to effective work time.",
+        "A fleet monitor for a large coal-mining company. The question behind it: of every hour the heavy machines exist, how many go into actual work, and where does the rest go?",
+        "The report answers it as a top-down waterfall funnel. It starts at the full 24/7 clock, 100% of available time, and deducts maintenance and every other idle category in turn, each slice shown as a share of the total. Two breakpoints mark the stages that matter: \"Ready for work\", the time left once major maintenance is done, and \"Effective work time\", the time the machine spent on its main job.",
+        "A switcher flips between linear utilization and an average weighted by each excavator's ladle volume, so a big machine standing idle costs what it should. Actuals and two plans, weekly and monthly, run through the same category hierarchy.",
+        "Built in Power BI on a plain stacked bar chart and a handful of DAX measures, with no custom visual. All figures are altered to protect the client's data.",
       ],
       ru: [
-        "Монитор парка техники крупной угледобывающей компании.",
-        "Круглосуточное время, вычитаемое категория за категорией — до эффективного рабочего времени.",
+        "Монитор парка техники крупной угледобывающей компании. Вопрос, на который он отвечает: сколько из каждого часа тяжёлая техника реально работает и куда уходит остальное время?",
+        "Ответ — воронка-водопад сверху вниз. Она начинается с полного круглосуточного времени, 100% доступного, и по очереди вычитает обслуживание и все остальные категории простоев; каждый срез показан как доля от общего. Две контрольные точки отмечают важные этапы: «Готов к работе» — время, оставшееся после крупного обслуживания, и «Эффективное рабочее время» — время, которое машина занималась основной работой.",
+        "Переключатель меняет линейный расчёт на средневзвешенный по объёму ковша каждого экскаватора, чтобы простой большой машины стоил столько, сколько должен. Факт и два плана, недельный и месячный, проходят через одну и ту же иерархию категорий.",
+        "Сделано в Power BI на обычной линейчатой диаграмме с накоплением и нескольких мерах DAX, без кастомных визуалов. Все цифры изменены, чтобы защитить данные клиента.",
       ],
     },
   },

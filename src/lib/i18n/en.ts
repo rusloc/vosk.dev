@@ -251,7 +251,8 @@ export const en = {
     },
     empty: "Case studies coming soon.",
     backToShowcase: "Back to showcase",
-    openLiveDashboard: "Open live dashboard",
+    openInNewTab: "Open in a new tab",
+    closeReport: "Close the report",
     openLiveReport: "Open the live report",
     writeUp: "Write-up",
     // Guest-token dashboards (Superset) mount client-side, so they need a wait state

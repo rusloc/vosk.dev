@@ -7,6 +7,17 @@
 > history keeps them). Its companies list survives in `.log/report/2026-10-20-lead-engine-companies-export.html`.
 > Leads are tracked by hand now; there is no second project driven from this folder._
 
+## Scope — this repo and its agent are a pair (decided 2026-10-22)
+
+- **The agent's duty is vosk.dev and help with client acquisition** (profiles, outreach copy,
+  the funnel). Nothing else is driven from here.
+- **Don't read, check or log other repos** (`C:\__PBI\QBO`, `C:\__PBI\Rayfin`, anything else) unless
+  the owner names a specific folder. Their work, agents, skills and trails stay there.
+- **Artifacts arrive through a `.sync` folder** the owner points to: report embeds, screenshots,
+  data snapshots, instruction `.md` files. Take what's there and apply it in this repo; never write
+  back into it or into the repo that produced it.
+- Agents and skills for other repos' work (e.g. Rayfin / Fabric Apps) don't live in this repo's `.claude/`.
+
 ### Supabase — one project, two tenants, separated by schema and role
 
 One project, ref **`howpxpdnjjzdwqrgxkee`**, region `eu-west-1`, org `sudo.opc` (free plan),

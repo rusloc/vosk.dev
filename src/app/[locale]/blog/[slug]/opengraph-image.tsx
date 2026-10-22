@@ -1,11 +1,11 @@
 import { ImageResponse } from "next/og";
-import { getPostBySlug, getPostSlugs } from "@/lib/content";
+import { getAllPosts, getPostBySlug } from "@/lib/content";
 import { siteConfig } from "@/lib/site";
 import { locales } from "@/lib/i18n/config";
 
 export function generateStaticParams() {
   return locales.flatMap((locale) =>
-    getPostSlugs().map((slug) => ({ locale, slug })),
+    getAllPosts().map(({ slug }) => ({ locale, slug })),
   );
 }
 

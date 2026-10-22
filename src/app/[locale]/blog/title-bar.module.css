@@ -3,7 +3,7 @@
    text sits on top, unblurred; the bar is a soft highlight that fades in →right. */
 .titleBar {
   position: absolute;
-  inset: -0.1em -0.6em;
+  inset: -0.1em -0.5em; /* 0.5em < the 16 px phone gutter at text-3xl */
   z-index: 0;
   border-radius: 0 8px 8px 0; /* right-rounded, same as the home bars */
   background: linear-gradient(

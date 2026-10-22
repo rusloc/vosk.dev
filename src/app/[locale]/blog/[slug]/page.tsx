@@ -17,7 +17,6 @@ import { blogPostingGraph, breadcrumbGraph } from "@/lib/structured-data";
 import {
   getAllPosts,
   getPostBySlug,
-  getPostSlugs,
   getRelatedPosts,
 } from "@/lib/content";
 import {
@@ -33,7 +32,7 @@ type Props = { params: Promise<{ locale: string; slug: string }> };
 
 export function generateStaticParams() {
   return locales.flatMap((locale) =>
-    getPostSlugs().map((slug) => ({ locale, slug })),
+    getAllPosts().map(({ slug }) => ({ locale, slug })),
   );
 }
 

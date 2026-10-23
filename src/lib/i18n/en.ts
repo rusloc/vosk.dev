@@ -240,12 +240,10 @@ export const en = {
     breadcrumbHome: "Home",
     aboutHeading: "About this project",
     metaDescription:
-      "Client dashboards written up as case studies — each with the story and a live Power BI or Apache Superset report you can explore.",
+      "BI dashboard case studies with live reports to explore: client work with the figures altered and demos on synthetic data, built in {platforms}.",
+    // The platform list after `lead` is built from the showcases on the site (lib/work.ts).
     intro: {
-      lead: "Real client dashboards, written up as short case studies. Open any one for the story and the live report — filter and drill down exactly as the client does. Built in ",
-      powerbi: "Power BI",
-      and: " and ",
-      superset: "Apache Superset",
+      lead: "Dashboards written up as short case studies: client work with the figures altered, and demos built on synthetic data. Open any one for the story and the live report — filter and drill down as its users do. Built in ",
       tail: ".",
     },
     empty: "Case studies coming soon.",

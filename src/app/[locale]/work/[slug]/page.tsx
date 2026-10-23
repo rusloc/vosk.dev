@@ -91,7 +91,7 @@ export default async function ShowcasePage({ params }: Props) {
     { name: title },
   ];
 
-  const reportTitle = `${title} — live ${PLATFORM_LABEL[platform]} dashboard`;
+  const reportTitle = `${title} — ${PLATFORM_LABEL[platform]}`;
 
   return (
     <Container className="py-6">

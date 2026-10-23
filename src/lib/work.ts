@@ -260,6 +260,11 @@ export const showcases: Showcase[] = allShowcases.filter((s) => {
   }
 });
 
+/** Platform labels of the showcases on the site, in list order — the /work intro names these. */
+export function getShowcasePlatformLabels(): string[] {
+  return [...new Set(showcases.map((s) => PLATFORM_LABEL[s.platform]))];
+}
+
 export function getShowcaseSlugs(): string[] {
   return showcases.map((s) => s.slug);
 }

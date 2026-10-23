@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/container";
 import { PageHeader } from "@/components/page-header";
 import { buildMetadata } from "@/lib/metadata";
-import { localize, showcases } from "@/lib/work";
+import { getShowcasePlatformLabels, localize, showcases } from "@/lib/work";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { ShowcaseCard } from "./showcase-card";
@@ -14,9 +14,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const l = (isLocale(locale) ? locale : "en") as Locale;
   const t = getDictionary(l).work;
+  const platforms = new Intl.ListFormat(l, { type: "conjunction" }).format(
+    getShowcasePlatformLabels(),
+  );
   return buildMetadata({
     title: t.metaTitle,
-    description: t.metaDescription,
+    description: t.metaDescription.replace("{platforms}", platforms),
     path: "/work",
     locale: l,
   });
@@ -26,6 +29,11 @@ export default async function WorkPage({ params }: Props) {
   const { locale } = await params;
   const l = (isLocale(locale) ? locale : "en") as Locale;
   const t = getDictionary(l).work;
+  // The intro names the platforms of the showcases actually listed, so it can't drift
+  // from the cards (a hidden Superset entry once left it promising Superset).
+  const platforms = new Intl.ListFormat(l, {
+    type: "conjunction",
+  }).formatToParts(getShowcasePlatformLabels());
 
   return (
     <Container className="py-10 sm:py-12">
@@ -33,13 +41,15 @@ export default async function WorkPage({ params }: Props) {
       <div className="flex flex-col lg:min-h-[660px]">
         <PageHeader title={t.title}>
           {t.intro.lead}
-          <strong className="text-foreground font-medium">
-            {t.intro.powerbi}
-          </strong>
-          {t.intro.and}
-          <strong className="text-foreground font-medium">
-            {t.intro.superset}
-          </strong>
+          {platforms.map((part, i) =>
+            part.type === "element" ? (
+              <strong key={i} className="text-foreground font-medium">
+                {part.value}
+              </strong>
+            ) : (
+              part.value
+            ),
+          )}
           {t.intro.tail}
         </PageHeader>
 

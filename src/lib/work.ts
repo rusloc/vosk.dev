@@ -14,12 +14,14 @@ import type { Locale } from "./i18n/config";
  *                short-lived guest token per viewer (see lib/superset.ts).
  *  - Cube      → not an embed at all: the page queries Cube server-side and draws the
  *                dashboard itself with Tremor charts (docs/08-cube-sales-showcase.md).
+ *  - JS        → not an embed either: a report built in this repo (components/pnl) that loads
+ *                static Parquet files and computes every number in the browser (docs/pnl/).
  *
  * Server-only in effect: lib/cube.ts is, and this imports it. Every importer is a Server
  * Component, a Route Handler or the sitemap — a client component reaching for this file
  * now fails the build, which is the right answer.
  */
-export type ShowcasePlatform = "power-bi" | "superset" | "cube";
+export type ShowcasePlatform = "power-bi" | "superset" | "cube" | "js";
 
 type ShowcaseBase<Text, Paragraphs> = {
   slug: string;
@@ -54,7 +56,9 @@ type ShowcaseOf<Text, Paragraphs> =
     })
   // No fields of its own: there is one Cube dashboard and the detail page renders it by
   // name. A report id earns its place when a second one exists.
-  | (ShowcaseBase<Text, Paragraphs> & { platform: "cube" });
+  | (ShowcaseBase<Text, Paragraphs> & { platform: "cube" })
+  // Same: one report, rendered by name.
+  | (ShowcaseBase<Text, Paragraphs> & { platform: "js" });
 
 /**
  * A locale the site no longer publishes but whose copy is kept in place. Russian
@@ -97,6 +101,7 @@ export function localize(s: Showcase, locale: Locale): LocalizedShowcase {
     case "superset":
       return { ...base, platform: s.platform, embedId: s.embedId };
     case "cube":
+    case "js":
       return { ...base, platform: s.platform };
   }
 }
@@ -105,6 +110,7 @@ export const PLATFORM_LABEL: Record<ShowcasePlatform, string> = {
   "power-bi": "Power BI",
   superset: "Superset",
   cube: "Cube + Tremor",
+  js: "Custom JS",
 };
 
 /** Placeholder marker — an entry still carrying this is not publishable. */
@@ -116,6 +122,34 @@ const UNSET_EMBED_ID = "REPLACE-WITH-EMBED-UUID";
  * actual story — goal → data → what the dashboard changed.
  */
 const allShowcases: Showcase[] = [
+  {
+    slug: "unified-management-pnl",
+    platform: "js",
+    title: {
+      en: "Consolidated management P&L dashboard",
+      ru: "Консолидированный управленческий P&L",
+    },
+    summary: {
+      en: "Budget vs actual for two companies and the consolidated group: variance statement, revenue bridge, key figures and profitability, built in custom JavaScript.",
+      ru: "Бюджет против факта для двух компаний и консолидированной группы: отчёт об отклонениях, мост выручки, ключевые показатели и рентабельность — на собственном JavaScript.",
+    },
+    metric: "$3.97B",
+    // The page's text: what the report does, short on purpose. Spec and build notes: docs/pnl/.
+    details: {
+      en: [
+        "A management P&L for a two-company group: a consumer-goods business, a SaaS business, and the consolidated group, where the fees one company bills the other are eliminated. One statement layout serves all three, so every company reads the same way.",
+        "Four views. The P&L statement compares actual with budget and prior year line by line, with the full-year budget and latest estimate alongside. Key figures put twelve KPIs on one screen. Analysis walks net revenue from budget to actual (volume, price / mix and FX) and lists the eight largest variances. Profitability breaks margins down by region, channel, category or segment.",
+        "Filters cover period, versions, reporting currency, constant currency and slices. When a slice is chosen, costs that are not booked to slices are shared out by net revenue, and the report says so.",
+        "No BI tool and no backend: the browser loads three compressed data files and a TypeScript engine computes every number, reconciled to the source data's 552 control totals. The figures are synthetic.",
+      ],
+      ru: [
+        "Управленческий P&L группы из двух компаний: бизнес потребительских товаров, SaaS-бизнес и консолидированная группа, в которой платежи одной компании другой элиминируются. Один макет отчёта для всех трёх, поэтому каждая компания читается одинаково.",
+        "Четыре представления. Отчёт о прибылях и убытках сравнивает факт с бюджетом и прошлым годом построчно, рядом — годовой бюджет и последний прогноз. Ключевые показатели — двенадцать KPI на одном экране. Анализ раскладывает путь выручки от бюджета к факту (объём, цена / микс и курсы) и показывает восемь крупнейших отклонений. Рентабельность раскладывает маржу по регионам, каналам, категориям или сегментам.",
+        "Фильтры: период, версии, валюта отчётности, постоянный курс и срезы. Когда выбран срез, расходы, которые на срезы не разносятся, распределяются по доле выручки, и отчёт об этом говорит.",
+        "Без BI-инструмента и без бэкенда: браузер загружает три сжатых файла данных, а движок на TypeScript считает каждое число и сверяется с 552 контрольными итогами исходных данных. Цифры синтетические.",
+      ],
+    },
+  },
   {
     slug: "mining-time-utilization",
     platform: "power-bi",
@@ -137,7 +171,7 @@ const allShowcases: Showcase[] = [
     details: {
       en: [
         "A fleet monitor for a large coal-mining company. The question behind it: of every hour the heavy machines exist, how many go into actual work, and where does the rest go?",
-        "The report answers it as a top-down waterfall funnel. It starts at the full 24/7 clock, 100% of available time, and deducts maintenance and every other idle category in turn, each slice shown as a share of the total. Two breakpoints mark the stages that matter: \"Ready for work\", the time left once major maintenance is done, and \"Effective work time\", the time the machine spent on its main job.",
+        'The report answers it as a top-down waterfall funnel. It starts at the full 24/7 clock, 100% of available time, and deducts maintenance and every other idle category in turn, each slice shown as a share of the total. Two breakpoints mark the stages that matter: "Ready for work", the time left once major maintenance is done, and "Effective work time", the time the machine spent on its main job.',
         "A switcher flips between linear utilization and an average weighted by each excavator's ladle volume, so a big machine standing idle costs what it should. Actuals and two plans, weekly and monthly, run through the same category hierarchy.",
         "Built in Power BI on a plain stacked bar chart and a handful of DAX measures, with no custom visual. All figures are altered to protect the client's data.",
       ],
@@ -185,18 +219,23 @@ const allShowcases: Showcase[] = [
       ru: "Выручка, заказы, маржа и структура каналов интернет-магазина — схема «звезда» в Postgres, меры, один раз определённые в семантическом слое Cube, и собственный фронтенд на Tremor вместо BI-инструмента.",
     },
     metric: "$4.77M",
+    articleSlug: "your-own-bi-front-end-with-cube",
     // Until the owner has signed off the write-up (docs/08 §9, phase 4).
     noindex: true,
-    // Not rendered: since 09-27 the Cube page shows its header only (page.tsx). Kept
-    // because the union requires it and the copy may return.
+    // The page's text since 10-22, when the dashboard moved into the popup like every
+    // other showcase. Facts from docs/08 §7, the as-built dashboard.
     details: {
       en: [
-        "Postgres star schema → Cube semantic layer → this page. Every figure is a governed measure — revenue, orders and margin are defined once in the model, not re-derived per chart.",
-        "Synthetic data, real stack. The page queries Cube on the server and caches the result for a day, so it shows governed numbers, not a live feed.",
+        "A sales dashboard for an online shop, built without a BI tool: revenue, profit, orders and margin, the monthly trend, the top five categories or countries, and sales by channel.",
+        'The data sits in a Postgres star schema. A Cube semantic layer defines each measure once, and every chart asks Cube for it, so two charts can\'t disagree on what "margin" means. Margin is recomputed from summed revenue and profit at every level, never summed itself.',
+        "The page queries Cube on the server, three queries and 240 rows, and draws the charts with Tremor on React. The browser never sees the database or Cube's credentials. Results are cached for a day: governed numbers, not a live feed.",
+        "The data is synthetic, a generated sales history, so no client figures are shown.",
       ],
       ru: [
-        "Схема «звезда» в Postgres → семантический слой Cube → эта страница. Каждая цифра — управляемая мера: выручка, заказы и маржа определены один раз в модели, а не пересчитываются в каждом графике.",
-        "Данные синтетические, стек настоящий. Страница запрашивает Cube на сервере и кэширует результат на сутки — это управляемые показатели, а не поток в реальном времени.",
+        "Дашборд продаж интернет-магазина, собранный без BI-инструмента: выручка, прибыль, заказы и маржа, помесячная динамика, топ-5 категорий или стран и продажи по каналам.",
+        "Данные лежат в схеме «звезда» в Postgres. Семантический слой Cube определяет каждую меру один раз, и каждый график берёт её из Cube, поэтому два графика не могут по-разному понимать «маржу». Маржа пересчитывается из сумм выручки и прибыли на каждом уровне и никогда не суммируется сама.",
+        "Страница запрашивает Cube на сервере — три запроса, 240 строк — и рисует графики на Tremor и React. Браузер не видит ни базу, ни ключи Cube. Результат кэшируется на сутки: управляемые показатели, а не поток в реальном времени.",
+        "Данные синтетические — сгенерированная история продаж, поэтому цифр клиентов здесь нет.",
       ],
     },
   },

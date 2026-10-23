@@ -239,7 +239,6 @@ export const en = {
     metaTitle: "BI Dashboard Case Studies",
     breadcrumbHome: "Home",
     aboutHeading: "About this project",
-    liveReportHeading: "The live report",
     metaDescription:
       "Client dashboards written up as case studies — each with the story and a live Power BI or Apache Superset report you can explore.",
     intro: {
@@ -251,7 +250,6 @@ export const en = {
     },
     empty: "Case studies coming soon.",
     backToShowcase: "Back to showcase",
-    openInNewTab: "Open in a new tab",
     closeReport: "Close the report",
     openLiveReport: "Open the live report",
     writeUp: "Write-up",

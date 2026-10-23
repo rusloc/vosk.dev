@@ -17,6 +17,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Retired features kept for reference only — not built, not linted.
     ".archive/**",
+    // The P&L design mockup: reference material with a minified bundle, not site code.
+    "docs/pnl/design-mockup/**",
   ]),
 ]);
 

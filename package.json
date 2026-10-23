@@ -26,6 +26,7 @@
     "@superset-ui/embedded-sdk": "^0.4.0",
     "clsx": "^2.1.1",
     "gray-matter": "^4.0.3",
+    "hyparquet": "1.31.5",
     "next": "16.2.10",
     "next-mdx-remote": "^6.0.0",
     "react": "19.2.4",

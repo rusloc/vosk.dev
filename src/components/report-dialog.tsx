@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import styles from "./cta-button.module.css";
 
@@ -17,20 +17,37 @@ export function ReportDialog({
   title,
   closeLabel,
   href,
+  openOnQuery,
   children,
 }: {
   label: string;
   title: string;
   closeLabel: string;
   href?: string;
+  /** Open on arrival when the page URL carries one of these keys: a shared link (F-37) lands inside the report. */
+  openOnQuery?: readonly string[];
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const dialog = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    if (!openOnQuery?.some((key) => query.has(key))) return;
+    // deferred a tick: the page hydrates closed (it is static), then the shared link opens the report
+    const t = setTimeout(() => setOpen(true), 0);
+    return () => clearTimeout(t);
+  }, [openOnQuery]);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key !== "Escape") return;
+      // A pop-up inside the report (a filter flyout, an info pop-up) closes itself first; Escape there must not
+      // close the whole report as well.
+      const inner = document.activeElement?.closest('[role="dialog"]');
+      if (inner && inner !== dialog.current) return;
+      setOpen(false);
     };
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -74,6 +91,7 @@ export function ReportDialog({
             onClick={() => setOpen(false)}
           >
             <div
+              ref={dialog}
               role="dialog"
               aria-modal="true"
               aria-label={title}
@@ -105,7 +123,10 @@ export function ReportDialog({
                   </svg>
                 </button>
               </div>
-              <div className="bg-muted min-h-0 flex-1">{children}</div>
+              {/* Scrolls for a native dashboard taller than the box; an iframe fills it. */}
+              <div className="bg-muted min-h-0 flex-1 overflow-auto">
+                {children}
+              </div>
             </div>
           </div>,
           document.body,

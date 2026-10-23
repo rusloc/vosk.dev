@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { BackLink } from "@/components/back-link";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
+import { PnlReportLazy } from "@/components/pnl-report-lazy";
+import { SELECTION_KEYS } from "@/lib/pnl/state/selection-schema";
 import { ReportDialog } from "@/components/report-dialog";
 import { SalesDashboardLazy } from "@/components/sales-dashboard-lazy";
 import { SupersetEmbed } from "@/components/superset-embed";
@@ -89,12 +91,7 @@ export default async function ShowcasePage({ params }: Props) {
     { name: title },
   ];
 
-  // A native dashboard, not an iframe: it is drawn on the page itself, below the
-  // header, and gets no About text (owner's call, 09-27) — the header alone sits above
-  // it so the whole dashboard fits a laptop screen, and its own footnote says
-  // "synthetic data". Every other platform is the reverse: text on the page, the
-  // report in a popup (owner's call, 10-22).
-  const isNative = platform === "cube";
+  const reportTitle = `${title} — live ${PLATFORM_LABEL[platform]} dashboard`;
 
   return (
     <Container className="py-6">
@@ -125,101 +122,71 @@ export default async function ShowcasePage({ params }: Props) {
         </span>
       </header>
 
-      {/* Cube: the rows are queried right here, server-side, and handed to a client
-          component as plain props — the browser never sees Cube or its token. */}
-      {showcase.platform === "cube" && (
-        <section className="mt-4">
-          <h2 className="sr-only">{t.liveReportHeading}</h2>
-          <SalesDashboardLazy
-            data={await getSalesDashboardData()}
-            labels={dict.salesDashboard}
-          />
-        </section>
-      )}
-
-      {/* An iframe is opaque to crawlers, so the page leads with the story and the
-          report opens on request. Power BI's public URL doubles as the no-JS fallback;
-          Superset has no public URL — the SDK mints a guest token per viewer
-          (ADR-0002) — so it gets a plain button and no new-tab link. */}
-      {!isNative && (
-        <>
-          <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
-            <ReportDialog
-              label={t.openLiveReport}
-              title={`${title} — live ${PLATFORM_LABEL[platform]} dashboard`}
-              closeLabel={t.closeReport}
-              href={
-                showcase.platform === "power-bi" ? showcase.href : undefined
-              }
-            >
-              {showcase.platform === "superset" ? (
-                <SupersetEmbed
-                  slug={showcase.slug}
-                  embedId={showcase.embedId}
-                  title={`${title} — live ${PLATFORM_LABEL[platform]} dashboard`}
-                  loadingLabel={t.dashboardLoading}
-                  errorLabel={t.dashboardError}
-                />
-              ) : (
-                <iframe
-                  src={showcase.embedUrl}
-                  title={`${title} — live ${PLATFORM_LABEL[platform]} dashboard`}
-                  allowFullScreen
-                  className="h-full w-full border-0"
-                />
-              )}
-            </ReportDialog>
-
-            {showcase.platform === "power-bi" && (
-              <a
-                href={showcase.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
-              >
-                {t.openInNewTab}
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  className="h-4 w-4"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M7 17 17 7M9 7h8v8"
-                  />
-                </svg>
-              </a>
-            )}
-          </div>
-
-          <section className="mt-8 max-w-prose">
-            <h2 className="text-lg font-semibold tracking-tight">
-              {t.aboutHeading}
-            </h2>
-            <div className="text-foreground/85 mt-3 space-y-4 leading-relaxed">
-              {details.map((paragraph, i) => (
-                <p key={i}>{paragraph}</p>
-              ))}
-              {/* The long-form story, linked by its own title as the anchor. */}
-              {article && (
-                <p>
-                  {t.writeUp}:{" "}
-                  <Link
-                    href={localizedPath(l, `/blog/${article.slug}`)}
-                    className="text-primary font-medium hover:underline"
-                  >
-                    {article.title}
-                  </Link>
-                </p>
-              )}
+      {/* Every showcase is a text page with one button: the report opens in a popup on
+          request (owner's call, 10-22), so the page is the story a crawler can read.
+          Power BI's public URL doubles as the no-JS fallback; Superset has no public
+          URL — the SDK mints a guest token per viewer (ADR-0002) — and Cube is drawn
+          from rows queried right here, server-side, handed to a client component as
+          plain props, so the browser never sees Cube or its token. The JS report
+          needs nothing from the server: it loads its own static data on open. */}
+      <div className="mt-5">
+        <ReportDialog
+          label={t.openLiveReport}
+          title={reportTitle}
+          closeLabel={t.closeReport}
+          href={showcase.platform === "power-bi" ? showcase.href : undefined}
+          openOnQuery={showcase.platform === "js" ? SELECTION_KEYS : undefined}
+        >
+          {showcase.platform === "cube" ? (
+            <div className="p-4 sm:p-6">
+              <SalesDashboardLazy
+                data={await getSalesDashboardData()}
+                labels={dict.salesDashboard}
+              />
             </div>
-          </section>
-        </>
-      )}
+          ) : showcase.platform === "js" ? (
+            <PnlReportLazy />
+          ) : showcase.platform === "superset" ? (
+            <SupersetEmbed
+              slug={showcase.slug}
+              embedId={showcase.embedId}
+              title={reportTitle}
+              loadingLabel={t.dashboardLoading}
+              errorLabel={t.dashboardError}
+            />
+          ) : (
+            <iframe
+              src={showcase.embedUrl}
+              title={reportTitle}
+              allowFullScreen
+              className="h-full w-full border-0"
+            />
+          )}
+        </ReportDialog>
+      </div>
+
+      <section className="mt-8 max-w-prose">
+        <h2 className="text-lg font-semibold tracking-tight">
+          {t.aboutHeading}
+        </h2>
+        <div className="text-foreground/85 mt-3 space-y-4 leading-relaxed">
+          {details.map((paragraph, i) => (
+            <p key={i}>{paragraph}</p>
+          ))}
+          {/* The long-form story, linked by its own title as the anchor. */}
+          {article && (
+            <p>
+              {t.writeUp}:{" "}
+              <Link
+                href={localizedPath(l, `/blog/${article.slug}`)}
+                className="text-primary font-medium hover:underline"
+              >
+                {article.title}
+              </Link>
+            </p>
+          )}
+        </div>
+      </section>
     </Container>
   );
 }

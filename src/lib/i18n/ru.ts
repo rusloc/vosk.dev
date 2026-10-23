@@ -226,7 +226,6 @@ export const ru: Dictionary = {
     metaTitle: "Кейсы BI-дашбордов",
     breadcrumbHome: "Главная",
     aboutHeading: "О проекте",
-    liveReportHeading: "Живой отчёт",
     metaDescription:
       "Клиентские дашборды в виде кейсов — с историей проекта и живым отчётом Power BI или Apache Superset, который можно изучить.",
     intro: {
@@ -238,7 +237,6 @@ export const ru: Dictionary = {
     },
     empty: "Кейсы скоро появятся.",
     backToShowcase: "Назад в портфолио",
-    openInNewTab: "Открыть в новой вкладке",
     closeReport: "Закрыть отчёт",
     openLiveReport: "Открыть живой отчёт",
     writeUp: "Разбор",

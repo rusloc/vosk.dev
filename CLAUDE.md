@@ -70,6 +70,9 @@ _Amended 2026-10-20: the lead engine's `public` tables are gone; `qbo` is the se
   `clsx` + `tailwind-merge`, `@remixicon/react`. They replaced `chart.js` (agreed 2026-09-21, removed).
   Not `@tremor/react` (React 18 / Tailwind 3 only, unmaintained), not `@cubejs-client/*` — native
   `fetch` covers the data. The vendored files are ours now: upstream stopped development in 2025.
+- **Agreed addition (2026-10-22):** `hyparquet` (exact 1.31.5) for the P&L showcase, which reads static Parquet
+  in the browser; IBM Plex Sans (+ Condensed) via `next/font`, scoped to that report only. Its own design
+  system (Ledger tokens, CSS Modules) stays inside `components/pnl/`; the site keeps Tailwind and Geist.
 
 ## Structure — the site
 
@@ -80,15 +83,18 @@ src/
   proxy.ts        → locale rewriting middleware; excludes /api/*
   components/     → shared UI (nav, footer, cards, contact-form, mdx-components, primitives)
   lib/            → content.ts (MDX seam), work.ts (showcase registry), schema.ts (Zod), env.ts, site.ts, metadata.ts
+  lib/pnl/        → the P&L showcase's engine, loader and state (framework-free); components/pnl/ its UI
 content/
   blog/*.mdx      → articles
 data/             → synthetic demo warehouses as plain SQL: P&L (Superset), sales/ (Cube)
 public/images/    → work/<slug>/… and blog/<slug>/… assets
+public/data/pnl/  → the P&L showcase's frozen data (Parquet + manifest); spec and decisions in docs/pnl/
 ```
 
 - **`src/lib/content.ts`** is the single seam for reading/listing/validating MDX — pages consume it, never touch the filesystem directly (keeps a future CMS swap cheap).
 - **`/work` is not MDX.** Showcases are entries in **`src/lib/work.ts`** — a discriminated union by
-  `platform` (`power-bi` | `superset` | `cube`), per `ADR-0002`. There is no `content/work/`.
+  `platform` (`power-bi` | `superset` | `cube` | `js`), per `ADR-0002`. There is no `content/work/`.
+  Every showcase page is text plus one "Open the live report" button; the report opens in a popup.
   The `cube` entry is not an embed: the page queries Cube server-side and draws the dashboard
   itself (`components/sales-dashboard.tsx`); it is hidden until `CUBE_API_URL` + `CUBE_API_SECRET` are set.
 - All pages are Server Components / statically rendered. `[slug]` routes use `generateStaticParams()`. Client components are the exception (contact form, theme toggle, mobile menu) — mark them `'use client'`.

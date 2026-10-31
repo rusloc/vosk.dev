@@ -157,7 +157,7 @@ const allShowcases: Showcase[] = [
     details: {
       en: [
         "A management P&L for a two-company group: a consumer-goods business and an e-commerce SaaS business, picked from the brand mark. One statement layout serves both, so every company reads the same way.",
-        "Four views. The statement compares actual with budget and prior year line by line, with the full-year budget and latest estimate alongside; it opens collapsed and expands to the account. Vitals puts the key figures on one screen. Analysis walks net revenue and profit from budget to actual on one page and lists the largest variances on the next, top 8, 12 or all, grouped by block or by size, cut by region, channel, line or segment. Profitability breaks margins down by region, channel, category or segment, in actual or constant currency.",
+        "Four views. The statement compares actual with budget and prior year line by line, with the full-year budget and latest estimate alongside; it opens collapsed and expands to the account. Vitals puts the key figures on one screen. Analysis walks net revenue and profit from budget to actual on one page and lists the largest variances on the next, as many as you ask for, cut by region, channel, line or segment. Profitability breaks margins down by the same slices, in actual or constant currency.",
         "Filters cover the period, the versions compared, the reporting currency and FX basis, units and display. Every state has a link: copy it and the report reopens exactly there.",
         "No BI tool and no backend: the browser loads three compressed data files and a TypeScript engine computes every number, reconciled to the source data's 552 control totals. The figures are synthetic.",
       ],
@@ -213,9 +213,9 @@ const allShowcases: Showcase[] = [
     // one placeholder card (channel attainment) and no cross-filtering yet.
     details: {
       en: [
-        "A sales and revenue dashboard for Mirelo, a fictional neobank and microlender in Poland, Romania and Portugal. Five views: an overview, loans issued, clients, portfolio quality, and revenue against targets. The header switches market, period (month, quarter to date, year to date, rolling twelve months), anchor month and comparator, budget or prior year, and every view reads them.",
-        "A row in a table opens a slide-over: a market, an agent with their loans and quota, or a client with their loan history. Clicking a month on a trend sets the month. The charts are inline SVG, no chart library; the loan sample behind the drill-downs loads only when first needed.",
-        "The browser loads under a megabyte of data and a TypeScript engine computes every number, reconciled to the generator's control totals per market and month. The data is synthetic. One card still reads as a placeholder, channel attainment, because the dataset has no channel targets.",
+        "A sales and revenue dashboard for Mirelo, a fictional neobank and microlender in Poland, Romania and Portugal. Five views: an overview, loans issued, clients, portfolio quality, and revenue against targets. The header switches the market, the period (a month, quarter to date, year to date or the last twelve months), the month itself, and whether you compare with budget or with the prior year; every view reads the same settings.",
+        "A row in a table opens a slide-over: a market, an agent with their loans and quota, or a client with their loan history. Clicking a month on a trend sets the month. The charts are inline SVG without a chart library, and the loan sample behind the drill-downs loads only when first needed. Under a megabyte of data in all; a TypeScript engine computes every number and is checked against the generator's control totals per market and month.",
+        "The data is synthetic. One card is still a placeholder, channel attainment, because the dataset has no channel targets.",
       ],
       ru: [
         "Дашборд продаж и выручки Mirelo — вымышленного необанка и микрокредитора в Польше, Румынии и Португалии. Пять представлений: обзор, выданные займы, клиенты, качество портфеля и выручка против целей. Шапка переключает рынок, период (месяц, квартал с начала, год с начала, скользящие двенадцать месяцев), опорный месяц и базу сравнения, бюджет или прошлый год, и каждое представление их читает.",

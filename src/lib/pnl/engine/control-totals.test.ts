@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
-import { csvTable } from "../csv";
+import { csvTable } from "@/lib/csv";
 import type { Dataset } from "../data/dataset";
 import { DATA_DIR, loadPublicDataset } from "../test-utils/public-data";
 import { selection } from "../test-utils/selection";

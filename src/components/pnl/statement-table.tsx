@@ -4,17 +4,17 @@ import {
   formatAmount,
   formatPercent,
   formatPoints,
-  isEmptyRow,
   roundsToZero,
   type Units,
 } from "@/lib/pnl/engine/format";
+import { statementColumns } from "@/lib/pnl/engine/hide-empty";
 import type { Selection, StatementRow, Variance } from "@/lib/pnl/engine/types";
 import { ChevronIcon } from "./icons";
 import styles from "./statement.module.css";
 
 // P&L statement, Variance layout (spec §4, design guide §6.1). Renders engine values only: the table formats and
-// colours them, it never computes a number (no business logic in components). Expand all / Collapse all sit above
-// the line column (M-20, ADR-0007); hidden empty lines follow M-22.
+// colours them, it never computes a number (no business logic in components). Rows read as Track B ("01. GROSS
+// REVENUE", parity rule 11); Expand all / Collapse all sit above the line column (M-20).
 
 const BASE_LABEL = { A: "Actual", LE: "Latest estimate", B: "Budget" } as const;
 const SHORT = {
@@ -44,12 +44,6 @@ const TAG_STYLE: Record<string, CSSProperties> = {
     color: "var(--slate-600)",
   },
   IC: { borderColor: "var(--ic)", color: "var(--ic)" },
-  // alloc. pairs with the allocation notice (L-05), so it takes the notice colour
-  "alloc.": {
-    borderColor: "var(--notice-icon)",
-    borderStyle: "dotted",
-    color: "var(--notice-icon)",
-  },
 };
 
 type ColumnKind =
@@ -75,17 +69,18 @@ interface Column {
 function buildColumns(sel: Selection, windowLabel: string) {
   const columns: Column[] = [];
   const groups: { title: string; span: number }[] = [];
-  const amount = sel.varianceFormat !== "PCT";
-  const pct = sel.varianceFormat !== "ABS";
+  const show = statementColumns(sel); // the same columns Hide empty lines judges (M-22)
+  const amount = show.amount;
+  const pct = show.percent;
   const push = (title: string, cols: Omit<Column, "groupStart">[]) => {
     groups.push({ title, span: cols.length });
     cols.forEach((c, i) =>
       columns.push({ ...c, groupStart: i === 0 && columns.length > 0 }),
     );
   };
-  push(`${windowLabel} · ${BASE_LABEL[sel.base]}`, [
+  push(`${windowLabel} - ${BASE_LABEL[sel.base]}`, [
     { kind: "base", width: 84, title: SHORT[sel.base] },
-    ...(sel.showPctNr
+    ...(show.pctNr
       ? [{ kind: "pctNr" as const, width: 60, title: "% NR" }]
       : []),
   ]);
@@ -102,7 +97,7 @@ function buildColumns(sel: Selection, windowLabel: string) {
       ...(amount ? [{ kind: "dB" as const, width: 72, title: "Δ" }] : []),
       ...(pct ? [{ kind: "dBpct" as const, width: 62, title: "Δ %" }] : []),
     ]);
-  if (sel.showFyOutlook)
+  if (show.fyOutlook)
     push(`Full year ${sel.fy}`, [
       { kind: "fyBud", width: 84, title: "Budget" },
       { kind: "fyLe", width: 84, title: "Latest est." },
@@ -120,7 +115,7 @@ const rowClass = (r: StatementRow) =>
         ? r.isKey
           ? styles.key
           : styles.subtotal
-        : r.kind === "leaf" || r.kind === "entity"
+        : r.kind === "leaf"
           ? ""
           : styles.section;
 
@@ -146,16 +141,13 @@ export function StatementTable({
   format: StatementFormat;
   open: ReadonlySet<string>;
   onToggle: (code: string) => void;
-  onExpandAll: () => void;
-  onCollapseAll: () => void;
+  onExpandAll: () => void; // M-20: every leaf open
+  onCollapseAll: () => void; // M-20: blocks and subtotals only
 }) {
   const { columns, groups } = buildColumns(sel, windowLabel);
-  const shown = sel.hideEmpty
-    ? rows.filter((r) => !isEmptyRow(r, sel, format.units))
-    : rows;
-  const parents = new Set(shown.map((r) => r.parent).filter((p) => p !== null));
-  const byCode = new Map(shown.map((r) => [r.code, r]));
-  const visible = shown.filter((r) => {
+  const parents = new Set(rows.map((r) => r.parent).filter((p) => p !== null));
+  const byCode = new Map(rows.map((r) => [r.code, r]));
+  const visible = rows.filter((r) => {
     for (let p = r.parent; p !== null; p = byCode.get(p)?.parent ?? null)
       if (!open.has(p)) return false;
     return true;
@@ -246,17 +238,13 @@ export function StatementTable({
       aria-label="Income statement"
       className={styles.card}
     >
-      <div className={styles.tableBar}>
-        <button
-          type="button"
-          className={styles.barButton}
-          onClick={onExpandAll}
-        >
+      <div role="group" aria-label="Statement rows" className={styles.rowTools}>
+        <button type="button" className={styles.rowTool} onClick={onExpandAll}>
           Expand all
         </button>
         <button
           type="button"
-          className={styles.barButton}
+          className={styles.rowTool}
           onClick={onCollapseAll}
         >
           Collapse all
@@ -286,7 +274,7 @@ export function StatementTable({
             </tr>
             <tr className={styles.colHead}>
               <th scope="col" className={`${styles.sticky} ${styles.lineHead}`}>
-                Line · {format.unitsLabel}
+                Line - {format.unitsLabel}
               </th>
               {columns.map((c) => (
                 <th
@@ -325,10 +313,10 @@ export function StatementTable({
                           onClick={() => onToggle(r.code)}
                         >
                           <ChevronIcon open={isOpen} />
-                          <span>{r.label}</span>
+                          <span>{r.display}</span>
                         </button>
                       ) : (
-                        <span className={styles.noToggle}>{r.label}</span>
+                        <span className={styles.noToggle}>{r.display}</span>
                       )}
                       {r.alias && (
                         <span className={styles.alias}>{r.alias}</span>
@@ -377,13 +365,11 @@ export function StatementTable({
         {sel.fxBasis === "CC"
           ? `All versions at FY${sel.fy} budget rates`
           : "Actual at monthly average rates, budget at budget rates"}{" "}
-        · costs {sel.costSign === "POS" ? "positive" : "negative"} · Δ positive
-        when favourable · bar = Δ % vs{" "}
+        - costs {sel.costSign === "POS" ? "positive" : "negative"} - Δ positive
+        when favourable - bar = Δ % vs{" "}
         {sel.compareA === "NONE" ? "Compare A" : COMPARE_LABEL[sel.compareA]} on
-        a ±15% scale · IFRS 18 required subtotal · MPM management-defined
-        measure · IC intercompany
-        {rows.some((r) => r.tag === "alloc.") &&
-          " · alloc. shared out by net revenue"}
+        a ±15% scale - IFRS 18 required subtotal - MPM management-defined
+        measure - IC intercompany
       </p>
     </section>
   );

@@ -9,6 +9,28 @@
 
 # Backlog
 
+## New on 10-31
+
+- **The report packs arrived** (owner named `C:\__PBI\PNL\.sync` 10-31 10:50; entry note `2026-10-31-report-packs.md`,
+  draft). Three reports × two flavours: standalone Next.js 16.4 apps (`pnl/js-app/`, `mirelo-sales/js-app/`,
+  `nordmark-exec/js-app/`, data prebuilt, framed at 1440 × 810, `EMBED_ALLOWED_ORIGINS` at build) and PBIPs without
+  data (`data-gen/` generates it; owner publishes from Desktop). Accepted here 10-31: `npm ci`, typecheck, tests
+  (196 + 1 skipped / 92 + 4 skipped / 458) and builds green on Node 24.19. **Blocked on the hosting decision**
+  (`plan-2026-10-31.md` question A) and on B–D. The pack's P&L lacks the Group view and slice filters the live
+  showcase has. AI chat for the P&L is deferred (owner, 10-28, on the PNL side). ✅ _(11:52 → built the same
+  afternoon: all three vendored into the site; `docs/{pnl,mirelo,nordmark}/README.md`; waiting: the owner's PBI
+  embeds, and the PNL side's Group view + slices for the P&L.)_
+- **Two new `/work` entries** (executive, sales) and the P&L replaced; every page gets "Power BI" + "Custom" buttons
+  (owner, 10-31). `online-sales-cube` stays. The P&L's Fabric app becomes a video later (owner supplies it).
+
+## New on 10-28
+
+- **Showcase three reports** (owner, 10-28 23:43): the executive dashboard (new), the sales report
+  (`online-sales-cube` today), the P&L report (update of `unified-management-pnl`). Code and artifacts come via
+  `.sync`. On `plan-2026-10-29.md` as task 1. Extends Goal F / T.11 for the P&L.
+- **text-writer skill** in `.claude/skills/text-writer/` (10-28): use it for posts, LinkedIn copy and outreach
+  (T.12). Its `slop_check.py` needs Python, which is installed now.
+
 ## New on 10-22 (not on board twenty-three)
 
 - **Supabase keep-alive** (`8bc1d1d`): GitHub Actions requests the Cube showcase every second day at 06:17 UTC.

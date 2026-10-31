@@ -23,22 +23,22 @@ export interface PlColumns {
   cents: Float64Array; // integer cents, local currency, signed (M-01)
 }
 
-/** fact_operational (ops.parquet), both companies, columnar. Code columns index into manifest.dict. */
+/** Operational facts of both entities, columnar (ops.parquet, D-03): units (P), GMV and active merchants (S). */
 export interface OpsColumns {
   n: number;
-  entity: Int32Array; // index into dict.entity
+  entity: Int32Array; // index into manifest.dict.entity
   monthIdx: Int32Array;
   version: Int32Array;
   region: Int32Array;
   channel: Int32Array;
   line: Int32Array;
   segment: Int32Array;
-  units: Float64Array; // Consumer Products units sold
-  gmvCents: Float64Array; // Commerce Cloud GMV processed, local currency cents
-  merchants: Float64Array; // Commerce Cloud active merchants at month end
+  units: Int32Array; // flow, sums over months
+  gmvCents: Float64Array; // local currency cents, translated like amounts
+  merchants: Int32Array; // month-end stock, never summed over months (K-23)
 }
 
-/** Validated state (F-01 … F-21, ADR-0002 §2.4). Layout, cost lens and detail level are gone (ADR-0007). */
+/** Validated URL state (F-01 … F-21, ADR-0002 §2.4). */
 export interface Selection {
   entity: EntityView;
   fy: number;
@@ -94,22 +94,21 @@ export interface VersionPlan {
   fyLE: ColumnPlan;
 }
 
-// `entity`: a company node inside a block in the Group view (M-05).
 export type RowKind =
-  "block" | "entity" | "leaf" | "subtotal" | "ratio" | "memo" | "group_total";
+  "block" | "leaf" | "subtotal" | "ratio" | "memo" | "group_total";
 
 export interface SpineRow {
   code: string; // line_code for spine rows, account_code for leaves
   kind: RowKind;
   label: string; // N-11: from dim_report_line / dim_account
+  /** Statement row text (parity rule 11, Track B `dim_pl_row[line_display]`): "01. GROSS REVENUE"; leaves = label. */
+  display: string;
   alias: string | null; // L-11: entity-specific name of a spine line, shown as a secondary label
   parent: string | null;
-  level: 0 | 1 | 2 | 3;
-  tag: string | null; // L-14: IFRS 18 · MPM · Mgmt · IC · alloc.
+  level: 0 | 1 | 2;
+  tag: string | null; // L-14: IFRS 18 · MPM · Mgmt · IC
   isKey: boolean;
   isCost: boolean; // F-15 / M-25: flipped by "Costs shown as positives" (display only)
-  account: string | null; // leaves: the dim_account code (Group leaves carry an entity suffix in `code`)
-  entity: EntityCode | null; // Group view: the company a leaf or node belongs to; null elsewhere
 }
 
 /** One comparison cell group. `value` null = "n/a" (M-13). Ratio rows: Δ in percentage points, no Δ %. */

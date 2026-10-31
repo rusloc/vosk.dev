@@ -5,6 +5,8 @@ import type { EntityView, MonthNumber, Selection } from "../engine/types";
 // F-37 shareable link (ADR-0002 §2.4): the URL query string is the whole state. Every key is validated at the
 // boundary; an invalid value is replaced by its default (F-02 … F-21) and the URL is rewritten, and unknown keys are
 // dropped, so nothing unvalidated reaches the engine. Defaults are omitted, so the bare URL is the spec default.
+// Retired keys `lay`, `lens` and `d` (layout, cost lens, detail; ADR-0007 items 1–3) are unknown keys now: old links
+// still open, and the rewrite drops them.
 
 const entity = z.enum(["P", "S", "GROUP"]);
 const flag = z.enum(["0", "1"]).transform((v) => v === "1");
@@ -52,10 +54,10 @@ const KEYS = {
   view: "v",
 } as const satisfies Record<keyof Selection, string>;
 
-type Query = Pick<URLSearchParams, "get">;
-
-/** Every key the state may carry in a URL: a page URL with any of them is a shared link into the report (F-37). */
+/** Every Selection key as it appears in the query string: a page URL carrying one of them is a shared report link. */
 export const SELECTION_KEYS: readonly string[] = Object.values(KEYS);
+
+type Query = Pick<URLSearchParams, "get">;
 
 /** Entity alone, readable before the manifest is loaded (it decides which data file to fetch). */
 export function parseEntity(query: Query): EntityView {
@@ -122,9 +124,8 @@ export function createSelectionCodec(m: Manifest): SelectionCodec {
       showPctNr: true, // F-17: all on
       showFyOutlook: true,
       showTags: true,
-      hideEmpty: true,
-      // F-18 … F-20 are gone (ADR-0007): Variance only, By function only, Expand / Collapse are not state
-      breakdown: e === "GROUP" ? "ENTITY" : "CHANNEL", // F-21
+      hideEmpty: true, // M-22
+      breakdown: "REGION", // F-21: Region for every company (ADR-0007 §3a, parity rule 4)
       view: "statement",
     };
   }
@@ -174,7 +175,7 @@ export function createSelectionCodec(m: Manifest): SelectionCodec {
       showFyOutlook: pick(flag, q.get(KEYS.showFyOutlook), d.showFyOutlook),
       showTags: pick(flag, q.get(KEYS.showTags), d.showTags),
       hideEmpty: pick(flag, q.get(KEYS.hideEmpty), d.hideEmpty),
-      // F-21: the Entity breakdown exists only in the Group view, which offers Region and Entity only
+      // The Entity breakdown exists only in the Group view, which offers Region and Entity only (F-21)
       breakdown:
         (breakdown === "ENTITY" && e !== "GROUP") ||
         (e === "GROUP" && !["REGION", "ENTITY"].includes(breakdown))
@@ -185,8 +186,7 @@ export function createSelectionCodec(m: Manifest): SelectionCodec {
   }
 
   function serialize(sel: Selection): string {
-    // The entity-dependent default (breakdown) is judged against the selected entity; the entity itself
-    // against the global default.
+    // Defaults are judged against the selected entity; the entity itself against the global default.
     const d = { ...defaults(sel.entity), entity: defaults("P").entity };
     const out = new URLSearchParams();
     for (const [field, key] of Object.entries(KEYS) as [
@@ -213,75 +213,18 @@ export function createSelectionCodec(m: Manifest): SelectionCodec {
   return { defaults, parse, serialize };
 }
 
-/** Each company's own channel, category and segment selection (F-30). */
-export type SliceMemory = Partial<
-  Record<EntityView, Pick<Selection, "channel" | "line" | "segment">>
->;
-
-const BREAKDOWNS: Record<EntityView, readonly Selection["breakdown"][]> = {
-  P: ["REGION", "CHANNEL", "LINE", "SEGMENT"],
-  S: ["REGION", "CHANNEL", "LINE", "SEGMENT"],
-  GROUP: ["REGION", "ENTITY"],
-};
-
 /**
- * Company switch (F-01, F-30, F-31, T-14): period, versions, region and display settings carry across; channel,
- * category and segment are the target company's own, remembered from its last visit; the Group view has none
- * (F-32). A breakdown the target does not offer falls back to its default (F-21).
+ * What the app can show today (ADR-0002 build steps 0–3, 6–8). Anything else falls back to the default, so a link made
+ * for a later build still opens on real numbers instead of an unbuilt view. Remove each line as its step lands.
  */
-export function switchEntity(
-  sel: Selection,
-  to: EntityView,
-  memory: SliceMemory,
-  defaults: (e: EntityView) => Selection,
-): { sel: Selection; memory: SliceMemory } {
-  const saved: SliceMemory = {
-    ...memory,
-    [sel.entity]: {
-      channel: sel.channel,
-      line: sel.line,
-      segment: sel.segment,
-    },
-  };
-  const own =
-    to === "GROUP"
-      ? { channel: [], line: [], segment: [] }
-      : (saved[to] ?? { channel: [], line: [], segment: [] });
+export function restrictToBuilt(sel: Selection): Selection {
   return {
-    memory: saved,
-    sel: {
-      ...sel,
-      ...own,
-      entity: to,
-      breakdown: BREAKDOWNS[to].includes(sel.breakdown)
-        ? sel.breakdown
-        : defaults(to).breakdown,
-    },
+    ...sel,
+    entity: sel.entity === "GROUP" ? "P" : sel.entity, // step 4: Group view, eliminations
+    region: [], // step 5: slice filters and allocation
+    channel: [],
+    line: [],
+    segment: [],
+    // steps 6–8 landed 2026-10-27 (P&L views redesign v4): Vitals (`v=kpi`), Analysis, Profitability
   };
-}
-
-/** F-35 Reset: the defaults, keeping the current company and view. */
-export function resetSelection(
-  sel: Selection,
-  defaults: (e: EntityView) => Selection,
-): Selection {
-  return { ...defaults(sel.entity), view: sel.view };
-}
-
-/**
- * F-33 multi-select, as a BI slicer: `chosen` [] means all. From all, a click selects just that value; after that a
- * click adds or removes one. The last value stays on (never empty), and a selection that reaches every value
- * collapses back to [] (all). Order follows `all`.
- */
-export function toggleSlice(
-  chosen: readonly string[],
-  all: readonly string[],
-  code: string,
-): string[] {
-  if (chosen.length === 0) return all.length === 1 ? [] : [code];
-  const next = chosen.includes(code)
-    ? chosen.filter((c) => c !== code)
-    : [...chosen, code];
-  if (next.length === 0) return [...chosen];
-  return next.length === all.length ? [] : all.filter((c) => next.includes(c));
 }

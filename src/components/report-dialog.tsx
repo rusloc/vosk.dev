@@ -42,10 +42,12 @@ export function ReportDialog({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      // A pop-up inside the report (a filter flyout, an info pop-up) closes itself first; Escape there must not
-      // close the whole report as well.
-      const inner = document.activeElement?.closest('[role="dialog"]');
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      // A pop-up inside the report (a filter flyout, an info pop-up, a slide-over) closes itself first; Escape
+      // there must not close the whole report as well. Read the event's target, not `activeElement`: a report's
+      // own handler runs first (document before window) and may already have moved focus back to the opener.
+      const inner =
+        e.target instanceof Element && e.target.closest('[role="dialog"]');
       if (inner && inner !== dialog.current) return;
       setOpen(false);
     };

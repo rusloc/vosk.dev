@@ -10,7 +10,7 @@ export const COMPANY_THEME: Record<
     acc: "#2453A6",
     accT: "#E8EEF8",
     keyRule: "#B9C8E4",
-    sub: "Goods · retail, D2C, marketplaces",
+    sub: "Goods - retail, D2C, marketplaces",
   },
   S: {
     acc: "#6B48C8",

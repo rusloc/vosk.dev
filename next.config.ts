@@ -9,6 +9,17 @@ const nextConfig: NextConfig = {
   // deployment asleep at build time (lib/cube.ts). The default of 60 would kill the page
   // attempt before that retry could run.
   staticPageGenerationTimeout: 130,
+  // The P&L showcase was renamed on 2026-10-31 (`pnl-suite`); its old URL had been shared from
+  // profiles and posts, so it is retired with a 308, not a 404. Applied before the locale proxy.
+  async redirects() {
+    return [
+      {
+        source: "/work/unified-management-pnl",
+        destination: "/work/pnl-suite",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

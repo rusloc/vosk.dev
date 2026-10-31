@@ -9,6 +9,24 @@
   border-radius: 12px;
   background: var(--surface);
 }
+/* M-20: Expand all / Collapse all above the line column */
+.rowTools {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line-100);
+}
+.rowTool {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line-300);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink-700);
+  font-size: 13px;
+  cursor: pointer;
+}
 .scroll {
   flex: 1 1 auto;
   min-height: 0;
@@ -82,39 +100,38 @@
   border-left: 1px solid var(--group-rule);
 }
 
-/* body rows (§6.1 row kinds). `> *`, not `td`: the line label is a <th>, whose default bold would otherwise win. */
-.row > * {
+/* body rows (§6.1 row kinds) */
+.row td {
   height: 28px;
-  font-weight: 400;
   border-top: 1px solid var(--line-100);
   background: var(--surface);
   font-size: 14px;
   text-align: right;
 }
-.row > .lineCell {
+.row td.lineCell {
   text-align: left;
 }
-.section > * {
+.section td {
   border-top-color: var(--group-rule);
   font-weight: 500;
 }
-.subtotal > * {
+.subtotal td {
   border-top-color: var(--subtotal-rule);
   background: var(--subtle);
   font-weight: 600;
 }
-.memo > * {
+.memo td {
   border-top-color: var(--subtotal-rule);
   background: var(--subtle);
   font-weight: 500;
   font-style: italic;
 }
-.key > * {
+.key td {
   border-top-color: var(--key-rule);
   background: var(--acc-t);
   font-weight: 700;
 }
-.ratio > * {
+.ratio td {
   color: var(--slate-600);
   font-size: 13px;
   font-style: italic;
@@ -197,25 +214,4 @@
   border-top: 1px solid var(--line-100);
   color: var(--slate-600);
   font-size: 12px;
-}
-
-/* Expand all / Collapse all, above the line column (M-20, ADR-0007) */
-.tableBar {
-  display: flex;
-  flex: none;
-  gap: 8px;
-  padding: 10px 12px 8px;
-  border-bottom: 1px solid var(--line-100);
-}
-.barButton {
-  height: 30px;
-  padding: 0 12px;
-  border: 1px solid var(--line-300);
-  border-radius: 8px;
-  background: var(--surface);
-  font-size: 13px;
-  cursor: pointer;
-}
-.barButton:hover {
-  background: var(--subtle);
 }

@@ -139,16 +139,3 @@ export function versionPlan(m: Manifest, sel: Selection): VersionPlan {
 
 /** No data at all for the column → "n/a" (M-13, C-04). */
 export const hasNoData = (c: ColumnPlan) => c.parts.length === 0;
-
-/** Prior year over the base's months (C-04), whatever Compare A and B are: organic growth and the bridge need it. */
-export function priorYearPlan(m: Manifest, plan: VersionPlan): ColumnPlan {
-  return column(versionKeys(m), "PY", plan.months);
-}
-
-/** The prior year of any column's own months (C-04): growth of a Budget or forecast column, e.g. for Rule of 40. */
-export function priorOf(m: Manifest, c: ColumnPlan): ColumnPlan {
-  const months = [...new Set(c.parts.flatMap((p) => p.months))].sort(
-    (a, b) => a - b,
-  );
-  return column(versionKeys(m), "PY", months);
-}

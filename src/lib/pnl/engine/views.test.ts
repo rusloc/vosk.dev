@@ -2,11 +2,19 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { Dataset } from "../data/dataset";
 import { loadPublicDataset } from "../test-utils/public-data";
 import { selection } from "../test-utils/selection";
+import { createFx } from "./fx";
 import { createEngine } from "./index";
 import type { Engine } from "./index";
-import type { EntityView, Selection } from "./types";
+import { aggregateBy, createSliceCache } from "./slices";
+import { aggregateAccounts } from "./aggregate";
+import type { Selection } from "./types";
+import { createViewContext, money } from "./view-context";
+import { versionPlan } from "./versions";
 
-// Build steps 6–8: key figures (spec §5), the bridge and largest variances (C-40, C-45), profitability (C-46).
+// P&L views redesign v4 (Vitals · Analysis · Profitability): values against control_totals_usd.csv (the quoted
+// Commerce Cloud FY2025 view) and the internal reconciliations of build-brief §5 (bridge Σ steps = Δ, variances total
+// = operating-profit Δ, coverage, of which FX = reported − constant currency, shares sum to 100 %, allocation
+// conserves every account).
 
 let ds: Dataset;
 let engine: Engine;
@@ -15,205 +23,324 @@ beforeAll(async () => {
   engine = createEngine(ds);
 });
 
-const ENTITIES: EntityView[] = ["P", "S", "GROUP"];
-const line = (sel: Selection, code: string) =>
-  engine.statement(sel).rows.find((r) => r.code === code);
+const fy2025 = (o: Partial<Selection> = {}) =>
+  selection({ entity: "S", fy: 2025, month: 12, timeView: "FY", ...o });
+const SELECTIONS: [string, Selection][] = [
+  ["S FY2025 vs Budget", fy2025()],
+  ["P FY2025 vs Budget", fy2025({ entity: "P" })],
+  ["S YTD Sep 2026", selection({ entity: "S" })],
+  [
+    "P YTD Sep 2026 vs PY only",
+    selection({ compareA: "PY", compareB: "NONE" }),
+  ],
+  [
+    "S Q3 2026 in EUR at CC",
+    selection({ entity: "S", timeView: "QTD", currency: "EUR", fxBasis: "CC" }),
+  ],
+];
 
-describe("net revenue bridge (C-40)", () => {
-  for (const entity of ENTITIES)
-    for (const [label, against, extra] of [
-      ["vs Budget", "A", {}],
-      ["vs prior year", "B", {}],
-      [
-        "vs prior year, slice on",
-        "B",
-        entity === "GROUP" ? { region: ["EU"] } : { region: ["NA", "AP"] },
-      ],
-    ] as const)
-      it(`T-05 ${entity} ${label}: comparison + steps = base, to the unit`, () => {
-        const sel = selection({ entity, ...extra });
-        const { bridge, comparison } = engine.analysis(sel, against);
-        const total = bridge.steps.reduce((s, x) => s + x.value, bridge.start);
-        expect(Math.abs(total - bridge.end)).toBeLessThan(1);
-        expect(bridge.end).toBeCloseTo(line(sel, "NR")?.base ?? NaN, 4);
-        expect(comparison.label).toBe(
-          against === "A" ? "Budget" : "Prior year",
-        );
-      });
-
-  it("step sets: volume and price / mix (CP), service lines (CC), companies and eliminations (Group)", () => {
-    const keys = (entity: EntityView) =>
-      engine
-        .analysis(selection({ entity }), "A")
-        .bridge.steps.map((s) => s.key);
-    expect(keys("P")).toEqual(["VOLUME", "PRICE_MIX", "FX"]);
-    expect(keys("S")).toEqual(["SUB", "PAY", "APP", "PS", "FX"]);
-    expect(keys("GROUP")).toEqual(["P", "S", "ELIM", "FX"]);
+describe("Vitals", () => {
+  it("hero values of the quoted Commerce Cloud FY2025 view (control_totals_usd: NR 667.4, EBITDA 82.8, OP 48.6)", () => {
+    const vm = engine.vitals(fy2025());
+    expect(vm.results.map((c) => [c.title, c.value])).toEqual([
+      ["Net revenue", "$667.4 m"],
+      ["Adjusted EBITDA", "$82.8 m"],
+      ["Operating profit", "$48.6 m"],
+      ["Gross margin %", "55.9%"],
+      ["Opex % revenue", "38.9%"],
+    ]);
+    expect(vm.drivers.map((c) => c.title)).toEqual([
+      "GMV processed",
+      "Active merchants",
+      "ARR (run-rate)",
+      "Revenue mix",
+      "FY outlook",
+    ]);
   });
 
-  it("T-10 constant currency: the FX step is zero", () => {
-    for (const entity of ENTITIES) {
-      const fx = engine
-        .analysis(selection({ entity, fxBasis: "CC" }), "B")
-        .bridge.steps.find((s) => s.key === "FX");
-      expect(Math.abs(fx?.value ?? NaN)).toBeLessThan(0.01);
+  it("cards: two Δ rows (Compare A, B), Budget-only chip, a complete ⓘ, no sparkline", () => {
+    for (const [, sel] of SELECTIONS) {
+      const vm = engine.vitals(sel);
+      expect(vm.results).toHaveLength(5);
+      expect(vm.drivers).toHaveLength(5);
+      for (const c of [...vm.results, ...vm.drivers]) {
+        expect(c).not.toHaveProperty("spark");
+        expect(c.info.what.length, c.id).toBeGreaterThan(10);
+        expect(c.info.source.length, c.id).toBeGreaterThan(5);
+        expect(JSON.stringify(c), c.id).not.toMatch(/NaN|undefined|Infinity/);
+      }
+      const rows = sel.compareB === "NONE" ? 1 : 2;
+      expect(vm.results[0]?.rows).toHaveLength(rows); // parity rule 17: NONE drops the row
     }
+    expect(engine.vitals(selection()).drivers.map((c) => c.id)).toEqual([
+      "units",
+      "nrPerUnit",
+      "gtn",
+      "ap",
+      "fy",
+    ]); // L-10
   });
 
-  it("falls back to the prior year when both comparisons are off", () => {
-    const a = engine.analysis(
-      selection({ compareA: "NONE", compareB: "NONE" }),
-      "A",
-    );
-    expect(a.comparison.choice).toBe("PY");
+  it("heroes equal the statement (one engine, one number)", () => {
+    for (const [, sel] of SELECTIONS) {
+      const st = engine.statement(sel).rows;
+      const val = (code: string) =>
+        st.find((r) => r.code === code)?.base ?? null;
+      const ctx = createViewContext(
+        ds,
+        sel,
+        createSliceCache(ds),
+        createFx(ds.manifest),
+      );
+      const t = ctx.total(ctx.plan.base, ctx.tr);
+      for (const code of ["NR", "EBITDA", "OP"])
+        expect(t?.get(code)).toBeCloseTo(val(code) ?? NaN, 6);
+    }
   });
 });
 
-describe("largest variances (C-45)", () => {
-  it("top 8 leaf lines by |Δ|, Δ = base − comparison as in the statement", () => {
-    const sel = selection();
-    const rows = engine.analysis(sel, "A").variances;
-    expect(rows).toHaveLength(8);
-    for (let i = 1; i < rows.length; i++)
-      expect(Math.abs(rows[i - 1]?.delta ?? 0)).toBeGreaterThanOrEqual(
-        Math.abs(rows[i]?.delta ?? 0),
-      );
-    const top = rows[0];
-    const st = line(sel, top?.code ?? "");
-    expect(st?.kind).toBe("leaf");
-    expect(top?.delta).toBeCloseTo(st?.compareA?.delta ?? NaN, 4);
-    expect(top?.favourable).toBe((top?.delta ?? 0) > 0);
+describe("Analysis page 1 — bridges reconcile (T-05)", () => {
+  it.each(SELECTIONS)("%s", (_, sel) => {
+    const vm = engine.analysis(sel);
+    expect(Math.abs(vm.nr.residual)).toBeLessThan(1e-3);
+    expect(Math.abs(vm.profit.residual)).toBeLessThan(1e-3);
+    const st = engine.statement(sel).rows;
+    const op = st.find((r) => r.code === "OP")?.base ?? NaN;
+    expect(vm.profit.steps.at(-1)?.value).toBeCloseTo(op, 3);
+    const nr = st.find((r) => r.code === "NR")?.base ?? NaN;
+    expect(vm.nr.steps.at(-1)?.value).toBeCloseTo(nr, 3);
+    // CC subtotal + FX = actual
+    const cc = vm.nr.steps.find((s) => s.kind === "subtotal")?.value ?? NaN;
+    const fx = vm.nr.steps.find((s) => s.kind === "fx")?.value ?? NaN;
+    expect(cc + fx).toBeCloseTo(nr, 3);
+    if (sel.fxBasis === "CC") expect(fx).toBeCloseTo(0, 6); // Bridge FX is zero at constant currency
   });
 
-  it("Group rows name their block and company", () => {
-    const rows = engine.analysis(selection({ entity: "GROUP" }), "A").variances;
+  it("Commerce Cloud bridge steps are the four service lines; Consumer Products volume + price / mix", () => {
+    const s = engine.analysis(fy2025()).nr.steps;
     expect(
-      rows.every(
-        (r) =>
-          / · (Consumer Products|Commerce Cloud)$/.test(r.block) ||
-          r.code.startsWith("ELIM"),
-      ),
+      s.map((x) => (x.kind === "up" || x.kind === "down" ? "step" : x.kind)),
+    ).toEqual([
+      "start",
+      "step",
+      "step",
+      "step",
+      "step",
+      "subtotal",
+      "fx",
+      "end",
+    ]);
+    expect(s[1]?.label).toBe("Platform subscriptions");
+    expect(
+      engine.analysis(fy2025({ entity: "P" })).nr.steps.map((s) => s.label),
+    ).toEqual([
+      "Budget NR",
+      "Volume",
+      "Price / mix",
+      "Constant-currency NR",
+      "FX",
+      "Actual NR",
+    ]); // build-brief §2 labels (PV-11)
+  });
+});
+
+describe("Analysis page 2 — largest variances", () => {
+  it.each(SELECTIONS)(
+    "%s: total = operating-profit Δ, coverage, FX = reported − CC",
+    (_, sel) => {
+      const vm = engine.variances(sel, 8, "block", "none");
+      const ctx = createViewContext(
+        ds,
+        sel,
+        createSliceCache(ds),
+        createFx(ds.manifest),
+      );
+      const op = (p: typeof ctx.plan.base, t = ctx.tr) =>
+        ctx.total(p, t)?.get("OP") ?? 0;
+      const total = vm.footer.find((f) => f.code === "TOTAL");
+      expect(total?.delta).toBeCloseTo(
+        op(ctx.plan.base) - op(ctx.bridgeCmp.plan),
+        3,
+      );
+      const shown = vm.footer.find((f) => f.code === "SHOWN");
+      const other = vm.footer.find((f) => f.code === "OTHER");
+      expect((shown?.delta ?? 0) + (other?.delta ?? 0)).toBeCloseTo(
+        total?.delta ?? NaN,
+        3,
+      );
+      expect(vm.coverage).toBeGreaterThan(0);
+      expect(vm.coverage).toBeLessThanOrEqual(1);
+      expect(vm.rows.filter((r) => r.kind === "leaf")).toHaveLength(8);
+      // of which FX: Δ at the selected basis − Δ at constant currency, summed over every leaf = OP
+      const ccDelta =
+        op(ctx.plan.base, ctx.trCC) - op(ctx.bridgeCmp.plan, ctx.trCC);
+      const fxTotal = (total?.delta ?? 0) - ccDelta;
+      expect(total?.fx).toBe(money(ctx, fxTotal, true));
+      if (sel.fxBasis === "CC") expect(Math.abs(fxTotal)).toBeLessThan(1e-6);
+    },
+  );
+
+  it('Top 8 / 12 / All, by block or by |Δ|; block rows carry "n of m lines"', () => {
+    const sel = fy2025();
+    expect(
+      engine
+        .variances(sel, 12, "abs", "none")
+        .rows.filter((r) => r.kind === "leaf"),
+    ).toHaveLength(12);
+    const all = engine.variances(sel, "all", "block", "none");
+    expect(all.coverage).toBeCloseTo(1, 9);
+    expect(
+      all.rows.filter((r) => r.kind === "block").map((r) => r.code),
+    ).toEqual([
+      "GR",
+      "GTN",
+      "COR",
+      "VSC",
+      "SM",
+      "RD",
+      "GA",
+      "OOI",
+      "DA",
+      "ADJ",
+    ]);
+    expect(all.rows.find((r) => r.kind === "block")?.count).toMatch(
+      /^\d+ of \d+ lines$/,
+    );
+    const abs = engine
+      .variances(sel, "all", "abs", "none")
+      .rows.map((r) => Math.abs(r.delta));
+    expect(abs).toEqual([...abs].sort((a, b) => b - a));
+  });
+
+  it("a cut splits every leaf exactly into its members; below-CM rows are allocated (alloc.) unless cut by region", () => {
+    for (const cut of ["region", "channel", "line", "segment"] as const) {
+      const vm = engine.variances(fy2025(), "all", "abs", cut);
+      for (const r of vm.rows) {
+        const sum = r.members.reduce((s, x) => s + x.delta, 0);
+        expect(sum, `${cut} ${r.code}`).toBeCloseTo(r.delta, 3);
+      }
+      const allocated = vm.rows.filter((r) => r.alloc).map((r) => r.code);
+      if (cut === "region") expect(allocated).toEqual([]);
+      else
+        expect(allocated.every((c) => /^(SM|RD|GA|OOI|DA|ADJ)_/.test(c))).toBe(
+          true,
+        );
+    }
+  });
+
+  it("n.m. when |comparison| < 2.0 display units or |Δ %| > 50 %", () => {
+    const vm = engine.variances(fy2025(), "all", "abs", "none");
+    for (const r of vm.rows)
+      if (r.deltaPct !== "n.m.")
+        expect(
+          Math.abs(parseFloat(r.deltaPct.replace("−", "-"))),
+        ).toBeLessThanOrEqual(50);
+    expect(vm.rows.some((r) => r.deltaPct === "n.m.")).toBe(true);
+  });
+
+  it("hides lines with no data in either version; they never show as n.m. (Track B parity round)", () => {
+    const sel = fy2025({ entity: "S" });
+    const vm = engine.variances(sel, "all", "abs", "none");
+    const leaves = vm.rows.filter((r) => r.kind === "leaf");
+    // S FY2025 vs Budget: OOI_2, ADJ_1 and ADJ_2 are empty in both versions (35 leaves → 32)
+    expect(leaves).toHaveLength(32);
+    for (const code of ["OOI_2", "ADJ_1", "ADJ_2"])
+      expect(leaves.some((r) => r.code === code)).toBe(false);
+    const shown = engine.variances(sel, 8, "block", "none");
+    const total = shown.footer.find((f) => f.code === "TOTAL");
+    expect(total?.delta).toBeCloseTo(
+      leaves.reduce((s, r) => s + r.delta, 0),
+      6,
+    ); // hiding moves no money
+  });
+});
+
+describe("C-31 allocation in the engine", () => {
+  it("a cut by channel / line / segment conserves every account (Σ members = total)", () => {
+    const sel = fy2025();
+    const fx = createFx(ds.manifest);
+    const tr = { fx, currency: sel.currency, basis: sel.fxBasis, fy: sel.fy };
+    const plan = versionPlan(ds.manifest, sel).base;
+    const total = aggregateAccounts(ds, "S", plan, tr);
+    for (const dim of ["channel", "line", "segment"] as const) {
+      const cut = aggregateBy(ds, "S", plan, tr, [dim]);
+      for (let a = 0; a < total.length; a++) {
+        const s = [...cut.values()].reduce((x, arr) => x + (arr[a] ?? 0), 0);
+        expect(s, `${dim} ${ds.manifest.dict.account[a]}`).toBeCloseTo(
+          total[a] ?? 0,
+          2,
+        );
+      }
+      expect([...cut.keys()].some((k) => k.endsWith("UNASSIGNED"))).toBe(false); // nothing left unallocated
+    }
+  });
+});
+
+describe("Profitability", () => {
+  it.each(SELECTIONS)(
+    "%s: shares sum to 100 %, heat and table reconcile, CC subtitle",
+    (_, sel) => {
+      const vm = engine.profitability(sel);
+      for (const level of vm.concentration.levels)
+        expect(
+          level.segments.reduce((s, x) => s + x.share, 0),
+          level.label,
+        ).toBeCloseTo(1, 9);
+      expect(vm.table.rows.at(-1)?.label).toBe("Total");
+      expect(vm.table.rows.at(-1)?.nr).toBe(vm.heat.grand); // table total = heatmap grand total (both CC)
+      expect(vm.subtitle).toMatch(
+        /^Constant currency \(FY\d{4} budget rates\)/,
+      );
+      expect(vm.heat.rows).toHaveLength(4);
+      expect(vm.bubble.points.length).toBeGreaterThan(0);
+      expect(JSON.stringify(vm)).not.toMatch(/NaN|undefined|Infinity/);
+    },
+  );
+
+  it("heat cells add up to their region and line totals (CC)", () => {
+    const sel = fy2025();
+    const ctx = createViewContext(
+      ds,
+      sel,
+      createSliceCache(ds),
+      createFx(ds.manifest),
+    );
+    const cells = ctx.values(ctx.plan.base, ctx.trCC, ["region", "line"]);
+    const regions = ctx.values(ctx.plan.base, ctx.trCC, ["region"]);
+    for (const [r, vals] of regions ?? []) {
+      const sum = [...(cells ?? [])]
+        .filter(([k]) => k.startsWith(`${r}|`))
+        .reduce((s, [, x]) => s + (x.get("NR") ?? 0), 0);
+      expect(sum, r).toBeCloseTo(vals.get("NR") ?? NaN, 3);
+    }
+  });
+
+  it("prior-year trails need two earlier years (C-04): none for FY2025, drawn for FY2026", () => {
+    expect(
+      engine
+        .profitability(fy2025())
+        .bubble.points.every((p) => p.trail === null),
+    ).toBe(true);
+    expect(
+      engine
+        .profitability(selection({ entity: "S" }))
+        .bubble.points.every((p) => p.trail !== null),
     ).toBe(true);
   });
 });
 
-describe("profitability by slice (C-46)", () => {
-  const cases: [EntityView, Selection["breakdown"]][] = [
-    ["P", "CHANNEL"],
-    ["P", "REGION"],
-    ["P", "SEGMENT"],
-    ["S", "LINE"],
-    ["GROUP", "REGION"],
-    ["GROUP", "ENTITY"],
-  ];
-  for (const [entity, breakdown] of cases)
-    it(`${entity} by ${breakdown}: NR rows sum to the total, shares to 100 %`, () => {
-      const p = engine.profitability(selection({ entity, breakdown }), "A");
-      const nr = p.rows.reduce((s, r) => s + (r.netRevenue ?? 0), 0);
-      const share = p.rows.reduce((s, r) => s + (r.share ?? 0), 0);
-      expect(Math.abs(nr - (p.total.netRevenue ?? NaN))).toBeLessThan(0.01);
-      expect(share).toBeCloseTo(1, 9);
-      expect(p.total.netRevenue).toBeCloseTo(
-        line(selection({ entity }), "NR")?.base ?? NaN,
-        4,
-      );
-    });
-
-  it("a slice filter limits the rows to the chosen values", () => {
-    const p = engine.profitability(
-      selection({ breakdown: "CHANNEL", channel: ["MKT", "D2C"] }),
-      "A",
+describe("How to read", () => {
+  it("one per view, starting with the period sentence", () => {
+    const titles = (["kpi", "analysis", "profitability"] as const).map(
+      (view) => engine.howToRead(selection({ view })).title,
     );
-    expect(p.rows.map((r) => r.key)).toEqual(["D2C", "MKT"]);
-  });
-});
-
-describe("key figures (spec §5)", () => {
-  const tile = (sel: Selection, id: string) =>
-    engine.kpis(sel).find((t) => t.id === id);
-
-  it("twelve tiles per view, eight financial then four operational", () => {
-    for (const entity of ENTITIES) {
-      const tiles = engine.kpis(selection({ entity }));
-      expect(tiles.map((t) => t.id)).toEqual([
-        "K-01",
-        "K-02",
-        "K-03",
-        "K-04",
-        "K-05",
-        "K-06",
-        "K-07",
-        "K-08",
-        "K-09",
-        "K-10",
-        "K-11",
-        "K-12",
-      ]);
-      expect(tiles.filter((t) => t.group === "financial")).toHaveLength(8);
-    }
-  });
-
-  it("tiles equal the statement: net revenue, gross margin, Adj. EBITDA and its margin", () => {
-    for (const entity of ENTITIES) {
-      const sel = selection({ entity });
-      expect(tile(sel, "K-01")?.value).toBeCloseTo(
-        line(sel, "NR")?.base ?? NaN,
-        4,
-      );
-      expect(tile(sel, "K-03")?.value).toBeCloseTo(
-        line(sel, "GM_PCT")?.base ?? NaN,
-        9,
-      );
-      expect(tile(sel, "K-07")?.value).toBeCloseTo(
-        line(sel, "EBITDA")?.base ?? NaN,
-        4,
-      );
-      expect(tile(sel, "K-07")?.sub?.value).toBeCloseTo(
-        line(sel, "EBITDA_PCT")?.base ?? NaN,
-        9,
-      );
-      expect(tile(sel, "K-01")?.compareA?.value).toBeCloseTo(
-        line(sel, "NR")?.compareA?.value ?? NaN,
-        4,
-      );
-    }
-  });
-
-  it("T-17: period-end KPIs read the window's last month, not a sum", () => {
-    const ytd = selection({ entity: "S" });
-    const sep = selection({ entity: "S", timeView: "MTD" });
-    expect(tile(ytd, "K-10")?.value).toBe(tile(sep, "K-10")?.value); // active merchants
-    expect(tile(ytd, "K-04")?.value).toBeCloseTo(
-      tile(sep, "K-04")?.value ?? NaN,
-      4,
-    ); // ARR
-    expect(tile(sep, "K-04")?.value).toBeGreaterThan(0);
-  });
-
-  it("growth KPIs carry no comparisons; neutral KPIs are never coloured (K-20, K-21)", () => {
-    const tiles = engine.kpis(selection());
-    for (const t of tiles.filter((x) => x.growth)) {
-      expect(t.compareA).toBeNull();
-      expect(t.compareB).toBeNull();
-    }
-    for (const t of tiles.filter((x) => x.betterWhen === "neutral"))
-      expect(
-        [t.compareA?.favourable, t.compareB?.favourable].every(
-          (f) => f == null,
-        ),
-      ).toBe(true);
-  });
-
-  it("volume + price / mix vs prior year = organic growth (Consumer Products)", () => {
-    const sel = selection();
-    const v = tile(sel, "K-11")?.value ?? NaN;
-    const pm = tile(sel, "K-12")?.value ?? NaN;
-    expect(v + pm).toBeCloseTo(tile(sel, "K-02")?.value ?? NaN, 9);
-  });
-
-  it("first-year window: prior year n/a, growth n/a", () => {
-    const sel = selection({ fy: 2024, timeView: "FY", month: 12 });
-    expect(tile(sel, "K-02")?.value).toBeNull();
-    expect(tile(sel, "K-01")?.compareB?.value).toBeNull();
+    expect(titles).toEqual([
+      "How to read - Vitals",
+      "How to read - Analysis",
+      "How to read - Profitability",
+    ]);
+    expect(
+      engine.howToRead(selection({ view: "kpi" })).lines[0]?.value,
+    ).toMatch(/^Showing /);
   });
 });

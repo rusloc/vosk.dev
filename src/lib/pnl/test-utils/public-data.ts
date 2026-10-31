@@ -4,7 +4,7 @@ import { createDatasetLoader } from "../data/dataset";
 import type { Dataset } from "../data/dataset";
 import type { EntityCode } from "../engine/types";
 
-// Node side of the loader for Vitest: reads the built public/data artifacts (run `npm run build:data` first).
+// Node side of the loader for Vitest: reads the shipped public/data/pnl artifacts (prebuilt in rusloc/pnl, js-report/).
 const DIR = new URL("../../../../public/data/pnl/", import.meta.url);
 
 const loader = createDatasetLoader(async (name) => {
@@ -16,7 +16,7 @@ const loader = createDatasetLoader(async (name) => {
     );
   } catch (error) {
     throw new Error(
-      `public/data/${name} unreadable — run \`npm run build:data\` first`,
+      `public/data/${name} unreadable — copy it from the pack (rebuilt in rusloc/pnl)`,
       { cause: error },
     );
   }
@@ -26,6 +26,7 @@ export const loadPublicDataset = (
   entities: readonly EntityCode[] = ["P", "S"],
 ): Promise<Dataset> => loader.load(entities);
 
+// Test fixtures copied from rusloc/pnl data/acme_pl_dummy_data/ (checks/control_totals_usd.csv, T-06).
 export const DATA_DIR = fileURLToPath(
   new URL("../../../../data/pnl/", import.meta.url),
 );

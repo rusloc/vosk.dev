@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import type { Manifest } from "@/lib/pnl/data/manifest";
-import { toggleSlice } from "@/lib/pnl/state/selection-schema";
+import type { PeriodView } from "@/lib/pnl/engine/period";
 import type {
   BaseChoice,
   CompareChoice,
   Selection,
-  TimeView,
 } from "@/lib/pnl/engine/types";
 import {
   RAIL_GROUPS,
@@ -15,13 +14,14 @@ import {
   railItemId,
   type PanelKey,
 } from "./filter-rail";
-import { CheckIcon, CloseIcon, InfoIcon } from "./icons";
+import { CloseIcon, InfoIcon } from "./icons";
 import styles from "./ledger.module.css";
-import { Segmented, SwitchRow, type Option } from "./primitives";
+import { ChoiceGroup, Segmented, SwitchRow, type Option } from "./primitives";
+import { useDismiss } from "./use-dismiss";
 
 // Filter flyout (design guide §5.2): one open at a time, pointer at its rail item; Escape, ✕ and Done close it;
 // focus moves to ✕ on open and back to the rail item on close (N-08). "Reset this group" restores the group's
-// defaults (F-35).
+// defaults (F-35); in Period it reads "Back to default" (period picker v2).
 
 export type Patch = Partial<Selection>;
 
@@ -47,10 +47,10 @@ const GROUP_FIELDS: Record<PanelKey, readonly (keyof Selection)[]> = {
 const POINTER_TOP = 124 - 92 - 6;
 const RAIL_ITEM_PITCH = 52;
 
-const TITLES: Record<PanelKey, [string, string]> = {
-  period: ["Period", "Year, month and time view"],
+const TITLES: Record<PanelKey, [string, string | null]> = {
+  period: ["Period", null], // period picker v2: the live summary sentence replaces the subtitle
   versions: ["Versions", "Base and two comparisons"],
-  slice: ["Slice", "Region, channel, category and segment"],
+  slice: ["Slice", "Region, channel, category and tier"],
   display: ["Display", "Currency, units and table options"],
 };
 
@@ -66,28 +66,24 @@ export function Flyout({
   sel,
   defaults,
   manifest,
+  period,
   onChange,
   onClose,
 }: PanelProps & {
   panel: PanelKey;
   wide: boolean;
   defaults: Selection;
+  period: PeriodView;
   onClose: () => void;
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    closeRef.current?.focus();
-    return () => document.getElementById(railItemId(panel))?.focus();
-  }, [panel]);
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    window.addEventListener("keydown", (e) => e.key === "Escape" && onClose(), {
-      signal: ctrl.signal,
-    });
-    return () => ctrl.abort();
-  }, [onClose]);
+  useDismiss({
+    panelRef,
+    focusRef: closeRef,
+    triggerId: railItemId(panel),
+    onClose,
+  });
 
   const [title, subtitle] = TITLES[panel];
   const index = RAIL_GROUPS.findIndex((g) => g.key === panel);
@@ -99,6 +95,7 @@ export function Flyout({
 
   return (
     <div
+      ref={panelRef}
       className={styles.flyout}
       style={{ left: (wide ? RAIL_WIDTH.expanded : RAIL_WIDTH.collapsed) + 10 }}
     >
@@ -115,7 +112,7 @@ export function Flyout({
         <div className={styles.flyoutHead}>
           <div>
             <div className={styles.flyoutTitle}>{title}</div>
-            <div className={styles.caption}>{subtitle}</div>
+            {subtitle && <div className={styles.caption}>{subtitle}</div>}
           </div>
           <button
             ref={closeRef}
@@ -127,15 +124,21 @@ export function Flyout({
             <CloseIcon />
           </button>
         </div>
+        {panel === "period" && (
+          // Live summary (period picker v2): updates on every click, announced politely
+          <p aria-live="polite" className={styles.periodSummary}>
+            {period.summary}
+          </p>
+        )}
         <div className={styles.flyoutBody}>
-          {panel === "period" && <PeriodPanel {...props} />}
+          {panel === "period" && <PeriodPanel {...props} period={period} />}
           {panel === "versions" && <VersionsPanel {...props} />}
           {panel === "slice" && <SlicePanel {...props} />}
           {panel === "display" && <DisplayPanel {...props} />}
         </div>
         <div className={styles.flyoutFoot}>
           <button type="button" className={styles.resetLink} onClick={reset}>
-            Reset this group
+            {panel === "period" ? "Back to default" : "Reset this group"}
           </button>
           <button
             type="button"
@@ -150,85 +153,88 @@ export function Flyout({
   );
 }
 
-function Group({
-  label,
-  count,
-  children,
-}: {
-  label: string;
-  count?: string; // multi-selects: "All 4" / "2 of 4" (design guide §5.2)
-  children: ReactNode;
-}) {
+function Group({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className={styles.group}>
-      <span className={styles.groupLabel}>
-        {label}
-        {count && <span>{count}</span>}
-      </span>
+      <span className={styles.groupLabel}>{label}</span>
       {children}
     </div>
   );
 }
 
-const TIME_VIEWS: readonly Option<TimeView>[] = [
-  { value: "MTD", label: "Month" },
-  { value: "QTD", label: "QTD" },
-  { value: "YTD", label: "YTD" },
-  { value: "LTM", label: "LTM" },
-  { value: "FY", label: "FY" },
-];
-
-// F-02 … F-04
-function PeriodPanel({ sel, manifest, onChange }: PanelProps) {
-  const months = manifest.tables.dim_month;
-  const years = [...new Set(months.map((d) => d.fiscal_year))];
+// F-02 … F-04, period picker v2 (docs/design/period-picker-v2.md Part 1): Show (time view) first, then Year, then the
+// month grid labelled by what the month means; Full year replaces the grid with one line. Covered months are shaded,
+// the anchor is solid; open months follow the base version (C-01, C-02). Selection applies at once; Done only closes.
+function PeriodPanel({
+  sel,
+  onChange,
+  period,
+}: PanelProps & { period: PeriodView }) {
   return (
     <>
-      <Group label="Fiscal year">
-        <Segmented
-          label="Fiscal year"
-          value={String(sel.fy)}
-          options={years.map((y) => ({ value: String(y), label: `FY${y}` }))}
-          onChange={(v) => onChange({ fy: Number(v) })}
-        />
-      </Group>
-      <Group label="Month">
-        <div role="group" aria-label="Month" className={styles.monthGrid}>
-          {months
-            .filter((d) => d.fiscal_year === sel.fy)
-            .map((d) => (
-              <button
-                key={d.month_key}
-                type="button"
-                aria-pressed={d.month_number === sel.month}
-                aria-label={
-                  d.is_closed ? d.month_name : `${d.month_name} (open month)`
-                }
-                className={`${styles.month} ${d.is_closed ? "" : styles.monthOpen}`}
-                onClick={() =>
-                  onChange({
-                    month:
-                      d.month_number as Selection["month"] /* dim_month schema: 1 … 12 */,
-                  })
-                }
-              >
-                {d.month_name}
-              </button>
-            ))}
-        </div>
-        <span className={styles.caption}>
-          Dashed months are still open. Actual shows closed months only; Latest
-          estimate and Budget cover them.
+      <div className={styles.group}>
+        <span id="period-show" className={styles.groupLabel}>
+          Show
         </span>
-      </Group>
-      <Group label="Time view">
-        <Segmented
-          label="Time view"
+        <ChoiceGroup
+          labelledBy="period-show"
           value={sel.timeView}
-          options={TIME_VIEWS}
+          className={styles.choiceGrid2}
+          options={period.timeViews.map((t) => ({
+            value: t.value,
+            content: t.label,
+            className: styles.choice,
+          }))}
           onChange={(timeView) => onChange({ timeView })}
         />
-      </Group>
+      </div>
+      <div className={styles.group}>
+        <span id="period-year" className={styles.groupLabel}>
+          Year
+        </span>
+        <ChoiceGroup
+          labelledBy="period-year"
+          value={String(sel.fy)}
+          className={styles.choiceGrid3}
+          options={period.years.map((y) => ({
+            value: String(y),
+            content: String(y),
+            className: styles.choice,
+          }))}
+          onChange={(v) => onChange({ fy: Number(v) })}
+        />
+      </div>
+      {period.gridLabel === null ? (
+        <p className={styles.periodNote}>{period.fullYearNote}</p>
+      ) : (
+        <div className={styles.group}>
+          <span id="period-month" className={styles.groupLabel}>
+            {period.gridLabel}
+          </span>
+          <ChoiceGroup
+            labelledBy="period-month"
+            value={String(sel.month)}
+            className={styles.monthGrid}
+            options={period.months.map((c) => ({
+              value: String(c.month),
+              className: `${styles.month} ${c.covered && !c.anchor ? styles.monthCovered : ""}`,
+              disabledReason: c.selectable ? undefined : period.openMonthHint,
+              content: (
+                <>
+                  <span>{c.name}</span>
+                  {c.note && <span className={styles.monthNote}>{c.note}</span>}
+                </>
+              ),
+            }))}
+            onChange={(v) => {
+              const month = period.months.find(
+                (c) => String(c.month) === v,
+              )?.month;
+              if (month) onChange({ month });
+            }}
+          />
+        </div>
+      )}
     </>
   );
 }
@@ -316,129 +322,32 @@ function VersionsPanel({ sel, manifest, onChange }: PanelProps) {
   );
 }
 
-// F-08 … F-11: chips per slot (design guide §5.2). F-33: never empty, Select all; F-32: in the Group view the three
-// company-specific slots are off and say why; region stays.
-function SlicePanel({ sel, manifest, onChange }: PanelProps) {
-  const t = manifest.tables;
-  const own = <
-    R extends {
-      entity_code: string;
-      is_unassigned: boolean;
-      sort_order: number;
-    },
-  >(
-    rows: readonly R[],
-  ) =>
-    rows
-      .filter((r) => r.entity_code === sel.entity && !r.is_unassigned)
-      .sort((a, b) => a.sort_order - b.sort_order);
-  const slotLabel = (
-    rows: readonly { entity_code: string; slot_label: string }[],
-    fallback: string,
-  ) =>
-    rows.find(
-      (r) => r.entity_code === (sel.entity === "GROUP" ? "P" : sel.entity),
-    )?.slot_label ?? fallback;
-  const slots: {
-    field: "region" | "channel" | "line" | "segment";
-    label: string;
-    options: { code: string; name: string }[];
-  }[] = [
-    {
-      field: "region",
-      label: "Region",
-      options: [...t.dim_region]
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .map((r) => ({ code: r.region_code, name: r.region_name })),
-    },
-    {
-      field: "channel",
-      label: slotLabel(t.dim_channel, "Channel"),
-      options: own(t.dim_channel).map((r) => ({
-        code: r.channel_code,
-        name: r.channel_name,
-      })),
-    },
-    {
-      field: "line",
-      label: slotLabel(t.dim_line, "Category"),
-      options: own(t.dim_line).map((r) => ({
-        code: r.line_code,
-        name: r.line_name,
-      })),
-    },
-    {
-      field: "segment",
-      label: slotLabel(t.dim_segment, "Segment"),
-      options: own(t.dim_segment).map((r) => ({
-        code: r.segment_code,
-        name: r.segment_name,
-      })),
-    },
+// F-08 … F-11: honestly off until build step 5 (slice filters and the C-31 allocation)
+function SlicePanel({ sel, manifest }: PanelProps) {
+  const slot = (rows: readonly { entity_code: string; slot_label: string }[]) =>
+    rows.find((r) => r.entity_code === sel.entity)?.slot_label ?? "";
+  const rows = [
+    "Region",
+    slot(manifest.tables.dim_channel),
+    slot(manifest.tables.dim_line),
+    slot(manifest.tables.dim_segment),
   ];
-  const group = sel.entity === "GROUP";
   return (
     <>
-      {group && (
-        <div className={styles.noticeBox}>
-          <InfoIcon />
-          <span>
-            ACME Group: channel, category and segment differ by company, so they
-            are off here (All, consolidated). Region applies.
-          </span>
-        </div>
-      )}
-      {slots.map(({ field, label, options }) => {
-        if (group && field !== "region")
-          return (
-            <Group key={field} label={label}>
-              <div className={styles.disabledRow} aria-disabled="true">
-                All (consolidated)
-              </div>
-            </Group>
-          );
-        const all = options.map((o) => o.code);
-        const chosen = sel[field];
-        const on = (code: string) => chosen.includes(code);
-        const count =
-          chosen.length === 0
-            ? `All ${all.length}`
-            : `${chosen.length} of ${all.length}`;
-        return (
-          <Group key={field} label={label} count={count}>
-            <div role="group" aria-label={label} className={styles.chips}>
-              <button
-                type="button"
-                aria-pressed={chosen.length === 0}
-                className={styles.chip}
-                onClick={() => onChange({ [field]: [] })}
-              >
-                {chosen.length === 0 && <CheckIcon />}
-                Select all
-              </button>
-              {options.map((o) => (
-                <button
-                  key={o.code}
-                  type="button"
-                  aria-pressed={on(o.code)}
-                  className={styles.chip}
-                  onClick={() =>
-                    onChange({ [field]: toggleSlice(chosen, all, o.code) })
-                  }
-                >
-                  {on(o.code) && <CheckIcon />}
-                  {o.name}
-                </button>
-              ))}
-            </div>
-          </Group>
-        );
-      })}
-      <span className={styles.caption}>
-        Lines from operating expenses down are not booked to channel, category
-        or segment; with one of these filters on they are shared out by net
-        revenue (alloc.).
-      </span>
+      <div className={styles.noticeBox}>
+        <InfoIcon />
+        <span>
+          Slice filters are not built yet. They arrive with the allocation of
+          lines below contribution margin (C-31); the figures show every slice.
+        </span>
+      </div>
+      {rows.map((label) => (
+        <Group key={label} label={label}>
+          <div className={styles.disabledRow} aria-disabled="true">
+            All
+          </div>
+        </Group>
+      ))}
     </>
   );
 }
@@ -446,6 +355,10 @@ function SlicePanel({ sel, manifest, onChange }: PanelProps) {
 // F-12 … F-17
 function DisplayPanel({ sel, manifest, onChange }: PanelProps) {
   const p = manifest.tables;
+  // Parity rule 14: the units buttons carry the selected currency's symbol ($m / $k, €m / €k, £m / £k)
+  const symbol =
+    p.param_reporting_currency.find((c) => c.currency_code === sel.currency)
+      ?.symbol ?? sel.currency;
   return (
     <>
       <Group label="Currency">
@@ -476,8 +389,8 @@ function DisplayPanel({ sel, manifest, onChange }: PanelProps) {
             label="Units"
             value={sel.units}
             options={[
-              { value: "M", label: "m" },
-              { value: "K", label: "k" },
+              { value: "M", label: `${symbol}m` },
+              { value: "K", label: `${symbol}k` },
             ]}
             onChange={(units) => onChange({ units })}
           />

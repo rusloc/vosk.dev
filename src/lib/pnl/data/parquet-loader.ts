@@ -68,7 +68,7 @@ export async function readPlColumns(
   return pl;
 }
 
-/** ops.parquet → typed arrays: both companies, slice grain, units / GMV cents / month-end merchants. */
+/** ops.parquet → typed arrays (same contract as readPlColumns; written by scripts/build-data.ts §5). */
 export async function readOpsColumns(
   file: ArrayBuffer,
   manifest: Manifest,
@@ -83,9 +83,9 @@ export async function readOpsColumns(
     channel: new Int32Array(n),
     line: new Int32Array(n),
     segment: new Int32Array(n),
-    units: new Float64Array(n),
+    units: new Int32Array(n),
     gmvCents: new Float64Array(n),
-    merchants: new Float64Array(n),
+    merchants: new Int32Array(n),
   };
   const target = new Map<string, Int32Array | Float64Array>([
     ["entity", ops.entity],
@@ -115,18 +115,18 @@ export async function readOpsColumns(
       out.set(columnData, rowStart);
     },
   });
-  const sizes: [Int32Array, number][] = [
-    [ops.entity, manifest.dict.entity.length],
-    [ops.monthIdx, manifest.tables.dim_month.length],
-    [ops.version, manifest.dict.version.length],
-    [ops.region, manifest.dict.region.length],
-    [ops.channel, manifest.dict.channel.length],
-    [ops.line, manifest.dict.line.length],
-    [ops.segment, manifest.dict.segment.length],
+  const sizes: [Int32Array, number, string][] = [
+    [ops.entity, manifest.dict.entity.length, "entity"],
+    [ops.monthIdx, manifest.tables.dim_month.length, "month"],
+    [ops.version, manifest.dict.version.length, "version"],
+    [ops.region, manifest.dict.region.length, "region"],
+    [ops.channel, manifest.dict.channel.length, "channel"],
+    [ops.line, manifest.dict.line.length, "line"],
+    [ops.segment, manifest.dict.segment.length, "segment"],
   ];
-  for (const [col, size] of sizes)
+  for (const [col, size, name] of sizes)
     for (const v of col)
       if (v < 0 || v >= size)
-        throw new Error(`parquet: ops code ${v} outside 0…${size - 1}`);
+        throw new Error(`parquet: ops ${name} code ${v} outside 0…${size - 1}`);
   return ops;
 }

@@ -1,11 +1,39 @@
-# Unified management P&L — the JS showcase
+# Management P&L suite — the JS showcase
 
 The custom-JavaScript flavour ("Track C") of the ACME Unified P&L, built and hosted in this repo as a showcase
-item. Copied on 2026-10-22 from `rusloc/pnl` → `js-report/` (build slices 0–3: data, engine core reconciled to the
-552 control totals, Ledger shell, statement) and **owned by this repo from then on**: nothing here reads, builds
-from or reports back to the PNL repo (owner's call, 2026-10-22).
+item: `/work/pnl-suite` (until 2026-10-31 `/work/unified-management-pnl`, which now 308s there).
 
-## Where things are
+## 2026-10-31: replaced by the standalone-app pack
+
+The owner had the PNL repo's **`pnl/js-app/` pack** (`.sync`, 2026-10-28; its README is `pack-readme-2026-10-28.md`
+here, the hand-over note `../report-packs-2026-10-31.md`) replace the 10-22 copy. The pack is the P&L part of
+`js-report/` as of 10-28: the 10-27 views redesign (Vitals, two-page Analysis with the largest variances, two-page
+Profitability, glass pop-ups, company picker, period picker v2), **without the Group view and the slice filters** the
+10-22 copy had built here (its `restrictToBuilt` forces P / S and clears the slices; the company picker lists Group
+as "not built yet"). The 10-22 code, its allocation-parity fixture and its decisions below are history now; git has
+them (`b38fc8f` and before).
+
+How it was brought in (the same way as on 10-22, now for three reports at once, see `../mirelo/README.md` and
+`../nordmark/README.md`):
+
+- **Copied in, not framed.** `lib/{data,engine,state,test-utils}` → `src/lib/pnl/`, `components/` →
+  `src/components/pnl/`, `public/data/` → `public/data/pnl/`, `fixtures/checks/` → `data/pnl/checks/`. Files renamed
+  to kebab-case, `.ts` import extensions dropped, the pack's Prettier style (single quotes, 120 columns) replaced by
+  the site's. The pack's `app/` (root layout, page, `globals.css`) and `next.config.ts` (CSP `frame-ancestors`,
+  `EMBED_ALLOWED_ORIGINS`) are not needed: the report is a client component in the site's own popup.
+- **State in React, not in the page URL** (`src/components/report-search.ts`, shared by the three reports): the
+  client root reads `window.location.search` once and keeps the query string in state through the same Zod codec
+  the standalone app used for its URL; "Copy link" gives the showcase page's URL plus the state, and a page URL
+  carrying one of the report's keys (`lib/js-reports.ts`) opens the popup in that state on arrival.
+- **Tokens and base type on the report root** (`ledger.module.css` `.app`), fonts through `fonts.ts` on the same
+  element, `height: 100%` of the popup instead of `100dvh`, `min-width: 1024px` (N-09): the popup scrolls below that.
+- **Tests:** the pack's 196 (+ 1 skipped: the Track B bookmark cross-check, which needs the PBIP) run in the site's
+  Vitest projects; the CSV reader moved to `src/lib/csv.ts`, shared by the three reports' control-total tests.
+- **Rule of the pack:** fixes go back to `rusloc/pnl` through a dated `.sync` note and the pack is re-issued; a
+  re-issue is a copy-over of the same folders plus the adaptations above (the port script lives in the session
+  scratchpad only; the list above is the recipe).
+
+## Where things are (10-22, kept)
 
 | What | Path |
 |---|---|

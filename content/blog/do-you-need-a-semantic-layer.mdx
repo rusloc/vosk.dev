@@ -1,110 +1,116 @@
 ---
 title: "Do you need a semantic layer?"
-description: "What a semantic layer is, who really needs one, how dbt, Cube, Looker, AtScale and the warehouses differ, and a plain-SQL version a small team can run from its IDE."
+description: "Who really needs a semantic layer product, how dbt, Cube, Looker, AtScale and the warehouses differ, and the plain-SQL version a small team can run from its IDE."
 date: "2026-10-27"
+updated: "2026-10-28"
 tags: ["sql", "power bi"]
 draft: false
 ---
 
-> **In short.** A semantic layer is one agreed definition of your numbers that
-> every tool reads from. Large teams with many tools need a product for it.
-> Most small teams already know the language that does the job: SQL.
+You've probably sat through this meeting. Someone puts last month's revenue on
+the screen, someone else has a different number in their spreadsheet, and the
+next half hour goes on working out why. One of them counts returns. One converts
+to USD at the month-end rate, the other at the daily rate. Both numbers are
+correct, each by its own definition, and that's exactly the trouble.
 
-## What it is
-
-Ask three people for last month's revenue and you can get three answers: one
-counts returns, one counts in local currency, one forgot the intercompany
-invoices. Each figure was correct according to its own definition.
-
-A semantic layer sits between the data and everything that reads it. It holds
-the definitions in one place:
-
-- **measures:** what "revenue", "margin" or "active customer" means;
-- **joins:** how orders, customers and products relate;
-- **rules:** currency, time grain, who may see which rows.
-
-Every consumer goes through it: a BI tool, a spreadsheet, an app, an AI agent.
-They all get the same answer because they all ask the same definition.
+A semantic layer is the fix people sell for this. Strip the marketing off and
+it's a single place where "revenue" is defined, along with how orders join to
+customers and who's allowed to see which rows. Every tool that shows a number
+reads it from there: the BI tool, the spreadsheet, the app, and these days the
+AI agent too. They all ask the same definition, so they all get the same
+number.
 
 ## Do you really need one?
 
-**Yes, when the same numbers are read in many places.** Several BI tools across
-teams, a product that embeds analytics for its customers, AI agents that
-query data on their own. Without a shared layer, each of them redefines
-revenue, and the definitions drift apart.
+If the same numbers get read in a lot of places, yes. Three BI tools across
+three departments, a product that embeds analytics for its customers, agents
+querying the warehouse on their own: without one shared definition, each of
+them quietly invents its own revenue, and a year later nobody can say which one
+is right.
 
-**Probably not as a separate product when** one team reports from one BI
-tool. A Power BI semantic model *is* a semantic layer: measures in DAX,
-relationships, row-level security. It just mostly serves Microsoft's own front
-ends.
+If you're one team reporting out of one Power BI model, you very likely have
+one already. A Power BI semantic model *is* a semantic layer: DAX measures,
+relationships, row-level security. Its only real limit is that it mostly talks
+to Microsoft's own front ends.
 
-The real question is not "do we have a semantic layer" but "is there exactly
-one place where revenue is defined?"
+So here's the test I'd use instead of the product question: is there exactly
+one place where revenue is defined? If there is, you're fine, whatever it's
+called.
 
-## The main players
+## Who's selling what
+
+The market is crowded, and every vendor will tell you theirs is the one. Six
+you'll actually run into:
 
 | Option | What it is | Best fit | Watch out for |
 |---|---|---|---|
-| **Power BI semantic model** | DAX measures and relationships inside Power BI and Fabric | Microsoft shops | Other tools reach it through the XMLA endpoint, which needs Premium, PPU or Fabric capacity |
-| **Looker (LookML)** | A modelling language that sits at the core of Looker | Teams standardised on Looker | Tied to Looker's licence and way of working |
-| **dbt Semantic Layer** | Metrics in YAML next to dbt models, compiled to SQL by MetricFlow | Teams that already run dbt | MetricFlow is open source; the hosted APIs other tools connect to are on the paid dbt platform |
-| **Cube** | A headless layer with SQL, REST and GraphQL APIs, caching and access rules | Apps, embedded analytics, AI agents | One more service to deploy and run |
-| **AtScale** | An enterprise layer that serves Excel, Power BI and Tableau as if it were a cube | Large enterprises with many BI tools | Commercial, enterprise pricing |
-| **Warehouse-native** | Snowflake semantic views, Databricks metric views | Teams committed to one warehouse | Tied to that warehouse |
+| Power BI semantic model | DAX measures and relationships inside Power BI and Fabric | Microsoft shops | Other tools reach it through the XMLA endpoint, which needs Premium, PPU or Fabric capacity |
+| Looker (LookML) | A modelling language at the core of Looker | Teams standardised on Looker | Tied to Looker's licence and way of working |
+| dbt Semantic Layer | Metrics in YAML next to dbt models, compiled to SQL by MetricFlow | Teams that already run dbt | MetricFlow is open source; the hosted APIs other tools connect to are on the paid dbt platform |
+| Cube | A headless layer with SQL, REST and GraphQL APIs, caching and access rules | Apps, embedded analytics, AI agents | One more service to deploy and run |
+| AtScale | An enterprise layer that serves Excel, Power BI and Tableau as if it were a cube | Large enterprises with many BI tools | Commercial, enterprise pricing |
+| Warehouse-native | Snowflake semantic views, Databricks metric views | Teams committed to one warehouse | Tied to that warehouse |
 
-The vendors are also working on a shared format. Snowflake, dbt Labs, Salesforce
-and others back the Open Semantic Interchange, so definitions can move between
-tools. It is early days.
+They differ mostly in where the definition lives (inside a BI tool, next to the
+dbt models, in a service of its own, or in the warehouse) and in who can read
+it: one front end, or anything that speaks the API. Cube and AtScale also cache
+and pre-aggregate, which matters once queries get expensive.
 
-## How they differ
+What they have in common is that each one is a new language. DAX, LookML, dbt
+YAML, Cube's data model, or somebody's UI. Somebody on your team has to learn
+it, and then somebody has to be the person who knows it.
 
-- **Where the definition lives:** inside a BI tool (Power BI, Looker), next to
-  the transformations (dbt), in its own service (Cube, AtScale), or in the
-  warehouse (Snowflake, Databricks).
-- **Who can read it:** one front end, or any tool through an API.
-- **What else it does:** caching and pre-aggregation (Cube, AtScale), access
-  control, lineage.
-- **What you have to learn:** DAX, LookML, dbt YAML, Cube's data model, or a
-  vendor's UI. That is a new language for every option on the list.
+The vendors are working on a shared format too. Snowflake, dbt Labs, Salesforce
+and others back the Open Semantic Interchange, so definitions could move between
+tools. It's early days.
 
-I run Cube for the [online-sales showcase](/work/online-sales-cube) on this site,
-and [wrote up that stack](/blog/your-own-bi-front-end-with-cube). It is a good
-tool. It is also more than most small teams need on day one.
+I like Cube, for what it's worth. It runs the
+[online-sales showcase](/work/online-sales-cube) on this site, and I
+[wrote up that stack](/blog/your-own-bi-front-end-with-cube). I still wouldn't
+hand it to a three-person team on day one.
 
-## A simpler version: plain SQL, in git, written with an AI agent
+## The version I actually use: plain SQL, in git
 
-If your team knows SQL, the definitions can be SQL. No new modelling language,
-no new service.
+If your team already knows SQL, your definitions can just be SQL. No new
+modelling language, no new service to keep alive.
 
-1. **One query per business object.** Revenue, orders, the P&L lines: each is a
-   SQL script with one owner and a readable layout.
-2. **The query lives in the database, and Power BI reads it from there.** A small
-   table holds the scripts; Power Query fetches the text and runs it on every
-   refresh. I described this in
-   [a Postgres + Power BI workflow](/blog/postgres-power-bi-workflow). Nothing is
-   copied into the report, so the report can't drift from the definition.
-3. **The same scripts are in git.** Every change is a diff with an author and a
-   date. You can read it, reverse it, or ask why it happened.
-4. **An AI coding agent does most of the typing.** It writes and edits the SQL
-   in your IDE, in your house style, and you review the diff. With read-only
-   access to the database it can check its own work against real rows. That
-   took one query from five minutes to 15 seconds in
-   [this post](/blog/give-the-agent-eyes).
-5. **Other front ends read the same table.** The Excel view's DAX can sit in the
-   row next to the SQL, so
+It goes like this:
+
+1. One query per business object. Revenue, orders, the P&L lines: each is its
+   own SQL script, with one owner and a layout people can read.
+2. The query lives in the database, and Power BI reads it from there. A small
+   table holds the scripts, and Power Query fetches the text and runs it on every
+   refresh. The whole setup is in
+   [a Postgres + Power BI workflow](/blog/postgres-power-bi-workflow). Nothing
+   gets pasted into the report, so the report can't drift away from the
+   definition.
+3. The same scripts sit in git. Every change is a diff with an author and a
+   date, so you can read it, undo it, or go and ask why it happened.
+4. An AI coding agent does most of the typing. It writes and edits the SQL in
+   your IDE, in your house style, and you review the diff. Give it read-only
+   access to the database and it checks its own work against real rows. That's
+   how my biggest query went from five minutes to 15 seconds, which I
+   [wrote up separately](/blog/give-the-agent-eyes).
+5. Other front ends read the same table. The DAX for the Excel view sits in the
+   row next to the SQL, which is how
    [Power BI and Excel share one default view](/blog/one-model-two-front-doors).
 
-What you get: one definition of every number, in a language the whole team
-reads, in files you can open by hand when the agent isn't around. Nobody needs
-to learn a semantic-layer product to change a measure.
+You end up with one definition of every number, written in a language the whole
+team reads, in files you can open by hand on a day the agent isn't around.
+Changing a measure doesn't mean learning a product first.
 
-What you don't get: an API for apps, a query cache, or row-level rules beyond
-what database roles give you. You also need one rule: definitions change in
-git, never in the report. When you outgrow that, the SQL you wrote moves into
-dbt or Cube almost as it is, so none of it is wasted.
+It has a weak spot, and I learned it the hard way. Everything rests on one rule:
+definitions change in git, never in the database by hand and never in the
+report. That same big query grew to 2,200 lines partly because I kept editing
+it straight in the database while the file stayed behind. The git mirror came
+after the pain.
 
-## Where to start
+You also don't get an API for apps, a query cache, or row-level rules beyond
+what database roles give you. When you outgrow that, the SQL you've written
+moves into dbt or Cube nearly as it is, so none of the work is wasted.
 
-Pick the three numbers people argue about most. Write each as one SQL query,
-commit it, and point the report at it. If nobody argues about those numbers next
-month, you have a semantic layer.
+## Where I'd start
+
+Pick the three numbers people argue about most. Write each one as a single SQL
+query, commit it, and point the report at it. If nobody argues about those
+numbers next month, congratulations, you have a semantic layer.

@@ -236,6 +236,8 @@ export const ru: Dictionary = {
     backToShowcase: "Назад в портфолио",
     closeReport: "Закрыть отчёт",
     openLiveReport: "Открыть живой отчёт",
+    openPowerBi: "Power BI",
+    openCustom: "Собственный",
     writeUp: "Разбор",
     dashboardLoading: "Загружаем живой дашборд…",
     dashboardError:

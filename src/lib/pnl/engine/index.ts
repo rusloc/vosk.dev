@@ -1,61 +1,79 @@
 import type { Dataset } from "../data/dataset";
-import { allocates, sliceFilter } from "./aggregate";
-import {
-  largestVariances,
-  profitability,
-  type Profitability,
-  type VarianceRow,
-} from "./analysis";
-import { bridge, type Bridge } from "./bridge";
-import { createCore, IC_DIFFERENCE } from "./core";
-import { kpis, type KpiTile } from "./kpis";
-import { contextLine, notices } from "./notices";
+import { aggregateAccounts } from "./aggregate";
+import { analysisBridges, largestVariances } from "./analysis";
+import type { Translation } from "./aggregate";
+import { createFx } from "./fx";
+import { appliedFilters, headerStatus, railSummaries } from "./header";
+import type { FilterRow } from "./header";
+import { notices } from "./notices";
 import type { Notice } from "./notices";
+import { periodView } from "./period";
+import { profitability } from "./profitability";
+import { createSliceCache } from "./slices";
+import type { PeriodView } from "./period";
+import { buildSpine, evaluateSpine } from "./spine";
 import type {
   ColumnPlan,
-  CompareChoice,
   Selection,
   SpineRow,
   StatementResult,
   StatementRow,
   Variance,
-  VersionPlan,
 } from "./types";
-import { priorYearPlan, versionPlan } from "./versions";
+import { hasNoData, versionPlan } from "./versions";
+import { createViewContext } from "./view-context";
+import type {
+  AnalysisVM,
+  HowToReadVM,
+  ProfitabilityVM,
+  VarCut,
+  VarMode,
+  VarTop,
+  VariancesVM,
+  VitalsVM,
+} from "./view-types";
+import { howToRead } from "./view-copy";
+import { vitals } from "./vitals";
 
 // Public engine API (ADR-0002 §2.3): the UI calls this and nothing else; every number on screen comes from here.
-
-/** Which comparison the Analysis and Profitability views use: Compare A or Compare B (C-40). */
-export type Against = "A" | "B";
-
-export interface Comparison {
-  choice: Exclude<CompareChoice, "NONE">;
-  label: string; // "Budget", "Latest estimate", "Prior year"
-}
+// Built so far (steps 0–3): statement() in the Variance layout, by function, without slice filters; notices; page top.
 
 export interface Engine {
   statement(sel: Selection): StatementResult;
-  kpis(sel: Selection): KpiTile[]; // spec §5, kpi-card-v2
-  analysis(
-    sel: Selection,
-    against: Against,
-  ): { comparison: Comparison; bridge: Bridge; variances: VarianceRow[] }; // C-40, C-45
-  profitability(
-    sel: Selection,
-    against: Against,
-  ): Profitability & { comparison: Comparison }; // C-46
-  notices(sel: Selection): Notice[]; // C-50, L-05
-  context(sel: Selection): string; // L-04
+  notices(sel: Selection): Notice[]; // C-50, L-05: labelled rows of the applied-filters pop-up
   dataStatus(): { lastClosedMonth: string; builtAt: string }; // N-02 / N-03
+  period(sel: Selection): PeriodView; // F-02 … F-04, C-01: period picker v2 summary sentence and month grid
+  /** Page top: status line (L-01, N-02), applied-filters rows (replace the L-04 context line), rail summaries. */
+  header(
+    sel: Selection,
+    timeZone?: string,
+  ): {
+    status: string;
+    filters: FilterRow[];
+    rail: { versions: string; display: string };
+  };
+  /** P&L views redesign v4 (single company views; the Group view is not built in Track C). */
+  vitals(sel: Selection): VitalsVM;
+  analysis(sel: Selection): AnalysisVM;
+  variances(
+    sel: Selection,
+    top: VarTop,
+    mode: VarMode,
+    cut: VarCut,
+  ): VariancesVM;
+  profitability(sel: Selection): ProfitabilityVM;
+  howToRead(sel: Selection): HowToReadVM;
 }
 
 const NET_REVENUE = "NR"; // every ratio and % NR divides by step 3 (M-03, M-12)
 const NO_COLOUR = new Set(["ETR_PCT"]); // effective tax rate Δ carries no favourable/unfavourable colour (M-11)
-const COMPARE_LABEL = {
-  B: "Budget",
-  LE: "Latest estimate",
-  PY: "Prior year",
-} as const;
+
+function assertBuilt(sel: Selection): void {
+  if (
+    [sel.region, sel.channel, sel.line, sel.segment].some((s) => s.length > 0)
+  )
+    throw new Error("engine: not built yet — slice filters (build step 5)");
+}
 
 /**
  * Δ = current − comparison on signed values (M-10): positive is favourable on every line, revenue or cost (T-13).
@@ -77,61 +95,45 @@ export function variance(
   };
 }
 
-/** C-40: the chosen comparison if it is on, else the other one, else the prior year. */
-function comparisonOf(
-  m: Dataset["manifest"],
-  sel: Selection,
-  plan: VersionPlan,
-  against: Against,
-): { plan: ColumnPlan; comparison: Comparison } {
-  const options: [ColumnPlan | null, CompareChoice][] =
-    against === "B"
-      ? [
-          [plan.compareB, sel.compareB],
-          [plan.compareA, sel.compareA],
-        ]
-      : [
-          [plan.compareA, sel.compareA],
-          [plan.compareB, sel.compareB],
-        ];
-  for (const [p, choice] of options)
-    if (p && choice !== "NONE")
-      return { plan: p, comparison: { choice, label: COMPARE_LABEL[choice] } };
-  return {
-    plan: priorYearPlan(m, plan),
-    comparison: { choice: "PY", label: COMPARE_LABEL.PY },
-  };
-}
-
 export function createEngine(ds: Dataset): Engine {
-  const core = createCore(ds);
   const m = ds.manifest;
+  const fx = createFx(m);
+  const cache = createSliceCache(ds);
+  const view = (sel: Selection) => createViewContext(ds, sel, cache, fx);
 
   return {
     statement(sel) {
+      assertBuilt(sel);
       const plan = versionPlan(m, sel);
-      const f = sliceFilter(m, sel);
-      const tr = core.translation(sel);
-      const spine = core.spine(sel.entity, allocates(f));
-      const col = (p: ColumnPlan | null) =>
-        core.column(sel.entity, spine, p, f, tr);
-      const base = col(plan.base);
-      const compareA = col(plan.compareA);
-      const compareB = col(plan.compareB);
-      const fyBudget = col(plan.fyBudget);
-      const fyLE = col(plan.fyLE);
+      const tr: Translation = {
+        fx,
+        currency: sel.currency,
+        basis: sel.fxBasis,
+        fy: sel.fy,
+      };
+      const spine = buildSpine(m, sel.entity);
+      const evaluate = (c: ColumnPlan | null) =>
+        c === null || hasNoData(c)
+          ? null
+          : evaluateSpine(m, spine, aggregateAccounts(ds, sel.entity, c, tr));
+
+      const base = evaluate(plan.base);
+      const compareA = evaluate(plan.compareA);
+      const compareB = evaluate(plan.compareB);
+      const fyBudget = evaluate(plan.fyBudget);
+      const fyLE = evaluate(plan.fyLE);
       const baseNr = base?.get(NET_REVENUE) ?? null;
 
       const rows = spine.map((row): StatementRow => {
-        const value = (c: Map<string, number | null> | null) =>
-          c?.get(row.code) ?? null;
+        const value = (col: Map<string, number | null> | null) =>
+          col?.get(row.code) ?? null;
         const b = value(base);
         const compare = (
           on: ColumnPlan | null,
-          c: Map<string, number | null> | null,
+          col: Map<string, number | null> | null,
         ): Variance | null => {
           if (on === null) return null;
-          const v = value(c);
+          const v = value(col);
           return { value: v, ...variance(row, b, v) };
         };
         const le = value(fyLE);
@@ -147,50 +149,11 @@ export function createEngine(ds: Dataset): Engine {
           fyLE: { value: le, ...variance(row, le, budget) },
         };
       });
-      // C-37: the Intercompany difference shows only when it is not zero — below half a cent is float noise
-      const isZero = (r: StatementRow) =>
-        [
-          r.base,
-          r.compareA?.value,
-          r.compareB?.value,
-          r.fyBudget,
-          r.fyLE.value,
-        ].every((v) => Math.abs(v ?? 0) < 0.005);
-      return {
-        rows: rows.filter((r) => r.code !== IC_DIFFERENCE || !isZero(r)),
-        plan,
-      };
-    },
-
-    kpis(sel) {
-      return kpis(core, sel, versionPlan(m, sel));
-    },
-
-    analysis(sel, against) {
-      const plan = versionPlan(m, sel);
-      const c = comparisonOf(m, sel, plan, against);
-      return {
-        comparison: c.comparison,
-        bridge: bridge(core, sel, plan.base, c.plan),
-        variances: largestVariances(core, sel, plan.base, c.plan),
-      };
-    },
-
-    profitability(sel, against) {
-      const plan = versionPlan(m, sel);
-      const c = comparisonOf(m, sel, plan, against);
-      return {
-        ...profitability(core, sel, plan.base, c.plan),
-        comparison: c.comparison,
-      };
+      return { rows, plan };
     },
 
     notices(sel) {
-      return notices(m, versionPlan(m, sel), sel);
-    },
-
-    context(sel) {
-      return contextLine(m, sel);
+      return notices(m, sel, versionPlan(m, sel));
     },
 
     dataStatus() {
@@ -199,5 +162,24 @@ export function createEngine(ds: Dataset): Engine {
       if (!last) throw new Error("engine: no closed month in dim_month");
       return { lastClosedMonth: last.month_key, builtAt: m.builtAt };
     },
+
+    period(sel) {
+      return periodView(m, sel);
+    },
+
+    header(sel, timeZone) {
+      return {
+        status: headerStatus(m, sel, timeZone),
+        filters: appliedFilters(m, sel),
+        rail: railSummaries(sel),
+      };
+    },
+
+    vitals: (sel) => vitals(view(sel)),
+    analysis: (sel) => analysisBridges(view(sel)),
+    variances: (sel, top, mode, cut) =>
+      largestVariances(view(sel), top, mode, cut),
+    profitability: (sel) => profitability(view(sel)),
+    howToRead: (sel) => howToRead(m, sel, view(sel)),
   };
 }

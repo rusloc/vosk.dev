@@ -4,8 +4,8 @@ import { notFound } from "next/navigation";
 import { BackLink } from "@/components/back-link";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
-import { PnlReportLazy } from "@/components/pnl-report-lazy";
-import { SELECTION_KEYS } from "@/lib/pnl/state/selection-schema";
+import { JsReportLazy } from "@/components/js-report-lazy";
+import { REPORT_QUERY_KEYS } from "@/lib/js-reports";
 import { ReportDialog } from "@/components/report-dialog";
 import { SalesDashboardLazy } from "@/components/sales-dashboard-lazy";
 import { SupersetEmbed } from "@/components/superset-embed";
@@ -122,20 +122,46 @@ export default async function ShowcasePage({ params }: Props) {
         </span>
       </header>
 
-      {/* Every showcase is a text page with one button: the report opens in a popup on
+      {/* Every showcase is a text page with a button: the report opens in a popup on
           request (owner's call, 10-22), so the page is the story a crawler can read.
           Power BI's public URL doubles as the no-JS fallback; Superset has no public
           URL — the SDK mints a guest token per viewer (ADR-0002) — and Cube is drawn
           from rows queried right here, server-side, handed to a client component as
           plain props, so the browser never sees Cube or its token. The JS report
-          needs nothing from the server: it loads its own static data on open. */}
-      <div className="mt-5">
+          needs nothing from the server: it loads its own static data on open. A JS
+          showcase whose Power BI flavour is published gets two buttons, "Power BI"
+          and "Custom" (owner, 10-31); until then only the custom one, under the
+          generic label. */}
+      <div className="mt-5 flex flex-wrap gap-3">
+        {showcase.platform === "js" && showcase.powerBi && (
+          <ReportDialog
+            label={t.openPowerBi}
+            title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
+            closeLabel={t.closeReport}
+            href={showcase.powerBi.href}
+          >
+            <iframe
+              src={showcase.powerBi.embedUrl}
+              title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
+              allowFullScreen
+              className="h-full w-full border-0"
+            />
+          </ReportDialog>
+        )}
         <ReportDialog
-          label={t.openLiveReport}
+          label={
+            showcase.platform === "js" && showcase.powerBi
+              ? t.openCustom
+              : t.openLiveReport
+          }
           title={reportTitle}
           closeLabel={t.closeReport}
           href={showcase.platform === "power-bi" ? showcase.href : undefined}
-          openOnQuery={showcase.platform === "js" ? SELECTION_KEYS : undefined}
+          openOnQuery={
+            showcase.platform === "js"
+              ? REPORT_QUERY_KEYS[showcase.report]
+              : undefined
+          }
         >
           {showcase.platform === "cube" ? (
             <div className="p-4 sm:p-6">
@@ -145,7 +171,7 @@ export default async function ShowcasePage({ params }: Props) {
               />
             </div>
           ) : showcase.platform === "js" ? (
-            <PnlReportLazy />
+            <JsReportLazy report={showcase.report} />
           ) : showcase.platform === "superset" ? (
             <SupersetEmbed
               slug={showcase.slug}

@@ -1,6 +1,7 @@
 import { isCubeConfigured } from "./cube";
 import { env } from "./env";
 import type { Locale } from "./i18n/config";
+import type { JsReport } from "./js-reports";
 
 /**
  * Work showcase data — client dashboards written up like case studies on /work.
@@ -14,8 +15,10 @@ import type { Locale } from "./i18n/config";
  *                short-lived guest token per viewer (see lib/superset.ts).
  *  - Cube      → not an embed at all: the page queries Cube server-side and draws the
  *                dashboard itself with Tremor charts (docs/08-cube-sales-showcase.md).
- *  - JS        → not an embed either: a report built in this repo (components/pnl) that loads
- *                static Parquet files and computes every number in the browser (docs/pnl/).
+ *  - JS        → not an embed either: a report built in this repo (components/<report>) that
+ *                loads static Parquet files and computes every number in the browser
+ *                (docs/<report>/). A JS showcase may also carry the same report's Power BI
+ *                flavour, published to web: the page then offers both ("Power BI" / "Custom").
  *
  * Server-only in effect: lib/cube.ts is, and this imports it. Every importer is a Server
  * Component, a Route Handler or the sitemap — a client component reaching for this file
@@ -57,8 +60,17 @@ type ShowcaseOf<Text, Paragraphs> =
   // No fields of its own: there is one Cube dashboard and the detail page renders it by
   // name. A report id earns its place when a second one exists.
   | (ShowcaseBase<Text, Paragraphs> & { platform: "cube" })
-  // Same: one report, rendered by name.
-  | (ShowcaseBase<Text, Paragraphs> & { platform: "js" });
+  // Three reports, so this one names its component (lib/js-reports.ts). The Power BI
+  // flavour is optional: absent until the owner has published the report, and the page
+  // shows its button only when it is set (owner's call, 10-31).
+  | (ShowcaseBase<Text, Paragraphs> & {
+      platform: "js";
+      report: JsReport;
+      powerBi?: PowerBiEmbed;
+    });
+
+/** A Power BI report published to web, as the `power-bi` platform carries it. */
+export type PowerBiEmbed = { embedUrl: string; href: string };
 
 /**
  * A locale the site no longer publishes but whose copy is kept in place. Russian
@@ -101,8 +113,14 @@ export function localize(s: Showcase, locale: Locale): LocalizedShowcase {
     case "superset":
       return { ...base, platform: s.platform, embedId: s.embedId };
     case "cube":
-    case "js":
       return { ...base, platform: s.platform };
+    case "js":
+      return {
+        ...base,
+        platform: s.platform,
+        report: s.report,
+        powerBi: s.powerBi,
+      };
   }
 }
 
@@ -123,30 +141,86 @@ const UNSET_EMBED_ID = "REPLACE-WITH-EMBED-UUID";
  */
 const allShowcases: Showcase[] = [
   {
-    slug: "unified-management-pnl",
+    slug: "pnl-suite",
     platform: "js",
+    report: "pnl",
     title: {
-      en: "Consolidated management P&L dashboard",
-      ru: "Консолидированный управленческий P&L",
+      en: "Management P&L suite",
+      ru: "Управленческий P&L",
     },
     summary: {
-      en: "Budget vs actual for two companies and the consolidated group: variance statement, revenue bridge, key figures and profitability, built in custom JavaScript.",
-      ru: "Бюджет против факта для двух компаний и консолидированной группы: отчёт об отклонениях, мост выручки, ключевые показатели и рентабельность — на собственном JavaScript.",
+      en: "Budget vs actual for a consumer-goods company and an e-commerce SaaS company: statement, Vitals, revenue and profit bridges, largest variances and profitability, built in custom JavaScript.",
+      ru: "Бюджет против факта для компании потребительских товаров и SaaS-компании: отчёт, Vitals, мосты выручки и прибыли, крупнейшие отклонения и рентабельность — на собственном JavaScript.",
     },
-    metric: "$3.97B",
+    metric: "$3.4B",
     // The page's text: what the report does, short on purpose. Spec and build notes: docs/pnl/.
     details: {
       en: [
-        "A management P&L for a two-company group: a consumer-goods business, a SaaS business, and the consolidated group, where the fees one company bills the other are eliminated. One statement layout serves all three, so every company reads the same way.",
-        "Four views. The P&L statement compares actual with budget and prior year line by line, with the full-year budget and latest estimate alongside. Key figures put twelve KPIs on one screen. Analysis walks net revenue from budget to actual (volume, price / mix and FX) and lists the eight largest variances. Profitability breaks margins down by region, channel, category or segment.",
-        "Filters cover period, versions, reporting currency, constant currency and slices. When a slice is chosen, costs that are not booked to slices are shared out by net revenue, and the report says so.",
+        "A management P&L for a two-company group: a consumer-goods business and an e-commerce SaaS business, picked from the brand mark. One statement layout serves both, so every company reads the same way.",
+        "Four views. The statement compares actual with budget and prior year line by line, with the full-year budget and latest estimate alongside; it opens collapsed and expands to the account. Vitals puts the key figures on one screen. Analysis walks net revenue and profit from budget to actual on one page and lists the largest variances on the next, top 8, 12 or all, grouped by block or by size, cut by region, channel, line or segment. Profitability breaks margins down by region, channel, category or segment, in actual or constant currency.",
+        "Filters cover the period, the versions compared, the reporting currency and FX basis, units and display. Every state has a link: copy it and the report reopens exactly there.",
         "No BI tool and no backend: the browser loads three compressed data files and a TypeScript engine computes every number, reconciled to the source data's 552 control totals. The figures are synthetic.",
       ],
       ru: [
-        "Управленческий P&L группы из двух компаний: бизнес потребительских товаров, SaaS-бизнес и консолидированная группа, в которой платежи одной компании другой элиминируются. Один макет отчёта для всех трёх, поэтому каждая компания читается одинаково.",
-        "Четыре представления. Отчёт о прибылях и убытках сравнивает факт с бюджетом и прошлым годом построчно, рядом — годовой бюджет и последний прогноз. Ключевые показатели — двенадцать KPI на одном экране. Анализ раскладывает путь выручки от бюджета к факту (объём, цена / микс и курсы) и показывает восемь крупнейших отклонений. Рентабельность раскладывает маржу по регионам, каналам, категориям или сегментам.",
-        "Фильтры: период, версии, валюта отчётности, постоянный курс и срезы. Когда выбран срез, расходы, которые на срезы не разносятся, распределяются по доле выручки, и отчёт об этом говорит.",
+        "Управленческий P&L группы из двух компаний: бизнес потребительских товаров и SaaS-бизнес для e-commerce, выбираются по логотипу. Один макет отчёта для обеих, поэтому каждая компания читается одинаково.",
+        "Четыре представления. Отчёт сравнивает факт с бюджетом и прошлым годом построчно, рядом — годовой бюджет и последний прогноз; открывается свёрнутым и раскрывается до счёта. Vitals — ключевые показатели на одном экране. Анализ раскладывает путь выручки и прибыли от бюджета к факту на одной странице и показывает крупнейшие отклонения на следующей: топ-8, 12 или все, по блокам или по величине, в разрезе региона, канала, линии или сегмента. Рентабельность раскладывает маржу по регионам, каналам, категориям или сегментам, в фактической или постоянной валюте.",
+        "Фильтры: период, сравниваемые версии, валюта отчётности и курс, единицы и отображение. У каждого состояния есть ссылка: скопируйте её — и отчёт откроется ровно там же.",
         "Без BI-инструмента и без бэкенда: браузер загружает три сжатых файла данных, а движок на TypeScript считает каждое число и сверяется с 552 контрольными итогами исходных данных. Цифры синтетические.",
+      ],
+    },
+  },
+  {
+    slug: "executive-dashboard",
+    platform: "js",
+    report: "nordmark",
+    title: {
+      en: "Retail executive dashboard",
+      ru: "Дашборд руководителя ритейлера",
+    },
+    summary: {
+      en: "Twelve trading metrics for a multi-category reseller on one screen: status at a glance, a retail-calendar period picker, Budget / Last year / Previous, region and category filters, built in custom JavaScript.",
+      ru: "Двенадцать торговых метрик мультикатегорийного ритейлера на одном экране: статус с первого взгляда, выбор периода по торговому календарю, бюджет / прошлый год / предыдущий период, фильтры по региону и категории — на собственном JavaScript.",
+    },
+    metric: "€68.4M",
+    // Spec and build notes: docs/nordmark/.
+    details: {
+      en: [
+        "An executive dashboard for Nordmark Retail, a fictional multi-category reseller with stores in the Netherlands and Belgium, an online shop and a wholesale arm. Twelve trading metrics as cards: the three numbers that matter first, then what explains them. Each card carries a status chip, a sparkline and a delta against the comparator; the header counts how many are on track, to watch and off track.",
+        "The period picker follows the 4-5-4 retail calendar: a week, a month, a quarter or a year, to date, with Budget, Last year or the previous period as the comparator. Region and category filters narrow every card; where a metric has no meaning for one category, the card says so. An ⓘ on every card explains the figure with its actual and target stacked, and a drill path shows what sits behind it. More KPIs wait on a bench.",
+        "Every number is computed in the browser from 450 kB of data by a TypeScript engine, checked against 36,657 control rows from the data generator; the Power BI flavour of the same dashboard reconciles to the same totals, card for card. The data is synthetic.",
+      ],
+      ru: [
+        "Дашборд руководителя Nordmark Retail — вымышленного мультикатегорийного ритейлера с магазинами в Нидерландах и Бельгии, интернет-магазином и оптовым направлением. Двенадцать торговых метрик в виде карточек: сначала три главных числа, затем то, что их объясняет. На каждой карточке — статус, спарклайн и отклонение от базы сравнения; в шапке — сколько метрик в норме, под наблюдением и вне плана.",
+        "Выбор периода следует торговому календарю 4-5-4: неделя, месяц, квартал или год с начала, в сравнении с бюджетом, прошлым годом или предыдущим периодом. Фильтры по региону и категории сужают каждую карточку; если метрика не имеет смысла для категории, карточка так и говорит. ⓘ на каждой карточке объясняет показатель, факт и цель стоят рядом, а путь детализации показывает, что за ним стоит. Остальные KPI ждут на скамейке.",
+        "Каждое число считается в браузере из 450 КБ данных движком на TypeScript и сверяется с 36 657 контрольными строками генератора данных; версия того же дашборда в Power BI сходится с теми же итогами, карточка к карточке. Данные синтетические.",
+      ],
+    },
+  },
+  {
+    slug: "online-sales-report",
+    platform: "js",
+    report: "mirelo",
+    title: {
+      en: "Sales & revenue for a microlender",
+      ru: "Продажи и выручка микрокредитора",
+    },
+    summary: {
+      en: "Loans issued, clients, portfolio quality and revenue against targets for an online lender in three markets, with drill-downs to a market, an agent or a client, built in custom JavaScript.",
+      ru: "Выданные займы, клиенты, качество портфеля и выручка против целей онлайн-кредитора на трёх рынках, с детализацией до рынка, агента или клиента — на собственном JavaScript.",
+    },
+    metric: "€12.0M",
+    // Spec and build notes: docs/mirelo/. Content shipped as the owner accepted it on 10-30:
+    // one placeholder card (channel attainment) and no cross-filtering yet.
+    details: {
+      en: [
+        "A sales and revenue dashboard for Mirelo, a fictional neobank and microlender in Poland, Romania and Portugal. Five views: an overview, loans issued, clients, portfolio quality, and revenue against targets. The header switches market, period (month, quarter to date, year to date, rolling twelve months), anchor month and comparator, budget or prior year, and every view reads them.",
+        "A row in a table opens a slide-over: a market, an agent with their loans and quota, or a client with their loan history. Clicking a month on a trend sets the month. The charts are inline SVG, no chart library; the loan sample behind the drill-downs loads only when first needed.",
+        "The browser loads under a megabyte of data and a TypeScript engine computes every number, reconciled to the generator's control totals per market and month. The data is synthetic. One card still reads as a placeholder, channel attainment, because the dataset has no channel targets.",
+      ],
+      ru: [
+        "Дашборд продаж и выручки Mirelo — вымышленного необанка и микрокредитора в Польше, Румынии и Португалии. Пять представлений: обзор, выданные займы, клиенты, качество портфеля и выручка против целей. Шапка переключает рынок, период (месяц, квартал с начала, год с начала, скользящие двенадцать месяцев), опорный месяц и базу сравнения, бюджет или прошлый год, и каждое представление их читает.",
+        "Строка таблицы открывает боковую панель: рынок, агент с его займами и квотой или клиент с историей займов. Клик по месяцу на тренде выбирает месяц. Графики — встроенный SVG без библиотеки; выборка займов для детализации загружается только по первому запросу.",
+        "Браузер загружает меньше мегабайта данных, а движок на TypeScript считает каждое число и сверяется с контрольными итогами генератора по рынкам и месяцам. Данные синтетические. Одна карточка пока заглушка — выполнение плана по каналам, потому что в данных нет целей по каналам.",
       ],
     },
   },

@@ -1,33 +1,49 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useReportSearch } from "@/components/report-search";
 import { createDatasetLoader, type Dataset } from "@/lib/pnl/data/dataset";
-import { createEngine, type Against } from "@/lib/pnl/engine";
-import { activeSlices, windowLabel } from "@/lib/pnl/engine/notices";
+import { createEngine } from "@/lib/pnl/engine";
+import { companyName } from "@/lib/pnl/engine/header";
+import { hideEmptyLines } from "@/lib/pnl/engine/hide-empty";
+import { windowLabel } from "@/lib/pnl/engine/notices";
 import type { EntityCode, EntityView, Selection } from "@/lib/pnl/engine/types";
 import {
   createSelectionCodec,
   parseEntity,
-  resetSelection,
-  switchEntity,
-  type SliceMemory,
+  restrictToBuilt,
 } from "@/lib/pnl/state/selection-schema";
-import { AnalysisView } from "./analysis-view";
-import { FilterRail, type Company, type PanelKey } from "./filter-rail";
+import {
+  joinQuery,
+  parseViewState,
+  serializeViewState,
+  type ViewState,
+} from "@/lib/pnl/state/view-state";
+import { CompanyPicker } from "./company-picker";
+import {
+  collapsedRows,
+  expandedRows,
+  openRows,
+  type Expansion,
+} from "./expansion";
+import { FilterRail, isPanelKey, type Overlay } from "./filter-rail";
 import { pnlFontVariables } from "./fonts";
+import { PopupProvider } from "./glass";
 import { Flyout } from "./flyout";
 import { Header } from "./header";
-import { InfoIcon } from "./icons";
-import { KeyFigures, KeyFiguresToolbar } from "./key-figures";
 import styles from "./ledger.module.css";
-import { Segmented } from "./primitives";
-import { ProfitabilityView } from "./profitability-view";
 import { StatementTable } from "./statement-table";
 import { themeVars } from "./theme";
+import { AnalysisBridges, Variances } from "./views/analysis-view";
+import {
+  ProfitabilityCharts,
+  ProfitabilityTable,
+} from "./views/profitability-view";
+import { VitalsView } from "./views/vitals-view";
 
 // Client root (ADR-0002 §2.5): loads public/data/pnl, owns the Selection and passes engine results down.
-// Orchestration only: every number comes from lib/engine. Embedded in the site's report popup, the Selection lives
-// in React state as its query string (same codec as the standalone app's URL, F-37), not in the page URL.
+// Orchestration only: every number comes from lib/pnl/engine. Embedded in the site's report popup, the Selection
+// lives in React state as its query string (same codec as the standalone app's URL, F-37), not in the page URL.
 
 const loader = createDatasetLoader(async (name) => {
   const res = await fetch(`/data/pnl/${name}`);
@@ -35,41 +51,23 @@ const loader = createDatasetLoader(async (name) => {
   return res.arrayBuffer();
 });
 
-const FILES: Record<EntityView, readonly EntityCode[]> = {
-  P: ["P"],
-  S: ["S"],
-  GROUP: ["P", "S"], // the Group view needs both companies (ADR-0002 §2.2)
-};
-
-const SHORT = { B: "Budget", LE: "Latest est.", PY: "Prior year" } as const;
-const BASE = { A: "Actual", LE: "Latest estimate", B: "Budget" } as const;
-
 type Load =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ready"; entity: EntityView; dataset: Dataset };
+  | { status: "ready"; entity: EntityCode; dataset: Dataset };
 
 export function Shell() {
-  // A shared link (F-37) carries the state in the page URL. The report only ever renders in the browser (inside the
-  // popup, after a click or a shared link), so reading `window` here is safe.
-  const [search, setSearch] = useState(() => window.location.search.slice(1));
-  const entity = parseEntity(new URLSearchParams(search));
+  const { search, go, shareUrl } = useReportSearch();
+  const entityParam = parseEntity(new URLSearchParams(search));
+  const entity: EntityCode = entityParam === "S" ? "S" : "P"; // Group view: build step 4
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
-  // The last dataset stays on screen while another company's file loads, so a switch never blanks the report.
-  const [shown, setShown] = useState<Dataset | null>(null);
-  // F-30 memory lives here, above the report, so it survives the report unmounting while a file loads.
-  const [memory, setMemory] = useState<SliceMemory>({});
 
   // Synchronise with the external data files; a stale response for another entity is ignored.
   useEffect(() => {
     let live = true;
-    loader.load(FILES[entity]).then(
-      (dataset) => {
-        if (!live) return;
-        setLoad({ status: "ready", entity, dataset });
-        setShown(dataset);
-      },
+    loader.load([entity]).then(
+      (dataset) => live && setLoad({ status: "ready", entity, dataset }),
       (error: unknown) =>
         live &&
         setLoad({
@@ -82,18 +80,13 @@ export function Shell() {
     };
   }, [entity, attempt]);
 
-  const ready = load.status === "ready" && load.entity === entity;
-  const dataset = ready ? load.dataset : null;
-  const fallback =
-    shown && FILES[entity].every((e) => shown.pl.has(e)) ? shown : null;
-  if (dataset ?? fallback)
+  if (load.status === "ready" && load.entity === entity)
     return (
       <Ledger
-        dataset={(dataset ?? fallback) as Dataset}
+        dataset={load.dataset}
         search={search}
-        onSearch={setSearch}
-        memory={memory}
-        onMemory={setMemory}
+        onSearch={go}
+        shareUrl={shareUrl}
       />
     );
   return (
@@ -127,51 +120,103 @@ function Ledger({
   dataset,
   search,
   onSearch,
-  memory,
-  onMemory,
+  shareUrl,
 }: {
   dataset: Dataset;
   search: string;
-  onSearch: (search: string) => void;
-  memory: SliceMemory;
-  onMemory: (memory: SliceMemory) => void;
+  onSearch: (query: string) => void;
+  shareUrl: string;
 }) {
   const m = dataset.manifest;
   const codec = useMemo(() => createSelectionCodec(m), [m]);
   const engine = useMemo(() => createEngine(dataset), [dataset]);
+  const defaults = useMemo(() => codec.defaults("P"), [codec]);
   const sel = useMemo(
-    () => codec.parse(new URLSearchParams(search)),
+    () => restrictToBuilt(codec.parse(new URLSearchParams(search))),
     [codec, search],
   );
-  const canonical = codec.serialize(sel);
+  // Sub-page and variances controls (p, lvn, lvm, lvc): validated like the Selection keys, appended after them.
+  const vs = useMemo(
+    () => parseViewState(new URLSearchParams(search)),
+    [search],
+  );
+  const paged = sel.view === "analysis" || sel.view === "profitability";
+  const canonical = joinQuery(
+    codec.serialize(sel),
+    serializeViewState(paged ? vs : { ...vs, page: 1 }),
+  );
 
+  // Invalid or unbuilt input never stays in the state: rewrite it to the state actually shown (ADR-0002 §2.4).
+  useEffect(() => {
+    if (canonical !== search) onSearch(canonical);
+  }, [canonical, search, onSearch]);
+
+  const go = useCallback(
+    (next: Selection, view: ViewState) =>
+      onSearch(joinQuery(codec.serialize(next), serializeViewState(view))),
+    [codec, onSearch],
+  );
+  // A view switch opens its first sub-page (ADR-0004 pager).
   const update = useCallback(
     (patch: Partial<Selection>) =>
-      onSearch(codec.serialize({ ...sel, ...patch })),
-    [codec, sel, onSearch],
+      go(
+        { ...sel, ...patch },
+        patch.view && patch.view !== sel.view ? { ...vs, page: 1 } : vs,
+      ),
+    [go, sel, vs],
   );
-  const onEntity = (to: EntityView) => {
-    const next = switchEntity(sel, to, memory, codec.defaults);
-    onMemory(next.memory);
-    onSearch(codec.serialize(next.sel));
-  };
+  const updateView = useCallback(
+    (patch: Partial<ViewState>) => go(sel, { ...vs, ...patch }),
+    [go, sel, vs],
+  );
+
+  // ← → page Analysis and Profitability (build-brief §0), unless the key belongs to a field, a pop-up or a control.
+  useEffect(() => {
+    if (!paged) return;
+    const ctrl = new AbortController();
+    window.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        const t = e.target;
+        if (
+          t instanceof Element &&
+          t.closest(
+            'input, select, textarea, [role="dialog"], [role="radiogroup"], [role="tablist"]',
+          )
+        )
+          return;
+        updateView({ page: e.key === "ArrowLeft" ? 1 : 2 });
+      },
+      { signal: ctrl.signal },
+    );
+    return () => ctrl.abort();
+  }, [paged, updateView]);
 
   const [wide, setWide] = useState(false);
-  const [panel, setPanel] = useState<PanelKey | null>(null);
-  const closePanel = useCallback(() => setPanel(null), []);
-  // The comparison the Analysis and Profitability views use (C-40): Compare A unless the toolbar picks B.
-  const [against, setAgainst] = useState<Against>("A");
+  // One pop-over at a time: a filter flyout, the company picker or the applied-filters pop-up
+  const [overlay, setOverlay] = useState<Overlay | null>(null);
+  const closeOverlay = useCallback(() => setOverlay(null), []);
+  const toggleOverlay = (key: Overlay) =>
+    setOverlay((o) => (o === key ? null : key));
 
-  // M-20 / M-21 (ADR-0007): collapsed by default; expansion persists across filter changes and resets to collapsed
-  // when the company changes.
-  const [expansion, setExpansion] = useState({
-    key: sel.entity,
-    open: new Set<string>(),
+  const statement = useMemo(() => engine.statement(sel), [engine, sel]);
+  const howToRead = useMemo(
+    () => (sel.view === "statement" ? null : engine.howToRead(sel)),
+    [engine, sel],
+  );
+
+  // M-20 / M-21 (parity rule 5): the statement opens collapsed; expansion persists across every filter change and
+  // resets to collapsed only when the company changes. Presets read the full spine, so rows that Hide empty lines
+  // drops do not change them.
+  const [expansion, setExpansion] = useState<Expansion>({
+    entity: sel.entity,
+    open: null,
   });
-  const open =
-    expansion.key === sel.entity ? expansion.open : new Set<string>();
-  const setOpen = (next: Set<string>) =>
-    setExpansion({ key: sel.entity, open: next });
+  const collapsed = useMemo(() => collapsedRows(statement.rows), [statement]);
+  const open = openRows(expansion, sel.entity, collapsed);
+  const setOpen = (next: ReadonlySet<string>) =>
+    setExpansion({ entity: sel.entity, open: next });
   const toggle = (code: string) => {
     const next = new Set(open);
     if (!next.delete(code)) next.add(code);
@@ -179,184 +224,24 @@ function Ledger({
   };
 
   const notices = useMemo(() => engine.notices(sel), [engine, sel]);
-  const status = engine.dataStatus();
-  const closedMonth = m.tables.dim_month.find(
-    (d) => d.month_key === status.lastClosedMonth,
-  );
+  const period = useMemo(() => engine.period(sel), [engine, sel]);
+  const header = useMemo(() => engine.header(sel), [engine, sel]); // viewer's time zone: client-only render
   const units = m.tables.param_units.find(
     (u) => u.units_code === sel.units,
   ) ?? { divisor: 1_000_000, decimals: 1 };
-  const unitsSuffix = sel.units === "M" ? "m" : "k";
-  const unitsLabel = `${sel.currency} ${unitsSuffix}`;
-  const symbol =
-    m.tables.param_reporting_currency.find(
-      (c) => c.currency_code === sel.currency,
-    )?.symbol ?? "";
   const costMultiplier =
     m.tables.param_cost_sign.find((c) => c.cost_sign_code === sel.costSign)
       ?.display_multiplier_for_costs ?? 1;
   const window_ = windowLabel(m, sel);
-  const anchor = m.tables.dim_month.find(
-    (d) => d.fiscal_year === sel.fy && d.month_number === sel.month,
-  );
-  const anchorLabel = `${anchor?.month_name ?? sel.month} ${sel.fy}`;
-  // F-37: the showcase page's own URL plus the state. Ledger mounts only in the browser (after the data load), so
-  // `window` is always there.
-  const base = `${window.location.origin}${window.location.pathname}`;
-  const shareUrl = `${base}${canonical ? `?${canonical}` : ""}`;
-  const compares = [sel.compareA, sel.compareB]
-    .filter((c) => c !== "NONE")
-    .map((c) => SHORT[c]);
-  const slices = activeSlices(m, sel);
+  // F-37: the share link is the showcase page's URL plus the report's state (useReportSearch).
+  const rows = hideEmptyLines(statement.rows, sel, units); // M-22, rounded in the selected units
 
-  const companies: Company[] = [
-    ...m.tables.dim_entity.map((e) => ({
-      code: e.entity_code,
-      name: e.short_name,
-    })),
-    {
-      code: "GROUP" as const,
-      name: m.tables.dim_entity[0]?.consolidation_group ?? "ACME Group",
-    },
-  ];
-  const slot = (rows: readonly { entity_code: string; slot_label: string }[]) =>
-    rows.find((x) => x.entity_code === sel.entity)?.slot_label ?? "";
-  const breakdowns: { value: Selection["breakdown"]; label: string }[] =
-    sel.entity === "GROUP"
-      ? [
-          { value: "REGION", label: "Region" },
-          { value: "ENTITY", label: "Entity" },
-        ]
-      : [
-          { value: "REGION", label: "Region" },
-          { value: "CHANNEL", label: slot(m.tables.dim_channel) },
-          { value: "LINE", label: slot(m.tables.dim_line) },
-          { value: "SEGMENT", label: slot(m.tables.dim_segment) },
-        ];
-
-  /** The active view's own controls in the header toolbar (design guide §5.3). */
-  function toolbar() {
-    switch (sel.view) {
-      case "kpi":
-        return (
-          <KeyFiguresToolbar
-            caption={
-              compares.length
-                ? `Changes vs ${compares.join(" and ")}, same months`
-                : "No comparison selected"
-            }
-          />
-        );
-      case "analysis":
-        return (
-          <>
-            <span className={styles.toolbarLabel}>Compared with</span>
-            <Segmented
-              compact
-              label="Compared with"
-              value={against}
-              options={(["A", "B"] as const).map((k) => {
-                const choice = k === "A" ? sel.compareA : sel.compareB;
-                return {
-                  value: k,
-                  label: choice === "NONE" ? `Compare ${k}` : SHORT[choice],
-                  disabledReason:
-                    choice === "NONE"
-                      ? `Compare ${k} is off (Versions filter)`
-                      : undefined,
-                };
-              })}
-              onChange={setAgainst}
-            />
-          </>
-        );
-      case "profitability":
-        return (
-          <>
-            <span className={styles.toolbarLabel}>Break down by</span>
-            <Segmented
-              compact
-              label="Break down by"
-              value={sel.breakdown}
-              options={breakdowns}
-              onChange={(breakdown) => update({ breakdown })}
-            />
-          </>
-        );
-      default:
-        return null;
-    }
-  }
-
-  /** One view at a time (the tabs swap the content area); each asks the engine only for its own numbers. */
-  function view() {
-    switch (sel.view) {
-      case "kpi":
-        return (
-          <KeyFigures
-            tiles={engine.kpis(sel)}
-            names={{
-              a: sel.compareA === "NONE" ? "" : `vs ${SHORT[sel.compareA]}`,
-              b: sel.compareB === "NONE" ? "" : `vs ${SHORT[sel.compareB]}`,
-            }}
-            fmt={{ units: { ...units, suffix: unitsSuffix }, symbol }}
-          />
-        );
-      case "analysis": {
-        const a = engine.analysis(sel, against);
-        return (
-          <AnalysisView
-            bridge={a.bridge}
-            variances={a.variances}
-            comparison={a.comparison.label}
-            baseLabel={BASE[sel.base]}
-            unitsLabel={`${sel.currency} ${sel.units === "M" ? "millions" : "thousands"}`}
-            units={units}
-          />
-        );
-      }
-      case "profitability": {
-        const p = engine.profitability(sel, against);
-        return (
-          <ProfitabilityView
-            rows={p.rows}
-            total={p.total}
-            comparison={p.comparison.label}
-            breakdown={
-              breakdowns.find((b) => b.value === sel.breakdown)?.label ??
-              "Entity"
-            }
-            units={units}
-            unitsLabel={unitsLabel}
-            allocated={["CHANNEL", "LINE", "SEGMENT"].includes(sel.breakdown)}
-          />
-        );
-      }
-      default: {
-        const statement = engine.statement(sel);
-        return (
-          <StatementTable
-            rows={statement.rows}
-            sel={sel}
-            windowLabel={window_}
-            format={{ units, unitsLabel, costMultiplier }}
-            open={open}
-            onToggle={toggle}
-            onExpandAll={() =>
-              setOpen(
-                new Set(
-                  statement.rows
-                    .map((r) => r.parent)
-                    .filter((p): p is string => p !== null),
-                ),
-              )
-            }
-            onCollapseAll={() => setOpen(new Set())}
-          />
-        );
-      }
-    }
-  }
+  const companies = (
+    ["P", "S", "GROUP"] as const satisfies readonly EntityView[]
+  ).map((code) => ({
+    code,
+    name: companyName(m, code),
+  }));
 
   return (
     <div
@@ -366,65 +251,142 @@ function Ledger({
       <FilterRail
         wide={wide}
         onToggleWide={() => setWide((w) => !w)}
-        openPanel={panel}
-        onTogglePanel={(key) => setPanel((p) => (p === key ? null : key))}
+        openPanel={overlay}
+        onTogglePanel={toggleOverlay}
         summaries={{
-          period:
-            sel.timeView === "FY"
-              ? `Full year · FY${sel.fy}`
-              : `${sel.timeView === "MTD" ? "Month" : sel.timeView} · ${anchorLabel}`,
-          versions: `${BASE[sel.base]}${compares.length ? ` vs ${compares.join(", ")}` : ""}`,
-          slice:
-            slices.length === 0
-              ? "All slices"
-              : `${slices.length} filter${slices.length === 1 ? "" : "s"} on`,
-          display: `${sel.currency} ${unitsSuffix} · ${sel.fxBasis === "CC" ? "constant currency" : "actual rates"}`,
+          period: period.summary, // period picker v2: the rail tooltip uses the summary sentence
+          versions: header.rail.versions,
+          slice: "All slices",
+          display: header.rail.display,
         }}
-        entity={sel.entity}
-        companies={companies}
-        onEntity={onEntity}
       />
-      {panel && (
+      {overlay === "company" && (
+        <CompanyPicker
+          entity={sel.entity}
+          companies={companies}
+          wide={wide}
+          onSelect={(entity) => update({ entity })}
+          onClose={closeOverlay}
+        />
+      )}
+      {overlay !== null && isPanelKey(overlay) && (
         <Flyout
-          panel={panel}
+          panel={overlay}
           wide={wide}
           sel={sel}
-          defaults={codec.defaults(sel.entity)}
+          defaults={defaults}
           manifest={m}
+          period={period}
           onChange={update}
-          onClose={closePanel}
+          onClose={closeOverlay}
         />
       )}
       <main className={styles.main}>
-        <Header
-          sel={sel}
-          dataStatus={
-            closedMonth
-              ? `Actuals closed through ${closedMonth.month_name} ${closedMonth.fiscal_year}`
-              : ""
-          }
-          context={engine.context(sel)}
-          shareUrl={shareUrl}
-          toolbar={toolbar()}
-          onChange={update}
-          onReset={() =>
-            onSearch(codec.serialize(resetSelection(sel, codec.defaults)))
-          }
-        />
-        <div className={styles.content}>
-          {notices.length > 0 && (
-            <ul className={styles.notices} aria-label="Notices">
-              {notices.map((n) => (
-                <li key={n.code}>
-                  <InfoIcon />
-                  {n.text}
-                </li>
-              ))}
-            </ul>
-          )}
-          {view()}
-        </div>
+        {/* one glass pop-up at a time across header and content; a view or page change closes it */}
+        <PopupProvider scope={`${sel.view}-${vs.page}`}>
+          <Header
+            sel={sel}
+            status={header.status}
+            filters={header.filters}
+            notices={notices}
+            filtersOpen={overlay === "filters"}
+            onToggleFilters={() => toggleOverlay("filters")}
+            onCloseFilters={closeOverlay}
+            shareUrl={shareUrl}
+            onChange={update}
+            pager={
+              paged
+                ? { page: vs.page, onPage: (page) => updateView({ page }) }
+                : null
+            }
+            howToRead={howToRead}
+          />
+          <div className={styles.content}>
+            {sel.view === "statement" ? (
+              <StatementTable
+                rows={rows}
+                sel={sel}
+                windowLabel={window_}
+                format={{
+                  units,
+                  unitsLabel: `${sel.currency} ${sel.units === "M" ? "m" : "k"}`,
+                  costMultiplier,
+                }}
+                open={open}
+                onToggle={toggle}
+                onExpandAll={() => setOpen(expandedRows(statement.rows))}
+                onCollapseAll={() => setOpen(collapsed)}
+              />
+            ) : (
+              <RedesignedView
+                engine={engine}
+                sel={sel}
+                vs={vs}
+                onViewState={updateView}
+              />
+            )}
+          </div>
+        </PopupProvider>
       </main>
     </div>
+  );
+}
+
+/** Vitals · Analysis · Profitability (P&L views redesign v4): engine view models in, components out. */
+function RedesignedView({
+  engine,
+  sel,
+  vs,
+  onViewState,
+}: {
+  engine: ReturnType<typeof createEngine>;
+  sel: Selection;
+  vs: ViewState;
+  onViewState: (patch: Partial<ViewState>) => void;
+}) {
+  const vm = useMemo(() => {
+    if (sel.view === "kpi")
+      return { kind: "vitals", vm: engine.vitals(sel) } as const;
+    if (sel.view === "analysis")
+      return vs.page === 1
+        ? ({ kind: "bridges", vm: engine.analysis(sel) } as const)
+        : ({
+            kind: "variances",
+            vm: engine.variances(sel, vs.top, vs.mode, vs.cut),
+          } as const);
+    if (sel.view === "profitability")
+      return {
+        kind: vs.page === 1 ? "profTable" : "profCharts",
+        vm: engine.profitability(sel),
+      } as const;
+    return null;
+  }, [engine, sel, vs]);
+  if (!vm) return null;
+  return (
+    <section
+      id={`view-${sel.view}`}
+      role="tabpanel"
+      aria-label={`${sel.view === "kpi" ? "Vitals" : sel.view === "analysis" ? "Analysis" : "Profitability"}${sel.view === "kpi" ? "" : `, page ${vs.page} of 2`}`}
+      style={{
+        display: "flex",
+        flex: "1 1 auto",
+        flexDirection: "column",
+        minHeight: 0,
+      }}
+    >
+      {vm.kind === "vitals" ? <VitalsView vm={vm.vm} /> : null}
+      {vm.kind === "bridges" ? <AnalysisBridges vm={vm.vm} /> : null}
+      {vm.kind === "variances" ? (
+        <Variances
+          vm={vm.vm}
+          top={vs.top}
+          mode={vs.mode}
+          cut={vs.cut}
+          onChange={(patch) => onViewState(patch)}
+        />
+      ) : null}
+      {vm.kind === "profTable" ? <ProfitabilityTable vm={vm.vm} /> : null}
+      {vm.kind === "profCharts" ? <ProfitabilityCharts vm={vm.vm} /> : null}
+    </section>
   );
 }

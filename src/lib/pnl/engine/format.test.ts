@@ -4,10 +4,8 @@ import {
   formatAmount,
   formatPercent,
   formatPoints,
-  isEmptyRow,
   roundsToZero,
 } from "./format";
-import type { StatementRow } from "./types";
 
 // N-06 number formats; D-30 rounding at display only.
 const M = { divisor: 1_000_000, decimals: 1 };
@@ -57,52 +55,5 @@ describe("format", () => {
     expect(displayValue(-1_719.3, true, 1)).toBe(-1_719.3);
     expect(displayValue(3_398.5, false, -1)).toBe(3_398.5);
     expect(displayValue(null, true, -1)).toBeNull();
-  });
-});
-
-describe("M-22 hide empty lines (T-16)", () => {
-  const row = (kind: StatementRow["kind"], v: number | null): StatementRow => ({
-    code: "X",
-    kind,
-    label: "x",
-    alias: null,
-    parent: null,
-    level: 1,
-    tag: null,
-    isKey: false,
-    isCost: false,
-    account: null,
-    entity: null,
-    base: v,
-    pctNr: null,
-    compareA: { value: v, delta: 0, deltaPct: null, favourable: null },
-    compareB: { value: v, delta: 0, deltaPct: null, favourable: null },
-    fyBudget: v,
-    fyLE: { value: v, delta: 0, deltaPct: null, favourable: null },
-  });
-  const sel = { compareA: "B", compareB: "PY", showFyOutlook: true } as const;
-
-  it("hides leaf and company rows that show zero in every visible column", () => {
-    expect(isEmptyRow(row("leaf", 40_000), sel, M)).toBe(true); // 0.04 m shows as 0.0
-    expect(isEmptyRow(row("entity", null), sel, M)).toBe(true);
-    expect(isEmptyRow(row("leaf", 60_000), sel, M)).toBe(false); // shows as 0.1
-    expect(isEmptyRow(row("leaf", 40_000), sel, K)).toBe(false); // 40 in thousands
-  });
-
-  it("T-16: never hides a block, subtotal, group total, memo or ratio", () => {
-    for (const kind of [
-      "block",
-      "subtotal",
-      "group_total",
-      "memo",
-      "ratio",
-    ] as const)
-      expect(isEmptyRow(row(kind, 0), sel, M)).toBe(false);
-  });
-
-  it("only visible columns count", () => {
-    const r = { ...row("leaf", 0), fyBudget: 5_000_000 };
-    expect(isEmptyRow(r, sel, M)).toBe(false);
-    expect(isEmptyRow(r, { ...sel, showFyOutlook: false }, M)).toBe(true);
   });
 });

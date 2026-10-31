@@ -7,7 +7,7 @@ import { readOpsColumns, readPlColumns } from "./parquet-loader";
 export interface Dataset {
   manifest: Manifest;
   pl: ReadonlyMap<EntityCode, PlColumns>;
-  ops: OpsColumns; // small (≈ 0.1 MB), both companies, loaded with the first entity
+  ops: OpsColumns; // both entities, small (first-load budget, build-data.ts): units, GMV, merchants for the Vitals view
 }
 
 /** Reads one public/data artifact by file name: `fetch` in the browser, `fs` in Node tests. */
@@ -57,14 +57,14 @@ export function createDatasetLoader(read: ReadArtifact) {
   return {
     async load(entities: readonly EntityCode[]): Promise<Dataset> {
       const m = await loadManifest();
-      const [operational, ...columns] = await Promise.all([
+      const [columns, opsColumns] = await Promise.all([
+        Promise.all(entities.map((e) => loadPl(e, m))),
         loadOps(m),
-        ...entities.map((e) => loadPl(e, m)),
       ]);
       return {
         manifest: m,
         pl: new Map(entities.map((e, i) => [e, columns[i] as PlColumns])),
-        ops: operational,
+        ops: opsColumns,
       };
     },
   };

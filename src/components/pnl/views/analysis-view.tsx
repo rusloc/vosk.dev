@@ -1,23 +1,25 @@
-import { useState } from "react";
+import { useRef } from "react";
 import type { CSSProperties } from "react";
 import type {
   AnalysisVM,
   BridgeVM,
   Tone,
-  VarCut,
-  VarMode,
+  VarFilter,
+  VarFilterDim,
   VarRow,
-  VarTop,
   VariancesVM,
 } from "@/lib/pnl/engine/view-types";
-import { InfoButton } from "../glass";
-import { DivBar, MEMBER, Waterfall } from "./charts";
+import { NO_FILTER } from "@/lib/pnl/engine/view-types";
+import { GlassPopup, InfoButton, usePopup } from "../glass";
+import { FunnelIcon } from "../icons";
+import { ChoiceGroup } from "../primitives";
+import { DivBar, Waterfall } from "./charts";
 import { useSize } from "./use-size";
 import styles from "./views.module.css";
 
 // Analysis (P&L views redesign v4, build-brief §2; one page since 2026-10-31, owner's layout change). Upper half: the
-// largest variances; Top-N, grouping and cut live in the URL (lvn / lvm / lvc), block collapse and member lists are
-// local view state. Lower half: the two bridges side by side.
+// largest variances, every line ranked by |Δ|, narrowed by a filter of up to four slice members (lvr / lvch / lvln /
+// lvsg in the URL) chosen in a glass pop-up behind the funnel. Lower half: the two bridges side by side.
 
 const TONE: Record<Tone, string | undefined> = {
   ahead: styles.ahead,
@@ -70,48 +72,82 @@ export function AnalysisView({
   );
 }
 
-function Seg<T extends string | number>({
-  label,
-  options,
-  value,
-  onChange,
+/** The funnel and its pop-up: one radio row per dimension ("All" + the company's members); a choice applies at once. */
+function FilterButton({
+  dims,
+  filter,
+  onFilter,
 }: {
-  label: string | null;
-  options: readonly { value: T; label: string }[];
-  value: T;
-  onChange: (v: T) => void;
+  dims: readonly VarFilterDim[];
+  filter: VarFilter;
+  onFilter: (filter: VarFilter) => void;
 }) {
+  const { open, close, toggle } = usePopup("var-filter");
+  const opener = useRef<HTMLButtonElement>(null);
+  const applied = dims.filter((d) => filter[d.dim] !== null).length;
   return (
-    <div
-      className={styles.seg}
-      role="radiogroup"
-      aria-label={label ?? "Grouping"}
-    >
-      {label ? <span className={styles.lbl}>{label}</span> : null}
-      {options.map((o) => (
-        <button
-          key={String(o.value)}
-          type="button"
-          role="radio"
-          aria-checked={o.value === value}
-          onClick={() => onChange(o.value)}
+    <>
+      <button
+        ref={opener}
+        type="button"
+        className={styles.filterBtn}
+        aria-label={`Filter the variances${applied ? ` (${applied} applied)` : ""}`}
+        aria-expanded={open}
+        onClick={toggle}
+      >
+        <FunnelIcon />
+        {applied ? <b>{applied}</b> : null}
+      </button>
+      {open ? (
+        <GlassPopup
+          title="Filter the variances"
+          opener={opener}
+          style={POPUP_RIGHT}
+          className={styles.filterPopup}
+          onClose={close}
         >
-          {o.label}
-        </button>
-      ))}
-    </div>
+          <p>
+            One member per dimension; the chosen members combine. Opex and below
+            are allocated by net-revenue share to channel, category and tier
+            (alloc.).
+          </p>
+          {dims.map((d) => (
+            <div key={d.dim} className={styles.fgroup}>
+              <span id={`vf-${d.dim}`} className={styles.flabel}>
+                {d.label}
+              </span>
+              <ChoiceGroup
+                labelledBy={`vf-${d.dim}`}
+                className={styles.opts}
+                value={filter[d.dim] ?? ""}
+                options={[
+                  { value: "", content: "All" },
+                  ...d.options.map((o) => ({
+                    value: o.code,
+                    content: o.label,
+                  })),
+                ]}
+                onChange={(v) => onFilter({ ...filter, [d.dim]: v || null })}
+              />
+            </div>
+          ))}
+          <div className={styles.fdone}>
+            <button
+              type="button"
+              disabled={applied === 0}
+              onClick={() => onFilter(NO_FILTER)}
+            >
+              Clear filters
+            </button>
+            <button type="button" onClick={close}>
+              Done
+            </button>
+          </div>
+        </GlassPopup>
+      ) : null}
+    </>
   );
 }
-
-const TOPS: readonly { value: VarTop; label: string }[] = [
-  { value: 8, label: "8" },
-  { value: 12, label: "12" },
-  { value: "all", label: "All" },
-];
-const MODES: readonly { value: VarMode; label: string }[] = [
-  { value: "block", label: "By block" },
-  { value: "abs", label: "By |Δ|" },
-];
 
 function Cells({ r, scale, py }: { r: VarRow; scale: number; py: boolean }) {
   return (
@@ -119,7 +155,7 @@ function Cells({ r, scale, py }: { r: VarRow; scale: number; py: boolean }) {
       <td>{r.comparison}</td>
       <td>{r.actual}</td>
       <td>
-        <DivBar delta={r.delta} members={r.members} scale={scale} />
+        <DivBar delta={r.delta} scale={scale} />
       </td>
       <td className={TONE[r.tone]}>{r.deltaText}</td>
       <td className={r.deltaPct === "n.m." ? styles.nm : TONE[r.tone]}>
@@ -133,63 +169,23 @@ function Cells({ r, scale, py }: { r: VarRow; scale: number; py: boolean }) {
 
 export function Variances({
   vm,
-  top,
-  mode,
-  cut,
-  onChange,
+  filter,
+  onFilter,
 }: {
   vm: VariancesVM;
-  top: VarTop;
-  mode: VarMode;
-  cut: VarCut;
-  onChange: (patch: { top?: VarTop; mode?: VarMode; cut?: VarCut }) => void;
+  filter: VarFilter;
+  onFilter: (filter: VarFilter) => void;
 }) {
   const showPy = vm.columns.py !== ""; // Compare B = None drops the column (parity rule 17)
-  // "All" starts with every block collapsed so the page still fits (v4); other Top-N values start expanded.
-  const [closed, setClosed] = useState<ReadonlySet<string> | null>(null);
-  const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
-  const blocks = vm.rows.filter((r) => r.kind === "block").map((r) => r.code);
-  const isClosed = (code: string) =>
-    (closed ?? new Set(top === "all" ? blocks : [])).has(code);
-  const toggleBlock = (code: string) => {
-    const next = new Set(closed ?? (top === "all" ? blocks : []));
-    if (!next.delete(code)) next.add(code);
-    setClosed(next);
-  };
-  const toggleLeaf = (code: string) => {
-    const next = new Set(open);
-    if (!next.delete(code)) next.add(code);
-    setOpen(next);
-  };
-  const change = (patch: { top?: VarTop; mode?: VarMode; cut?: VarCut }) => {
-    setClosed(null);
-    setOpen(new Set());
-    onChange(patch);
-  };
-
   return (
     <section className={styles.panel} aria-labelledby="h-variances">
       <h2 id="h-variances">
         {vm.title}
+        {vm.filterText ? (
+          <span className={styles.sub}>{vm.filterText}</span>
+        ) : null}
         <div className={styles.ctl}>
-          <Seg
-            label="Top"
-            options={TOPS}
-            value={top}
-            onChange={(v) => change({ top: v })}
-          />
-          <Seg
-            label={null}
-            options={MODES}
-            value={mode}
-            onChange={(v) => change({ mode: v })}
-          />
-          <Seg
-            label="Cut"
-            options={vm.cuts}
-            value={cut}
-            onChange={(v) => change({ cut: v })}
-          />
+          <FilterButton dims={vm.filter} filter={filter} onFilter={onFilter} />
         </div>
         <InfoButton
           id="variances"
@@ -198,16 +194,6 @@ export function Variances({
           popupStyle={POPUP_RIGHT}
         />
       </h2>
-      {vm.legend.length > 0 ? (
-        <div className={styles.legend} aria-label="Cut members">
-          {vm.legend.map((m, i) => (
-            <span key={m.key}>
-              <i style={{ background: MEMBER[i % MEMBER.length] }} />
-              {m.label}
-            </span>
-          ))}
-        </div>
-      ) : null}
       <div className={`${styles.ch} ${styles.scroll}`}>
         <table className={`${styles.table} ${styles.vtable}`}>
           <thead>
@@ -223,89 +209,25 @@ export function Variances({
             </tr>
           </thead>
           <tbody>
-            {vm.rows.map((r) => {
-              if (r.kind === "block")
-                return (
-                  <tr key={`b-${r.code}`} className={styles.blk}>
-                    <td className={styles.l}>
-                      <button
-                        type="button"
-                        aria-expanded={!isClosed(r.code)}
-                        onClick={() => toggleBlock(r.code)}
-                      >
-                        {isClosed(r.code) ? "▸" : "▾"}
-                      </button>
-                      {r.label}
-                      <span className={styles.blkn}>{r.count}</span>
-                      {r.alloc ? (
-                        <span className={styles.tag}>alloc.</span>
-                      ) : null}
-                    </td>
-                    <Cells r={r} scale={vm.scale} py={showPy} />
-                  </tr>
-                );
-              if (mode === "block" && r.block && isClosed(r.block)) return null;
-              const expandable = r.members.length > 0;
-              return [
-                <tr
-                  key={`l-${r.code}`}
-                  className={`${mode === "block" ? styles.leaf : ""} ${r.alloc ? styles.alloc : ""}`}
-                >
-                  <td className={styles.l}>
-                    {expandable ? (
-                      <button
-                        type="button"
-                        aria-expanded={open.has(r.code)}
-                        aria-label={`Members of ${r.label}`}
-                        onClick={() => toggleLeaf(r.code)}
-                      >
-                        {open.has(r.code) ? "▾" : "▸"}
-                      </button>
-                    ) : null}
-                    {r.label}
-                    {mode === "abs" && r.blockName ? (
-                      <span className={styles.blkn}>{r.blockName}</span>
-                    ) : null}
-                    {r.alloc ? (
-                      <span className={styles.tag}>alloc.</span>
-                    ) : null}
-                  </td>
-                  <Cells r={r} scale={vm.scale} py={showPy} />
-                </tr>,
-                ...(open.has(r.code)
-                  ? r.members.map((m, i) => (
-                      <tr key={`m-${r.code}-${m.key}`} className={styles.mem}>
-                        <td className={styles.l}>
-                          <i
-                            style={{
-                              display: "inline-block",
-                              width: 8,
-                              height: 8,
-                              marginRight: 6,
-                              borderRadius: 4,
-                              background: MEMBER[i % MEMBER.length],
-                            }}
-                          />
-                          {m.label}
-                        </td>
-                        <td />
-                        <td />
-                        <td>
-                          <DivBar
-                            delta={m.delta}
-                            members={[]}
-                            scale={vm.scale}
-                          />
-                        </td>
-                        <td>{m.text}</td>
-                        <td />
-                        {showPy ? <td /> : null}
-                        <td />
-                      </tr>
-                    ))
-                  : []),
-              ];
-            })}
+            {vm.rows.length === 0 ? (
+              <tr>
+                <td className={styles.l} colSpan={showPy ? 8 : 7}>
+                  Nothing is booked for this combination.
+                </td>
+              </tr>
+            ) : null}
+            {vm.rows.map((r) => (
+              <tr key={r.code} className={r.alloc ? styles.alloc : ""}>
+                <td className={styles.l}>
+                  {r.label}
+                  {r.blockName ? (
+                    <span className={styles.blkn}>{r.blockName}</span>
+                  ) : null}
+                  {r.alloc ? <span className={styles.tag}>alloc.</span> : null}
+                </td>
+                <Cells r={r} scale={vm.scale} py={showPy} />
+              </tr>
+            ))}
           </tbody>
           <tfoot>
             {vm.footer.map((r) => (

@@ -1,19 +1,19 @@
+import type { Dataset } from "../data/dataset";
 import type { SliceDim } from "./slices";
-import type { ColumnPlan, SpineRow } from "./types";
-import { diff, money, pctSigned, v } from "./view-context";
+import type { ColumnPlan, EntityCode, SpineRow } from "./types";
+import { money, pctSigned, v } from "./view-context";
 import type { Values, ViewContext } from "./view-context";
 import type {
   AnalysisVM,
   BridgeStep,
   BridgeVM,
   Tone,
-  VarCut,
-  VarMember,
-  VarMode,
+  VarFilter,
+  VarFilterDim,
   VarRow,
-  VarTop,
   VariancesVM,
 } from "./view-types";
+import { VAR_DIMS } from "./view-types";
 
 // Analysis view (P&L views redesign v4, build-brief §2; one page since 2026-10-31). Lower half: net revenue bridge with
 // a constant-currency subtotal (Track B `Bridge Value` + new step "Constant-currency NR") and the profit bridge Budget
@@ -309,50 +309,93 @@ export function analysisBridges(ctx: ViewContext): AnalysisVM {
 }
 
 // ---------- largest variances (upper half since 2026-10-31) ----------
+// Every leaf line with data, ranked by |Δ|, under a filter of up to four slice members combined (2026-10-31, owner's
+// change; Top-N, block grouping and the cut are gone). Direct lines are read as booked at the member tuple; lines
+// below contribution margin are allocated by NR share unless the filter is by region only (C-31, marked alloc.).
 
-const CUT_DIM: Record<Exclude<VarCut, "none">, SliceDim> = {
-  region: "region",
-  channel: "channel",
-  line: "line",
-  segment: "segment",
-};
+const UNASSIGNED = /UNASSIGNED$/;
 
-function memberNames(ctx: ViewContext, dim: SliceDim): Map<string, string> {
-  const t = ctx.ds.manifest.tables;
-  const rows: [string, string, boolean][] =
-    dim === "region"
-      ? t.dim_region.map((r) => [r.region_code, r.region_name, false])
-      : dim === "channel"
-        ? t.dim_channel
-            .filter((c) => c.entity_code === ctx.entity)
-            .map((c) => [c.channel_code, c.channel_name, c.is_unassigned])
-        : dim === "line"
-          ? t.dim_line
-              .filter((c) => c.entity_code === ctx.entity)
-              .map((c) => [c.line_code, c.line_name, c.is_unassigned])
-          : t.dim_segment
-              .filter((c) => c.entity_code === ctx.entity)
-              .map((c) => [c.segment_code, c.segment_name, c.is_unassigned]);
-  return new Map(rows.filter((r) => !r[2]).map((r) => [r[0], r[1]]));
+/** The four filter dimensions with the company's members and slot labels (L-10); the unassigned member is left out. */
+export function varianceFilterDims(
+  m: Dataset["manifest"],
+  entity: EntityCode,
+): VarFilterDim[] {
+  const t = m.tables;
+  const of = <R extends { entity_code: string; slot_label: string }>(
+    rows: readonly R[],
+    code: (r: R) => string,
+    label: (r: R) => string,
+  ) => {
+    const mine = rows.filter((r) => r.entity_code === entity);
+    return {
+      label: mine[0]?.slot_label ?? "",
+      options: mine
+        .filter((r) => !UNASSIGNED.test(code(r)))
+        .map((r) => ({ code: code(r), label: label(r) })),
+    };
+  };
+  return [
+    {
+      dim: "region",
+      label: "Region",
+      options: t.dim_region.map((r) => ({
+        code: r.region_code,
+        label: r.region_name,
+      })),
+    },
+    {
+      dim: "channel",
+      ...of(
+        t.dim_channel,
+        (r) => r.channel_code,
+        (r) => r.channel_name,
+      ),
+    },
+    {
+      dim: "line",
+      ...of(
+        t.dim_line,
+        (r) => r.line_code,
+        (r) => r.line_name,
+      ),
+    },
+    {
+      dim: "segment",
+      ...of(
+        t.dim_segment,
+        (r) => r.segment_code,
+        (r) => r.segment_name,
+      ),
+    },
+  ];
 }
 
-/** Company-specific name of a slice dimension ("Sales motion", "Service line", …): dim_*.slot_label (L-10). */
-const slotLabel = (
-  rows: readonly { entity_code: string; slot_label: string }[],
-  entity: string,
-) => rows.find((r) => r.entity_code === entity)?.slot_label ?? "";
+/** Drops members the company does not have (a link made for the other company, a typo in the URL). */
+export function validVarFilter(
+  dims: readonly VarFilterDim[],
+  f: VarFilter,
+): VarFilter {
+  const out = { ...f };
+  for (const d of dims)
+    if (out[d.dim] !== null && !d.options.some((o) => o.code === out[d.dim]))
+      out[d.dim] = null;
+  return out;
+}
 
 export function largestVariances(
   ctx: ViewContext,
-  top: VarTop,
-  mode: VarMode,
-  cut: VarCut,
+  filter: VarFilter,
 ): VariancesVM {
   const { plan, tr, trCC, bridgeCmp: cmp, spine } = ctx;
   const m = ctx.ds.manifest;
   const idx = new Map(m.dict.account.map((c, i) => [c, i]));
+  const dims = varianceFilterDims(m, ctx.entity);
+  const by = VAR_DIMS.filter((d) => filter[d] !== null);
+  const key = by.map((d) => filter[d]).join("|");
+  const allocated = by.some((d) => d !== "region");
+  // Leaf vectors of the filtered member ("" = the whole company); a member with nothing booked is all zeros.
   const acc = (p: ColumnPlan, t = tr) =>
-    ctx.leaves(p, t).get("") ?? new Float64Array(m.dict.account.length);
+    ctx.leaves(p, t, by).get(key) ?? new Float64Array(m.dict.account.length);
   const base = acc(plan.base);
   const comp = acc(cmp.plan);
   // Second comparison column = Compare B (build-brief §2 "Compare B Amount per leaf"); dropped when Compare B = None
@@ -365,15 +408,9 @@ export function largestVariances(
   const isBelowCm = new Map(
     m.tables.dim_account.map((a) => [a.account_code, a.is_below_cm]),
   );
-  const blockRows = new Map(
-    spine.filter((r) => r.kind === "block").map((r) => [r.code, r]),
+  const blockNames = new Map(
+    spine.filter((r) => r.kind === "block").map((r) => [r.code, r.label]),
   );
-  const blockNames = new Map([...blockRows].map(([c, r]) => [c, r.label]));
-  const valuesBase = ctx.total(plan.base, tr);
-  const valuesCmp = ctx.total(cmp.plan, tr);
-  const valuesPy = cmpB ? ctx.total(cmpB.plan, tr) : null;
-  const valuesBaseCC = ctx.total(plan.base, trCC);
-  const valuesCmpCC = ctx.total(cmp.plan, trCC);
   const nm = 2 * ctx.units.divisor; // n.m. when |comparison| < 2.0 display units (spec Analysis 6.2)
 
   const deltaPct = (d: number, c: number) => {
@@ -386,23 +423,8 @@ export function largestVariances(
   const tone = (d: number): Tone =>
     Math.abs(d) < zero ? "plan" : d > 0 ? "ahead" : "adverse";
 
-  // Members of the cut (stacked segments, ▸ list), allocated below CM unless the cut is Region (C-31).
-  const dim = cut === "none" ? null : CUT_DIM[cut];
-  const names = dim ? memberNames(ctx, dim) : new Map<string, string>();
-  const byBase = dim ? ctx.leaves(plan.base, tr, [dim]) : null;
-  const byCmp = dim ? ctx.leaves(cmp.plan, tr, [dim]) : null;
-  const membersOf = (i: number): VarMember[] =>
-    dim
-      ? [...names].map(([key, label]) => {
-          const d = (byBase?.get(key)?.[i] ?? 0) - (byCmp?.get(key)?.[i] ?? 0);
-          return { key, label, delta: d, text: money(ctx, d, true) };
-        })
-      : [];
-
   interface Leaf {
     row: VarRow;
-    code: string;
-    block: string;
     abs: number;
     i: number;
   }
@@ -414,7 +436,7 @@ export function largestVariances(
         (VARIANCE_BLOCKS as readonly string[]).includes(r.parent),
     )
     // A line with no data in either version is hidden, not "n.m." (Track B parity round 2026-10-27, PV-12); its Δ is
-    // 0, so Σ|Δ all| and the coverage are unchanged. n.m. stays for lines with data (comparison < 2.0 or |Δ %| > 50 %).
+    // 0, so the total is unchanged. n.m. stays for lines with data (comparison < 2.0 or |Δ %| > 50 %).
     .filter((r) => {
       const i = idx.get(r.code) ?? -1;
       return (base[i] ?? 0) !== 0 || (comp[i] ?? 0) !== 0;
@@ -429,9 +451,7 @@ export function largestVariances(
         kind: "leaf",
         code: r.code,
         label: r.label,
-        block: r.parent,
         blockName: blockNames.get(r.parent) ?? r.parent,
-        count: null,
         comparison: money(ctx, c),
         actual: money(ctx, b),
         delta: d,
@@ -440,98 +460,39 @@ export function largestVariances(
         py: pyHas ? money(ctx, b - (py[i] ?? 0), true) : "n/a",
         fx: money(ctx, fx, true),
         tone: tone(d),
-        alloc:
-          dim !== null && dim !== "region" && (isBelowCm.get(r.code) ?? false),
-        members: membersOf(i),
+        alloc: allocated && (isBelowCm.get(r.code) ?? false),
       };
-      return { row, code: r.code, block: r.parent, abs: Math.abs(d), i };
-    });
-  const ranked = [...leaves].sort((a, b) => b.abs - a.abs || a.i - b.i);
-  const shown = top === "all" ? ranked : ranked.slice(0, top);
-  const shownSet = new Set(shown.map((l) => l.code));
-  const strip = (l: Leaf): VarRow => l.row;
+      return { row, abs: Math.abs(d), i };
+    })
+    .sort((a, b) => b.abs - a.abs || a.i - b.i);
 
-  const rows: VarRow[] = [];
-  if (mode === "abs") rows.push(...shown.map(strip));
-  else
-    for (const code of VARIANCE_BLOCKS) {
-      const inBlock = leaves.filter((l) => l.block === code);
-      const shownIn = ranked.filter(
-        (l) => l.block === code && shownSet.has(l.code),
-      );
-      if (inBlock.length === 0 || (top !== "all" && shownIn.length === 0))
-        continue;
-      const b = v(valuesBase, code) ?? 0;
-      const c = v(valuesCmp, code) ?? 0;
-      const d = b - c;
-      const fx =
-        d - ((v(valuesBaseCC, code) ?? 0) - (v(valuesCmpCC, code) ?? 0));
-      const i0 = inBlock.map((l) => l.i);
-      rows.push({
-        kind: "block",
-        code,
-        label: blockNames.get(code) ?? code,
-        block: null,
-        blockName: null,
-        count: `${shownIn.length} of ${inBlock.length} lines`,
-        comparison: money(ctx, c),
-        actual: money(ctx, b),
-        delta: d,
-        deltaText: money(ctx, d, true),
-        deltaPct: deltaPct(d, c),
-        py: pyHas ? money(ctx, diff(b, v(valuesPy, code)), true) : "n/a",
-        fx: money(ctx, fx, true),
-        tone: tone(d),
-        alloc:
-          dim !== null &&
-          dim !== "region" &&
-          inBlock.every((l) => isBelowCm.get(l.code)),
-        members: dim
-          ? [...names].map(([key, label]) => {
-              const md = i0.reduce(
-                (s, i) =>
-                  s +
-                  (byBase?.get(key)?.[i] ?? 0) -
-                  (byCmp?.get(key)?.[i] ?? 0),
-                0,
-              );
-              return { key, label, delta: md, text: money(ctx, md, true) };
-            })
-          : [],
-      });
-      rows.push(...shownIn.map(strip));
-    }
-
-  const sum = (ls: readonly Leaf[], f: (l: Leaf) => number) =>
-    ls.reduce((s, l) => s + f(l), 0);
-  const footer = (label: string, ls: readonly Leaf[], code: string): VarRow => {
-    const b = sum(ls, (l) => base[l.i] ?? 0);
-    const c = sum(ls, (l) => comp[l.i] ?? 0);
-    const d = b - c;
-    const fx = d - sum(ls, (l) => (baseCC[l.i] ?? 0) - (compCC[l.i] ?? 0));
-    return {
-      kind: "footer",
-      code,
-      label,
-      block: null,
-      blockName: null,
-      count: null,
-      comparison: money(ctx, c),
-      actual: money(ctx, b),
-      delta: d,
-      deltaText: money(ctx, d, true),
-      deltaPct: deltaPct(d, c),
-      py: pyHas ? money(ctx, b - sum(ls, (l) => py[l.i] ?? 0), true) : "n/a",
-      fx: money(ctx, fx, true),
-      tone: tone(d),
-      alloc: false,
-      members: [],
-    };
+  const sum = (f: (l: Leaf) => number) => leaves.reduce((s, l) => s + f(l), 0);
+  const b = sum((l) => base[l.i] ?? 0);
+  const c = sum((l) => comp[l.i] ?? 0);
+  const d = b - c;
+  const total: VarRow = {
+    kind: "footer",
+    code: "TOTAL",
+    label: "Total P&L Δ at operating profit",
+    blockName: null,
+    comparison: money(ctx, c),
+    actual: money(ctx, b),
+    delta: d,
+    deltaText: money(ctx, d, true),
+    deltaPct: deltaPct(d, c),
+    py: pyHas ? money(ctx, b - sum((l) => py[l.i] ?? 0), true) : "n/a",
+    fx: money(
+      ctx,
+      d - sum((l) => (baseCC[l.i] ?? 0) - (compCC[l.i] ?? 0)),
+      true,
+    ),
+    tone: tone(d),
+    alloc: false,
   };
-  const totalAbs = sum(leaves, (l) => l.abs);
-  const coverage = totalAbs === 0 ? 1 : sum(shown, (l) => l.abs) / totalAbs;
-  const others = leaves.filter((l) => !shownSet.has(l.code));
-  const pct0 = (x: number) => `${Math.round(x * 100)}%`;
+  const applied = dims
+    .filter((x) => filter[x.dim] !== null)
+    .map((x) => x.options.find((o) => o.code === filter[x.dim])?.label ?? "");
+  const filterText = applied.length ? applied.join(" · ") : null;
   return {
     title: `Largest variances vs ${cmp.name}`,
     cmpName: cmp.name,
@@ -539,34 +500,19 @@ export function largestVariances(
       comparison: cmp.name,
       py: cmpB ? `vs ${SHORT[cmpB.choice]}` : "",
     },
-    rows,
-    footer: [
-      footer(
-        `Shown lines (${shown.length}) - coverage ${pct0(coverage)}`,
-        shown,
-        "SHOWN",
-      ),
-      footer(`All other lines (${others.length})`, others, "OTHER"),
-      footer("Total P&L Δ at operating profit", leaves, "TOTAL"),
-    ],
-    coverage,
+    rows: leaves.map((l) => l.row),
+    footer: [total],
     scale: Math.max(...leaves.map((l) => l.abs), 1e-9),
-    legend: [...names].map(([key, label]) => ({ key, label })),
-    cuts: [
-      { value: "none", label: "Total" },
-      { value: "region", label: "Region" },
-      { value: "channel", label: slotLabel(m.tables.dim_channel, ctx.entity) },
-      { value: "line", label: slotLabel(m.tables.dim_line, ctx.entity) },
-      { value: "segment", label: slotLabel(m.tables.dim_segment, ctx.entity) },
-    ],
+    filter: dims,
+    filterText,
     info: {
       title: `Largest variances vs ${cmp.name}`,
-      what: "Leaf lines of the P&L down to operating profit. Δ = actual − comparison on signed values, so a positive Δ always helps profit and a negative one hurts it; bars share one scale. Top 8 / 12 / All; By block groups the shown lines under their P&L block with the block’s full subtotal; By |Δ| is one flat ranking. A cut splits every bar into slice members; opex and below are booked by region only and allocated by NR share to the other slices (marked alloc.).",
+      what: "Every leaf line of the P&L down to operating profit, ranked by |Δ|. Δ = actual − comparison on signed values, so a positive Δ always helps profit and a negative one hurts it; bars share one scale. The filter narrows the figures to one region, channel, category or price tier, or any combination of them; opex and below are booked by region only and allocated by NR share to the other slices (marked alloc.).",
       formula:
-        "Δ = actual − comparison; Δ % = Δ ÷ |comparison|, n.m. when |comparison| < 2.0 or |Δ %| > 50 %; FX = (actual − actual cc) − (comparison − comparison cc); coverage = Σ|Δ shown| ÷ Σ|Δ all|",
+        "Δ = actual − comparison; Δ % = Δ ÷ |comparison|, n.m. when |comparison| < 2.0 or |Δ %| > 50 %; FX = (actual − actual cc) − (comparison − comparison cc); filtered line = Σ fact rows of the chosen members, below CM × NR share",
       values: [
         { label: "Lines to operating profit", value: String(leaves.length) },
-        { label: "Coverage of the shown lines", value: pct0(coverage) },
+        { label: "Filter", value: filterText ?? "none (whole company)" },
         {
           label: "Second comparison",
           value: cmpB
@@ -577,7 +523,7 @@ export function largestVariances(
         },
       ],
       source:
-        "LV Base - LV Comparison - LV Δ - LV Δ % - LV Abs Δ (TopN) - Compare B Amount (PY) - dim_account.block_code - _Amt Row block subtotals - fact_pl / fact_pl_allocated cut (C-30, C-31) - new: LV FX, TopN parameter, block grouping - C-45",
+        "LV Base - LV Comparison - LV Δ - LV Δ % - LV Abs Δ - Compare B Amount (PY) - dim_account.block_code - fact_pl / fact_pl_allocated by member tuple (C-30, C-31) - new: LV FX, member filter - C-45",
     },
   };
 }

@@ -42,7 +42,7 @@ const BODY: Readonly<
       {
         label: "Top",
         value:
-          "Largest variances to operating profit: Top 8 / 12 / All, by block or by |Δ|, cut by slice, prior-year Δ and of which FX.",
+          "Every line to operating profit ranked by |Δ|, prior-year Δ and of which FX. The funnel filters by region, channel, category and price tier, alone or combined.",
       },
       {
         label: "Bottom",

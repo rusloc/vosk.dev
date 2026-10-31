@@ -185,7 +185,8 @@ export function profitability(ctx: ViewContext): ProfitabilityVM {
     },
   };
 
-  // Mix heatmap: region × service line (category for Consumer Products), NR at CC; colour = the line's GM %.
+  // Mix heatmap: region × service line (category for Consumer Products), NR at CC; colour = the cell's NR (2026-10-31,
+  // owner's change: a heatmap of the cells, no longer the column's GM %).
   const lines = t.dim_line
     .filter((l) => l.entity_code === ctx.entity && !l.is_unassigned)
     .sort((a, b) => a.sort_order - b.sort_order);
@@ -201,6 +202,7 @@ export function profitability(ctx: ViewContext): ProfitabilityVM {
           const c = cells?.get(`${r}|${l.line_code}`) ?? null;
           const nr = v(c, "NR");
           return {
+            value: nr,
             text: amt(nr),
             share: pct(ratio(nr, regionNr), 0),
             detail: `${regionName.get(r) ?? r} × ${l.line_name}: NR ${amt(nr)}, ${pct(ratio(nr, regionNr))} of the region, GM ${pct(ratio(v(c, "GP"), nr))}`,
@@ -223,9 +225,9 @@ export function profitability(ctx: ViewContext): ProfitabilityVM {
     grand: amt(v(total, "NR")),
     info: {
       title: `Mix - region × ${ctx.entity === "S" ? "service line" : "category"}`,
-      what: "Cells: net revenue at constant currency and its share of the region; colour = gross margin % of the column (dark = high). Row and column totals reconcile to the table.",
+      what: "Cells: net revenue at constant currency and its share of the region; colour = the cell's net revenue (dark = large). Column headers carry the line's gross margin %. Row and column totals reconcile to the table.",
       formula:
-        "cell = NR(region, line); share = cell ÷ region NR; colour = GP ÷ NR of the line",
+        "cell = NR(region, line); share = cell ÷ region NR; colour = cell ÷ largest cell; header GM = GP ÷ NR of the line",
       values: lines.map((l) => {
         const x = byLine?.get(l.line_code) ?? null;
         return {

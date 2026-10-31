@@ -6,7 +6,8 @@ import { useSize } from "./use-size";
 import styles from "./views.module.css";
 
 // Profitability (P&L views redesign v4, build-brief §3). Page 1: 8-column region table (status dot on CM Δ only) +
-// concentration bars; page 2: growth × margin by region (left) + region × service-line mix heatmap (right).
+// concentration bars; page 2: growth × margin by region (left) + region × service-line mix heatmap (right, cells
+// coloured by their value since 2026-10-31).
 
 const TONE: Record<Tone, string | undefined> = {
   ahead: styles.ahead,
@@ -138,12 +139,13 @@ export function ProfitabilityTable({ vm }: { vm: ProfitabilityVM }) {
 
 export function ProfitabilityCharts({ vm }: { vm: ProfitabilityVM }) {
   const [ref, size] = useSize<HTMLDivElement>();
-  const gms = vm.heat.cols.map((c) => c.gm ?? 0);
-  const lo = Math.min(...gms);
-  const hi = Math.max(...gms);
-  // colour = GM % of the column (company accent ramp, design v4); text switches to white on the dark half
-  const shade = (gm: number | null) =>
-    gm === null || hi === lo ? 0.5 : (gm - lo) / (hi - lo);
+  // colour = the cell's NR against the largest cell (company accent ramp); text switches to white on the dark half
+  const max = Math.max(
+    ...vm.heat.rows.flatMap((r) => r.cells.map((c) => Math.abs(c.value ?? 0))),
+    1e-9,
+  );
+  const shade = (value: number | null) =>
+    value === null ? 0 : Math.abs(value) / max;
   const bg = (t: number) =>
     `color-mix(in srgb, var(--acc) ${Math.round(15 + t * 70)}%, var(--acc-t))`;
   return (
@@ -188,7 +190,7 @@ export function ProfitabilityCharts({ vm }: { vm: ProfitabilityVM }) {
                 <tr key={r.key}>
                   <td className={styles.l}>{r.label}</td>
                   {r.cells.map((c, j) => {
-                    const t = shade(vm.heat.cols[j]?.gm ?? null);
+                    const t = shade(c.value);
                     return (
                       <td
                         key={j}

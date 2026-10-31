@@ -73,24 +73,38 @@ export interface BridgeVM {
   residual: number;
 }
 
-export type VarTop = 8 | 12 | "all";
-export type VarMode = "block" | "abs";
-export type VarCut = "none" | "region" | "channel" | "line" | "segment";
+/** The variances filter: one member per slice dimension or null = all; the chosen members combine (AND). */
+export interface VarFilter {
+  region: string | null;
+  channel: string | null;
+  line: string | null;
+  segment: string | null;
+}
+export type VarDim = keyof VarFilter;
+export const VAR_DIMS: readonly VarDim[] = [
+  "region",
+  "channel",
+  "line",
+  "segment",
+];
+export const NO_FILTER: VarFilter = {
+  region: null,
+  channel: null,
+  line: null,
+  segment: null,
+};
 
-export interface VarMember {
-  key: string;
-  label: string;
-  delta: number; // signed, reporting units
-  text: string;
+export interface VarFilterDim {
+  dim: VarDim;
+  label: string; // "Region", else the company's slot label ("Channel", "Sales motion", "Category", …)
+  options: { code: string; label: string }[]; // without the unassigned member
 }
 
 export interface VarRow {
-  kind: "block" | "leaf" | "footer";
+  kind: "leaf" | "footer";
   code: string;
   label: string;
-  block: string | null; // leaf: block code; flat mode shows the block name as a grey suffix
-  blockName: string | null;
-  count: string | null; // block row: "3 of 4 lines"
+  blockName: string | null; // leaf: the P&L block, shown as a grey suffix
   comparison: string;
   actual: string;
   delta: number; // signed, reporting units (bar)
@@ -99,20 +113,18 @@ export interface VarRow {
   py: string; // Δ vs prior year
   fx: string; // of which FX
   tone: Tone;
-  alloc: boolean; // below CM and cut by anything but Region (C-31)
-  members: VarMember[]; // stacked segments of the cut (empty without a cut)
+  alloc: boolean; // below CM under a channel / line / segment filter: allocated by NR share (C-31)
 }
 
 export interface VariancesVM {
   title: string;
   cmpName: string;
   columns: { comparison: string; py: string };
-  rows: VarRow[]; // display order; block rows precede their shown leaves in block mode
-  footer: VarRow[]; // shown lines · all other lines · total at operating profit
-  coverage: number; // Σ|Δ shown| ÷ Σ|Δ all|
+  rows: VarRow[]; // every leaf line with data, ranked by |Δ|
+  footer: VarRow[]; // total at operating profit
   scale: number; // max |Δ| of every leaf (shared bar scale)
-  legend: { key: string; label: string }[]; // cut members
-  cuts: { value: VarCut; label: string }[]; // Total · Region · company slot labels (dim_* slot_label)
+  filter: VarFilterDim[]; // the four dimensions and their members, for the filter pop-up
+  filterText: string | null; // the applied members, " · "-joined; null without a filter
   info: InfoVM;
 }
 
@@ -158,7 +170,12 @@ export interface HeatVM {
   rows: {
     key: string;
     label: string;
-    cells: { text: string; share: string; detail: string }[];
+    cells: {
+      value: number | null;
+      text: string;
+      share: string;
+      detail: string;
+    }[]; // value = NR, the cell colour
     total: string;
   }[];
   cols: {

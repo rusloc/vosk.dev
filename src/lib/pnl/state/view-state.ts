@@ -1,41 +1,48 @@
 import { z } from "zod";
-import type { VarCut, VarMode, VarTop } from "../engine/view-types";
+import type { VarFilter } from "../engine/view-types";
+import { NO_FILTER, VAR_DIMS } from "../engine/view-types";
 
-// URL keys of the P&L views redesign (F-37 shareable link): sub-page and the largest-variances controls. Validated at
+// URL keys of the P&L views redesign (F-37 shareable link): sub-page and the largest-variances filter. Validated at
 // the boundary like the Selection keys: an invalid value falls back to its default and the URL is rewritten; defaults
 // are omitted. The view itself stays `v` (Vitals keeps the value `kpi`).
 //   p   = sub-page of Profitability (1 | 2); Analysis is one page since 2026-10-31, so `p` is dropped there
-//   lvn = Top-N (8 | 12 | all) · lvm = grouping (block | abs) · lvc = cut (none | region | channel | line | segment)
+//   lvr · lvch · lvln · lvsg = the variances filter, one member code per slice dimension (2026-10-31); a member the
+//   company does not have is dropped by the shell (engine.validVarFilter), the code shape is checked here
 
 /** The view-state keys, after the Selection keys (shared links). */
-export const VIEW_STATE_KEYS = ["p", "lvn", "lvm", "lvc"] as const;
+export const VIEW_STATE_KEYS = ["p", "lvr", "lvch", "lvln", "lvsg"] as const;
+const FILTER_KEYS: Readonly<Record<keyof VarFilter, string>> = {
+  region: "lvr",
+  channel: "lvch",
+  line: "lvln",
+  segment: "lvsg",
+};
 
 export interface ViewState {
   page: 1 | 2;
-  top: VarTop;
-  mode: VarMode;
-  cut: VarCut;
+  filter: VarFilter;
 }
 
 export const VIEW_STATE_DEFAULTS: ViewState = {
   page: 1,
-  top: 8,
-  mode: "block",
-  cut: "none",
+  filter: NO_FILTER,
 };
 
+const member = z
+  .string()
+  .regex(/^[A-Z0-9_]{1,16}$/)
+  .nullable()
+  .catch(null);
 const schema = z
   .object({
     p: z
       .enum(["1", "2"])
       .transform((v): ViewState["page"] => (v === "2" ? 2 : 1))
       .catch(1),
-    lvn: z
-      .enum(["8", "12", "all"])
-      .transform((v): VarTop => (v === "all" ? "all" : v === "12" ? 12 : 8))
-      .catch(8),
-    lvm: z.enum(["block", "abs"]).catch("block"),
-    lvc: z.enum(["none", "region", "channel", "line", "segment"]).catch("none"),
+    region: member,
+    channel: member,
+    line: member,
+    segment: member,
   })
   .strict();
 
@@ -44,20 +51,30 @@ type Query = Pick<URLSearchParams, "get">;
 export function parseViewState(q: Query): ViewState {
   const r = schema.parse({
     p: q.get("p") ?? "1",
-    lvn: q.get("lvn") ?? "8",
-    lvm: q.get("lvm") ?? "block",
-    lvc: q.get("lvc") ?? "none",
+    region: q.get(FILTER_KEYS.region),
+    channel: q.get(FILTER_KEYS.channel),
+    line: q.get(FILTER_KEYS.line),
+    segment: q.get(FILTER_KEYS.segment),
   });
-  return { page: r.p, top: r.lvn, mode: r.lvm, cut: r.lvc };
+  return {
+    page: r.p,
+    filter: {
+      region: r.region,
+      channel: r.channel,
+      line: r.line,
+      segment: r.segment,
+    },
+  };
 }
 
 /** Non-default keys only, appended after the Selection keys. */
 export function serializeViewState(s: ViewState): string {
   const out = new URLSearchParams();
   if (s.page !== 1) out.set("p", String(s.page));
-  if (s.top !== 8) out.set("lvn", String(s.top));
-  if (s.mode !== "block") out.set("lvm", s.mode);
-  if (s.cut !== "none") out.set("lvc", s.cut);
+  for (const d of VAR_DIMS) {
+    const m = s.filter[d];
+    if (m !== null) out.set(FILTER_KEYS[d], m);
+  }
   return out.toString();
 }
 

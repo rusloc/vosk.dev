@@ -135,11 +135,12 @@ function Ledger({
     () => restrictToBuilt(codec.parse(new URLSearchParams(search))),
     [codec, search],
   );
-  // Sub-page and variances controls (p, lvn, lvm, lvc): validated like the Selection keys, appended after them.
-  const vs = useMemo(
-    () => parseViewState(new URLSearchParams(search)),
-    [search],
-  );
+  // Sub-page and the variances filter (p, lvr, lvch, lvln, lvsg): validated like the Selection keys, appended after
+  // them; a member the company shown does not have is dropped, so the URL is rewritten to what is on screen.
+  const vs = useMemo(() => {
+    const raw = parseViewState(new URLSearchParams(search));
+    return { ...raw, filter: engine.validVarFilter(sel, raw.filter) };
+  }, [engine, sel, search]);
   // Only Profitability keeps sub-pages: Analysis is one page since 2026-10-31 (variances over the bridges).
   const paged = sel.view === "profitability";
   const canonical = joinQuery(
@@ -352,7 +353,7 @@ function RedesignedView({
       return {
         kind: "analysis",
         bridges: engine.analysis(sel),
-        vm: engine.variances(sel, vs.top, vs.mode, vs.cut),
+        vm: engine.variances(sel, vs.filter),
       } as const;
     if (sel.view === "profitability")
       return {
@@ -379,10 +380,8 @@ function RedesignedView({
         <AnalysisView
           bridges={vm.bridges}
           vm={vm.vm}
-          top={vs.top}
-          mode={vs.mode}
-          cut={vs.cut}
-          onChange={(patch) => onViewState(patch)}
+          filter={vs.filter}
+          onFilter={(filter) => onViewState({ filter })}
         />
       ) : null}
       {vm.kind === "profTable" ? <ProfitabilityTable vm={vm.vm} /> : null}

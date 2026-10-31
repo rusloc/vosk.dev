@@ -43,6 +43,24 @@ here, not in the pack:** the PNL side was asked to do the same in the Power BI r
 has the two pages, so a re-issued pack must carry this change (or it is re-applied: `analysis-view.tsx`, `shell.tsx`
 `paged`, `view-copy.ts`) before it replaces these files.
 
+## 2026-10-31, evening: the variances filter, and the mix heatmap coloured by cell (owner's changes)
+
+- **"Largest variances vs Budget" lost its control block** (Top 8 / 12 / All, By block / By |Δ|, Cut). It now shows
+  every leaf line with data, ranked by |Δ|, the P&L block as a grey suffix; the footer is the one total at operating
+  profit (the "shown / other / coverage" rows went with Top-N).
+- **A funnel replaces the cut:** a glass pop-up with one radio row per dimension (Region, and the company's Channel /
+  Category / Price tier or Sales motion / Service line / Customer segment), "All" plus the members, never the
+  unassigned one. The chosen members combine (AND): "North America · Online marketplaces · Home care · Premium" is
+  the panel's subtitle, and a single member works alone. Engine: `largestVariances(ctx, filter)` reads the leaf
+  vectors of the member tuple from `ctx.leaves(plan, tr, dims)`; lines below contribution margin are allocated by NR
+  share whenever the filter has a non-region dimension (C-31, `alloc.`). Members partition the total (test).
+- **URL:** `lvn` / `lvm` / `lvc` are gone; `lvr` / `lvch` / `lvln` / `lvsg` carry the filter (one code each, shape
+  checked in `view-state.ts`, membership by `engine.validVarFilter` in the shell, so a code of the other company is
+  dropped and the link rewritten).
+- **Profitability page 2, "Mix - region × category":** the cells are now coloured by their own net revenue against
+  the largest cell (a heatmap of the mix), no longer by the column's GM %, which stays in the header.
+- **Still a divergence from the `pnl/js-app/` pack**, like the page merge above: a re-issue must carry both.
+
 ## Where things are (10-22, kept)
 
 | What | Path |

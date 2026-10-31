@@ -1,6 +1,11 @@
 import type { Dataset } from "../data/dataset";
 import { aggregateAccounts } from "./aggregate";
-import { analysisBridges, largestVariances } from "./analysis";
+import {
+  analysisBridges,
+  largestVariances,
+  validVarFilter,
+  varianceFilterDims,
+} from "./analysis";
 import type { Translation } from "./aggregate";
 import { createFx } from "./fx";
 import { appliedFilters, headerStatus, railSummaries } from "./header";
@@ -26,9 +31,8 @@ import type {
   AnalysisVM,
   HowToReadVM,
   ProfitabilityVM,
-  VarCut,
-  VarMode,
-  VarTop,
+  VarFilter,
+  VarFilterDim,
   VariancesVM,
   VitalsVM,
 } from "./view-types";
@@ -55,12 +59,11 @@ export interface Engine {
   /** P&L views redesign v4 (single company views; the Group view is not built in Track C). */
   vitals(sel: Selection): VitalsVM;
   analysis(sel: Selection): AnalysisVM;
-  variances(
-    sel: Selection,
-    top: VarTop,
-    mode: VarMode,
-    cut: VarCut,
-  ): VariancesVM;
+  variances(sel: Selection, filter: VarFilter): VariancesVM;
+  /** The variances filter's dimensions and members for the company shown (Group falls back to P). */
+  varianceFilterDims(sel: Selection): VarFilterDim[];
+  /** The filter without members the company does not have. */
+  validVarFilter(sel: Selection, filter: VarFilter): VarFilter;
   profitability(sel: Selection): ProfitabilityVM;
   howToRead(sel: Selection): HowToReadVM;
 }
@@ -177,8 +180,14 @@ export function createEngine(ds: Dataset): Engine {
 
     vitals: (sel) => vitals(view(sel)),
     analysis: (sel) => analysisBridges(view(sel)),
-    variances: (sel, top, mode, cut) =>
-      largestVariances(view(sel), top, mode, cut),
+    variances: (sel, filter) => largestVariances(view(sel), filter),
+    varianceFilterDims: (sel) =>
+      varianceFilterDims(m, sel.entity === "GROUP" ? "P" : sel.entity),
+    validVarFilter: (sel, filter) =>
+      validVarFilter(
+        varianceFilterDims(m, sel.entity === "GROUP" ? "P" : sel.entity),
+        filter,
+      ),
     profitability: (sel) => profitability(view(sel)),
     howToRead: (sel) => howToRead(m, sel, view(sel)),
   };

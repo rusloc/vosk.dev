@@ -145,10 +145,11 @@ describe("Analysis, bridges (lower half) — reconcile (T-05)", () => {
 });
 
 describe("Analysis, largest variances (upper half)", () => {
+  const F = { region: null, channel: null, line: null, segment: null };
   it.each(SELECTIONS)(
-    "%s: total = operating-profit Δ, coverage, FX = reported − CC",
+    "%s: every line with data ranked by |Δ|, total = operating-profit Δ, FX = reported − CC",
     (_, sel) => {
-      const vm = engine.variances(sel, 8, "block", "none");
+      const vm = engine.variances(sel, F);
       const ctx = createViewContext(
         ds,
         sel,
@@ -162,15 +163,11 @@ describe("Analysis, largest variances (upper half)", () => {
         op(ctx.plan.base) - op(ctx.bridgeCmp.plan),
         3,
       );
-      const shown = vm.footer.find((f) => f.code === "SHOWN");
-      const other = vm.footer.find((f) => f.code === "OTHER");
-      expect((shown?.delta ?? 0) + (other?.delta ?? 0)).toBeCloseTo(
-        total?.delta ?? NaN,
-        3,
-      );
-      expect(vm.coverage).toBeGreaterThan(0);
-      expect(vm.coverage).toBeLessThanOrEqual(1);
-      expect(vm.rows.filter((r) => r.kind === "leaf")).toHaveLength(8);
+      expect(vm.footer).toHaveLength(1);
+      const abs = vm.rows.map((r) => Math.abs(r.delta));
+      expect(abs).toEqual([...abs].sort((a, b) => b - a));
+      expect(vm.rows.every((r) => r.kind === "leaf" && r.blockName)).toBe(true);
+      expect(vm.filterText).toBeNull();
       // of which FX: Δ at the selected basis − Δ at constant currency, summed over every leaf = OP
       const ccDelta =
         op(ctx.plan.base, ctx.trCC) - op(ctx.bridgeCmp.plan, ctx.trCC);
@@ -180,56 +177,98 @@ describe("Analysis, largest variances (upper half)", () => {
     },
   );
 
-  it('Top 8 / 12 / All, by block or by |Δ|; block rows carry "n of m lines"', () => {
-    const sel = fy2025();
-    expect(
-      engine
-        .variances(sel, 12, "abs", "none")
-        .rows.filter((r) => r.kind === "leaf"),
-    ).toHaveLength(12);
-    const all = engine.variances(sel, "all", "block", "none");
-    expect(all.coverage).toBeCloseTo(1, 9);
-    expect(
-      all.rows.filter((r) => r.kind === "block").map((r) => r.code),
-    ).toEqual([
-      "GR",
-      "GTN",
-      "COR",
-      "VSC",
-      "SM",
-      "RD",
-      "GA",
-      "OOI",
-      "DA",
-      "ADJ",
+  it("filter dimensions: Region plus the company's three slots, without the unassigned member", () => {
+    const p = engine.variances(fy2025({ entity: "P" }), F).filter;
+    expect(p.map((d) => d.label)).toEqual([
+      "Region",
+      "Channel",
+      "Category",
+      "Price tier",
     ]);
-    expect(all.rows.find((r) => r.kind === "block")?.count).toMatch(
-      /^\d+ of \d+ lines$/,
-    );
-    const abs = engine
-      .variances(sel, "all", "abs", "none")
-      .rows.map((r) => Math.abs(r.delta));
-    expect(abs).toEqual([...abs].sort((a, b) => b - a));
+    expect(p.map((d) => d.options.length)).toEqual([4, 5, 5, 3]);
+    const s = engine.variances(fy2025(), F).filter;
+    expect(s.map((d) => d.label)).toEqual([
+      "Region",
+      "Sales motion",
+      "Service line",
+      "Customer segment",
+    ]);
+    expect(
+      s.flatMap((d) => d.options).some((o) => /UNASSIGNED/.test(o.code)),
+    ).toBe(false);
+    // a member of the other company is dropped, a valid one kept
+    expect(
+      engine.validVarFilter(fy2025({ entity: "P" }), {
+        ...F,
+        channel: "SELF",
+        line: "HOME",
+      }),
+    ).toEqual({ ...F, line: "HOME" });
   });
 
-  it("a cut splits every leaf exactly into its members; below-CM rows are allocated (alloc.) unless cut by region", () => {
-    for (const cut of ["region", "channel", "line", "segment"] as const) {
-      const vm = engine.variances(fy2025(), "all", "abs", cut);
-      for (const r of vm.rows) {
-        const sum = r.members.reduce((s, x) => s + x.delta, 0);
-        expect(sum, `${cut} ${r.code}`).toBeCloseTo(r.delta, 3);
+  it("a filter by one dimension partitions the total: Σ members = whole company; below CM allocated unless by region", () => {
+    const sel = fy2025();
+    const whole = engine.variances(sel, F);
+    const totalOf = (vm: ReturnType<typeof engine.variances>) =>
+      vm.footer.find((f) => f.code === "TOTAL")?.delta ?? NaN;
+    for (const d of whole.filter) {
+      let sum = 0;
+      for (const o of d.options) {
+        const vm = engine.variances(sel, { ...F, [d.dim]: o.code });
+        sum += totalOf(vm);
+        expect(vm.filterText).toBe(o.label);
+        const allocated = vm.rows.filter((r) => r.alloc).map((r) => r.code);
+        if (d.dim === "region") expect(allocated).toEqual([]);
+        else
+          expect(
+            allocated.every((c) => /^(SM|RD|GA|OOI|DA|ADJ)_/.test(c)),
+            d.dim,
+          ).toBe(true);
       }
-      const allocated = vm.rows.filter((r) => r.alloc).map((r) => r.code);
-      if (cut === "region") expect(allocated).toEqual([]);
-      else
-        expect(allocated.every((c) => /^(SM|RD|GA|OOI|DA|ADJ)_/.test(c))).toBe(
-          true,
-        );
+      expect(sum, d.dim).toBeCloseTo(totalOf(whole), 2);
     }
   });
 
+  it("members combine (AND): the four-way filter equals the member tuple of the four-dimension cut", () => {
+    const sel = fy2025({ entity: "P" });
+    const filter = {
+      region: "NA",
+      channel: "MKT",
+      line: "HOME",
+      segment: "PREM",
+    };
+    const vm = engine.variances(sel, filter);
+    expect(vm.filterText).toBe(
+      "North America · Online marketplaces · Home care · Premium",
+    );
+    const ctx = createViewContext(
+      ds,
+      sel,
+      createSliceCache(ds),
+      createFx(ds.manifest),
+    );
+    const by = ["region", "channel", "line", "segment"] as const;
+    const base = ctx.leaves(ctx.plan.base, ctx.tr, by).get("NA|MKT|HOME|PREM");
+    const comp = ctx
+      .leaves(ctx.bridgeCmp.plan, ctx.tr, by)
+      .get("NA|MKT|HOME|PREM");
+    const idx = new Map(ds.manifest.dict.account.map((c, i) => [c, i]));
+    for (const r of vm.rows) {
+      const i = idx.get(r.code) ?? -1;
+      expect(r.delta, r.code).toBeCloseTo(
+        (base?.[i] ?? 0) - (comp?.[i] ?? 0),
+        6,
+      );
+    }
+    expect(vm.rows.length).toBeGreaterThan(0);
+    // the four single-member totals are each larger than the combined one in magnitude of lines shown
+    expect(
+      engine.variances(sel, { ...F, region: "NA" }).rows.length,
+    ).toBeGreaterThanOrEqual(vm.rows.length);
+  });
+
   it("n.m. when |comparison| < 2.0 display units or |Δ %| > 50 %", () => {
-    const vm = engine.variances(fy2025(), "all", "abs", "none");
+    const vm = engine.variances(fy2025(), F);
     for (const r of vm.rows)
       if (r.deltaPct !== "n.m.")
         expect(
@@ -240,16 +279,14 @@ describe("Analysis, largest variances (upper half)", () => {
 
   it("hides lines with no data in either version; they never show as n.m. (Track B parity round)", () => {
     const sel = fy2025({ entity: "S" });
-    const vm = engine.variances(sel, "all", "abs", "none");
-    const leaves = vm.rows.filter((r) => r.kind === "leaf");
+    const vm = engine.variances(sel, F);
     // S FY2025 vs Budget: OOI_2, ADJ_1 and ADJ_2 are empty in both versions (35 leaves → 32)
-    expect(leaves).toHaveLength(32);
+    expect(vm.rows).toHaveLength(32);
     for (const code of ["OOI_2", "ADJ_1", "ADJ_2"])
-      expect(leaves.some((r) => r.code === code)).toBe(false);
-    const shown = engine.variances(sel, 8, "block", "none");
-    const total = shown.footer.find((f) => f.code === "TOTAL");
+      expect(vm.rows.some((r) => r.code === code)).toBe(false);
+    const total = vm.footer.find((f) => f.code === "TOTAL");
     expect(total?.delta).toBeCloseTo(
-      leaves.reduce((s, r) => s + r.delta, 0),
+      vm.rows.reduce((s, r) => s + r.delta, 0),
       6,
     ); // hiding moves no money
   });
@@ -292,6 +329,12 @@ describe("Profitability", () => {
         /^Constant currency \(FY\d{4} budget rates\)/,
       );
       expect(vm.heat.rows).toHaveLength(4);
+      // heatmap colour = the cell's NR: every cell carries its value, the largest cell is a real amount
+      const cellValues = vm.heat.rows.flatMap((r) =>
+        r.cells.map((c) => c.value),
+      );
+      expect(cellValues.every((x) => typeof x === "number")).toBe(true);
+      expect(Math.max(...cellValues.map((x) => x ?? 0))).toBeGreaterThan(0);
       expect(vm.bubble.points.length).toBeGreaterThan(0);
       expect(JSON.stringify(vm)).not.toMatch(/NaN|undefined|Infinity/);
     },

@@ -3,7 +3,6 @@ import type {
   BridgeStep,
   BubbleVM,
   ConcentrationVM,
-  VarMember,
 } from "@/lib/pnl/engine/view-types";
 import { linear, niceTicks } from "../chart-scale";
 
@@ -221,40 +220,15 @@ export function Waterfall({
 /** Diverging variance bar on a shared scale; with a cut, member segments stack outwards from the centre. */
 export function DivBar({
   delta,
-  members,
   scale,
   width = 124,
 }: {
   delta: number;
-  members: readonly VarMember[];
   scale: number;
   width?: number;
 }) {
   const half = width / 2;
-  const w = (d: number) => (Math.min(Math.abs(d), scale) / scale) * half;
-  const segs: { x: number; w: number; fill: string }[] = [];
-  if (members.length === 0) {
-    const ww = w(delta);
-    segs.push({
-      x: delta >= 0 ? half : half - ww,
-      w: ww,
-      fill: delta >= 0 ? GREEN : ORANGE,
-    });
-  } else {
-    let right = half;
-    let left = half;
-    members.forEach((m, i) => {
-      const ww = w(m.delta);
-      const fill = MEMBER[i % MEMBER.length] ?? SLATE4;
-      if (m.delta >= 0) {
-        segs.push({ x: right, w: ww, fill });
-        right += ww;
-      } else {
-        left -= ww;
-        segs.push({ x: left, w: ww, fill });
-      }
-    });
-  }
+  const w = (Math.min(Math.abs(delta), scale) / scale) * half;
   return (
     <svg
       width={width}
@@ -263,16 +237,13 @@ export function DivBar({
       style={{ verticalAlign: "middle" }}
     >
       <rect x={0} y={1} width={width} height={9} rx={2} fill={LINE1} />
-      {segs.map((s, i) => (
-        <rect
-          key={i}
-          x={Math.max(0, s.x)}
-          y={1}
-          width={Math.min(s.w, width)}
-          height={9}
-          fill={s.fill}
-        />
-      ))}
+      <rect
+        x={Math.max(0, delta >= 0 ? half : half - w)}
+        y={1}
+        width={Math.min(w, width)}
+        height={9}
+        fill={delta >= 0 ? GREEN : ORANGE}
+      />
       <line x1={half} x2={half} y1={0} y2={11} stroke="rgba(16,27,43,.45)" />
     </svg>
   );

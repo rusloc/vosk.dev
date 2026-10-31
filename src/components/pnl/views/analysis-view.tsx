@@ -15,9 +15,9 @@ import { DivBar, MEMBER, Waterfall } from "./charts";
 import { useSize } from "./use-size";
 import styles from "./views.module.css";
 
-// Analysis (P&L views redesign v4, build-brief §2). Page 1: the two bridges side by side, full height. Page 2:
+// Analysis (P&L views redesign v4, build-brief §2; one page since 2026-10-31, owner's layout change). Upper half: the
 // largest variances; Top-N, grouping and cut live in the URL (lvn / lvm / lvc), block collapse and member lists are
-// local view state.
+// local view state. Lower half: the two bridges side by side.
 
 const TONE: Record<Tone, string | undefined> = {
   ahead: styles.ahead,
@@ -49,11 +49,23 @@ function BridgePanel({ vm }: { vm: BridgeVM }) {
   );
 }
 
-export function AnalysisBridges({ vm }: { vm: AnalysisVM }) {
+function AnalysisBridges({ vm }: { vm: AnalysisVM }) {
   return (
-    <div className={`${styles.page} ${styles.halves}`}>
+    <div className={styles.halves}>
       <BridgePanel vm={vm.nr} />
       <BridgePanel vm={vm.profit} />
+    </div>
+  );
+}
+
+export function AnalysisView({
+  bridges,
+  ...variances
+}: { bridges: AnalysisVM } & Parameters<typeof Variances>[0]) {
+  return (
+    <div className={`${styles.page} ${styles.stacked}`}>
+      <Variances {...variances} />
+      <AnalysisBridges vm={bridges} />
     </div>
   );
 }
@@ -156,158 +168,155 @@ export function Variances({
   };
 
   return (
-    <div className={styles.page}>
-      <section className={styles.panel} aria-labelledby="h-variances">
-        <h2 id="h-variances">
-          {vm.title}
-          <div className={styles.ctl}>
-            <Seg
-              label="Top"
-              options={TOPS}
-              value={top}
-              onChange={(v) => change({ top: v })}
-            />
-            <Seg
-              label={null}
-              options={MODES}
-              value={mode}
-              onChange={(v) => change({ mode: v })}
-            />
-            <Seg
-              label="Cut"
-              options={vm.cuts}
-              value={cut}
-              onChange={(v) => change({ cut: v })}
-            />
-          </div>
-          <InfoButton
-            id="variances"
-            title={vm.info.title}
-            info={vm.info}
-            popupStyle={POPUP_RIGHT}
+    <section className={styles.panel} aria-labelledby="h-variances">
+      <h2 id="h-variances">
+        {vm.title}
+        <div className={styles.ctl}>
+          <Seg
+            label="Top"
+            options={TOPS}
+            value={top}
+            onChange={(v) => change({ top: v })}
           />
-        </h2>
-        {vm.legend.length > 0 ? (
-          <div className={styles.legend} aria-label="Cut members">
-            {vm.legend.map((m, i) => (
-              <span key={m.key}>
-                <i style={{ background: MEMBER[i % MEMBER.length] }} />
-                {m.label}
-              </span>
-            ))}
-          </div>
-        ) : null}
-        <div className={`${styles.ch} ${styles.scroll}`}>
-          <table className={`${styles.table} ${styles.vtable}`}>
-            <thead>
-              <tr>
-                <th className={styles.l}>Line</th>
-                <th>{vm.columns.comparison}</th>
-                <th>Actual</th>
-                <th aria-label="Variance bar" />
-                <th>Δ</th>
-                <th>Δ %</th>
-                {showPy ? <th>{vm.columns.py}</th> : null}
-                <th>of which FX</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vm.rows.map((r) => {
-                if (r.kind === "block")
-                  return (
-                    <tr key={`b-${r.code}`} className={styles.blk}>
-                      <td className={styles.l}>
-                        <button
-                          type="button"
-                          aria-expanded={!isClosed(r.code)}
-                          onClick={() => toggleBlock(r.code)}
-                        >
-                          {isClosed(r.code) ? "▸" : "▾"}
-                        </button>
-                        {r.label}
-                        <span className={styles.blkn}>{r.count}</span>
-                        {r.alloc ? (
-                          <span className={styles.tag}>alloc.</span>
-                        ) : null}
-                      </td>
-                      <Cells r={r} scale={vm.scale} py={showPy} />
-                    </tr>
-                  );
-                if (mode === "block" && r.block && isClosed(r.block))
-                  return null;
-                const expandable = r.members.length > 0;
-                return [
-                  <tr
-                    key={`l-${r.code}`}
-                    className={`${mode === "block" ? styles.leaf : ""} ${r.alloc ? styles.alloc : ""}`}
-                  >
+          <Seg
+            label={null}
+            options={MODES}
+            value={mode}
+            onChange={(v) => change({ mode: v })}
+          />
+          <Seg
+            label="Cut"
+            options={vm.cuts}
+            value={cut}
+            onChange={(v) => change({ cut: v })}
+          />
+        </div>
+        <InfoButton
+          id="variances"
+          title={vm.info.title}
+          info={vm.info}
+          popupStyle={POPUP_RIGHT}
+        />
+      </h2>
+      {vm.legend.length > 0 ? (
+        <div className={styles.legend} aria-label="Cut members">
+          {vm.legend.map((m, i) => (
+            <span key={m.key}>
+              <i style={{ background: MEMBER[i % MEMBER.length] }} />
+              {m.label}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      <div className={`${styles.ch} ${styles.scroll}`}>
+        <table className={`${styles.table} ${styles.vtable}`}>
+          <thead>
+            <tr>
+              <th className={styles.l}>Line</th>
+              <th>{vm.columns.comparison}</th>
+              <th>Actual</th>
+              <th aria-label="Variance bar" />
+              <th>Δ</th>
+              <th>Δ %</th>
+              {showPy ? <th>{vm.columns.py}</th> : null}
+              <th>of which FX</th>
+            </tr>
+          </thead>
+          <tbody>
+            {vm.rows.map((r) => {
+              if (r.kind === "block")
+                return (
+                  <tr key={`b-${r.code}`} className={styles.blk}>
                     <td className={styles.l}>
-                      {expandable ? (
-                        <button
-                          type="button"
-                          aria-expanded={open.has(r.code)}
-                          aria-label={`Members of ${r.label}`}
-                          onClick={() => toggleLeaf(r.code)}
-                        >
-                          {open.has(r.code) ? "▾" : "▸"}
-                        </button>
-                      ) : null}
+                      <button
+                        type="button"
+                        aria-expanded={!isClosed(r.code)}
+                        onClick={() => toggleBlock(r.code)}
+                      >
+                        {isClosed(r.code) ? "▸" : "▾"}
+                      </button>
                       {r.label}
-                      {mode === "abs" && r.blockName ? (
-                        <span className={styles.blkn}>{r.blockName}</span>
-                      ) : null}
+                      <span className={styles.blkn}>{r.count}</span>
                       {r.alloc ? (
                         <span className={styles.tag}>alloc.</span>
                       ) : null}
                     </td>
                     <Cells r={r} scale={vm.scale} py={showPy} />
-                  </tr>,
-                  ...(open.has(r.code)
-                    ? r.members.map((m, i) => (
-                        <tr key={`m-${r.code}-${m.key}`} className={styles.mem}>
-                          <td className={styles.l}>
-                            <i
-                              style={{
-                                display: "inline-block",
-                                width: 8,
-                                height: 8,
-                                marginRight: 6,
-                                borderRadius: 4,
-                                background: MEMBER[i % MEMBER.length],
-                              }}
-                            />
-                            {m.label}
-                          </td>
-                          <td />
-                          <td />
-                          <td>
-                            <DivBar
-                              delta={m.delta}
-                              members={[]}
-                              scale={vm.scale}
-                            />
-                          </td>
-                          <td>{m.text}</td>
-                          <td />
-                          {showPy ? <td /> : null}
-                          <td />
-                        </tr>
-                      ))
-                    : []),
-                ];
-              })}
-            </tbody>
-            <tfoot>
-              {vm.footer.map((r) => (
-                <tr key={`f-${r.code}`} className={styles.foot}>
-                  <td className={styles.l}>{r.label}</td>
+                  </tr>
+                );
+              if (mode === "block" && r.block && isClosed(r.block)) return null;
+              const expandable = r.members.length > 0;
+              return [
+                <tr
+                  key={`l-${r.code}`}
+                  className={`${mode === "block" ? styles.leaf : ""} ${r.alloc ? styles.alloc : ""}`}
+                >
+                  <td className={styles.l}>
+                    {expandable ? (
+                      <button
+                        type="button"
+                        aria-expanded={open.has(r.code)}
+                        aria-label={`Members of ${r.label}`}
+                        onClick={() => toggleLeaf(r.code)}
+                      >
+                        {open.has(r.code) ? "▾" : "▸"}
+                      </button>
+                    ) : null}
+                    {r.label}
+                    {mode === "abs" && r.blockName ? (
+                      <span className={styles.blkn}>{r.blockName}</span>
+                    ) : null}
+                    {r.alloc ? (
+                      <span className={styles.tag}>alloc.</span>
+                    ) : null}
+                  </td>
                   <Cells r={r} scale={vm.scale} py={showPy} />
-                </tr>
-              ))}
-            </tfoot>
-          </table>
-        </div>
-      </section>
-    </div>
+                </tr>,
+                ...(open.has(r.code)
+                  ? r.members.map((m, i) => (
+                      <tr key={`m-${r.code}-${m.key}`} className={styles.mem}>
+                        <td className={styles.l}>
+                          <i
+                            style={{
+                              display: "inline-block",
+                              width: 8,
+                              height: 8,
+                              marginRight: 6,
+                              borderRadius: 4,
+                              background: MEMBER[i % MEMBER.length],
+                            }}
+                          />
+                          {m.label}
+                        </td>
+                        <td />
+                        <td />
+                        <td>
+                          <DivBar
+                            delta={m.delta}
+                            members={[]}
+                            scale={vm.scale}
+                          />
+                        </td>
+                        <td>{m.text}</td>
+                        <td />
+                        {showPy ? <td /> : null}
+                        <td />
+                      </tr>
+                    ))
+                  : []),
+              ];
+            })}
+          </tbody>
+          <tfoot>
+            {vm.footer.map((r) => (
+              <tr key={`f-${r.code}`} className={styles.foot}>
+                <td className={styles.l}>{r.label}</td>
+                <Cells r={r} scale={vm.scale} py={showPy} />
+              </tr>
+            ))}
+          </tfoot>
+        </table>
+      </div>
+    </section>
   );
 }

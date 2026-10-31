@@ -99,7 +99,7 @@ describe("Vitals", () => {
   });
 });
 
-describe("Analysis page 1 — bridges reconcile (T-05)", () => {
+describe("Analysis, bridges (lower half) — reconcile (T-05)", () => {
   it.each(SELECTIONS)("%s", (_, sel) => {
     const vm = engine.analysis(sel);
     expect(Math.abs(vm.nr.residual)).toBeLessThan(1e-3);
@@ -144,7 +144,7 @@ describe("Analysis page 1 — bridges reconcile (T-05)", () => {
   });
 });
 
-describe("Analysis page 2 — largest variances", () => {
+describe("Analysis, largest variances (upper half)", () => {
   it.each(SELECTIONS)(
     "%s: total = operating-profit Δ, coverage, FX = reported − CC",
     (_, sel) => {

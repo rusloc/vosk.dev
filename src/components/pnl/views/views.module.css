@@ -43,7 +43,13 @@
   min-height: 0;
 }
 .halves {
+  display: grid;
   grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  min-height: 0;
+}
+.stacked {
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
 }
 .tableAndBars {
   grid-template-columns: 1fr 470px;

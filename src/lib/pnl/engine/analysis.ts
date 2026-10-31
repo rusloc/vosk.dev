@@ -15,9 +15,9 @@ import type {
   VariancesVM,
 } from "./view-types";
 
-// Analysis view (P&L views redesign v4, build-brief §2). Page 1: net revenue bridge with a constant-currency subtotal
-// (Track B `Bridge Value` + new step "Constant-currency NR") and the profit bridge Budget Adj. EBITDA → Actual →
-// Operating profit (new `dim_profit_step`). Page 2: largest variances (`LV *` measures, C-45) with Top-N, block
+// Analysis view (P&L views redesign v4, build-brief §2; one page since 2026-10-31). Lower half: net revenue bridge with
+// a constant-currency subtotal (Track B `Bridge Value` + new step "Constant-currency NR") and the profit bridge Budget
+// Adj. EBITDA → Actual → Operating profit (new `dim_profit_step`). Upper half: largest variances (`LV *` measures, C-45) with Top-N, block
 // grouping, slice cut, prior-year Δ and "of which FX" (`LV FX`, gap analysis P4). Comparison = Compare A, else
 // Compare B, else prior year (parity rule 1, `Bridge Comparison Amount`).
 
@@ -65,7 +65,7 @@ const change = (
   sub,
 });
 
-// ---------- page 1: bridges ----------
+// ---------- bridges (lower half since 2026-10-31) ----------
 
 function nrBridge(ctx: ViewContext): BridgeVM {
   const { plan, tr, trCC, bridgeCmp: cmp } = ctx;
@@ -308,7 +308,7 @@ export function analysisBridges(ctx: ViewContext): AnalysisVM {
   return { nr: nrBridge(ctx), profit: profitBridge(ctx) };
 }
 
-// ---------- page 2: largest variances ----------
+// ---------- largest variances (upper half since 2026-10-31) ----------
 
 const CUT_DIM: Record<Exclude<VarCut, "none">, SliceDim> = {
   region: "region",

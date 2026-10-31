@@ -40,16 +40,15 @@ const BODY: Readonly<
     "Analysis",
     [
       {
-        label: "Page 1",
-        value:
-          "Net revenue bridge (drivers at constant currency → CC subtotal → FX → actual) and profit bridge (comparison Adj. EBITDA → actual → operating profit).",
-      },
-      {
-        label: "Page 2",
+        label: "Top",
         value:
           "Largest variances to operating profit: Top 8 / 12 / All, by block or by |Δ|, cut by slice, prior-year Δ and of which FX.",
       },
-      { label: "Paging", value: "‹ › in the tabs row, or the ← → keys." },
+      {
+        label: "Bottom",
+        value:
+          "Net revenue bridge (drivers at constant currency → CC subtotal → FX → actual) and profit bridge (comparison Adj. EBITDA → actual → operating profit).",
+      },
       {
         label: "Colours",
         value:

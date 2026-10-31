@@ -33,6 +33,16 @@ How it was brought in (the same way as on 10-22, now for three reports at once, 
   re-issue is a copy-over of the same folders plus the adaptations above (the port script lives in the session
   scratchpad only; the list above is the recipe).
 
+## 2026-10-31, later: Analysis is one page (owner's layout change)
+
+The owner asked for the two Analysis sub-pages to be merged: **the largest variances on top (the former page 2), the
+two bridges side by side underneath (the former page 1)**, equal halves (`views.module.css` `.stacked`). The pager,
+the ← → keys and the `p` URL key now belong to Profitability only; a shared link with `v=analysis&p=2` is rewritten
+to the one page. "How to read - Analysis" says Top / Bottom instead of Page 1 / Page 2. **This is a change made
+here, not in the pack:** the PNL side was asked to do the same in the Power BI report; its `pnl/js-app/` pack still
+has the two pages, so a re-issued pack must carry this change (or it is re-applied: `analysis-view.tsx`, `shell.tsx`
+`paged`, `view-copy.ts`) before it replaces these files.
+
 ## Where things are (10-22, kept)
 
 | What | Path |

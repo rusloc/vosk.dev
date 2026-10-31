@@ -67,7 +67,7 @@ export function Header({
   onCloseFilters: () => void;
   shareUrl: string;
   onChange: (patch: Partial<Selection>) => void;
-  /** Analysis / Profitability sub-pages (‹ › and "n / 2", ADR-0004 in-view pager). */
+  /** Profitability sub-pages (‹ › and "n / 2", ADR-0004 in-view pager); null on the one-page views. */
   pager: { page: 1 | 2; onPage: (page: 1 | 2) => void } | null;
   howToRead: HowToReadVM | null; // one per view (ADR-0012)
 }) {

@@ -4,7 +4,7 @@ import type { VarCut, VarMode, VarTop } from "../engine/view-types";
 // URL keys of the P&L views redesign (F-37 shareable link): sub-page and the largest-variances controls. Validated at
 // the boundary like the Selection keys: an invalid value falls back to its default and the URL is rewritten; defaults
 // are omitted. The view itself stays `v` (Vitals keeps the value `kpi`).
-//   p   = sub-page of Analysis / Profitability (1 | 2)
+//   p   = sub-page of Profitability (1 | 2); Analysis is one page since 2026-10-31, so `p` is dropped there
 //   lvn = Top-N (8 | 12 | all) · lvm = grouping (block | abs) · lvc = cut (none | region | channel | line | segment)
 
 /** The view-state keys, after the Selection keys (shared links). */

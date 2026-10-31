@@ -34,7 +34,7 @@ import { Header } from "./header";
 import styles from "./ledger.module.css";
 import { StatementTable } from "./statement-table";
 import { themeVars } from "./theme";
-import { AnalysisBridges, Variances } from "./views/analysis-view";
+import { AnalysisView } from "./views/analysis-view";
 import {
   ProfitabilityCharts,
   ProfitabilityTable,
@@ -140,7 +140,8 @@ function Ledger({
     () => parseViewState(new URLSearchParams(search)),
     [search],
   );
-  const paged = sel.view === "analysis" || sel.view === "profitability";
+  // Only Profitability keeps sub-pages: Analysis is one page since 2026-10-31 (variances over the bridges).
+  const paged = sel.view === "profitability";
   const canonical = joinQuery(
     codec.serialize(sel),
     serializeViewState(paged ? vs : { ...vs, page: 1 }),
@@ -170,7 +171,7 @@ function Ledger({
     [go, sel, vs],
   );
 
-  // ← → page Analysis and Profitability (build-brief §0), unless the key belongs to a field, a pop-up or a control.
+  // ← → page Profitability (build-brief §0), unless the key belongs to a field, a pop-up or a control.
   useEffect(() => {
     if (!paged) return;
     const ctrl = new AbortController();
@@ -348,12 +349,11 @@ function RedesignedView({
     if (sel.view === "kpi")
       return { kind: "vitals", vm: engine.vitals(sel) } as const;
     if (sel.view === "analysis")
-      return vs.page === 1
-        ? ({ kind: "bridges", vm: engine.analysis(sel) } as const)
-        : ({
-            kind: "variances",
-            vm: engine.variances(sel, vs.top, vs.mode, vs.cut),
-          } as const);
+      return {
+        kind: "analysis",
+        bridges: engine.analysis(sel),
+        vm: engine.variances(sel, vs.top, vs.mode, vs.cut),
+      } as const;
     if (sel.view === "profitability")
       return {
         kind: vs.page === 1 ? "profTable" : "profCharts",
@@ -366,7 +366,7 @@ function RedesignedView({
     <section
       id={`view-${sel.view}`}
       role="tabpanel"
-      aria-label={`${sel.view === "kpi" ? "Vitals" : sel.view === "analysis" ? "Analysis" : "Profitability"}${sel.view === "kpi" ? "" : `, page ${vs.page} of 2`}`}
+      aria-label={`${sel.view === "kpi" ? "Vitals" : sel.view === "analysis" ? "Analysis" : `Profitability, page ${vs.page} of 2`}`}
       style={{
         display: "flex",
         flex: "1 1 auto",
@@ -375,9 +375,9 @@ function RedesignedView({
       }}
     >
       {vm.kind === "vitals" ? <VitalsView vm={vm.vm} /> : null}
-      {vm.kind === "bridges" ? <AnalysisBridges vm={vm.vm} /> : null}
-      {vm.kind === "variances" ? (
-        <Variances
+      {vm.kind === "analysis" ? (
+        <AnalysisView
+          bridges={vm.bridges}
           vm={vm.vm}
           top={vs.top}
           mode={vs.mode}

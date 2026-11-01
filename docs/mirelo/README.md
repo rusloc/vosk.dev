@@ -32,3 +32,20 @@ showcase entry's `powerBi` field when it exists, and the page then shows two but
 - **Content as shipped** (owner, 10-30): the L11 "Attainment by channel" placeholder, no mark-click cross-filtering,
   and the three open questions in the pack README (budget per revenue stream, leaderboard columns, the loan-state
   snapshot) stay as they are until the PNL side changes them and re-issues the pack.
+
+## 2026-11-01: the owner's review of the live report (diverges from the pack)
+
+Ten changes, built here and handed to the PNL side as `C:\__PBI\PNL\.sync\2026-11-01-mirelo-sales-changes.md`
+(+ `.patch`, the diff for reference) so it can align the pack and the Power BI report. In short:
+
+- **Header:** the Market / Period / Month / Comparator controls are gone; one **Filters** button opens a glass pop-up
+  (Period: Week disabled, the data is monthly · Month · Quarter to date · Year to date, "Up to" month; Comparison;
+  Region), the applied filters read as one line beside it. R12M left the UI; `period=r12m` links still parse.
+- **Cards:** ⓘ top-left beside the title on hero and KPI cards; KPI cards show "vs Budget" and "vs PY" both (no hover
+  swap); the hero cards show a visible **Details →** (the whole card still opens the view).
+- **Charts:** the story callout is plain text (no yellow box, in the chart's aria-label); o6's prior year is a filled
+  yellow bar under the actual one.
+- **Pop-ups:** matte frosted glass, 28 px blur, 1 px `#1a1a1a` border, shadow; **this glass copy is Mirelo's own now**
+  (the P&L keeps its own). The detail view is a centred window over a 20 % dark-grey mask, not a right-half slide-over.
+- **Board:** `ReportBoard fill` scales to fit the popup both ways (≤ 1.25×) and grows taller than 810 px; the extra
+  height goes to the chart rows and band tables (`sales-app.tsx`). Nordmark keeps the old behaviour.

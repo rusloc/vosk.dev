@@ -1,4 +1,4 @@
-// vendored from rusloc/pnl js-report/components/glass.tsx, 2026-10-28; source of truth stays there
+// vendored from rusloc/pnl js-report/components/glass.tsx, 2026-10-28; Mirelo's own since 2026-11-01
 import {
   createContext,
   useCallback,
@@ -62,7 +62,8 @@ export function usePopup(id: string) {
   return { open, close, toggle };
 }
 
-const FOCUSABLE = 'button, [href], [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE =
+  'button:not([tabindex="-1"]), select, [href], [tabindex]:not([tabindex="-1"])';
 
 export function GlassPopup({
   title,

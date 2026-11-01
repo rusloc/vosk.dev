@@ -18,13 +18,13 @@ export interface Series {
 
 export interface LegendItem {
   label: string;
-  role: SeriesRole | "selected" | "ghost";
+  role: SeriesRole | "selected" | "ghost" | "pyFill"; // pyFill: prior year as a filled yellow bar (2026-11-01)
 }
 
 export interface BarRow {
   label: string;
   value: number | null;
-  ghost: number | null; // PY outline
+  ghost: number | null; // PY: a filled yellow bar under the actual one (2026-11-01; was an outline)
   tick: number | null; // target / SLA / average tick
   text: string;
 }
@@ -145,9 +145,8 @@ export interface KpiCard {
   label: string;
   info: InfoVM;
   value: string;
-  row: CmpRow;
-  status: Chip | null;
-  alt: CmpRow | null; // the other comparator, shown on hover / focus (layout-spec §6)
+  rows: CmpRow[]; // "vs Budget" (when the metric has one) and "vs PY", or one fixed comparator
+  status: Chip | null; // follows the chosen comparator
 }
 
 export interface Cell {
@@ -201,6 +200,7 @@ export interface BandVM {
 export interface HeaderVM {
   title: string;
   periodLine: string;
+  filterLine: string; // the applied filters beside the Filters button: "Sep 2026 - Month - vs Budget - All markets"
   howToRead: HowToReadVM;
   months: { value: string; label: string }[]; // closed months, newest first
 }

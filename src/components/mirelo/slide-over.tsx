@@ -2,8 +2,9 @@ import { useEffect, useRef } from "react";
 import type { SlideOverVM } from "@/lib/mirelo/view-model";
 import styles from "./sales.module.css";
 
-// 720 px slide-over (layout-spec §6 Row click): modal dialog over the right half, scrim over the left. Focus moves to
-// the close button on open, Tab stays inside, Escape or the scrim closes, and focus returns to the opener.
+// Detail window (layout-spec §6 Row click; "Show loans"): a modal dialog centred on the board in the pop-up glass, over
+// a 20 % dark-grey mask on the whole report (2026-11-01, owner; it was a 720 px slide-over on the right half). Focus
+// moves to the close button on open, Tab stays inside, Escape or the mask closes, and focus returns to the opener.
 
 const FOCUSABLE = 'button, [href], [tabindex]:not([tabindex="-1"])';
 

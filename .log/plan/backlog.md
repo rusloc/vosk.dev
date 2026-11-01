@@ -9,6 +9,12 @@
 
 # Backlog
 
+## New on 11-01
+
+- **North Star (owner, 11-01 15:18): all three reports in both flavours,** Power BI and custom JS, on their `/work`
+  pages. Custom is live since 10-31; the Power BI side waits on the owner's publish-to-web links
+  (`plan-2026-11-01.md` items 1–3). The P&L's two flavours now differ (the JS one was reshaped 10-31 evening).
+
 ## New on 10-31
 
 - **The report packs arrived** (owner named `C:\__PBI\PNL\.sync` 10-31 10:50; entry note `2026-10-31-report-packs.md`,

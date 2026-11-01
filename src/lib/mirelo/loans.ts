@@ -11,7 +11,7 @@ import {
   fmtPct,
   fmtPp,
 } from "./format";
-import { chipOf, kpiRows } from "./kpis";
+import { kpiRows } from "./kpis";
 import type { Bundle } from "./kpis";
 import { MARKETS } from "./manifest";
 import type { Ctx } from "./overview";
@@ -40,15 +40,14 @@ export function kpi(
   b: Bundle,
   cmp: Comparator,
 ): KpiCard {
-  const { row, alt } = kpiRows(kind, b, cmp);
+  const { rows, chip } = kpiRows(kind, b, cmp);
   return {
     id,
     label,
     info: info(id, values),
     value,
-    row,
-    alt,
-    status: chipOf(row),
+    rows,
+    status: chip,
   };
 }
 

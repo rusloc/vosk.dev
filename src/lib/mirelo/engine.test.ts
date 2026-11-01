@@ -70,7 +70,7 @@ describe("Overview (default window: Month · Sep 2026 · All markets · vs Budge
     expect(
       engine.header(sel({ market: "RO", tv: "Q", cmp: "PY" })).periodLine,
     ).toBe(
-      "Showing Jul–Sep 2026 - QTD - Romania - Actual vs Prior year and Budget - Closed through Sep 2026",
+      "Showing Jul–Sep 2026 - Quarter to date - Romania - Actual vs Prior year and Budget - Closed through Sep 2026",
     );
     expect(
       engine.header(sel({ tv: "R", anchor: monthIndex("2024-06") })).periodLine,

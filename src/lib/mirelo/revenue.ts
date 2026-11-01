@@ -102,8 +102,7 @@ export function revenueView(ctx: Ctx, sel: SalesSelection): BandVM {
         { label: "Budget", value: fmtEur(bud) },
       ]),
       value: fmtPct(att),
-      row: { ...attRow, status: attStatus },
-      alt: null,
+      rows: [{ ...attRow, status: attStatus }],
       status: chipOf({ ...attRow, status: attStatus }),
     },
     // R3 / R4 per layout-spec v4 §5 (MS-04): the Budget carries interest and fees together per loan product, so R3

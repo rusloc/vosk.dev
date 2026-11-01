@@ -284,7 +284,7 @@ export function overview(ctx: Ctx, sel: SalesSelection): OverviewVM {
     open: "clients",
     legend: [
       { label: windowLabel(w), role: "actual" },
-      { label: "Prior year", role: "ghost" },
+      { label: "Prior year", role: "pyFill" },
     ],
     chart: {
       kind: "bars",

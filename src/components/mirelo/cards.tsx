@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { useBoardHeight } from "@/components/report-board";
 import type { CmpRow, Status } from "@/lib/mirelo/status";
 import type { ViewId } from "@/lib/mirelo/types";
 import type {
@@ -41,20 +42,27 @@ const place = (b: Box) => ({
 });
 
 // Pop-up placement (design-tokens §5a: 360 px wide, max 420 high), in card coordinates: the side with more room, and
-// flipped to the card's right edge when 360 px would leave the frame (x 1408).
+// flipped to the card's right edge when 360 px would leave the frame (x 1408). The board can be taller than 810 px
+// since 2026-11-01 (it fills the popup), so the room below is read from the board's height.
 const FRAME_R = 1408;
-const BOARD_H = 810;
 const TABS_BOTTOM = 104;
 const POP_W = 360;
 const xSide = (b: Box): CSSProperties =>
   b.x + 8 + POP_W > FRAME_R ? { right: 8 } : { left: 8 };
-/** ⓘ at the bottom-left of a card or panel. */
-function belowOrAbove(b: Box): CSSProperties {
-  const down = BOARD_H - (b.y + b.h) - 8;
+/** ⓘ at the bottom-left of a chart card. */
+function belowOrAbove(b: Box, boardH: number): CSSProperties {
+  const down = boardH - (b.y + b.h) - 8;
   const up = b.y + b.h - 32 - TABS_BOTTOM;
   return down >= up
     ? { ...xSide(b), top: b.h + 4, maxHeight: Math.min(420, down) }
     : { ...xSide(b), bottom: 32, maxHeight: Math.min(420, up) };
+}
+/** ⓘ at the top-left of a hero or KPI card (2026-11-01): the pop-up opens under the card, or over it near the bottom. */
+function underCard(b: Box, boardH: number): CSSProperties {
+  const down = boardH - (b.y + b.h) - 8;
+  return down >= 220
+    ? { ...xSide(b), top: b.h + 4, maxHeight: Math.min(420, down) }
+    : { ...xSide(b), top: 36, maxHeight: 420 };
 }
 /** ⓘ in a table's title row: tables sit at the bottom of the frame, so the pop-up opens above the card. */
 const aboveCard = (b: Box): CSSProperties => ({
@@ -146,68 +154,65 @@ export function HeroCardView({
   box: Box;
   onOpen: (v: ViewId) => void;
 }) {
+  const boardH = useBoardHeight();
   return (
     <section
       className={`${styles.card} ${styles.hero}`}
       style={place(box)}
       aria-label={card.label}
     >
-      {/* stretched button: the whole card opens the metric's view; the ⓘ sits above it */}
+      {/* stretched button: the whole card opens the metric's view, and its visible "Details" label says so
+          (2026-11-01: there was no sign the card was clickable); the ⓘ sits above it */}
       <button
         type="button"
         className={styles.heroOpen}
-        aria-label={`${card.label}: ${card.value}${card.second ? `, ${card.second}` : ""}. ${card.rows.map((r) => `${r.label} ${r.text}`).join(", ")}. Open the view.`}
+        aria-label={`${card.label}: ${card.value}${card.second ? `, ${card.second}` : ""}. ${card.rows.map((r) => `${r.label} ${r.text}`).join(", ")}. Open the details.`}
         onClick={() => onOpen(card.open)}
-      />
-      <span className={styles.lab}>{card.label}</span>
+      >
+        <span className={styles.heroCta} aria-hidden="true">
+          Details →
+        </span>
+      </button>
+      <span className={`${styles.lab} ${styles.labI}`}>{card.label}</span>
       <StatusChip chip={card.status} className={styles.heroChip} />
       <span className={styles.heroVal}>
         {card.value}
         {card.second ? <small>{card.second}</small> : null}
       </span>
-      <Comparator row={card.rows[0]} top={124} bar />
-      <Comparator row={card.rows[1]} top={148} bar />
+      <Comparator row={card.rows[0]} top={108} bar />
+      <Comparator row={card.rows[1]} top={132} bar />
       <InfoButton
         id={card.id}
         title={card.label}
         info={card.info}
-        className={styles.infoCorner}
-        popupStyle={belowOrAbove(box)}
+        className={styles.infoTop}
+        popupStyle={underCard(box, boardH)}
       />
     </section>
   );
 }
 
+/** KPI card (2026-11-01): ⓘ top-left beside the title; "vs Budget" and "vs PY" both shown, no hover swap. */
 export function KpiCardView({ card, box }: { card: KpiCard; box: Box }) {
+  const boardH = useBoardHeight();
   return (
     <section
       className={`${styles.card} ${styles.kpi}`}
       style={place(box)}
       aria-label={card.label}
     >
-      <span className={styles.lab}>{card.label}</span>
+      <span className={`${styles.lab} ${styles.labI}`}>{card.label}</span>
       <span className={styles.kpiVal}>{card.value}</span>
       <StatusChip chip={card.status} className={styles.kpiChip} />
-      <Comparator
-        row={card.row}
-        top={80}
-        bar={false}
-        className={card.alt ? styles.main : undefined}
-      />
-      {card.alt ? (
-        <Comparator
-          row={card.alt}
-          top={80}
-          bar={false}
-          className={styles.alt}
-        />
-      ) : null}
+      {card.rows.map((row, i) => (
+        <Comparator key={row.label} row={row} top={78 + i * 20} bar={false} />
+      ))}
       <InfoButton
         id={card.id}
         title={card.label}
         info={card.info}
-        className={styles.infoCorner}
-        popupStyle={belowOrAbove(box)}
+        className={styles.infoTop}
+        popupStyle={underCard(box, boardH)}
       />
     </section>
   );
@@ -219,25 +224,30 @@ function Legend({ items }: { items: LegendItem[] }) {
     <div className={styles.legend} aria-hidden="true">
       {items.map((it) => {
         const square =
-          it.role === "selected" || it.role === "ghost" || it.role === "c5";
+          it.role === "selected" ||
+          it.role === "ghost" ||
+          it.role === "pyFill" ||
+          it.role === "c5";
         const style =
           it.role === "selected"
             ? { background: C.accent, border: `1px solid ${C.ink}` }
-            : it.role === "ghost"
-              ? { background: "transparent", border: `1px solid ${C.g400}` }
-              : it.role === "py"
-                ? {
-                    background: `repeating-linear-gradient(90deg, ${C.g400} 0 4px, transparent 4px 7px)`,
-                  }
-                : {
-                    background:
-                      FILL[it.role].fill === "none"
-                        ? "transparent"
-                        : FILL[it.role].fill,
-                    border: FILL[it.role].stroke
-                      ? `1px solid ${FILL[it.role].stroke}`
-                      : undefined,
-                  };
+            : it.role === "pyFill"
+              ? { background: C.accent }
+              : it.role === "ghost"
+                ? { background: "transparent", border: `1px solid ${C.g400}` }
+                : it.role === "py"
+                  ? {
+                      background: `repeating-linear-gradient(90deg, ${C.g400} 0 4px, transparent 4px 7px)`,
+                    }
+                  : {
+                      background:
+                        FILL[it.role].fill === "none"
+                          ? "transparent"
+                          : FILL[it.role].fill,
+                      border: FILL[it.role].stroke
+                        ? `1px solid ${FILL[it.role].stroke}`
+                        : undefined,
+                    };
         return (
           <span key={it.label}>
             <i
@@ -271,6 +281,7 @@ export function ChartCardView({
   onOpen: (v: ViewId) => void;
   onMonth: (m: number) => void;
 }) {
+  const boardH = useBoardHeight();
   const width = box.w - 32;
   const height = box.h - 40 - 30; // bottom strip: ⓘ + legend
   const ch = card.chart;
@@ -321,7 +332,7 @@ export function ChartCardView({
         title={card.title}
         info={card.info}
         className={styles.infoCorner}
-        popupStyle={belowOrAbove(box)}
+        popupStyle={belowOrAbove(box, boardH)}
       />
       <Legend items={card.legend} />
     </section>

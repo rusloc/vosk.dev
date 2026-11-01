@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { interFontVariable } from "@/components/inter-font";
-import { ReportBoard } from "@/components/report-board";
+import { ReportBoard, useBoardHeight } from "@/components/report-board";
 import { useReportSearch } from "@/components/report-search";
 import { createSalesLoader } from "@/lib/mirelo/data";
 import { createSalesEngine } from "@/lib/mirelo";
@@ -24,7 +25,8 @@ import styles from "./sales.module.css";
 // Client root (ADR-0011 (c)): loads public/data/mirelo in the browser, owns the Selection and passes engine view
 // models down. Orchestration only: every number and string comes from lib/mirelo. Embedded in the site's report
 // popup, the Selection lives in React state as its query string (the standalone app's URL contract), on a
-// 1440 × 810 board the popup scales to fit.
+// 1440-wide board the popup scales to fit; since 2026-11-01 the board also grows taller than 810 px to fill the popup
+// (no empty band under it) and the extra height goes to the chart rows and the band tables.
 
 const loader = createSalesLoader(async (name) => {
   const res = await fetch(`/data/mirelo/${name}`);
@@ -55,7 +57,7 @@ export function SalesApp() {
 
   if (load.status === "ready") return <Dashboard base={load.base} />;
   return (
-    <ReportBoard className={`${styles.page} ${interFontVariable}`}>
+    <ReportBoard fill className={`${styles.page} ${interFontVariable}`}>
       <div className={styles.board}>
         <p className={styles.status} role="status">
           {load.status === "loading"
@@ -78,18 +80,39 @@ export function SalesApp() {
   );
 }
 
-// Layout-spec §1–§5 boxes (board px).
+// Layout-spec §1–§5 boxes (board px) at the design height 810; `extra` = board height − 810 (fill, 2026-11-01).
+// Overview: both chart rows grow, the hero band and the 3-row market table keep their size and the table sits at the
+// bottom. Band views: the chart rows and the (scrolling) table share the extra.
+const DESIGN_H = 810;
 const HERO_X = [32, 380, 728, 1076] as const;
 const KPI_X = [32, 264, 496, 728, 960, 1192] as const;
-const THIRDS: readonly Box[] = [252, 430].flatMap((y) =>
-  [32, 496, 960].map((x) => ({ x, y, w: 448, h: 162 })),
-);
-const HALVES: readonly Box[] = [252, 430].flatMap((y) =>
-  [32, 728].map((x) => ({ x, y, w: 680, h: 162 })),
-);
-const WHY: readonly Box[] = [324, 500].flatMap((y) =>
-  [32, 728].map((x) => ({ x, y, w: 680, h: 160 })),
-);
+const rows2 = (
+  xs: readonly number[],
+  w: number,
+  y: number,
+  h1: number,
+  h2: number,
+  gap: number,
+): Box[] => [
+  ...xs.map((x) => ({ x, y, w, h: h1 })),
+  ...xs.map((x) => ({ x, y: y + h1 + gap, w, h: h2 })),
+];
+function bandBoxes(layout: BandVM["layout"], extra: number) {
+  const e = Math.floor(extra * 0.3);
+  const xs = layout === "thirds" ? [32, 496, 960] : [32, 728];
+  const w = layout === "thirds" ? 448 : 680;
+  return {
+    charts: rows2(xs, w, 252, 162 + e, 162 + e, 16),
+    table: { x: 32, y: 608 + 2 * e, w: 1376, h: 186 + extra - 2 * e },
+  };
+}
+function overviewBoxes(extra: number) {
+  const e = Math.floor(extra / 2);
+  return {
+    charts: rows2([32, 728], 680, 324, 160 + e, 160 + extra - e, 16),
+    table: { x: 32, y: 676 + extra, w: 1376, h: 118 },
+  };
+}
 
 type Detail = { ix: DetailIndex } | { error: string } | null;
 
@@ -101,6 +124,7 @@ function Dashboard({ base }: { base: SalesBase }) {
     [engine, search],
   );
   const canonical = engine.codec.serialize(sel);
+  const defaults = useMemo(() => engine.codec.defaults(), [engine]);
   const [stack, setStack] = useState<Drill[]>([]);
   const [detail, setDetail] = useState<Detail>(null);
   const panelId = useId();
@@ -157,13 +181,14 @@ function Dashboard({ base }: { base: SalesBase }) {
   }, [go, sel]);
 
   return (
-    <ReportBoard className={`${styles.page} ${interFontVariable}`}>
+    <ReportBoard fill className={`${styles.page} ${interFontVariable}`}>
       {/* one pop-up open at a time; a view change closes it (remount) */}
       <PopupProvider key={sel.view}>
-        <div className={styles.board}>
+        <Board>
           <Header
             vm={header}
             sel={sel}
+            defaults={defaults}
             panelId={panelId}
             shareUrl={shareUrl}
             onChange={update}
@@ -217,9 +242,19 @@ function Dashboard({ base }: { base: SalesBase }) {
               }}
             />
           ) : null}
-        </div>
+        </Board>
       </PopupProvider>
     </ReportBoard>
+  );
+}
+
+/** The board at the height the popup gives it (inside <ReportBoard fill>). */
+function Board({ children }: { children: ReactNode }) {
+  const height = useBoardHeight();
+  return (
+    <div className={styles.board} style={{ height }}>
+      {children}
+    </div>
   );
 }
 
@@ -234,6 +269,7 @@ function OverviewView({
   onMonth: (m: number) => void;
   onAction: (a: RowAction) => void;
 }) {
+  const boxes = overviewBoxes(useBoardHeight() - DESIGN_H);
   return (
     <>
       {vm.heroes.map((h, i) => (
@@ -248,14 +284,14 @@ function OverviewView({
         <ChartCardView
           key={c.id}
           card={c}
-          box={WHY[i] ?? { x: 32, y: 324, w: 680, h: 160 }}
+          box={boxes.charts[i] ?? { x: 32, y: 324, w: 680, h: 160 }}
           onOpen={onOpen}
           onMonth={onMonth}
         />
       ))}
       <TableCardView
         card={vm.table}
-        box={{ x: 32, y: 676, w: 1376, h: 118 }}
+        box={boxes.table}
         tight
         onAction={onAction}
       />
@@ -272,7 +308,7 @@ function BandView({
   onMonth: (m: number) => void;
   onAction: (a: RowAction) => void;
 }) {
-  const boxes = vm.layout === "thirds" ? THIRDS : HALVES;
+  const boxes = bandBoxes(vm.layout, useBoardHeight() - DESIGN_H);
   return (
     <>
       {vm.kpis.map((k, i) => (
@@ -286,14 +322,14 @@ function BandView({
         <ChartCardView
           key={c.id}
           card={c}
-          box={boxes[i] ?? { x: 32, y: 252, w: 448, h: 162 }}
+          box={boxes.charts[i] ?? { x: 32, y: 252, w: 448, h: 162 }}
           onOpen={() => undefined}
           onMonth={onMonth}
         />
       ))}
       <TableCardView
         card={vm.table}
-        box={{ x: 32, y: 608, w: 1376, h: 186 }}
+        box={boxes.table}
         tight={false}
         onAction={onAction}
       />

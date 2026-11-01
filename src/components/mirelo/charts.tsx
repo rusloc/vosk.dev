@@ -19,6 +19,7 @@ export const C = {
   accent: "#FFD54A",
   white: "#FFFFFF",
   marker: "#2F2F2D",
+  panel: "#E9E8E4",
 } as const;
 
 const STROKE: Record<
@@ -159,7 +160,11 @@ function XLabels({
   );
 }
 
-/** Story callout (design-tokens §5): placed in the empty half of the plot at the event's month. */
+/**
+ * Story callout (design-tokens §5): placed in the empty half of the plot at the event's month. Since 2026-11-01 plain
+ * annotation text beside the dashed marker, no yellow box: the box read as a button that did nothing. The text is also
+ * in the chart's aria-label, so it is not visual-only.
+ */
 function Callout({
   x,
   text,
@@ -171,10 +176,10 @@ function Callout({
   width: number;
   top: number;
 }) {
-  const w = text.length * 6.4 + 20;
-  const left = Math.min(Math.max(x + 8, 0), width - w);
+  const w = text.length * 5.9 + 8;
+  const right = x + 6 + w <= width;
   return (
-    <g pointerEvents="none">
+    <g pointerEvents="none" aria-hidden="true">
       <line
         x1={x}
         x2={x}
@@ -183,18 +188,20 @@ function Callout({
         stroke={C.marker}
         strokeDasharray="2 2"
       />
-      <rect
-        x={left}
-        y={top}
-        width={w}
-        height={22}
-        fill={C.accent}
-        stroke={C.white}
-        strokeWidth={2}
-      />
-      <T x={left + 10} y={top + 15} fill={C.ink} size={12} weight={600}>
+      <text
+        x={right ? x + 6 : x - 6}
+        y={top + 15}
+        fontSize={11}
+        fontWeight={600}
+        fill={C.ink}
+        textAnchor={right ? "start" : "end"}
+        stroke={C.panel}
+        strokeWidth={3}
+        strokeLinejoin="round"
+        paintOrder="stroke"
+      >
         {text}
-      </T>
+      </text>
     </g>
   );
 }
@@ -269,7 +276,7 @@ export function LineChart({
       width={width}
       height={height}
       role="img"
-      aria-label={chart.series.map((s) => s.name).join(", ")}
+      aria-label={`${chart.series.map((s) => s.name).join(", ")}${chart.callout ? `. ${chart.callout.text}` : ""}`}
     >
       <YAxis ticks={ticks} Y={Y} x={padL} unit={chart.unit} x2={width - padR} />
       <XLabels labels={chart.x} X={X} y={height - 3} sparse={step < 36} edges />
@@ -469,6 +476,11 @@ export function Bars({
       {chart.rows.map((r, i) => {
         const cy = i * rowH + rowH / 2;
         const bh = Math.min(10, rowH - 6);
+        // with a prior year the row holds two bars: actual (ink) on top, prior year (filled yellow) under it
+        const py = r.ghost !== null;
+        const ah = py ? Math.max(Math.round(bh * 0.6), 4) : bh;
+        const ph = py ? Math.max(Math.round(bh * 0.5), 3) : 0;
+        const top = py ? cy - (ah + ph + 1) / 2 : cy - bh / 2;
         return (
           <g key={r.label}>
             <T x={0} y={cy + 4} fill={C.ink} size={12} weight={500}>
@@ -476,28 +488,27 @@ export function Bars({
             </T>
             <rect
               x={labW}
-              y={cy - bh / 2}
+              y={top}
               width={pw}
-              height={bh}
+              height={py ? ah + ph + 1 : bh}
               fill={C.panel2}
             />
             {r.value !== null ? (
               <rect
                 x={labW}
-                y={cy - bh / 2}
+                y={top}
                 width={Math.max(X(r.value), 0)}
-                height={bh}
+                height={ah}
                 fill={C.ink}
               />
             ) : null}
             {r.ghost !== null ? (
               <rect
-                x={labW + 0.5}
-                y={cy - bh / 2 - 2.5}
+                x={labW}
+                y={top + ah + 1}
                 width={Math.max(X(r.ghost), 0)}
-                height={bh + 5}
-                fill="none"
-                stroke={C.g400}
+                height={ph}
+                fill={C.accent}
               />
             ) : null}
             {r.tick !== null ? (

@@ -65,6 +65,16 @@ export function periodLine(
   ].join(" - ");
 }
 
+/** The applied filters in one short line: "Sep 2026 - Month - vs Budget - All markets". */
+export function filterLine(sel: SalesSelection): string {
+  return [
+    windowLabel(windowOf(sel.tv, sel.anchor)),
+    TIME_VIEW_NAMES[sel.tv],
+    `vs ${CMP_NAMES[sel.cmp]}`,
+    MARKET_NAMES[sel.market],
+  ].join(" - ");
+}
+
 /** Story events annotated on trend charts when their month is in range (README "Stories built into the data"). */
 export const STORY_EVENTS: readonly {
   month: string;
@@ -482,6 +492,8 @@ export interface HowToReadVM {
 
 const LEGEND =
   "▲ up / ▼ down - green = favourable, amber = watch, red = off. ⓘ on each card opens its definition.";
+const FILTERS =
+  "Filters (top right): period (month, quarter or year to date, up to a closed month), comparison (Budget or prior year) and region.";
 const HOW: Readonly<Record<ViewId, readonly [string, readonly InfoValue[]]>> = {
   overview: [
     "Overview",
@@ -489,7 +501,7 @@ const HOW: Readonly<Record<ViewId, readonly [string, readonly InfoValue[]]>> = {
       {
         label: "Top band",
         value:
-          "The four Tier-1 numbers with their gap to Budget and to the prior year.",
+          "The four Tier-1 numbers with their gap to Budget and to the prior year; Details opens the metric's view.",
       },
       {
         label: "Grid",
@@ -499,7 +511,7 @@ const HOW: Readonly<Record<ViewId, readonly [string, readonly InfoValue[]]>> = {
       {
         label: "Table",
         value:
-          "Per market; click filters the page, double-click lists the loans.",
+          "Per market; click filters the page, double-click or Show loans opens the loan list.",
       },
     ],
   ],
@@ -593,6 +605,7 @@ export function howToRead(
     lines: [
       { label: "Showing", value: periodLine(sel, lastClosed, firstMonth) },
       ...lines,
+      { label: "Filters", value: FILTERS },
       { label: "Legend", value: LEGEND },
     ],
   };

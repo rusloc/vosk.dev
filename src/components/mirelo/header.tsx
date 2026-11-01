@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import type {
   Comparator,
   MarketSel,
@@ -7,27 +8,39 @@ import type {
 } from "@/lib/mirelo/types";
 import type { HeaderVM } from "@/lib/mirelo/view-model";
 import { monthIndex, monthKey } from "@/lib/mirelo/windows";
-import { CopyLink, Segmented, Tabs } from "./controls";
+import { CopyLink, Radios, Tabs } from "./controls";
+import { GlassPopup, usePopup } from "./glass";
 import { HowToReadButton } from "./popup";
 import styles from "./sales.module.css";
 
-// Header (layout-spec §0.1): identical in every view. Widths and x positions are the spec's px.
+// Header (layout-spec §0.1): identical in every view. Since 2026-11-01 (owner) the Market / Period / Month /
+// Comparator controls are gone from the bar: one Filters button opens a glass pop-up with Period (granularity + the
+// closed month it runs to), Comparison and Region; the applied filters read as one line beside the button.
 
-const MARKETS: readonly { value: MarketSel; label: string; width: number }[] = [
-  { value: "ALL", label: "All markets", width: 88 },
-  { value: "PL", label: "PL", width: 48 },
-  { value: "RO", label: "RO", width: 48 },
-  { value: "PT", label: "PT", width: 48 },
+const PERIODS: readonly {
+  value: TimeView | "W";
+  label: string;
+  disabledReason?: string;
+}[] = [
+  {
+    value: "W",
+    label: "Week",
+    disabledReason:
+      "The data set is monthly: weekly figures are not in the data.",
+  },
+  { value: "M", label: "Month" },
+  { value: "Q", label: "Quarter to date" },
+  { value: "Y", label: "Year to date" },
 ];
-const PERIODS: readonly { value: TimeView; label: string; width: number }[] = [
-  { value: "M", label: "Month", width: 49 },
-  { value: "Q", label: "QTD", width: 49 },
-  { value: "Y", label: "YTD", width: 49 },
-  { value: "R", label: "R12M", width: 49 },
+const CMPS: readonly { value: Comparator; label: string }[] = [
+  { value: "BUD", label: "Budget" },
+  { value: "PY", label: "Prior year" },
 ];
-const CMPS: readonly { value: Comparator; label: string; width: number }[] = [
-  { value: "BUD", label: "Budget", width: 56 },
-  { value: "PY", label: "PY", width: 46 },
+const MARKETS: readonly { value: MarketSel; label: string }[] = [
+  { value: "ALL", label: "All markets" },
+  { value: "PL", label: "PL" },
+  { value: "RO", label: "RO" },
+  { value: "PT", label: "PT" },
 ];
 const TABS: readonly { value: ViewId; label: string; width: number }[] = [
   { value: "overview", label: "Overview", width: 104 },
@@ -37,15 +50,147 @@ const TABS: readonly { value: ViewId; label: string; width: number }[] = [
   { value: "revenue", label: "Revenue & targets", width: 164 },
 ];
 
+function FunnelIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M3 4h14l-5.5 6.5V16l-3-1.5v-4z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function Filters({
+  vm,
+  sel,
+  defaults,
+  onChange,
+}: {
+  vm: HeaderVM;
+  sel: SalesSelection;
+  defaults: SalesSelection;
+  onChange: (patch: Partial<SalesSelection>) => void;
+}) {
+  const { open, close, toggle } = usePopup("filters");
+  const opener = useRef<HTMLButtonElement>(null);
+  const changed =
+    sel.tv !== defaults.tv ||
+    sel.anchor !== defaults.anchor ||
+    sel.cmp !== defaults.cmp ||
+    sel.market !== defaults.market;
+  return (
+    <div className={`${styles.abs} ${styles.filters}`}>
+      <span className={styles.filterLine} title={vm.periodLine}>
+        {vm.filterLine}
+      </span>
+      <button
+        ref={opener}
+        type="button"
+        className={styles.filterBtn}
+        aria-expanded={open}
+        aria-label={`Filters: ${vm.filterLine}`}
+        onClick={toggle}
+      >
+        <FunnelIcon />
+        Filters
+      </button>
+      {open ? (
+        <GlassPopup
+          title="Filters"
+          opener={opener}
+          style={{ right: 0, top: 36, width: 420, maxHeight: 520 }}
+          onClose={close}
+        >
+          <div className={styles.fGroup}>
+            <span id="mf-period" className={styles.fLabel}>
+              Period
+            </span>
+            <Radios
+              labelledBy="mf-period"
+              options={PERIODS}
+              value={sel.tv}
+              onChange={(tv) => tv !== "W" && onChange({ tv })}
+            />
+            <label className={styles.fRow}>
+              <span>Up to</span>
+              <select
+                className={styles.fSelect}
+                value={monthKey(sel.anchor)}
+                onChange={(e) =>
+                  onChange({ anchor: monthIndex(e.target.value) })
+                }
+              >
+                {vm.months.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className={styles.fGroup}>
+            <span id="mf-cmp" className={styles.fLabel}>
+              Comparison
+            </span>
+            <Radios
+              labelledBy="mf-cmp"
+              options={CMPS}
+              value={sel.cmp}
+              onChange={(cmp) => onChange({ cmp })}
+            />
+          </div>
+          <div className={styles.fGroup}>
+            <span id="mf-region" className={styles.fLabel}>
+              Region
+            </span>
+            <Radios
+              labelledBy="mf-region"
+              options={MARKETS}
+              value={sel.market}
+              onChange={(market) => onChange({ market })}
+            />
+          </div>
+          <p className={styles.fNote}>{vm.periodLine}</p>
+          <div className={styles.fFoot}>
+            <button
+              type="button"
+              disabled={!changed}
+              onClick={() =>
+                onChange({
+                  tv: defaults.tv,
+                  anchor: defaults.anchor,
+                  cmp: defaults.cmp,
+                  market: defaults.market,
+                })
+              }
+            >
+              Back to default
+            </button>
+            <button type="button" className={styles.fDone} onClick={close}>
+              Done
+            </button>
+          </div>
+        </GlassPopup>
+      ) : null}
+    </div>
+  );
+}
+
 export function Header({
   vm,
   sel,
+  defaults,
   panelId,
   shareUrl,
   onChange,
 }: {
   vm: HeaderVM;
   sel: SalesSelection;
+  defaults: SalesSelection;
   panelId: string;
   shareUrl: string;
   onChange: (patch: Partial<SalesSelection>) => void;
@@ -59,44 +204,7 @@ export function Header({
         M
       </div>
       <h1 className={`${styles.abs} ${styles.title}`}>{vm.title}</h1>
-      <Segmented
-        label="Market"
-        options={MARKETS}
-        value={sel.market}
-        onChange={(market) => onChange({ market })}
-        x={744}
-      />
-      <Segmented
-        label="Period"
-        title={vm.periodLine}
-        options={PERIODS}
-        value={sel.tv}
-        onChange={(tv) => onChange({ tv })}
-        x={988}
-      />
-      <label className={styles.srOnly} htmlFor="sales-month">
-        Month
-      </label>
-      <select
-        id="sales-month"
-        className={`${styles.abs} ${styles.select}`}
-        style={{ left: 1192, top: 20, width: 104 }}
-        value={monthKey(sel.anchor)}
-        onChange={(e) => onChange({ anchor: monthIndex(e.target.value) })}
-      >
-        {vm.months.map((m) => (
-          <option key={m.value} value={m.value}>
-            {m.label}
-          </option>
-        ))}
-      </select>
-      <Segmented
-        label="Comparator"
-        options={CMPS}
-        value={sel.cmp}
-        onChange={(cmp) => onChange({ cmp })}
-        x={1304}
-      />
+      <Filters vm={vm} sel={sel} defaults={defaults} onChange={onChange} />
       <Tabs
         tabs={TABS}
         value={sel.view}

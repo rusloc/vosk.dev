@@ -88,9 +88,9 @@ export const trailing13 = (anchor: number): number[] =>
 
 export const TIME_VIEW_NAMES: Readonly<Record<TimeView, string>> = {
   M: "Month",
-  Q: "QTD",
-  Y: "YTD",
-  R: "R12M",
+  Q: "Quarter to date",
+  Y: "Year to date",
+  R: "Last 12 months",
 };
 
 /** "Sep 2026", "Jul–Sep 2026", "Oct 2025–Sep 2026" (en dash, as in the period line). */

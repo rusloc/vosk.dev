@@ -14,6 +14,10 @@
 - **North Star (owner, 11-01 15:18): all three reports in both flavours,** Power BI and custom JS, on their `/work`
   pages. Custom is live since 10-31; the Power BI side waits on the owner's publish-to-web links
   (`plan-2026-11-01.md` items 1–3). The P&L's two flavours now differ (the JS one was reshaped 10-31 evening).
+- **Mirelo on its own Supabase schema (owner, 11-01 23:51):** load the report's data into the shared project and
+  relink the JS report to it. Today all three JS reports read static Parquet in `public/data/`. Owner's setup
+  first (MCP login, load credential, the link option, all data or aggregates), then the build
+  (`plan-2026-11-02.md` item 1; findings 20–23 in `daily-2026-11-01.md`).
 
 ## New on 10-31
 

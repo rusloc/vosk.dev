@@ -10,19 +10,18 @@ import { shift, periodWindow, windowLabel } from "./windows";
 
 // View 3 — Clients (layout-spec §3): acquisition and return.
 
-/** 4-step bins over the shown values (design-tokens §7 heat matrix). */
-export function bins(
+/**
+ * Heat level 0 … 1 of each cell over every shown cell, all rows and columns together (2026-11-01, owner: one gradient
+ * for the whole grid, grey → yellow → orange → red; it was four grey steps). Blank cells stay null.
+ */
+export function heatLevels(
   values: readonly (number | null)[],
-): (0 | 1 | 2 | 3 | null)[] {
+): (number | null)[] {
   const v = values.filter((x): x is number => x !== null);
   const lo = Math.min(...v);
   const hi = Math.max(...v);
   return values.map((x) =>
-    x === null
-      ? null
-      : hi > lo
-        ? (Math.min(3, Math.floor(((x - lo) / (hi - lo)) * 4)) as 0 | 1 | 2 | 3)
-        : 0,
+    x === null ? null : hi > lo ? (x - lo) / (hi - lo) : 0,
   );
 }
 
@@ -218,7 +217,7 @@ export function clientsView(ctx: Ctx, sel: SalesSelection): BandVM {
     k >= Math.max(from, 1) ? [{ d, k }] : [],
   );
   const grid = curves.map((curve) => days.map(({ k }) => curve[k] ?? null));
-  const cohortBins = bins(grid.flat());
+  const cohortLevels = heatLevels(grid.flat());
   const c9: ChartCard = {
     id: "c9",
     title: "Cohort repeat by quarter cohort",
@@ -234,7 +233,7 @@ export function clientsView(ctx: Ctx, sel: SalesSelection): BandVM {
           const v = grid[i]?.[j] ?? null;
           return {
             text: v === null ? "" : fmtPct(v, 0),
-            bin: cohortBins[i * days.length + j] ?? null,
+            level: cohortLevels[i * days.length + j] ?? null,
           };
         }),
       })),

@@ -200,7 +200,7 @@ const INFO: Readonly<Record<string, InfoCopy>> = {
   l10: [
     "Loans in the window per product × market.",
     "Product mix drives ticket size and risk.",
-    "Count of loans by product × market; darker = more loans (four steps over the cells shown).",
+    "Count of loans by product × market; grey → yellow → orange → red = few → many loans, graded over every cell of the grid.",
   ],
   l12: [
     "Median hours of the two timed legs against the stage SLA.",
@@ -255,7 +255,7 @@ const INFO: Readonly<Record<string, InfoCopy>> = {
   c9: [
     "Second-loan share by days since the first loan, last four quarter cohorts (oldest on top).",
     "Compares how fast recent cohorts come back: read a column down.",
-    "Clients with a second loan ≤ N days ÷ cohort clients, right-censored at the last close: a cohort not yet N days old is blank. Darker = higher (four steps over the cells shown).",
+    "Clients with a second loan ≤ N days ÷ cohort clients, right-censored at the last close: a cohort not yet N days old is blank. Grey → yellow → orange → red = low → high, graded over every cell of the grid.",
   ],
   c10: [
     "Repeat share of loans per microloan product.",
@@ -310,7 +310,7 @@ const INFO: Readonly<Record<string, InfoCopy>> = {
   p9: [
     "30+ DPD by balance per product × market.",
     "Locates the risk.",
-    "30+ DPD balance ÷ outstanding at the last month of the window.",
+    "30+ DPD balance ÷ outstanding at the last month of the window. Grey → yellow → orange → red = low → high risk, graded over every cell of the grid.",
   ],
   p10: [
     "30+ DPD by balance per market, 13 months.",

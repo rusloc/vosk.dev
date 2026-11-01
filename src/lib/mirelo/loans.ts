@@ -1,4 +1,4 @@
-import { bins } from "./clients";
+import { heatLevels } from "./clients";
 import { MARKET_NAMES, info } from "./copy";
 import type { InfoValue } from "./copy";
 import type { Cube } from "./cube";
@@ -371,7 +371,7 @@ export function loansView(ctx: Ctx, sel: SalesSelection): BandVM {
   const counts = products.map((p) =>
     shownMarkets.map((c) => byCell.get(`${c}|${p.product_code}`)?.loans ?? 0),
   );
-  const countBins = bins(counts.flat());
+  const countLevels = heatLevels(counts.flat());
   const l10: ChartCard = {
     id: "l10",
     title: "Loans by product × market",
@@ -385,7 +385,7 @@ export function loansView(ctx: Ctx, sel: SalesSelection): BandVM {
         label: p.product_name,
         cells: shownMarkets.map((_, j) => ({
           text: fmtCount(counts[i]?.[j] ?? null),
-          bin: countBins[i * shownMarkets.length + j] ?? null,
+          level: countLevels[i * shownMarkets.length + j] ?? null,
         })),
       })),
       side: null,
@@ -445,6 +445,8 @@ export function loansView(ctx: Ctx, sel: SalesSelection): BandVM {
   };
 }
 
+const STATUS_RANK = { good: 3, watch: 2, off: 1, neutral: null } as const;
+
 function leaderboard(ctx: Ctx, sel: SalesSelection): TableCard {
   const { cube } = ctx;
   const w = periodWindow(sel);
@@ -498,14 +500,25 @@ function leaderboard(ctx: Ctx, sel: SalesSelection): TableCard {
         },
         secondary: null,
         cells: [
-          { text: a.agent_name, tag: a.is_ramp_cohort ? "Ramp" : undefined },
-          { text: a.agent_type === "AGENT" ? "Agent" : "Partner" },
-          { text: a.market_code },
-          { text: fmtCount(s.loans) },
-          { text: fmtCount(s.target || null) },
-          { text: fmtPct(att), bar: att },
-          { text: fmtEur(s.principal) },
-          { text: d.text, status: d.status },
+          {
+            text: a.agent_name,
+            tag: a.is_ramp_cohort ? "Ramp" : undefined,
+            sort: a.agent_name,
+          },
+          {
+            text: a.agent_type === "AGENT" ? "Agent" : "Partner",
+            sort: a.agent_type,
+          },
+          { text: a.market_code, sort: a.market_code },
+          { text: fmtCount(s.loans), sort: s.loans },
+          { text: fmtCount(s.target || null), sort: s.target || null },
+          { text: fmtPct(att), bar: att, sort: att },
+          { text: fmtEur(s.principal), sort: s.principal },
+          {
+            text: d.text,
+            status: d.status,
+            sort: ref ? s.loans / ref - 1 : null,
+          },
           {
             text:
               status === "neutral"
@@ -517,6 +530,7 @@ function leaderboard(ctx: Ctx, sel: SalesSelection): TableCard {
                     : "Behind",
             status,
             chip: true,
+            sort: STATUS_RANK[status],
           },
         ],
       };
@@ -525,5 +539,6 @@ function leaderboard(ctx: Ctx, sel: SalesSelection): TableCard {
       rows.length === 0 ? "No agent or partner loans in this window" : null,
     action: null,
     needsDetail: false,
+    sortable: true,
   };
 }

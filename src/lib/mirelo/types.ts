@@ -1,5 +1,11 @@
 import type { RowOf } from "./parquet-columns";
-import type { FILES, FileKey, MarketCode, SalesManifest } from "./manifest";
+import type {
+  DETAIL,
+  FILES,
+  FileKey,
+  MarketCode,
+  SalesManifest,
+} from "./manifest";
 import type { TimeView } from "./windows";
 
 export type FileRows<K extends FileKey> = RowOf<(typeof FILES)[K]["columns"]>[];
@@ -19,10 +25,15 @@ export interface SalesBase {
   targetMonth: FileRows<"targetMonth">;
 }
 
-/** Capped loan / client sample, loaded on first need (slide-over, Clients and Portfolio tables). */
-export interface SalesDetail {
-  loans: FileRows<"detailLoans">;
-  clients: FileRows<"detailClients">;
+export type LoanRow = RowOf<typeof DETAIL.loans>;
+export type ClientRow = RowOf<typeof DETAIL.clients>;
+export type CohortRow = RowOf<typeof DETAIL.cohort>;
+
+/** The detail files one drill needs, loaded on demand (`detail/`, 2026-11-01: the full data, no sample). */
+export interface DetailParts {
+  loans: LoanRow[]; // loans-YYYY-MM, overdue, client-NN
+  cohort: CohortRow[]; // cohort-YYYY-MM
+  clients: ClientRow[]; // client-dim-NN
 }
 
 export type { MarketCode, TimeView };

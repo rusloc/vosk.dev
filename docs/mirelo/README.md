@@ -50,7 +50,7 @@ Ten changes, built here and handed to the PNL side as `C:\__PBI\PNL\.sync\2026-1
 - **Board:** `ReportBoard fill` scales to fit the popup both ways (≤ 1.25×) and grows taller than 810 px; the extra
   height goes to the chart rows and band tables (`sales-app.tsx`). Nordmark keeps the old behaviour.
 
-## 2026-11-01, second round: the calendar and seven smaller changes (not in the `.sync` note yet)
+## 2026-11-01, second round: the calendar and seven smaller changes (`.sync` note changes 11–18, added 18:30)
 
 - **The period is a range of closed months** (`SalesSelection.from` … `anchor`, URL `from=` + `month=`; the old
   `period=qtd|ytd|r12m` is still read and rewritten). The filter pop-up's calendar has four modes: Month, Quarter,
@@ -68,7 +68,7 @@ Ten changes, built here and handed to the PNL side as `C:\__PBI\PNL\.sync\2026-1
 - **ⓘ before the title** on every chart and table (it was in the bottom-left corner on charts, right of the title on
   tables), as on the KPI cards.
 
-## 2026-11-01, third round: stable filters, one glass, heatmaps, no chart clicks (not in the `.sync` note yet)
+## 2026-11-01, third round: stable filters, one glass, heatmaps, no chart clicks (`.sync` note changes 19–29, added 18:30)
 
 - **Filter pop-up has a fixed shape** (420 × 514): the calendar keeps the year-stepper row in every mode (Year mode shows
   the span, arrows hidden), one 108 px tile area (three month rows, or one row of quarters / years stretched to it),
@@ -106,3 +106,30 @@ Ten changes, built here and handed to the PNL side as `C:\__PBI\PNL\.sync\2026-1
   - Both lists come from the draft sample (`cohortClients` / `overdueLoans`, now with a channel / product filter); the
     titles count from the aggregates. The client list shows up to 50 rows. The engine's `band()` no longer takes the
     detail index. The sample is still fetched ahead on these two tabs, so a row opens without a wait.
+
+## 2026-11-01, fourth round: the full data behind every list, a four-colour heat scale, a sortable leaderboard
+
+- **The detail window lists every row of the data** (owner: "need full dataset to be available to drill down"). The pack's
+  capped sample (`detail-loans` / `detail-clients`, 718 kB, e.g. 23 of 3,260 Partner clients) is gone, with the
+  manifest's `caps`. `data/mirelo/build_detail.py` cuts the generator's output (`data-gen/mirelo-sales`, seed 20261026,
+  control totals byte-identical to `data/mirelo/checks`) into `public/data/mirelo/detail/` (195 Parquet files, 28 MB,
+  + `index.json` with rows and bytes per file):
+  - `loans-YYYY-MM`: every loan of a closed month (~410 kB). Show loans and the agent lists load the window's months.
+  - `cohort-YYYY-MM`: every client whose first loan is in the month, with loans / principal to date and the last loan
+    (~90 kB). The C11 client lists.
+  - `overdue`: the 4,782 loans 30+ DPD with a balance at the last close (98 kB). The P13 lists.
+  - `client-NN` + `client-dim-NN` (client_id % 64): a client's loans and dims (~215 kB). The client card.
+- **Rebuild:** run the generator into an empty folder with its pinned venv (`data-gen/README.md`), then
+  `python -I data/mirelo/build_detail.py <out>/parquet public/data/mirelo/detail`.
+- **Engine:** `engine.detailFiles(sel, drill)` names the files; the app loads them (`loader.detail(names)`, cached
+  per file, row counts checked against `index.json`) and calls `engine.slideOver(sel, parts, drill)`. A list keeps
+  every row: `total`, `rowAt(i)` (formats one row) and `csv()` (all rows). The window pages 50 rows at a time
+  (« ‹ Page n of N › »). Export CSV writes the whole list and says how many rows. Titles count the list, and tests
+  check each list against its aggregate (window loans, an agent's loans, a channel's first loans, a product's
+  30+ DPD count at the close).
+- **Heatmaps L10, C9, P9:** a continuous grey → yellow → orange → red scale (`charts.tsx` `heatFill`) on a 0 … 1 level
+  per cell, normalised over **all rows and columns** of the grid (`clients.ts` `heatLevels`, which replaced the 4-step
+  grey `bins`). White text from level 0.8 (the red end).
+- **Agent & partner leaderboard is sortable:** each column header is a button (first click: numbers high → low, text
+  A → Z; the next click reverses; empty values last; `aria-sort` on the header). Cells carry a raw `sort` key
+  (`view-model.ts` `Cell.sort`, `TableCard.sortable`), so "€46k" and "185.3%" sort by value.

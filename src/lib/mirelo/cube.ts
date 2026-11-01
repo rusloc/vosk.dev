@@ -374,7 +374,6 @@ export function createCube(base: SalesBase) {
     first,
     closed,
     dims,
-    caps: base.manifest.caps,
     cohortDays: base.manifest.cohortDays,
     currency,
     available,

@@ -1,14 +1,13 @@
 import { clientsView } from "./clients";
 import { TITLE, filterLine, howToRead, periodLine } from "./copy";
 import { createCube } from "./cube";
-import { indexDetail, slideOver } from "./detail";
-import type { DetailIndex } from "./detail";
+import { detailFiles, slideOver } from "./detail";
 import { loansView } from "./loans";
 import { createMetrics } from "./metrics";
 import { overview } from "./overview";
 import { portfolioView } from "./portfolio";
 import { revenueView } from "./revenue";
-import type { Drill, SalesBase, SalesDetail, SalesSelection } from "./types";
+import type { DetailParts, Drill, SalesBase, SalesSelection } from "./types";
 import { createUrlCodec } from "./url-state";
 import type { BandVM, HeaderVM, OverviewVM, SlideOverVM } from "./view-model";
 import { monthKey, monthLabel } from "./windows";
@@ -16,7 +15,6 @@ import { monthKey, monthLabel } from "./windows";
 // Mirelo sales engine (ADR-0011 (c)): framework-free, the single source of every number and string on /sales.
 
 export type SalesEngine = ReturnType<typeof createSalesEngine>;
-export type { DetailIndex };
 
 export function createSalesEngine(base: SalesBase) {
   const cube = createCube(base);
@@ -53,18 +51,13 @@ export function createSalesEngine(base: SalesBase) {
           );
       }
     },
-    indexDetail: (detail: SalesDetail): DetailIndex =>
-      indexDetail(cube, detail),
+    /** The `detail/` files a drill needs (the app loads them, then calls slideOver). */
+    detailFiles: (sel: SalesSelection, drill: Drill): string[] =>
+      detailFiles(cube, sel, drill),
     slideOver: (
       sel: SalesSelection,
-      ix: DetailIndex | null,
+      parts: DetailParts | null,
       drill: Drill,
-    ): SlideOverVM => slideOver(cube, ix, sel, drill),
-    /**
-     * True when the lazy detail sample is read: by any drill, and fetched ahead on Clients and Portfolio, whose table
-     * rows open sample lists (aggregate tables since 2026-11-01).
-     */
-    needsDetail: (sel: SalesSelection): boolean =>
-      sel.drill !== null || sel.view === "clients" || sel.view === "portfolio",
+    ): SlideOverVM => slideOver(cube, parts, sel, drill),
   };
 }

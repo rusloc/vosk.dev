@@ -1,27 +1,25 @@
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { parquetRead } from "hyparquet";
 import { beforeAll, describe, expect, it } from "vitest";
-import {
-  SALES_DATA_DIR,
-  loadSalesBase,
-  loadSalesDetail,
-} from "./test-utils/sales-data";
+import { loadSalesBase, loadSalesDetail } from "./test-utils/sales-data";
 import { createCube } from "./cube";
 import type { Cube } from "./cube";
-import { cohortClients, overdueLoans, topLoans } from "./detail";
 import { createSalesEngine } from "./index";
-import type { DetailIndex, SalesEngine } from "./index";
+import type { SalesEngine } from "./index";
 import { bridge } from "./loans";
-import type { MarketSel, SalesSelection, TimeView, ViewId } from "./types";
+import type {
+  DetailParts,
+  Drill,
+  MarketSel,
+  SalesSelection,
+  TimeView,
+  ViewId,
+} from "./types";
 import { monthIndex, windowOf } from "./windows";
 
-// View models end to end (default window + a sweep), the originations bridge, and the detail sample's exactness
-// against the raw fact_loan of the generator.
+// View models end to end (default window + a sweep), the originations bridge, and the full detail files (2026-11-01)
+// reconciled to the aggregates.
 
 let engine: SalesEngine;
 let cube: Cube;
-let ix: DetailIndex;
 // `tv` builds the period the old way (Month / QTD / YTD / R12M on the anchor, clamped to the data start): the period
 // is a range `from`…`anchor` since 2026-11-01, and these windows are the ones the window stats cover.
 const sel = ({
@@ -44,7 +42,6 @@ beforeAll(async () => {
   const base = await loadSalesBase();
   engine = createSalesEngine(base);
   cube = createCube(base);
-  ix = engine.indexDetail(await loadSalesDetail());
 });
 
 describe("Overview (default window: Month · Sep 2026 · All markets · vs Budget)", () => {
@@ -192,151 +189,95 @@ describe("originations bridge", () => {
   });
 });
 
-// The raw fact_loan.parquet stays in rusloc/pnl (19.6 MB, never shipped): this block runs there and skips here.
-const FACT_LOAN = join(SALES_DATA_DIR, "parquet", "fact_loan.parquet");
-const HAS_FACT_LOAN = existsSync(FACT_LOAN);
+/** The detail window of a drill, after loading the files it names (as the app does). */
+async function drillVM(drill: Drill, at: SalesSelection = sel()) {
+  const parts: DetailParts = await loadSalesDetail(
+    engine.detailFiles(at, drill),
+  );
+  return engine.slideOver(at, parts, drill);
+}
+const list = async (drill: Drill, at?: SalesSelection) => {
+  const vm = await drillVM(drill, at);
+  if (vm.kind === "missing") throw new Error(`${vm.title}: ${vm.sub}`);
+  return vm;
+};
+const rowsOf = (vm: {
+  total: number;
+  rowAt: (i: number) => { cells: string[] };
+}) => Array.from({ length: vm.total }, (_, i) => vm.rowAt(i));
 
-describe.skipIf(!HAS_FACT_LOAN)(
-  "detail sample is exact for its caps (checked against the raw fact_loan)",
-  () => {
-    type Raw = {
-      id: number;
-      client: number;
-      market: string;
-      day: string;
-      principal: number;
-      eur: number;
-      dpd: number;
-      out: number;
-      agent: string | null;
-    };
-    let raw: Raw[];
-    beforeAll(async () => {
-      const b = readFileSync(FACT_LOAN);
-      const cols: Record<string, unknown[]> = {};
-      await parquetRead({
-        file: b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength),
-        columns: [
-          "loan_id",
-          "client_id",
-          "market_code",
-          "disbursed_date",
-          "principal_local",
-          "principal_eur",
-          "dpd_days_close",
-          "outstanding_local_close",
-          "agent_code",
-        ],
-        onChunk: ({ columnName, columnData, rowStart }) => {
-          const c = (cols[columnName] ??= []);
-          for (let i = 0; i < columnData.length; i++)
-            c[rowStart + i] = columnData[i];
-        },
-      });
-      const g = (name: string, i: number) => cols[name]?.[i];
-      raw = (cols.loan_id ?? []).map((_, i) => ({
-        id: Number(g("loan_id", i)),
-        client: Number(g("client_id", i)),
-        market: String(g("market_code", i)),
-        day: (g("disbursed_date", i) as Date).toISOString().slice(0, 10),
-        principal: Number(g("principal_local", i)),
-        eur: Number(g("principal_eur", i)),
-        dpd: Number(g("dpd_days_close", i) ?? 0),
-        out: Number(g("outstanding_local_close", i) ?? 0),
-        agent: (g("agent_code", i) as string | null) ?? null,
-      }));
-    });
+describe("full detail (2026-11-01): every list is complete and reconciles to the aggregates", () => {
+  it("names only the files a drill needs", () => {
+    const q = sel({ tv: "Q" });
+    expect(engine.detailFiles(q, { kind: "loans", market: "RO" })).toEqual([
+      "loans-2026-07.parquet",
+      "loans-2026-08.parquet",
+      "loans-2026-09.parquet",
+    ]);
+    expect(
+      engine.detailFiles(q, { kind: "clients", market: "ALL", channel: null }),
+    ).toHaveLength(3);
+    expect(
+      engine.detailFiles(sel(), { kind: "client", client: 1234567 }),
+    ).toEqual(["client-07.parquet", "client-dim-07.parquet"]); // 1234567 % 64 = 7
+  });
 
-    it("top 50 by principal of a window × market", () => {
-      for (const [mk, tv] of [
-        ["RO", "M"],
-        ["ALL", "Q"],
-        ["PT", "Y"],
-      ] as [MarketSel, TimeView][]) {
-        const w = windowOf(tv, monthIndex("2026-09"));
-        const inW = (r: Raw) => {
-          const m = monthIndex(r.day.slice(0, 7));
-          return (
-            m >= w.start && m <= w.end && (mk === "ALL" || r.market === mk)
-          );
-        };
-        const expected = raw
-          .filter(inW)
-          .sort((a, b) => b.eur - a.eur || a.id - b.id)
-          .slice(0, 50)
-          .map((r) => r.id);
-        expect(
-          topLoans(ix, w, mk, 50).map((r) => r.loan_id),
-          `${mk} ${tv}`,
-        ).toEqual(expected);
-      }
-    });
-
-    it("top 10 of an agent and the worst overdue loans", () => {
-      const w = windowOf("Y", monthIndex("2026-09"));
-      const agent = raw
-        .filter(
-          (r) =>
-            r.agent === "A001" &&
-            monthIndex(r.day.slice(0, 7)) >= w.start &&
-            monthIndex(r.day.slice(0, 7)) <= w.end,
-        )
-        .sort((a, b) => b.eur - a.eur || a.id - b.id)
-        .slice(0, 10)
-        .map((r) => r.id);
-      expect(topLoans(ix, w, "PL", 10, "A001").map((r) => r.loan_id)).toEqual(
-        agent,
+  it("Show loans lists every loan of the window × market; the CSV holds them all", async () => {
+    for (const [mk, tv] of [
+      ["RO", "M"],
+      ["ALL", "Q"],
+    ] as [MarketSel, TimeView][]) {
+      const at = sel({ tv });
+      const vm = await list({ kind: "loans", market: mk }, at);
+      const n = cube.loans(windowOf(tv, monthIndex("2026-09")), mk).loans;
+      expect(vm.total, `${mk} ${tv}`).toBe(n);
+      expect(vm.title.startsWith(`${n.toLocaleString("en-US")} loans`)).toBe(
+        true,
       );
-      const overdue = raw
-        .filter((r) => r.market === "RO" && r.dpd >= 30 && r.out > 0)
-        .sort((a, b) => b.dpd - a.dpd || b.out - a.out || a.id - b.id)
-        .slice(0, 100)
-        .map((r) => r.id);
-      expect(overdueLoans(ix, "RO", 100).map((r) => r.loan_id)).toEqual(
-        overdue,
-      );
-    });
+      if (tv === "M") expect(vm.csv().split("\n")).toHaveLength(n + 1);
+    }
+  });
 
-    it("cohort clients carry their whole loan history (principal to date)", () => {
-      const list = cohortClients(
-        ix,
-        cube,
-        windowOf("M", monthIndex("2025-03")),
-        "PL",
-        20,
-      );
-      expect(list).toHaveLength(20);
-      for (const s of list) {
-        const own = raw.filter(
-          (r) => r.client === s.client.client_id && r.day <= "2026-09-30",
-        );
-        expect(s.loans).toBe(own.length + s.client.loans_before_2024);
-        expect(
-          Math.abs(s.principalToDate - own.reduce((t, r) => t + r.eur, 0)),
-        ).toBeLessThan(0.01);
-      }
-    });
+  it("an agent's list matches its aggregate", async () => {
+    const vm = await list({ kind: "agent", agent: "A001" }, sel({ tv: "Y" }));
+    const w = windowOf("Y", monthIndex("2026-09"));
+    expect(vm.total).toBe(cube.agents(w).get("A001")?.loans);
+  });
 
-    it("slide-over titles count from the aggregates, rows from the sample", () => {
-      const vm = engine.slideOver(sel(), ix, { kind: "loans", market: "RO" });
-      expect(vm.kind).toBe("loans");
-      if (vm.kind !== "loans") return;
-      const ro = raw.filter(
-        (r) => r.market === "RO" && r.day.startsWith("2026-09"),
-      ).length;
-      expect(vm.title).toBe(
-        `${ro.toLocaleString("en-US")} loans - Romania - Sep 2026`,
-      );
-      expect(vm.rows).toHaveLength(50);
-      expect(vm.csv.split("\n")).toHaveLength(51);
-      const client = engine.slideOver(sel(), ix, {
-        kind: "client",
-        client: vm.rows[0]?.client ?? 0,
-      });
-      expect(client.kind).toBe("client");
+  it("a channel's new clients = its first loans (C11), every one of them", async () => {
+    for (const ch of ["APP", "PAID", "PARTNER", "AGENT"]) {
+      const vm = await list({ kind: "clients", market: "ALL", channel: ch });
+      const n = cube.loans(windowOf("M", monthIndex("2026-09")), "ALL", {
+        repeat: false,
+        channel: ch,
+      }).first;
+      expect(vm.total, ch).toBe(n);
+    }
+  });
+
+  it("a product's overdue list = its 30+ DPD loans at the close (P13), worst first", async () => {
+    const snap = cube.snapshotBy(monthIndex("2026-09"), "RO", (r) => r.product);
+    const vm = await list({ kind: "overdue", market: "RO", product: "STEP6" });
+    expect(vm.total).toBe(snap?.get("STEP6")?.dpd30Count);
+    const dpd = rowsOf(vm).map((r) => Number(r.cells[7]));
+    expect(
+      dpd.every((d, k) => d >= 30 && (k === 0 || d <= (dpd[k - 1] ?? 0))),
+    ).toBe(true);
+  });
+
+  it("a list row opens the client card with the client's whole history", async () => {
+    const clients = await list({
+      kind: "clients",
+      market: "PL",
+      channel: null,
     });
-  },
-);
+    const top = clients.rowAt(0);
+    const card = await list({ kind: "client", client: top.client });
+    expect(card.kind).toBe("client");
+    expect(card.sub).toContain(`${top.cells[6]} loans to date`); // the list's "Loans to date"
+    expect(card.total).toBeGreaterThan(0);
+  });
+});
 
 describe("2026-11-01, third round: funnel scale, heatmaps, returning approval, subscriber flow", () => {
   const card = (view: ViewId, id: string) => {
@@ -375,7 +316,7 @@ describe("2026-11-01, third round: funnel scale, heatmaps, returning approval, s
     ]);
     expect(c9.cols[0]).toBe("45 d"); // nobody repeats within 30 days: those columns are dropped
     expect(c9.cols.at(-1)).toBe("180 d");
-    expect(c9.rows.at(-1)?.cells.at(-1)).toEqual({ text: "", bin: null });
+    expect(c9.rows.at(-1)?.cells.at(-1)).toEqual({ text: "", level: null });
   });
 
   it("C5 is the returning-client approval rate", () => {
@@ -398,7 +339,7 @@ describe("2026-11-01, third round: funnel scale, heatmaps, returning approval, s
   });
 });
 
-describe("2026-11-01: aggregate tables on Clients and Portfolio, their rows open sample lists", () => {
+describe("2026-11-01: aggregate tables on Clients and Portfolio, their rows open full lists", () => {
   it("C11: one row per channel; new clients add up to the C1 card; rows open that channel's clients", () => {
     const vm = engine.band(sel({ view: "clients" }));
     if ("heroes" in vm) return;
@@ -450,32 +391,59 @@ describe("2026-11-01: aggregate tables on Clients and Portfolio, their rows open
     );
   });
 
-  it("the lists: one channel's clients, one product's overdue loans, each row opens a client card", () => {
-    const clients = engine.slideOver(sel(), ix, {
+  it("the lists: one channel's clients, one product's overdue loans", async () => {
+    const clients = await list({
       kind: "clients",
       market: "ALL",
       channel: "PARTNER",
     });
     expect(clients.kind).toBe("clients");
-    if (clients.kind !== "clients") return;
     expect(clients.title).toMatch(
       /^[\d,]+ new clients - Partner - All markets - Sep 2026$/,
     );
-    expect(clients.rows.length).toBeGreaterThan(0);
-    expect(clients.rows.every((r) => r.cells[5] === "Partner")).toBe(true);
+    expect(rowsOf(clients).every((r) => r.cells[5] === "Partner")).toBe(true);
 
-    const overdue = engine.slideOver(sel(), ix, {
+    const overdue = await list({
       kind: "overdue",
       market: "RO",
       product: "STEP6",
     });
     expect(overdue.kind).toBe("loans");
-    if (overdue.kind !== "loans") return;
     expect(overdue.title).toMatch(
       /^[\d,]+ loans 30\+ DPD - Step 6 - Romania - Sep 2026$/,
     );
-    expect(overdue.rows.length).toBeGreaterThan(0);
-    expect(overdue.rows.every((r) => r.cells[2] === "Step 6")).toBe(true);
-    expect(overdue.rows.every((r) => Number(r.cells[7]) >= 30)).toBe(true);
+    expect(rowsOf(overdue).every((r) => r.cells[2] === "Step 6")).toBe(true);
+  });
+});
+
+describe("2026-11-01: heat scale over the whole grid, sortable leaderboard", () => {
+  it("each heatmap's levels run 0 … 1 over all its cells, not per column", () => {
+    for (const [view, id] of [
+      ["loans", "l10"],
+      ["clients", "c9"],
+      ["portfolio", "p9"],
+    ] as [ViewId, string][]) {
+      const vm = engine.band(sel({ view }));
+      if ("heroes" in vm) continue;
+      const ch = vm.charts.find((c) => c.id === id)?.chart;
+      if (ch?.kind !== "heat") throw new Error(`${id}: heat expected`);
+      const levels = ch.rows
+        .flatMap((r) => r.cells.map((c) => c.level))
+        .filter((l): l is number => l !== null);
+      expect(Math.min(...levels), id).toBe(0);
+      expect(Math.max(...levels), id).toBe(1);
+      // exactly one minimum and one maximum cell across the grid (a per-column scale would give one per column)
+      expect(levels.filter((l) => l === 1).length, id).toBeLessThan(
+        ch.cols.length,
+      );
+    }
+  });
+
+  it("the agent leaderboard is sortable and every cell carries a sort key", () => {
+    const vm = engine.band(sel({ view: "loans" }));
+    if ("heroes" in vm) return;
+    expect(vm.table.sortable).toBe(true);
+    for (const r of vm.table.rows)
+      expect(r.cells.every((c) => c.sort !== undefined)).toBe(true);
   });
 });

@@ -368,6 +368,29 @@ export function TableCardView({
   onAction: (a: RowAction) => void;
 }) {
   const boardH = useBoardHeight();
+  // Column sort (2026-11-01, sortable tables): first click sorts numbers high → low and text A → Z, the next reverses;
+  // empty values go last either way. No sort = the engine's order.
+  const [sort, setSort] = useState<{ col: number; desc: boolean } | null>(null);
+  const rows = sort
+    ? [...card.rows].sort((a, b) => {
+        const x = a.cells[sort.col]?.sort ?? null;
+        const y = b.cells[sort.col]?.sort ?? null;
+        if (x === null || y === null) return x === y ? 0 : x === null ? 1 : -1;
+        const c =
+          typeof x === "number" && typeof y === "number"
+            ? x - y
+            : String(x).localeCompare(String(y));
+        return sort.desc ? -c : c;
+      })
+    : card.rows;
+  const sortBy = (col: number) => {
+    const numeric = card.rows.some(
+      (r) => typeof r.cells[col]?.sort === "number",
+    );
+    setSort(
+      sort?.col === col ? { col, desc: !sort.desc } : { col, desc: numeric },
+    );
+  };
   return (
     <section
       className={styles.card}
@@ -414,13 +437,33 @@ export function TableCardView({
           </colgroup>
           <thead>
             <tr>
-              {card.columns.map((c) => (
+              {card.columns.map((c, k) => (
                 <th
                   key={c.key}
                   scope="col"
                   className={c.align === "right" ? styles.r : undefined}
+                  aria-sort={
+                    sort?.col === k
+                      ? sort.desc
+                        ? "descending"
+                        : "ascending"
+                      : undefined
+                  }
                 >
-                  {c.label}
+                  {card.sortable ? (
+                    <button
+                      type="button"
+                      className={styles.sortBtn}
+                      onClick={() => sortBy(k)}
+                    >
+                      {c.label}
+                      <span aria-hidden="true">
+                        {sort?.col === k ? (sort.desc ? " ▼" : " ▲") : " ↕"}
+                      </span>
+                    </button>
+                  ) : (
+                    c.label
+                  )}
                 </th>
               ))}
               <th aria-hidden="true" />
@@ -434,7 +477,7 @@ export function TableCardView({
                 </td>
               </tr>
             ) : null}
-            {card.rows.map((r) => (
+            {rows.map((r) => (
               <tr
                 key={r.key}
                 className={r.action ? styles.row : undefined}

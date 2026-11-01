@@ -93,7 +93,7 @@ export type Chart =
       cols: string[];
       rows: {
         label: string;
-        cells: { text: string; bin: 0 | 1 | 2 | 3 | null }[];
+        cells: { text: string; level: number | null }[]; // 0 … 1 over the whole grid; null = blank
       }[];
       side: { title: string; unit: Unit; rows: BarRow[] } | null;
     }
@@ -160,6 +160,7 @@ export interface Cell {
   chip?: boolean; // status chip with glyph + word
   bar?: number | null; // 0 … 1 attainment bar (target at 1)
   tag?: string; // small tag after the text ("Ramp")
+  sort?: number | string | null; // raw value for column sorting (sortable tables); null sorts last
 }
 
 export type RowAction =
@@ -187,6 +188,7 @@ export interface TableCard {
   empty: string | null; // shown in place of rows when there are none (or while the sample loads)
   action: { label: string; drill: Drill } | null; // "Show loans ↗"
   needsDetail: boolean; // rows come from the lazy detail sample
+  sortable?: boolean; // header click sorts by the cells' `sort` values (2026-11-01: the agent leaderboard)
 }
 
 export interface OverviewVM {
@@ -218,28 +220,23 @@ export interface DetailLoanRow {
   cells: string[];
 }
 
+/** A detail list (2026-11-01: every row of the data, paged in the window; rowAt formats one row, csv() writes all). */
+export interface DetailList {
+  title: string;
+  sub: string;
+  chips: string[];
+  columns: { label: string; align: "left" | "right" }[];
+  total: number;
+  rowAt: (i: number) => DetailLoanRow;
+  footer: string; // what a row does / the order, beside the pager
+  csv: () => string;
+  csvName: string;
+}
+
 export type SlideOverVM =
-  | {
-      kind: "loans" | "clients"; // a list; a row opens the client card
-      title: string;
-      sub: string;
-      chips: string[];
-      columns: { label: string; align: "left" | "right" }[];
-      rows: DetailLoanRow[];
-      footer: string;
-      csv: string;
-      csvName: string;
-    }
-  | {
+  | ({ kind: "loans" | "clients" } & DetailList) // a row opens the client card
+  | ({
       kind: "client";
-      title: string;
-      sub: string;
-      chips: string[];
       facts: { label: string; value: string }[];
-      columns: { label: string; align: "left" | "right" }[];
-      rows: DetailLoanRow[];
-      footer: string;
-      csv: string;
-      csvName: string;
-    }
+    } & DetailList)
   | { kind: "missing"; title: string; sub: string };

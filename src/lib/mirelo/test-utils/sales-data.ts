@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { createSalesLoader } from "../data";
-import type { SalesBase, SalesDetail } from "../types";
+import type { DetailParts, SalesBase } from "../types";
 
 // Node side of the sales loader for Vitest: reads the built public/data/sales artifacts through the same loader the
 // browser uses (prebuilt in rusloc/pnl, js-report/).
@@ -25,10 +25,12 @@ const loader = createSalesLoader(async (name) => {
 });
 
 export const loadSalesBase = (): Promise<SalesBase> => loader.base();
-export const loadSalesDetail = (): Promise<SalesDetail> => loader.detail();
+export const loadSalesDetail = (
+  names: readonly string[],
+): Promise<DetailParts> => loader.detail(names);
 
-// Test fixtures copied from rusloc/pnl data/mirelo_sales_dummy_data/ (checks/control_totals_eur.csv). The raw
-// parquet/fact_loan.parquet (19.6 MB) is not shipped: the detail-sample test in lib/sales/engine.test.ts skips without it.
+// Test fixtures copied from rusloc/pnl data/mirelo_sales_dummy_data/ (checks/control_totals_eur.csv). The full detail
+// in public/data/mirelo/detail/ is built from the generator by data/mirelo/build_detail.py (2026-11-01).
 export const SALES_DATA_DIR = fileURLToPath(
   new URL("../../../../data/mirelo/", import.meta.url),
 );

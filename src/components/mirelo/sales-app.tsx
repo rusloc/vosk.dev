@@ -7,8 +7,12 @@ import { ReportBoard, useBoardHeight } from "@/components/report-board";
 import { useReportSearch } from "@/components/report-search";
 import { createSalesLoader } from "@/lib/mirelo/data";
 import { createSalesEngine } from "@/lib/mirelo";
-import type { DetailIndex } from "@/lib/mirelo";
-import type { Drill, SalesBase, SalesSelection } from "@/lib/mirelo/types";
+import type {
+  DetailParts,
+  Drill,
+  SalesBase,
+  SalesSelection,
+} from "@/lib/mirelo/types";
 import type { BandVM, OverviewVM, RowAction } from "@/lib/mirelo/view-model";
 import {
   ChartCardView,
@@ -126,7 +130,9 @@ function overviewBoxes(extra: number) {
   };
 }
 
-type Detail = { ix: DetailIndex } | { error: string } | null;
+/** The detail files of the open drill, keyed by their names (one load per drill; the loader caches each file). */
+type Detail =
+  { key: string; parts: DetailParts } | { key: string; error: string } | null;
 
 function Dashboard({ base }: { base: SalesBase }) {
   const engine = useMemo(() => createSalesEngine(base), [base]);
@@ -150,20 +156,25 @@ function Dashboard({ base }: { base: SalesBase }) {
     if (canonical !== search) go(sel);
   }, [canonical, search, go, sel]);
 
-  // The capped loan / client sample loads on first need (Clients, Portfolio, any slide-over).
-  const needs = engine.needsDetail(sel);
+  // The full detail loads per drill: only the months, cohorts or client bucket it reads (2026-11-01).
+  const files = useMemo(
+    () => (sel.drill ? engine.detailFiles(sel, sel.drill) : []),
+    [engine, sel],
+  );
+  const filesKey = files.join(",");
   useEffect(() => {
-    if (!needs || detail) return;
+    if (!filesKey) return;
     let live = true;
-    loader.detail().then(
-      (d) => live && setDetail({ ix: engine.indexDetail(d) }),
-      (e: unknown) => live && setDetail({ error: message(e) }),
+    loader.detail(filesKey.split(",")).then(
+      (parts) => live && setDetail({ key: filesKey, parts }),
+      (e: unknown) => live && setDetail({ key: filesKey, error: message(e) }),
     );
     return () => {
       live = false;
     };
-  }, [needs, detail, engine]);
-  const ix = detail && "ix" in detail ? detail.ix : null;
+  }, [filesKey]);
+  const current = detail?.key === filesKey ? detail : null;
+  const parts = current && "parts" in current ? current.parts : null;
 
   const header = useMemo(() => engine.header(sel), [engine, sel]);
   const overview = useMemo(
@@ -175,8 +186,8 @@ function Dashboard({ base }: { base: SalesBase }) {
     [engine, sel],
   );
   const slide = useMemo(
-    () => (sel.drill ? engine.slideOver(sel, ix, sel.drill) : null),
-    [engine, sel, ix],
+    () => (sel.drill ? engine.slideOver(sel, parts, sel.drill) : null),
+    [engine, sel, parts],
   );
 
   const update = (patch: Partial<SalesSelection>) => go({ ...sel, ...patch });
@@ -223,11 +234,11 @@ function Dashboard({ base }: { base: SalesBase }) {
           {slide ? (
             <SlideOver
               vm={
-                detail && "error" in detail
+                current && "error" in current
                   ? {
                       kind: "missing",
-                      title: "Could not load the loan sample",
-                      sub: detail.error,
+                      title: "Could not load the loans",
+                      sub: current.error,
                     }
                   : slide
               }

@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { fmtInt } from "@/lib/mirelo/format";
 import type { SlideOverVM } from "@/lib/mirelo/view-model";
 import glass from "./glass.module.css";
 import styles from "./sales.module.css";
@@ -9,6 +10,7 @@ import styles from "./sales.module.css";
 // moves to the close button on open, Tab stays inside, Escape or the mask closes, and focus returns to the opener.
 
 const FOCUSABLE = 'button, [href], [tabindex]:not([tabindex="-1"])';
+const PAGE = 50; // rows per page; every row of the list is reachable and in the CSV (2026-11-01)
 
 export function SlideOver({
   vm,
@@ -22,6 +24,12 @@ export function SlideOver({
   onClient: (client: number) => void;
 }) {
   const panel = useRef<HTMLElement>(null);
+  const [page, setPage] = useState(0);
+  const [listOf, setListOf] = useState(vm.title);
+  if (listOf !== vm.title) {
+    setListOf(vm.title); // another list (a drill, Back): start at its first page
+    setPage(0);
+  }
   const closeBtn = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -74,10 +82,20 @@ export function SlideOver({
 
   const list = vm.kind === "loans" || vm.kind === "clients"; // rows open the client card
 
+  const pages = vm.kind === "missing" ? 0 : Math.ceil(vm.total / PAGE);
+  const current = Math.min(page, Math.max(pages - 1, 0));
+  const first = current * PAGE;
+  const rows =
+    vm.kind === "missing"
+      ? []
+      : Array.from({ length: Math.min(PAGE, vm.total - first) }, (_, i) =>
+          vm.rowAt(first + i),
+        );
+
   function exportCsv() {
     if (vm.kind === "missing") return;
     const url = URL.createObjectURL(
-      new Blob([vm.csv], { type: "text/csv;charset=utf-8" }),
+      new Blob([vm.csv()], { type: "text/csv;charset=utf-8" }),
     );
     const a = document.createElement("a");
     a.href = url;
@@ -161,7 +179,7 @@ export function SlideOver({
                   </tr>
                 </thead>
                 <tbody>
-                  {vm.rows.map((r) => (
+                  {rows.map((r) => (
                     <tr
                       key={r.key}
                       className={list ? styles.row : undefined}
@@ -202,9 +220,53 @@ export function SlideOver({
                 </button>
               ) : null}
               <button type="button" onClick={exportCsv}>
-                Export CSV
+                Export CSV ({fmtInt(vm.total)} rows)
               </button>
-              <span>{vm.footer}</span>
+              <span>
+                {vm.total === 0
+                  ? "No rows"
+                  : `${fmtInt(first + 1)}–${fmtInt(first + rows.length)} of ${fmtInt(vm.total)}`}{" "}
+                - {vm.footer}
+              </span>
+              {pages > 1 ? (
+                <nav className={styles.pager} aria-label="Pages">
+                  <button
+                    type="button"
+                    disabled={current === 0}
+                    onClick={() => setPage(0)}
+                    aria-label="First page"
+                  >
+                    «
+                  </button>
+                  <button
+                    type="button"
+                    disabled={current === 0}
+                    onClick={() => setPage(current - 1)}
+                    aria-label="Previous page"
+                  >
+                    ‹
+                  </button>
+                  <span aria-live="polite">
+                    Page {fmtInt(current + 1)} of {fmtInt(pages)}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={current >= pages - 1}
+                    onClick={() => setPage(current + 1)}
+                    aria-label="Next page"
+                  >
+                    ›
+                  </button>
+                  <button
+                    type="button"
+                    disabled={current >= pages - 1}
+                    onClick={() => setPage(pages - 1)}
+                    aria-label="Last page"
+                  >
+                    »
+                  </button>
+                </nav>
+              ) : null}
             </div>
           </>
         )}

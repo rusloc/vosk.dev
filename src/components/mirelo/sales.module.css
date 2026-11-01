@@ -877,6 +877,50 @@
   padding: 0 8px;
   cursor: pointer;
 }
+.soFoot button:disabled {
+  color: var(--g300);
+  cursor: default;
+}
+/* sortable table headers (2026-11-01: the agent leaderboard) */
+.sortBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.sortBtn:hover {
+  color: var(--ink);
+}
+.sortBtn span {
+  color: var(--g400);
+}
+th[aria-sort] .sortBtn,
+th[aria-sort] .sortBtn span {
+  color: var(--ink);
+}
+/* pager (2026-11-01): the full list in pages of 50, right of the footer */
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: var(--ink);
+  font-weight: 600;
+}
+.pager span {
+  padding: 0 6px;
+  white-space: nowrap;
+}
+.pager button {
+  min-width: 26px;
+}
 .status {
   position: absolute;
   left: 32px;

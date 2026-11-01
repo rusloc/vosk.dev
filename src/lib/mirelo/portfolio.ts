@@ -1,4 +1,4 @@
-import { bins } from "./clients";
+import { heatLevels } from "./clients";
 import { MARKET_NAMES, info } from "./copy";
 import { fmtCount, fmtEur, fmtPct } from "./format";
 import { kpi } from "./loans";
@@ -182,7 +182,7 @@ export function portfolioView(ctx: Ctx, sel: SalesSelection): BandVM {
       m.dpd30(cell?.get(`${p.product_code}|${c}`) ?? null),
     ),
   );
-  const flat = bins(values.flat());
+  const flat = heatLevels(values.flat());
   const p9: ChartCard = {
     id: "p9",
     title: "Bad rate by product × market",
@@ -196,7 +196,7 @@ export function portfolioView(ctx: Ctx, sel: SalesSelection): BandVM {
         label: p.product_name,
         cells: shownMarkets.map((_, j) => ({
           text: fmtPct(values[i]?.[j] ?? null),
-          bin: flat[i * shownMarkets.length + j] ?? null,
+          level: flat[i * shownMarkets.length + j] ?? null,
         })),
       })),
       side: null,

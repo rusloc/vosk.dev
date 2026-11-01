@@ -761,7 +761,22 @@ export function Waterfall({
   );
 }
 
-const BIN_FILL = [C.panel2, C.g300, C.g400, C.ink] as const;
+/** Heat scale (2026-11-01, owner): grey → yellow → orange → red, interpolated on the cell's level over the whole grid. */
+const HEAT_STOPS = [
+  [0xde, 0xdd, 0xd8], // panel-2 grey
+  [0xff, 0xd5, 0x4a], // accent yellow
+  [0xf2, 0x8c, 0x28], // orange
+  [0xc0, 0x39, 0x2b], // red
+] as const;
+function heatFill(level: number): string {
+  const t = Math.min(Math.max(level, 0), 1) * (HEAT_STOPS.length - 1);
+  const k = Math.min(Math.floor(t), HEAT_STOPS.length - 2);
+  const a = HEAT_STOPS[k] ?? HEAT_STOPS[0];
+  const b = HEAT_STOPS[k + 1] ?? a;
+  const f = t - k;
+  return `rgb(${a.map((v, i) => Math.round(v + ((b[i] ?? v) - v) * f)).join(",")})`;
+}
+const HEAT_LIGHT_TEXT = 0.8; // from here the red is dark enough for white text
 
 export function Heat({
   chart,
@@ -799,13 +814,17 @@ export function Heat({
                 y={headH + i * rh}
                 width={cw - 2}
                 height={rh - 2}
-                fill={cell.bin === null ? C.white : BIN_FILL[cell.bin]}
+                fill={cell.level === null ? C.white : heatFill(cell.level)}
               />
               <T
                 x={labW + j * cw + cw / 2}
                 y={headH + i * rh + rh / 2 + 3}
                 anchor="middle"
-                fill={cell.bin === 3 ? C.white : C.ink}
+                fill={
+                  cell.level !== null && cell.level >= HEAT_LIGHT_TEXT
+                    ? C.white
+                    : C.ink
+                }
                 size={11}
                 weight={600}
               >

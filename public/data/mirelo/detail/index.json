@@ -1,0 +1,786 @@
+{
+ "buckets": 64,
+ "files": {
+  "client-00.parquet": {
+   "bytes": 160093,
+   "rows": 9627
+  },
+  "client-01.parquet": {
+   "bytes": 158798,
+   "rows": 9544
+  },
+  "client-02.parquet": {
+   "bytes": 160895,
+   "rows": 9690
+  },
+  "client-03.parquet": {
+   "bytes": 158577,
+   "rows": 9528
+  },
+  "client-04.parquet": {
+   "bytes": 158626,
+   "rows": 9549
+  },
+  "client-05.parquet": {
+   "bytes": 158984,
+   "rows": 9526
+  },
+  "client-06.parquet": {
+   "bytes": 157575,
+   "rows": 9464
+  },
+  "client-07.parquet": {
+   "bytes": 158890,
+   "rows": 9555
+  },
+  "client-08.parquet": {
+   "bytes": 161083,
+   "rows": 9749
+  },
+  "client-09.parquet": {
+   "bytes": 157287,
+   "rows": 9437
+  },
+  "client-10.parquet": {
+   "bytes": 158909,
+   "rows": 9511
+  },
+  "client-11.parquet": {
+   "bytes": 161726,
+   "rows": 9776
+  },
+  "client-12.parquet": {
+   "bytes": 159320,
+   "rows": 9547
+  },
+  "client-13.parquet": {
+   "bytes": 159553,
+   "rows": 9572
+  },
+  "client-14.parquet": {
+   "bytes": 159632,
+   "rows": 9629
+  },
+  "client-15.parquet": {
+   "bytes": 161057,
+   "rows": 9699
+  },
+  "client-16.parquet": {
+   "bytes": 159902,
+   "rows": 9598
+  },
+  "client-17.parquet": {
+   "bytes": 157794,
+   "rows": 9440
+  },
+  "client-18.parquet": {
+   "bytes": 162354,
+   "rows": 9823
+  },
+  "client-19.parquet": {
+   "bytes": 161230,
+   "rows": 9699
+  },
+  "client-20.parquet": {
+   "bytes": 162054,
+   "rows": 9807
+  },
+  "client-21.parquet": {
+   "bytes": 158453,
+   "rows": 9526
+  },
+  "client-22.parquet": {
+   "bytes": 159253,
+   "rows": 9581
+  },
+  "client-23.parquet": {
+   "bytes": 158829,
+   "rows": 9545
+  },
+  "client-24.parquet": {
+   "bytes": 159912,
+   "rows": 9615
+  },
+  "client-25.parquet": {
+   "bytes": 160906,
+   "rows": 9694
+  },
+  "client-26.parquet": {
+   "bytes": 161217,
+   "rows": 9711
+  },
+  "client-27.parquet": {
+   "bytes": 159838,
+   "rows": 9619
+  },
+  "client-28.parquet": {
+   "bytes": 160366,
+   "rows": 9690
+  },
+  "client-29.parquet": {
+   "bytes": 160740,
+   "rows": 9702
+  },
+  "client-30.parquet": {
+   "bytes": 159955,
+   "rows": 9599
+  },
+  "client-31.parquet": {
+   "bytes": 159670,
+   "rows": 9606
+  },
+  "client-32.parquet": {
+   "bytes": 158596,
+   "rows": 9521
+  },
+  "client-33.parquet": {
+   "bytes": 160072,
+   "rows": 9611
+  },
+  "client-34.parquet": {
+   "bytes": 159333,
+   "rows": 9565
+  },
+  "client-35.parquet": {
+   "bytes": 161624,
+   "rows": 9768
+  },
+  "client-36.parquet": {
+   "bytes": 157923,
+   "rows": 9464
+  },
+  "client-37.parquet": {
+   "bytes": 160321,
+   "rows": 9662
+  },
+  "client-38.parquet": {
+   "bytes": 159306,
+   "rows": 9560
+  },
+  "client-39.parquet": {
+   "bytes": 159232,
+   "rows": 9586
+  },
+  "client-40.parquet": {
+   "bytes": 158898,
+   "rows": 9526
+  },
+  "client-41.parquet": {
+   "bytes": 159276,
+   "rows": 9554
+  },
+  "client-42.parquet": {
+   "bytes": 157773,
+   "rows": 9449
+  },
+  "client-43.parquet": {
+   "bytes": 158662,
+   "rows": 9546
+  },
+  "client-44.parquet": {
+   "bytes": 158724,
+   "rows": 9537
+  },
+  "client-45.parquet": {
+   "bytes": 159747,
+   "rows": 9582
+  },
+  "client-46.parquet": {
+   "bytes": 157892,
+   "rows": 9464
+  },
+  "client-47.parquet": {
+   "bytes": 158204,
+   "rows": 9459
+  },
+  "client-48.parquet": {
+   "bytes": 160021,
+   "rows": 9675
+  },
+  "client-49.parquet": {
+   "bytes": 158966,
+   "rows": 9560
+  },
+  "client-50.parquet": {
+   "bytes": 157032,
+   "rows": 9400
+  },
+  "client-51.parquet": {
+   "bytes": 159654,
+   "rows": 9614
+  },
+  "client-52.parquet": {
+   "bytes": 157506,
+   "rows": 9477
+  },
+  "client-53.parquet": {
+   "bytes": 159123,
+   "rows": 9575
+  },
+  "client-54.parquet": {
+   "bytes": 160104,
+   "rows": 9636
+  },
+  "client-55.parquet": {
+   "bytes": 159453,
+   "rows": 9577
+  },
+  "client-56.parquet": {
+   "bytes": 159440,
+   "rows": 9640
+  },
+  "client-57.parquet": {
+   "bytes": 159143,
+   "rows": 9557
+  },
+  "client-58.parquet": {
+   "bytes": 158758,
+   "rows": 9484
+  },
+  "client-59.parquet": {
+   "bytes": 158744,
+   "rows": 9557
+  },
+  "client-60.parquet": {
+   "bytes": 161014,
+   "rows": 9694
+  },
+  "client-61.parquet": {
+   "bytes": 159053,
+   "rows": 9549
+  },
+  "client-62.parquet": {
+   "bytes": 160231,
+   "rows": 9640
+  },
+  "client-63.parquet": {
+   "bytes": 159545,
+   "rows": 9591
+  },
+  "client-dim-00.parquet": {
+   "bytes": 55256,
+   "rows": 4722
+  },
+  "client-dim-01.parquet": {
+   "bytes": 55322,
+   "rows": 4722
+  },
+  "client-dim-02.parquet": {
+   "bytes": 55269,
+   "rows": 4722
+  },
+  "client-dim-03.parquet": {
+   "bytes": 55317,
+   "rows": 4722
+  },
+  "client-dim-04.parquet": {
+   "bytes": 55237,
+   "rows": 4722
+  },
+  "client-dim-05.parquet": {
+   "bytes": 55236,
+   "rows": 4722
+  },
+  "client-dim-06.parquet": {
+   "bytes": 54510,
+   "rows": 4722
+  },
+  "client-dim-07.parquet": {
+   "bytes": 55248,
+   "rows": 4722
+  },
+  "client-dim-08.parquet": {
+   "bytes": 55310,
+   "rows": 4722
+  },
+  "client-dim-09.parquet": {
+   "bytes": 55310,
+   "rows": 4722
+  },
+  "client-dim-10.parquet": {
+   "bytes": 55305,
+   "rows": 4722
+  },
+  "client-dim-11.parquet": {
+   "bytes": 55302,
+   "rows": 4722
+  },
+  "client-dim-12.parquet": {
+   "bytes": 55340,
+   "rows": 4722
+  },
+  "client-dim-13.parquet": {
+   "bytes": 55313,
+   "rows": 4722
+  },
+  "client-dim-14.parquet": {
+   "bytes": 55355,
+   "rows": 4722
+  },
+  "client-dim-15.parquet": {
+   "bytes": 55412,
+   "rows": 4722
+  },
+  "client-dim-16.parquet": {
+   "bytes": 55353,
+   "rows": 4722
+  },
+  "client-dim-17.parquet": {
+   "bytes": 55342,
+   "rows": 4722
+  },
+  "client-dim-18.parquet": {
+   "bytes": 55297,
+   "rows": 4722
+  },
+  "client-dim-19.parquet": {
+   "bytes": 55320,
+   "rows": 4722
+  },
+  "client-dim-20.parquet": {
+   "bytes": 55318,
+   "rows": 4722
+  },
+  "client-dim-21.parquet": {
+   "bytes": 55114,
+   "rows": 4722
+  },
+  "client-dim-22.parquet": {
+   "bytes": 55223,
+   "rows": 4722
+  },
+  "client-dim-23.parquet": {
+   "bytes": 55239,
+   "rows": 4722
+  },
+  "client-dim-24.parquet": {
+   "bytes": 55305,
+   "rows": 4722
+  },
+  "client-dim-25.parquet": {
+   "bytes": 55223,
+   "rows": 4722
+  },
+  "client-dim-26.parquet": {
+   "bytes": 55124,
+   "rows": 4722
+  },
+  "client-dim-27.parquet": {
+   "bytes": 55099,
+   "rows": 4722
+  },
+  "client-dim-28.parquet": {
+   "bytes": 55292,
+   "rows": 4722
+  },
+  "client-dim-29.parquet": {
+   "bytes": 55317,
+   "rows": 4722
+  },
+  "client-dim-30.parquet": {
+   "bytes": 55243,
+   "rows": 4722
+  },
+  "client-dim-31.parquet": {
+   "bytes": 55201,
+   "rows": 4722
+  },
+  "client-dim-32.parquet": {
+   "bytes": 55231,
+   "rows": 4722
+  },
+  "client-dim-33.parquet": {
+   "bytes": 55377,
+   "rows": 4723
+  },
+  "client-dim-34.parquet": {
+   "bytes": 55411,
+   "rows": 4723
+  },
+  "client-dim-35.parquet": {
+   "bytes": 55353,
+   "rows": 4723
+  },
+  "client-dim-36.parquet": {
+   "bytes": 55334,
+   "rows": 4723
+  },
+  "client-dim-37.parquet": {
+   "bytes": 55360,
+   "rows": 4723
+  },
+  "client-dim-38.parquet": {
+   "bytes": 55384,
+   "rows": 4723
+  },
+  "client-dim-39.parquet": {
+   "bytes": 55365,
+   "rows": 4723
+  },
+  "client-dim-40.parquet": {
+   "bytes": 55329,
+   "rows": 4723
+  },
+  "client-dim-41.parquet": {
+   "bytes": 55423,
+   "rows": 4723
+  },
+  "client-dim-42.parquet": {
+   "bytes": 55352,
+   "rows": 4723
+  },
+  "client-dim-43.parquet": {
+   "bytes": 55325,
+   "rows": 4723
+  },
+  "client-dim-44.parquet": {
+   "bytes": 55341,
+   "rows": 4723
+  },
+  "client-dim-45.parquet": {
+   "bytes": 55337,
+   "rows": 4723
+  },
+  "client-dim-46.parquet": {
+   "bytes": 55337,
+   "rows": 4723
+  },
+  "client-dim-47.parquet": {
+   "bytes": 55280,
+   "rows": 4723
+  },
+  "client-dim-48.parquet": {
+   "bytes": 55344,
+   "rows": 4723
+  },
+  "client-dim-49.parquet": {
+   "bytes": 55363,
+   "rows": 4723
+  },
+  "client-dim-50.parquet": {
+   "bytes": 55321,
+   "rows": 4723
+  },
+  "client-dim-51.parquet": {
+   "bytes": 55292,
+   "rows": 4723
+  },
+  "client-dim-52.parquet": {
+   "bytes": 55304,
+   "rows": 4723
+  },
+  "client-dim-53.parquet": {
+   "bytes": 55307,
+   "rows": 4723
+  },
+  "client-dim-54.parquet": {
+   "bytes": 55298,
+   "rows": 4723
+  },
+  "client-dim-55.parquet": {
+   "bytes": 55256,
+   "rows": 4722
+  },
+  "client-dim-56.parquet": {
+   "bytes": 54637,
+   "rows": 4722
+  },
+  "client-dim-57.parquet": {
+   "bytes": 54557,
+   "rows": 4722
+  },
+  "client-dim-58.parquet": {
+   "bytes": 54651,
+   "rows": 4722
+  },
+  "client-dim-59.parquet": {
+   "bytes": 55277,
+   "rows": 4722
+  },
+  "client-dim-60.parquet": {
+   "bytes": 54628,
+   "rows": 4722
+  },
+  "client-dim-61.parquet": {
+   "bytes": 55209,
+   "rows": 4722
+  },
+  "client-dim-62.parquet": {
+   "bytes": 54575,
+   "rows": 4722
+  },
+  "client-dim-63.parquet": {
+   "bytes": 54597,
+   "rows": 4722
+  },
+  "cohort-2024-01.parquet": {
+   "bytes": 106508,
+   "rows": 6069
+  },
+  "cohort-2024-02.parquet": {
+   "bytes": 104352,
+   "rows": 5909
+  },
+  "cohort-2024-03.parquet": {
+   "bytes": 115632,
+   "rows": 6719
+  },
+  "cohort-2024-04.parquet": {
+   "bytes": 116189,
+   "rows": 6753
+  },
+  "cohort-2024-05.parquet": {
+   "bytes": 125127,
+   "rows": 7313
+  },
+  "cohort-2024-06.parquet": {
+   "bytes": 118253,
+   "rows": 6951
+  },
+  "cohort-2024-07.parquet": {
+   "bytes": 114878,
+   "rows": 6676
+  },
+  "cohort-2024-08.parquet": {
+   "bytes": 114099,
+   "rows": 6669
+  },
+  "cohort-2024-09.parquet": {
+   "bytes": 128011,
+   "rows": 7611
+  },
+  "cohort-2024-10.parquet": {
+   "bytes": 142641,
+   "rows": 8551
+  },
+  "cohort-2024-11.parquet": {
+   "bytes": 144562,
+   "rows": 8705
+  },
+  "cohort-2024-12.parquet": {
+   "bytes": 153896,
+   "rows": 9377
+  },
+  "cohort-2025-01.parquet": {
+   "bytes": 132340,
+   "rows": 8024
+  },
+  "cohort-2025-02.parquet": {
+   "bytes": 114879,
+   "rows": 6939
+  },
+  "cohort-2025-03.parquet": {
+   "bytes": 141863,
+   "rows": 8657
+  },
+  "cohort-2025-04.parquet": {
+   "bytes": 145966,
+   "rows": 8849
+  },
+  "cohort-2025-05.parquet": {
+   "bytes": 146195,
+   "rows": 8953
+  },
+  "cohort-2025-06.parquet": {
+   "bytes": 140789,
+   "rows": 8693
+  },
+  "cohort-2025-07.parquet": {
+   "bytes": 135529,
+   "rows": 8335
+  },
+  "cohort-2025-08.parquet": {
+   "bytes": 136044,
+   "rows": 8417
+  },
+  "cohort-2025-09.parquet": {
+   "bytes": 144586,
+   "rows": 9281
+  },
+  "cohort-2025-10.parquet": {
+   "bytes": 152930,
+   "rows": 9978
+  },
+  "cohort-2025-11.parquet": {
+   "bytes": 157518,
+   "rows": 10526
+  },
+  "cohort-2025-12.parquet": {
+   "bytes": 170019,
+   "rows": 11600
+  },
+  "cohort-2026-01.parquet": {
+   "bytes": 145676,
+   "rows": 9965
+  },
+  "cohort-2026-02.parquet": {
+   "bytes": 128254,
+   "rows": 8873
+  },
+  "cohort-2026-03.parquet": {
+   "bytes": 142768,
+   "rows": 10397
+  },
+  "cohort-2026-04.parquet": {
+   "bytes": 142098,
+   "rows": 10660
+  },
+  "cohort-2026-05.parquet": {
+   "bytes": 120862,
+   "rows": 9019
+  },
+  "cohort-2026-06.parquet": {
+   "bytes": 111998,
+   "rows": 8823
+  },
+  "cohort-2026-07.parquet": {
+   "bytes": 98968,
+   "rows": 8207
+  },
+  "cohort-2026-08.parquet": {
+   "bytes": 86977,
+   "rows": 7893
+  },
+  "cohort-2026-09.parquet": {
+   "bytes": 92100,
+   "rows": 9796
+  },
+  "loans-2024-01.parquet": {
+   "bytes": 146539,
+   "rows": 9142
+  },
+  "loans-2024-02.parquet": {
+   "bytes": 148041,
+   "rows": 9244
+  },
+  "loans-2024-03.parquet": {
+   "bytes": 175580,
+   "rows": 11085
+  },
+  "loans-2024-04.parquet": {
+   "bytes": 185482,
+   "rows": 11742
+  },
+  "loans-2024-05.parquet": {
+   "bytes": 203556,
+   "rows": 12965
+  },
+  "loans-2024-06.parquet": {
+   "bytes": 200560,
+   "rows": 12770
+  },
+  "loans-2024-07.parquet": {
+   "bytes": 205187,
+   "rows": 13080
+  },
+  "loans-2024-08.parquet": {
+   "bytes": 205791,
+   "rows": 13114
+  },
+  "loans-2024-09.parquet": {
+   "bytes": 230521,
+   "rows": 14768
+  },
+  "loans-2024-10.parquet": {
+   "bytes": 252577,
+   "rows": 16256
+  },
+  "loans-2024-11.parquet": {
+   "bytes": 265610,
+   "rows": 16855
+  },
+  "loans-2024-12.parquet": {
+   "bytes": 302083,
+   "rows": 19265
+  },
+  "loans-2025-01.parquet": {
+   "bytes": 272156,
+   "rows": 17272
+  },
+  "loans-2025-02.parquet": {
+   "bytes": 238992,
+   "rows": 15335
+  },
+  "loans-2025-03.parquet": {
+   "bytes": 296453,
+   "rows": 18887
+  },
+  "loans-2025-04.parquet": {
+   "bytes": 303868,
+   "rows": 19353
+  },
+  "loans-2025-05.parquet": {
+   "bytes": 316190,
+   "rows": 20119
+  },
+  "loans-2025-06.parquet": {
+   "bytes": 312371,
+   "rows": 19738
+  },
+  "loans-2025-07.parquet": {
+   "bytes": 313073,
+   "rows": 19777
+  },
+  "loans-2025-08.parquet": {
+   "bytes": 312100,
+   "rows": 19679
+  },
+  "loans-2025-09.parquet": {
+   "bytes": 337119,
+   "rows": 21185
+  },
+  "loans-2025-10.parquet": {
+   "bytes": 368373,
+   "rows": 22545
+  },
+  "loans-2025-11.parquet": {
+   "bytes": 382451,
+   "rows": 23291
+  },
+  "loans-2025-12.parquet": {
+   "bytes": 433943,
+   "rows": 26373
+  },
+  "loans-2026-01.parquet": {
+   "bytes": 388980,
+   "rows": 23312
+  },
+  "loans-2026-02.parquet": {
+   "bytes": 352829,
+   "rows": 20966
+  },
+  "loans-2026-03.parquet": {
+   "bytes": 418536,
+   "rows": 24884
+  },
+  "loans-2026-04.parquet": {
+   "bytes": 431766,
+   "rows": 24987
+  },
+  "loans-2026-05.parquet": {
+   "bytes": 413389,
+   "rows": 23805
+  },
+  "loans-2026-06.parquet": {
+   "bytes": 406946,
+   "rows": 23361
+  },
+  "loans-2026-07.parquet": {
+   "bytes": 395942,
+   "rows": 22624
+  },
+  "loans-2026-08.parquet": {
+   "bytes": 376590,
+   "rows": 21549
+  },
+  "loans-2026-09.parquet": {
+   "bytes": 407861,
+   "rows": 24410
+  },
+  "overdue.parquet": {
+   "bytes": 97683,
+   "rows": 4782
+  }
+ },
+ "lastClose": "2026-09-30"
+}

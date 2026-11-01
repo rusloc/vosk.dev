@@ -206,49 +206,11 @@ function Callout({
   );
 }
 
-function MonthHits({
-  months,
-  X,
-  slot,
-  height,
-  onMonth,
-}: {
-  months: number[] | null;
-  X: (i: number) => number;
-  slot: number;
-  height: number;
-  onMonth?: (m: number) => void;
-}) {
-  if (!months || !onMonth) return null;
-  return (
-    <>
-      {months.map((m, i) => (
-        <rect
-          key={m}
-          x={X(i) - slot / 2}
-          y={0}
-          width={slot}
-          height={height}
-          fill="transparent"
-          style={{ cursor: "pointer" }}
-          onClick={() => onMonth(m)}
-        >
-          <title>Select this month</title>
-        </rect>
-      ))}
-    </>
-  );
-}
-
 export function LineChart({
   chart,
   width,
   height,
-  onMonth,
-}: Size & {
-  chart: Extract<Chart, { kind: "line" }>;
-  onMonth?: (m: number) => void;
-}) {
+}: Size & { chart: Extract<Chart, { kind: "line" }> }) {
   const padL = 44;
   const padR = 10;
   const padT = 6;
@@ -322,13 +284,6 @@ export function LineChart({
           strokeWidth={1}
         />
       ) : null}
-      <MonthHits
-        months={chart.months}
-        X={X}
-        slot={step}
-        height={height}
-        onMonth={onMonth}
-      />
     </svg>
   );
 }
@@ -337,11 +292,7 @@ export function ColumnChart({
   chart,
   width,
   height,
-  onMonth,
-}: Size & {
-  chart: Extract<Chart, { kind: "columns" }>;
-  onMonth?: (m: number) => void;
-}) {
+}: Size & { chart: Extract<Chart, { kind: "columns" }> }) {
   const padL = 44;
   const padR = 6;
   const padT = chart.labels ? 14 : 6;
@@ -444,13 +395,6 @@ export function ColumnChart({
           )}
         </g>
       ) : null}
-      <MonthHits
-        months={chart.months}
-        X={X}
-        slot={slot}
-        height={height}
-        onMonth={onMonth}
-      />
     </svg>
   );
 }
@@ -601,6 +545,7 @@ export function StackedBars({
   );
 }
 
+/** Stage bars on the scale of the first stage; `lost` = a yellow line over the end of the bar (2026-11-01). */
 export function Funnel({
   chart,
   width,
@@ -610,7 +555,7 @@ export function Funnel({
   const textW = Math.min(250, width * 0.5);
   const pw = width - labW - textW;
   const rowH = height / Math.max(chart.rows.length, 1);
-  const hi = Math.max(...chart.rows.map((r) => r.value + (r.lost ?? 0)), 1);
+  const hi = Math.max(...chart.rows.map((r) => r.value), 1); // the first stage fills the bar
   const X = linear(0, hi, 0, pw);
   return (
     <svg
@@ -643,11 +588,11 @@ export function Funnel({
             />
             {r.lost ? (
               <rect
-                x={labW + X(r.value)}
+                x={labW + X(r.value - r.lost)}
                 y={cy - 2}
                 width={X(r.lost)}
                 height={4}
-                fill={C.g400}
+                fill={C.accent}
               />
             ) : null}
             <text

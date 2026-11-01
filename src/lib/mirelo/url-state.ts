@@ -73,17 +73,26 @@ export function createUrlCodec(manifest: SalesManifest): UrlCodec {
   const first = monthIndex(manifest.source.firstMonth);
   const last = monthIndex(manifest.source.lastClosedMonth);
   const agents = new Set(manifest.dims.agent.map((a) => a.agent_code));
+  const channels = new Set(manifest.dims.channel.map((c) => c.channel_code));
+  const products = new Set(manifest.dims.product.map((p) => p.product_code));
 
   const drill = z
     .string()
-    .regex(/^(loans(\.(all|pl|ro|pt))?|agent\.[A-Z]\d{3}|client\.\d{1,9})$/)
+    .regex(
+      /^(loans(\.(all|pl|ro|pt))?|agent\.[A-Z]\d{3}|client\.\d{1,9}|(clients|overdue)(\.(all|pl|ro|pt)(\.[A-Z0-9]{1,12})?)?)$/,
+    )
     .transform((s, ctx): Drill => {
-      const [kind, arg] = s.split(".") as [string, string | undefined];
-      if (kind === "loans")
-        return {
-          kind: "loans",
-          market: MARKET_URL[(arg ?? "all") as keyof typeof MARKET_URL],
-        };
+      const [kind, arg, code] = s.split(".") as [
+        string,
+        string | undefined,
+        string | undefined,
+      ];
+      const market = MARKET_URL[(arg ?? "all") as keyof typeof MARKET_URL];
+      if (kind === "clients" && (code === undefined || channels.has(code)))
+        return { kind: "clients", market, channel: code ?? null };
+      if (kind === "overdue" && (code === undefined || products.has(code)))
+        return { kind: "overdue", market, product: code ?? null };
+      if (kind === "loans") return { kind: "loans", market };
       if (kind === "agent" && arg && agents.has(arg))
         return { kind: "agent", agent: arg };
       if (kind === "client" && arg)
@@ -165,6 +174,12 @@ export function createUrlCodec(manifest: SalesManifest): UrlCodec {
         return `agent.${dr.agent}`;
       case "client":
         return `client.${dr.client}`;
+      case "clients":
+      case "overdue": {
+        const code = dr.kind === "clients" ? dr.channel : dr.product;
+        if (dr.market === "ALL" && code === null) return dr.kind;
+        return `${dr.kind}.${MARKET_KEY[dr.market]}${code === null ? "" : `.${code}`}`;
+      }
     }
   }
 

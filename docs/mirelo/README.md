@@ -67,3 +67,42 @@ Ten changes, built here and handed to the PNL side as `C:\__PBI\PNL\.sync\2026-1
   per product and a small market filter on the card (starts at the page's market), labels drop when they would overlap.
 - **ⓘ before the title** on every chart and table (it was in the bottom-left corner on charts, right of the title on
   tables), as on the KPI cards.
+
+## 2026-11-01, third round: stable filters, one glass, heatmaps, no chart clicks (not in the `.sync` note yet)
+
+- **Filter pop-up has a fixed shape** (420 × 514): the calendar keeps the year-stepper row in every mode (Year mode shows
+  the span, arrows hidden), one 108 px tile area (three month rows, or one row of quarters / years stretched to it),
+  one hint line per mode, and a two-line "Showing …" sentence. Switching Month / Quarter / Year / Custom range changes
+  the content only.
+- **One glass for every pop-up** (`glass.module.css` `.surface`): ⓘ, How to read, Filters and the detail window share
+  border, 28 px blur, shadow and opacity, now `.32` (was `.42`, the detail window `.60`). The detail window's mask also
+  blurs the report (6 px).
+- **No "Source" line in the ⓘ pop-ups**: the field left the copy table (`copy.ts`), the view model and the renderer.
+- **Chart clicks no longer move the period**: the month hit areas and the charts' `months` field are gone; the period
+  is set in the Filters pop-up only.
+- **L8 Application funnel:** bars on the scale of Started (it fills the bar); a yellow line over the end of each bar =
+  the applications that did not reach the next stage (none on Disbursed). Started reads "% of leads". It was a grey
+  "lost" bar after each black one, scaled to the leads, so step 1 read as half lost.
+- **L10 Loans by product × market** is a heatmap like P9 (products × markets, four grey steps over the cells shown).
+- **C5** is the **returning-client approval rate** (approved ÷ submitted, repeat applicants); the 180-day repeat left the
+  Clients band (the Overview hero keeps it).
+- **C9 Cohort repeat by quarter cohort** is a heatmap: the four last quarter cohorts, oldest on top, × days since the
+  first loan from 45 d to 180 d every 15 days (the leading days where nobody has repeated yet are dropped); a cohort
+  not that old yet is blank.
+- **R11 New vs churned subscribers** (Plus + Pro, 13 months) replaces "Subscriber churn %", which was a flat 2.1 %
+  line: the two lines cross in Feb 2026 after the Plus price rise. The churn rate and net adds of the selected month
+  are in the ⓘ.
+- **The bottom tables of Clients and Portfolio are aggregates now**, built like the Overview market table: a row opens
+  a list in the detail window, and the header button opens the whole list. A list row opens the client card, and
+  Back returns to the list.
+  - **C11 Acquisition by channel** (was the client list): one row per channel with new clients, vs PY, share of new,
+    lead → first loan, new and returning approval %, repeat share, first ticket and status. A row opens that channel's
+    new clients (drill `clients.<market>.<CHANNEL>`); **Show clients** opens all of them (`clients`). Budget has no
+    channel split, so the Δ is always vs PY.
+  - **P13 Overdue by product** (was the overdue-loan list): one row per microloan product with active loans,
+    outstanding, the four bucket balances, 30+ DPD %, vs PY, provision and status at the window's last month. A row
+    opens that product's loans 30+ DPD at the last close (drill `overdue.<market>.<PRODUCT>`); **Show overdue loans**
+    opens all of them (`overdue`). Budget 30+ DPD exists per market only, so the Δ is vs PY.
+  - Both lists come from the draft sample (`cohortClients` / `overdueLoans`, now with a channel / product filter); the
+    titles count from the aggregates. The client list shows up to 50 rows. The engine's `band()` no longer takes the
+    detail index. The sample is still fetched ahead on these two tabs, so a row opens without a wait.

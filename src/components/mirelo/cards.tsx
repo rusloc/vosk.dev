@@ -232,7 +232,7 @@ function Legend({ items }: { items: LegendItem[] }) {
         const style =
           it.role === "selected"
             ? { background: C.accent, border: `1px solid ${C.ink}` }
-            : it.role === "pyFill"
+            : it.role === "pyFill" || it.role === "lost"
               ? { background: C.accent }
               : it.role === "ghost"
                 ? { background: "transparent", border: `1px solid ${C.g400}` }
@@ -275,12 +275,10 @@ export function ChartCardView({
   card,
   box,
   onOpen,
-  onMonth,
 }: {
   card: ChartCard;
   box: Box;
   onOpen: (v: ViewId) => void;
-  onMonth: (m: number) => void;
 }) {
   const boardH = useBoardHeight();
   const [variant, setVariant] = useState(card.variants?.value ?? "");
@@ -340,12 +338,8 @@ export function ChartCardView({
         <div className={styles.placeholder}>{ch.text}</div>
       ) : (
         <div className={styles.chart}>
-          {ch.kind === "line" ? (
-            <LineChart chart={ch} {...size} onMonth={onMonth} />
-          ) : null}
-          {ch.kind === "columns" ? (
-            <ColumnChart chart={ch} {...size} onMonth={onMonth} />
-          ) : null}
+          {ch.kind === "line" ? <LineChart chart={ch} {...size} /> : null}
+          {ch.kind === "columns" ? <ColumnChart chart={ch} {...size} /> : null}
           {ch.kind === "bars" ? <Bars chart={ch} {...size} /> : null}
           {ch.kind === "stackedBars" ? (
             <StackedBars chart={ch} {...size} />

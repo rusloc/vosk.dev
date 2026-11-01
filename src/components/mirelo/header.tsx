@@ -15,7 +15,8 @@ import styles from "./sales.module.css";
 // Header (layout-spec §0.1): identical in every view. Since 2026-11-01 (owner) the Market / Period / Month /
 // Comparator controls are gone from the bar: one Filters button opens a glass pop-up with Period (the calendar:
 // month, quarter, year or custom range), Comparison and Region, then Reset, a rule and the "Showing …" sentence; the
-// applied filters read as one line beside the button. Choices apply at once (no Done button).
+// applied filters read as one line beside the button. Choices apply at once (no Done button). The pop-up has a fixed
+// size: every calendar mode keeps the same rows (calendar.tsx), so a mode switch never reshapes it.
 
 const CMPS: readonly { value: Comparator; label: string }[] = [
   { value: "BUD", label: "Budget" },
@@ -87,7 +88,7 @@ function Filters({
         <GlassPopup
           title="Filters"
           opener={opener}
-          style={{ right: 0, top: 36, width: 420, maxHeight: 520 }}
+          style={{ right: 0, top: 36, width: 420, height: 514, maxHeight: 514 }}
           onClose={close}
         >
           <div className={styles.fGroup}>

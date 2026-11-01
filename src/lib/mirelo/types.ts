@@ -34,7 +34,10 @@ export type ViewId = "overview" | "loans" | "clients" | "portfolio" | "revenue";
 export type Drill =
   | { kind: "loans"; market: MarketSel } // loan grain, window × market
   | { kind: "agent"; agent: string } // that agent's loans in the window
-  | { kind: "client"; client: number }; // client card + all loans of the client
+  | { kind: "client"; client: number } // client card + all loans of the client
+  // 2026-11-01: the Clients and Portfolio tables became aggregates; their rows open these lists
+  | { kind: "clients"; market: MarketSel; channel: string | null } // cohort clients of the window, one channel or all
+  | { kind: "overdue"; market: MarketSel; product: string | null }; // loans 30+ DPD at the last close
 
 export interface SalesSelection {
   view: ViewId;

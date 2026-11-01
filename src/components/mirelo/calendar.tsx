@@ -14,6 +14,8 @@ import styles from "./sales.module.css";
 // no QTD / YTD). Classic picker shape: a mode row, a year stepper, then a 4 × 3 month grid, four quarter tiles or the
 // year tiles. A custom range is two clicks, first month then last, across years if needed; the first click already
 // applies that month, so the report never sits in a half-picked state. Only closed months with data can be picked.
+// Fixed layout (2026-11-01, owner): every mode keeps the same rows at the same size (stepper, a 108 px tile area, one
+// hint line), so switching Month / Quarter / Year changes the content only, never the pop-up's shape.
 
 const MONTHS = [
   "Jan",
@@ -37,6 +39,12 @@ const MODES: readonly { value: PeriodKind; label: string }[] = [
 ];
 const FIRST_YEAR = 2024; // month index 0 = Jan 2024 (windows.ts)
 const yearStart = (y: number) => (y - FIRST_YEAR) * 12;
+const HINTS: Record<PeriodKind, string> = {
+  month: "Pick a month.",
+  quarter: "Pick a quarter.",
+  year: "Pick a year; the current one runs to the last closed month.",
+  range: "Pick the first month, then the last.",
+};
 
 export function Calendar({
   from,
@@ -78,27 +86,28 @@ export function Calendar({
           setPending(null);
         }}
       />
-      {mode !== "year" ? (
-        <div className={styles.calYear}>
-          <button
-            type="button"
-            aria-label="Previous year"
-            disabled={year <= y0}
-            onClick={() => setYear(year - 1)}
-          >
-            ‹
-          </button>
-          <span aria-live="polite">{year}</span>
-          <button
-            type="button"
-            aria-label="Next year"
-            disabled={year >= y1}
-            onClick={() => setYear(year + 1)}
-          >
-            ›
-          </button>
-        </div>
-      ) : null}
+      {/* the stepper row stays in Year mode (the span of years, no arrows) so the tiles never move */}
+      <div className={styles.calYear}>
+        <button
+          type="button"
+          aria-label="Previous year"
+          disabled={year <= y0}
+          style={mode === "year" ? { visibility: "hidden" } : undefined}
+          onClick={() => setYear(year - 1)}
+        >
+          ‹
+        </button>
+        <span aria-live="polite">{mode === "year" ? `${y0}–${y1}` : year}</span>
+        <button
+          type="button"
+          aria-label="Next year"
+          disabled={year >= y1}
+          style={mode === "year" ? { visibility: "hidden" } : undefined}
+          onClick={() => setYear(year + 1)}
+        >
+          ›
+        </button>
+      </div>
 
       {mode === "month" || mode === "range" ? (
         <div className={styles.calGrid} role="group" aria-label={`${year}`}>
@@ -185,13 +194,11 @@ export function Calendar({
         </div>
       ) : null}
 
-      {mode === "range" ? (
-        <p className={styles.calHint} aria-live="polite">
-          {pending === null
-            ? "Pick the first month, then the last."
-            : `From ${monthLabel(pending)}: now pick the last month.`}
-        </p>
-      ) : null}
+      <p className={styles.calHint} aria-live="polite">
+        {mode === "range" && pending !== null
+          ? `From ${monthLabel(pending)}: now pick the last month.`
+          : HINTS[mode]}
+      </p>
     </div>
   );
 }

@@ -37,14 +37,14 @@ export function createSalesEngine(base: SalesBase) {
       last: cube.closed,
     }),
     overview: (sel: SalesSelection): OverviewVM => overview(ctx, sel),
-    band: (sel: SalesSelection, ix: DetailIndex | null): BandVM => {
+    band: (sel: SalesSelection): BandVM => {
       switch (sel.view) {
         case "loans":
           return loansView(ctx, sel);
         case "clients":
-          return clientsView(ctx, sel, ix);
+          return clientsView(ctx, sel);
         case "portfolio":
-          return portfolioView(ctx, sel, ix);
+          return portfolioView(ctx, sel);
         case "revenue":
           return revenueView(ctx, sel);
         case "overview":
@@ -60,7 +60,10 @@ export function createSalesEngine(base: SalesBase) {
       ix: DetailIndex | null,
       drill: Drill,
     ): SlideOverVM => slideOver(cube, ix, sel, drill),
-    /** True when the view or the drill reads the lazy detail sample. */
+    /**
+     * True when the lazy detail sample is read: by any drill, and fetched ahead on Clients and Portfolio, whose table
+     * rows open sample lists (aggregate tables since 2026-11-01).
+     */
     needsDetail: (sel: SalesSelection): boolean =>
       sel.drill !== null || sel.view === "clients" || sel.view === "portfolio",
   };

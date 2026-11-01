@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 import type { SlideOverVM } from "@/lib/mirelo/view-model";
+import glass from "./glass.module.css";
 import styles from "./sales.module.css";
 
 // Detail window (layout-spec §6 Row click; "Show loans"): a modal dialog centred on the board in the pop-up glass, over
-// a 20 % dark-grey mask on the whole report (2026-11-01, owner; it was a 720 px slide-over on the right half). Focus
+// a 20 % dark-grey mask that blurs the whole report (2026-11-01, owner; it was a 720 px slide-over on the right half),
+// in the same glass as every other pop-up. Focus
 // moves to the close button on open, Tab stays inside, Escape or the mask closes, and focus returns to the opener.
 
 const FOCUSABLE = 'button, [href], [tabindex]:not([tabindex="-1"])';
@@ -70,6 +72,8 @@ export function SlideOver({
     return () => ctrl.abort();
   }, [onClose]);
 
+  const list = vm.kind === "loans" || vm.kind === "clients"; // rows open the client card
+
   function exportCsv() {
     if (vm.kind === "missing") return;
     const url = URL.createObjectURL(
@@ -93,7 +97,7 @@ export function SlideOver({
       />
       <aside
         ref={panel}
-        className={styles.so}
+        className={`${styles.so} ${glass.surface}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="so-title"
@@ -136,7 +140,11 @@ export function SlideOver({
               <table
                 className={styles.table}
                 aria-label={
-                  vm.kind === "client" ? "Loans of the client" : "Loans"
+                  vm.kind === "client"
+                    ? "Loans of the client"
+                    : vm.kind === "clients"
+                      ? "Clients"
+                      : "Loans"
                 }
               >
                 <thead>
@@ -156,15 +164,11 @@ export function SlideOver({
                   {vm.rows.map((r) => (
                     <tr
                       key={r.key}
-                      className={vm.kind === "loans" ? styles.row : undefined}
-                      tabIndex={vm.kind === "loans" ? 0 : undefined}
-                      onClick={
-                        vm.kind === "loans"
-                          ? () => onClient(r.client)
-                          : undefined
-                      }
+                      className={list ? styles.row : undefined}
+                      tabIndex={list ? 0 : undefined}
+                      onClick={list ? () => onClient(r.client) : undefined}
                       onKeyDown={
-                        vm.kind === "loans"
+                        list
                           ? (e) => {
                               if (e.key === "Enter" || e.key === " ") {
                                 e.preventDefault();

@@ -98,7 +98,7 @@ describe("ADR-0012: card face = title · value · delta rows · status chip; the
     "%s: every card and panel carries a complete ⓘ, no sub-line or footnote on the face",
     (view) => {
       const s = sel({ view });
-      const vm = view === "overview" ? engine.overview(s) : engine.band(s, ix);
+      const vm = view === "overview" ? engine.overview(s) : engine.band(s);
       const cards =
         "heroes" in vm
           ? [...vm.heroes, ...vm.charts, vm.table]
@@ -106,7 +106,7 @@ describe("ADR-0012: card face = title · value · delta rows · status chip; the
       for (const c of cards) {
         expect(c, c.id).not.toHaveProperty("sub");
         expect(c, c.id).not.toHaveProperty("note");
-        for (const k of ["what", "why", "formula", "source"] as const)
+        for (const k of ["what", "why", "formula"] as const)
           expect(c.info[k].length, `${c.id}.${k}`).toBeGreaterThan(8);
       }
       const band = "heroes" in vm ? vm.heroes : vm.kpis;
@@ -164,8 +164,7 @@ describe("every view renders for every market × time view × comparator", () =>
             anchor,
             cmp: anchor % 2 ? "PY" : "BUD",
           });
-          const vm =
-            view === "overview" ? engine.overview(s) : engine.band(s, ix);
+          const vm = view === "overview" ? engine.overview(s) : engine.band(s);
           const text = JSON.stringify(vm);
           expect(text, `${view} ${market} ${tv} ${anchor}`).not.toMatch(
             /NaN|Infinity|undefined/,
@@ -338,3 +337,145 @@ describe.skipIf(!HAS_FACT_LOAN)(
     });
   },
 );
+
+describe("2026-11-01, third round: funnel scale, heatmaps, returning approval, subscriber flow", () => {
+  const card = (view: ViewId, id: string) => {
+    const vm = engine.band(sel({ view }));
+    if ("heroes" in vm) throw new Error("band expected");
+    const c = vm.charts.find((x) => x.id === id);
+    if (!c) throw new Error(`no ${id}`);
+    return c;
+  };
+
+  it("L8: Started fills the scale; the yellow line = did not reach the next stage; none on the last", () => {
+    const ch = card("loans", "l8").chart;
+    if (ch.kind !== "funnel") throw new Error("funnel expected");
+    const v = ch.rows.map((r) => r.value);
+    expect(Math.max(...v)).toBe(v[0]);
+    ch.rows.forEach((r, k) =>
+      expect(r.lost).toBe(k < v.length - 1 ? r.value - (v[k + 1] ?? 0) : null),
+    );
+    expect(ch.rows[0]?.sub).toMatch(/^\d+% of leads - /);
+  });
+
+  it("L10 and C9 are heatmaps; C9 runs oldest cohort first, blank where a cohort is too young", () => {
+    const l10 = card("loans", "l10").chart;
+    expect(l10.kind).toBe("heat");
+    if (l10.kind !== "heat") return;
+    expect(l10.cols).toEqual(["Poland", "Romania", "Portugal"]);
+    expect(l10.rows[0]?.cells[0]?.text).toBe("3,571"); // Flex 30 × PL, Sep 2026
+    const c9 = card("clients", "c9").chart;
+    expect(c9.kind).toBe("heat");
+    if (c9.kind !== "heat") return;
+    expect(c9.rows.map((r) => r.label)).toEqual([
+      "Q4 2025",
+      "Q1 2026",
+      "Q2 2026",
+      "Q3 2026",
+    ]);
+    expect(c9.cols[0]).toBe("45 d"); // nobody repeats within 30 days: those columns are dropped
+    expect(c9.cols.at(-1)).toBe("180 d");
+    expect(c9.rows.at(-1)?.cells.at(-1)).toEqual({ text: "", bin: null });
+  });
+
+  it("C5 is the returning-client approval rate", () => {
+    const vm = engine.band(sel({ view: "clients" }));
+    if ("heroes" in vm) return;
+    const c5 = vm.kpis.find((k) => k.id === "c5");
+    const f = cube.funnel(windowOf("M", monthIndex("2026-09")), "ALL", true);
+    expect(c5?.label).toBe("Returning-client approval rate");
+    expect(c5?.value).toBe(`${((f.approved / f.submitted) * 100).toFixed(1)}%`);
+  });
+
+  it("R11 plots new and churned paying subscribers (Feb 2026: churn above sign-ups)", () => {
+    const ch = card("revenue", "r11").chart;
+    if (ch.kind !== "line") throw new Error("line expected");
+    const feb = ch.x.indexOf("Feb");
+    expect(ch.series.map((s) => [s.name, s.values[feb]])).toEqual([
+      ["New", 665],
+      ["Churned", 754],
+    ]);
+  });
+});
+
+describe("2026-11-01: aggregate tables on Clients and Portfolio, their rows open sample lists", () => {
+  it("C11: one row per channel; new clients add up to the C1 card; rows open that channel's clients", () => {
+    const vm = engine.band(sel({ view: "clients" }));
+    if ("heroes" in vm) return;
+    expect(vm.table.title).toBe(
+      "Acquisition by channel - Sep 2026 - All markets",
+    );
+    expect(vm.table.rows.map((r) => r.cells[0]?.text)).toEqual([
+      "App",
+      "Paid",
+      "Partner",
+      "Agent",
+    ]);
+    const sum = vm.table.rows.reduce(
+      (t, r) => t + Number(r.cells[1]?.text.replace(/,/g, "")),
+      0,
+    );
+    expect(sum.toLocaleString("en-US")).toBe(vm.kpis[0]?.value);
+    expect(vm.table.rows[2]?.action).toEqual({
+      kind: "drill",
+      drill: { kind: "clients", market: "ALL", channel: "PARTNER" },
+    });
+    expect(vm.table.action?.drill).toEqual({
+      kind: "clients",
+      market: "ALL",
+      channel: null,
+    });
+  });
+
+  it("P13: one row per microloan product; buckets add up to the outstanding minus current", () => {
+    const vm = engine.band(sel({ view: "portfolio" }));
+    if ("heroes" in vm) return;
+    expect(vm.table.title).toBe("Overdue by product - Sep 2026 - All markets");
+    expect(vm.table.rows.map((r) => r.key)).toEqual([
+      "FLEX30",
+      "FLEX90",
+      "STEP6",
+      "STEP12",
+      "BIZ",
+    ]);
+    const snap = cube.snapshotBy(
+      monthIndex("2026-09"),
+      "ALL",
+      (r) => r.product,
+    );
+    const s = snap?.get("STEP6");
+    expect(s && s.b1_29 + s.b30_59 + s.b60_89 + s.b90p + s.current).toBeCloseTo(
+      s?.outstanding ?? 0,
+      0,
+    );
+  });
+
+  it("the lists: one channel's clients, one product's overdue loans, each row opens a client card", () => {
+    const clients = engine.slideOver(sel(), ix, {
+      kind: "clients",
+      market: "ALL",
+      channel: "PARTNER",
+    });
+    expect(clients.kind).toBe("clients");
+    if (clients.kind !== "clients") return;
+    expect(clients.title).toMatch(
+      /^[\d,]+ new clients - Partner - All markets - Sep 2026$/,
+    );
+    expect(clients.rows.length).toBeGreaterThan(0);
+    expect(clients.rows.every((r) => r.cells[5] === "Partner")).toBe(true);
+
+    const overdue = engine.slideOver(sel(), ix, {
+      kind: "overdue",
+      market: "RO",
+      product: "STEP6",
+    });
+    expect(overdue.kind).toBe("loans");
+    if (overdue.kind !== "loans") return;
+    expect(overdue.title).toMatch(
+      /^[\d,]+ loans 30\+ DPD - Step 6 - Romania - Sep 2026$/,
+    );
+    expect(overdue.rows.length).toBeGreaterThan(0);
+    expect(overdue.rows.every((r) => r.cells[2] === "Step 6")).toBe(true);
+    expect(overdue.rows.every((r) => Number(r.cells[7]) >= 30)).toBe(true);
+  });
+});

@@ -1,3 +1,4 @@
+import { bins } from "./clients";
 import { MARKET_NAMES, info } from "./copy";
 import type { InfoValue } from "./copy";
 import type { Cube } from "./cube";
@@ -259,7 +260,6 @@ export function loansView(ctx: Ctx, sel: SalesSelection): BandVM {
     chart: {
       kind: "columns",
       x: t.x,
-      months: t.months,
       unit: "count",
       stacks: [{ name: "Actual", role: "actual", values: t.actual }],
       ghost: t.py,
@@ -278,7 +278,8 @@ export function loansView(ctx: Ctx, sel: SalesSelection): BandVM {
     },
   };
 
-  // L8 Application funnel
+  // L8 Application funnel (2026-11-01, owner: the grey "lost" bar ran to the leads and read as 100 % lost at step 1):
+  // bars on the scale of Started, and on each bar a yellow line for the applications that did not reach the next stage
   const stages = [
     ["Started", "started"],
     ["Submitted", "submitted"],
@@ -293,7 +294,7 @@ export function loansView(ctx: Ctx, sel: SalesSelection): BandVM {
     open: null,
     legend: [
       { label: "Applications", role: "actual" },
-      { label: "Lost at the step", role: "c3" },
+      { label: "Did not reach the next stage", role: "lost" },
     ],
     chart: {
       kind: "funnel",
@@ -303,12 +304,13 @@ export function loansView(ctx: Ctx, sel: SalesSelection): BandVM {
         const prev = F[prevKey];
         const conv = prev > 0 ? v / prev : null;
         const convPy = FP && FP[prevKey] > 0 ? FP[key] / FP[prevKey] : null;
+        const next = stages[k + 1];
         return {
           label,
           value: v,
           text: fmtCount(v),
-          sub: `${fmtPct(conv, 0)} - ${conv !== null && convPy !== null ? fmtPp(conv - convPy) : "n/a"} vs PY`,
-          lost: prev - v,
+          sub: `${fmtPct(conv, 0)}${k === 0 ? " of leads" : ""} - ${conv !== null && convPy !== null ? fmtPp(conv - convPy) : "n/a"} vs PY`,
+          lost: next ? v - F[next[1]] : null,
         };
       }),
     },
@@ -360,38 +362,33 @@ export function loansView(ctx: Ctx, sel: SalesSelection): BandVM {
       : { kind: "placeholder", text: "No Budget for this window" },
   };
 
-  // L10 Loans by product × market
+  // L10 Loans by product × market: a heatmap like P9 (2026-11-01, owner; it was stacked bars per market)
   const products = cube.dims.product.filter(
     (p) => p.product_line === "Microloan",
   );
   const byCell = cube.loansBy(w, "ALL", (r) => `${r.market}|${r.product}`);
   const shownMarkets = mk === "ALL" ? MARKETS : [mk];
+  const counts = products.map((p) =>
+    shownMarkets.map((c) => byCell.get(`${c}|${p.product_code}`)?.loans ?? 0),
+  );
+  const countBins = bins(counts.flat());
   const l10: ChartCard = {
     id: "l10",
     title: "Loans by product × market",
     info: info("l10"),
     open: null,
-    legend: products.map((p, k) => ({
-      label: p.product_name,
-      role: CATEGORY_ROLES[k] ?? "c5",
-    })),
+    legend: [],
     chart: {
-      kind: "stackedBars",
-      unit: "count",
-      segments: products.map((p, k) => ({
-        name: p.product_name,
-        role: CATEGORY_ROLES[k] ?? "c5",
+      kind: "heat",
+      cols: shownMarkets.map((c) => MARKET_NAMES[c]),
+      rows: products.map((p, i) => ({
+        label: p.product_name,
+        cells: shownMarkets.map((_, j) => ({
+          text: fmtCount(counts[i]?.[j] ?? null),
+          bin: countBins[i * shownMarkets.length + j] ?? null,
+        })),
       })),
-      rows: shownMarkets.map((c) => {
-        const values = products.map(
-          (p) => byCell.get(`${c}|${p.product_code}`)?.loans ?? 0,
-        );
-        return {
-          label: MARKET_NAMES[c],
-          values,
-          text: fmtCount(values.reduce((s, v) => s + v, 0)),
-        };
-      }),
+      side: null,
     },
   };
 

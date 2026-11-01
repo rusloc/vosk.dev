@@ -171,8 +171,8 @@ function Dashboard({ base }: { base: SalesBase }) {
     [engine, sel],
   );
   const band = useMemo(
-    () => (sel.view === "overview" ? null : engine.band(sel, ix)),
-    [engine, sel, ix],
+    () => (sel.view === "overview" ? null : engine.band(sel)),
+    [engine, sel],
   );
   const slide = useMemo(
     () => (sel.drill ? engine.slideOver(sel, ix, sel.drill) : null),
@@ -215,17 +215,10 @@ function Dashboard({ base }: { base: SalesBase }) {
               <OverviewView
                 vm={overview}
                 onOpen={(view) => update({ view })}
-                onMonth={(anchor) => update({ anchor })}
                 onAction={onAction}
               />
             ) : null}
-            {band ? (
-              <BandView
-                vm={band}
-                onMonth={(anchor) => update({ anchor })}
-                onAction={onAction}
-              />
-            ) : null}
+            {band ? <BandView vm={band} onAction={onAction} /> : null}
           </div>
           {slide ? (
             <SlideOver
@@ -273,12 +266,10 @@ function Board({ children }: { children: ReactNode }) {
 function OverviewView({
   vm,
   onOpen,
-  onMonth,
   onAction,
 }: {
   vm: OverviewVM;
   onOpen: (v: SalesSelection["view"]) => void;
-  onMonth: (m: number) => void;
   onAction: (a: RowAction) => void;
 }) {
   const boxes = overviewBoxes(useBoardHeight() - DESIGN_H);
@@ -298,7 +289,6 @@ function OverviewView({
           card={c}
           box={boxes.charts[i] ?? { x: 32, y: 324, w: 680, h: 160 }}
           onOpen={onOpen}
-          onMonth={onMonth}
         />
       ))}
       <TableCardView
@@ -313,11 +303,9 @@ function OverviewView({
 
 function BandView({
   vm,
-  onMonth,
   onAction,
 }: {
   vm: BandVM;
-  onMonth: (m: number) => void;
   onAction: (a: RowAction) => void;
 }) {
   const boxes = bandBoxes(
@@ -340,7 +328,6 @@ function BandView({
           card={c}
           box={boxes.charts[i] ?? { x: 32, y: 252, w: 448, h: 162 }}
           onOpen={() => undefined}
-          onMonth={onMonth}
         />
       ))}
       <TableCardView

@@ -14,7 +14,7 @@ import type {
   TableCard,
   TableRow,
 } from "./view-model";
-import { periodWindow, shift, windowLabel } from "./windows";
+import { monthLabel, periodWindow, shift, windowLabel } from "./windows";
 import type { Window } from "./windows";
 
 // View 5 — Revenue & targets (layout-spec §5). Budget REVENUE_LOCAL is set per product: loan products carry interest +
@@ -177,7 +177,6 @@ export function revenueView(ctx: Ctx, sel: SalesSelection): BandVM {
     chart: {
       kind: "line",
       x: t.x,
-      months: t.months,
       unit: "eur",
       series: [
         { name: "Actual", role: "actual", values: t.actual },
@@ -212,7 +211,6 @@ export function revenueView(ctx: Ctx, sel: SalesSelection): BandVM {
     chart: {
       kind: "columns",
       x: t.x,
-      months: t.months,
       unit: "eur",
       stacks: STREAMS.map((s, k) => ({
         name: STREAM_NAMES[s] ?? s,
@@ -273,7 +271,6 @@ export function revenueView(ctx: Ctx, sel: SalesSelection): BandVM {
     chart: {
       kind: "columns",
       x: t.x,
-      months: t.months,
       unit: "count",
       stacks: PAYING.map((tier, k) => ({
         name: tier === "PLUS" ? "Plus" : "Pro",
@@ -294,32 +291,41 @@ export function revenueView(ctx: Ctx, sel: SalesSelection): BandVM {
     },
   };
 
-  // R11 Subscriber churn % (paying tiers)
-  const churn = (i: number) => {
-    const s = m.paying(i, mk);
-    return s && s.start > 0 ? s.churned / s.start : null;
-  };
-  const tc = trend(ctx, a, churn);
+  // R11 New vs churned paying subscribers (2026-11-01, owner: the churn rate was a flat 2.1 % line); the churn rate of
+  // the selected month stays in the ⓘ
+  const flow = (pick: "added" | "churned") =>
+    t.months.map((i) => (inData(i) ? (m.paying(i, mk)?.[pick] ?? null) : null));
+  const last = m.paying(a, mk);
   const r11: ChartCard = {
     id: "r11",
-    title: "Subscriber churn %",
-    info: info("r11"),
+    title: "New vs churned subscribers",
+    info: info("r11", [
+      {
+        label: `Churn rate ${monthLabel(a)}`,
+        value: fmtPct(
+          last && last.start > 0 ? last.churned / last.start : null,
+        ),
+      },
+      {
+        label: `Net adds ${monthLabel(a)}`,
+        value: fmtCount(last ? last.added - last.churned : null),
+      },
+    ]),
     open: null,
     legend: [
-      { label: "Actual", role: "actual" },
-      { label: "Prior year", role: "py" },
+      { label: "New", role: "c1" },
+      { label: "Churned", role: "c2" },
     ],
     chart: {
       kind: "line",
-      x: tc.x,
-      months: tc.months,
-      unit: "pct",
+      x: t.x,
+      unit: "count",
       series: [
-        { name: "Actual", role: "actual", values: tc.actual },
-        { name: "Prior year", role: "py", values: tc.py },
+        { name: "New", role: "c1", values: flow("added") },
+        { name: "Churned", role: "c2", values: flow("churned") },
       ],
       selected: 12,
-      callout: storyCallout("r11", tc.months),
+      callout: storyCallout("r11", t.months),
       zeroBased: true,
     },
   };
@@ -340,7 +346,6 @@ export function revenueView(ctx: Ctx, sel: SalesSelection): BandVM {
     chart: {
       kind: "columns",
       x: t.x,
-      months: t.months,
       unit: "pct",
       stacks: cube.dims.channel.map((c, k) => ({
         name: CHANNEL_SHORT[c.channel_code] ?? c.channel_name,

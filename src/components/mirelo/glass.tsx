@@ -190,10 +190,9 @@ export interface GlassInfo {
   why?: string;
   formula: string;
   values: { label: string; value: string }[];
-  source: string;
 }
 
-/** Standard ⓘ content: what · why · formula · sub-values · source. */
+/** Standard ⓘ content: what · why · formula · sub-values (no source line since 2026-11-01, owner). */
 export function InfoBody({ info }: { info: GlassInfo }) {
   return (
     <>
@@ -213,8 +212,6 @@ export function InfoBody({ info }: { info: GlassInfo }) {
             <dd>{v.value}</dd>
           </div>
         ))}
-        <dt>Source</dt>
-        <dd className={styles.src}>{info.source}</dd>
       </dl>
     </>
   );

@@ -18,7 +18,8 @@ export interface Series {
 
 export interface LegendItem {
   label: string;
-  role: SeriesRole | "selected" | "ghost" | "pyFill"; // pyFill: prior year as a filled yellow bar (2026-11-01)
+  // pyFill: prior year as a filled yellow bar; lost: the funnel's yellow drop-out line (both 2026-11-01)
+  role: SeriesRole | "selected" | "ghost" | "pyFill" | "lost";
 }
 
 export interface BarRow {
@@ -33,7 +34,6 @@ export type Chart =
   | {
       kind: "line";
       x: string[];
-      months: number[] | null; // month index per x (mark click → month), null when x is not months
       unit: Unit;
       series: Series[];
       selected: number | null;
@@ -43,7 +43,6 @@ export type Chart =
   | {
       kind: "columns";
       x: string[];
-      months: number[] | null;
       unit: Unit;
       stacks: Series[]; // bottom → top
       ghost: (number | null)[] | null; // PY total as an outline
@@ -66,7 +65,7 @@ export type Chart =
         value: number;
         text: string;
         sub: string;
-        lost: number | null;
+        lost: number | null; // did not reach the next stage: a yellow line over the bar's end
       }[];
     }
   | {
@@ -221,7 +220,7 @@ export interface DetailLoanRow {
 
 export type SlideOverVM =
   | {
-      kind: "loans";
+      kind: "loans" | "clients"; // a list; a row opens the client card
       title: string;
       sub: string;
       chips: string[];

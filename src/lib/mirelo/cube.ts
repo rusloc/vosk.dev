@@ -389,6 +389,7 @@ export function createCube(base: SalesBase) {
         funnelBy(w, market, () => "", repeat),
         zeroFunnel,
       ),
+    funnelBy,
     snapshot: (month: number, market: MarketSel) => {
       const s = snapshotBy(month, market, () => "");
       return s ? (s.get("") ?? zeroSnapshot()) : null;

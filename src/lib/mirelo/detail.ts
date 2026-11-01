@@ -100,13 +100,15 @@ export function overdueLoans(
   ix: DetailIndex,
   market: MarketSel,
   cap: number,
+  product: string | null = null,
 ): LoanRow[] {
   return ix.loans
     .filter(
       (r) =>
         r.dpd_close >= 30 &&
         r.outstanding_close_local > 0 &&
-        inMarket(r, market),
+        inMarket(r, market) &&
+        (product === null || r.product === product),
     )
     .map((r) => ({ r, o: ix.outstandingEur(r) }))
     .sort(
@@ -147,18 +149,20 @@ export function clientSummary(
   };
 }
 
-/** Clients whose first loan falls in the window, top by principal to date. */
+/** Clients whose first loan falls in the window (optionally one acquisition channel), top by principal to date. */
 export function cohortClients(
   ix: DetailIndex,
   cube: Cube,
   w: Window,
   market: MarketSel,
   cap: number,
+  channel: string | null = null,
 ): ClientSummary[] {
   const out: ClientSummary[] = [];
   for (const c of ix.clients.values()) {
     const cm = monthIndex(c.cohort_month);
     if (cm < w.start || cm > w.end || !inMarket(c, market)) continue;
+    if (channel !== null && c.acquisition_channel !== channel) continue;
     const s = clientSummary(ix, cube, c.client_id);
     if (s) out.push(s);
   }
@@ -203,6 +207,48 @@ function loanRow(ix: DetailIndex, cube: Cube, r: LoanRow): DetailLoanRow {
     ],
   };
 }
+
+const CLIENT_COLUMNS = [
+  { label: "Client id", align: "left" },
+  { label: "Market", align: "left" },
+  { label: "Type", align: "left" },
+  { label: "First loan", align: "left" },
+  { label: "First product", align: "left" },
+  { label: "Channel", align: "left" },
+  { label: "Loans to date", align: "right" },
+  { label: "Principal to date", align: "right" },
+  { label: "Last loan", align: "left" },
+  { label: "Days since", align: "right" },
+  { label: "Status", align: "left" },
+] as const;
+
+function clientRow(cube: Cube, s: ClientSummary): DetailLoanRow {
+  const c = s.client;
+  return {
+    key: String(c.client_id),
+    client: c.client_id,
+    cells: [
+      `C-${c.client_id}`,
+      c.market,
+      SEGMENT_NAMES[c.segment] ?? c.segment,
+      dateLabel(c.first_loan_date),
+      cube.dims.product.find((p) => p.product_code === c.first_product)
+        ?.product_name ?? c.first_product,
+      CHANNEL_SHORT[c.acquisition_channel] ?? c.acquisition_channel,
+      fmtInt(s.loans),
+      fmtEur0(s.principalToDate),
+      dateLabel(s.last.disbursed),
+      fmtInt(s.daysSince),
+      s.status,
+    ],
+  };
+}
+
+/** The client list shows up to as many rows as the loan list (caps.loansPerMonthMarket); the sample holds the top
+ * clients per cohort month × market, so a longer window or one channel lists a subset of the sample. */
+const CLIENT_LIST_CAP = 50;
+
+const slug = (s: string) => s.replace(/[^\w]+/g, "-").toLowerCase();
 
 const csvCell = (s: string) =>
   /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -281,6 +327,74 @@ export function slideOver(
       csvName: `mirelo-client-${c.client_id}.csv`,
     };
   }
+  if (drill.kind === "clients") {
+    const span = { start: Math.max(w.start, cube.first), end: w.end };
+    const total = cube.loans(span, drill.market, {
+      repeat: false,
+      ...(drill.channel === null ? {} : { channel: drill.channel }),
+    }).first;
+    const channel =
+      drill.channel === null
+        ? "All channels"
+        : (CHANNEL_SHORT[drill.channel] ?? drill.channel);
+    const rows = cohortClients(
+      ix,
+      cube,
+      w,
+      drill.market,
+      CLIENT_LIST_CAP,
+      drill.channel,
+    ).map((c) => clientRow(cube, c));
+    return {
+      kind: "clients",
+      title: `${fmtInt(total)} new clients - ${channel} - ${MARKET_NAMES[drill.market]} - ${windowLabel(w)}`,
+      sub: `Client grain - first loan in the window - largest ${fmtCount(rows.length)} by principal to date (draft sample) - ${snapshot}`,
+      chips: [win, MARKET_NAMES[drill.market], channel],
+      columns: [...CLIENT_COLUMNS],
+      rows,
+      footer: `Showing ${fmtInt(rows.length)} of ${fmtInt(total)} clients - row click opens the client card`,
+      csv: toCsv(
+        CLIENT_COLUMNS.map((c) => c.label),
+        rows,
+      ),
+      csvName: `mirelo-clients-${slug(`${drill.market}-${drill.channel ?? "all"}-${windowLabel(w)}`)}.csv`,
+    };
+  }
+  if (drill.kind === "overdue") {
+    const snap = cube.snapshotBy(cube.closed, drill.market, (r) =>
+      drill.product === null || r.product === drill.product ? "" : r.product,
+    );
+    const total = snap?.get("")?.dpd30Count ?? 0;
+    const product =
+      drill.product === null
+        ? "All products"
+        : (cube.dims.product.find((p) => p.product_code === drill.product)
+            ?.product_name ?? drill.product);
+    const rows = overdueLoans(
+      ix,
+      drill.market,
+      cube.caps.overduePerMarket,
+      drill.product,
+    ).map((r) => loanRow(ix, cube, r));
+    return {
+      kind: "loans",
+      title: `${fmtInt(total)} loans 30+ DPD - ${product} - ${MARKET_NAMES[drill.market]} - ${monthLabel(cube.closed)}`,
+      sub: `Loan grain - worst ${fmtCount(rows.length)} by DPD (draft sample) - ${snapshot}`,
+      chips: [
+        `Month-end ${monthLabel(cube.closed)}`,
+        MARKET_NAMES[drill.market],
+        product,
+      ],
+      columns: [...LOAN_COLUMNS],
+      rows,
+      footer: `Showing ${fmtInt(rows.length)} of ${fmtInt(total)} loans - row click opens the client card`,
+      csv: toCsv(
+        LOAN_COLUMNS.map((c) => c.label),
+        rows,
+      ),
+      csvName: `mirelo-overdue-${slug(`${drill.market}-${drill.product ?? "all"}-${monthLabel(cube.closed)}`)}.csv`,
+    };
+  }
   const market: MarketSel =
     drill.kind === "loans"
       ? drill.market
@@ -332,8 +446,6 @@ export function slideOver(
       LOAN_COLUMNS.map((c) => c.label),
       rows,
     ),
-    csvName: `mirelo-loans-${market.toLowerCase()}-${windowLabel(w)
-      .replace(/[^\w]+/g, "-")
-      .toLowerCase()}.csv`,
+    csvName: `mirelo-loans-${market.toLowerCase()}-${slug(windowLabel(w))}.csv`,
   };
 }

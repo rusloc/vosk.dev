@@ -252,7 +252,6 @@ export function overview(ctx: Ctx, sel: SalesSelection): OverviewVM {
     chart: {
       kind: "line",
       x: loansTrend.x,
-      months: loansTrend.months,
       unit: "count",
       series: [
         { name: "Actual", role: "actual", values: loansTrend.actual },
@@ -323,7 +322,6 @@ export function overview(ctx: Ctx, sel: SalesSelection): OverviewVM {
     chart: {
       kind: "line",
       x: dayLabels,
-      months: null,
       unit: "pct",
       series: cohorts.map((c, k) => ({
         name: quarterLabel(c[0] ?? sel.anchor),
@@ -350,7 +348,6 @@ export function overview(ctx: Ctx, sel: SalesSelection): OverviewVM {
     chart: {
       kind: "line",
       x: months13.map(axisLabel),
-      months: months13,
       unit: "pct",
       series: MARKETS.map((c, k) => ({
         name: MARKET_NAMES[c],

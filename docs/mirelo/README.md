@@ -107,7 +107,7 @@ Ten changes, built here and handed to the PNL side as `C:\__PBI\PNL\.sync\2026-1
     titles count from the aggregates. The client list shows up to 50 rows. The engine's `band()` no longer takes the
     detail index. The sample is still fetched ahead on these two tabs, so a row opens without a wait.
 
-## 2026-11-01, fourth round: the full data behind every list, a four-colour heat scale, a sortable leaderboard
+## 2026-11-01, fourth round: the full data behind every list, a four-colour heat scale, a sortable leaderboard (`.sync` note changes 30–33, added 11-02 00:01)
 
 - **The detail window lists every row of the data** (owner: "need full dataset to be available to drill down"). The pack's
   capped sample (`detail-loans` / `detail-clients`, 718 kB, e.g. 23 of 3,260 Partner clients) is gone, with the

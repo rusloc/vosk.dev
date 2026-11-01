@@ -1,10 +1,12 @@
 import type { Comparator, MarketSel, SalesSelection, ViewId } from "./types";
 import {
-  TIME_VIEW_NAMES,
+  PERIOD_KIND_NAMES,
   isComplete,
   monthLabel,
+  periodKind,
+  periodLabel,
+  periodWindow,
   windowLabel,
-  windowOf,
 } from "./windows";
 
 // UI copy built from the selection (design-tokens §9: " - " separator, "Showing …" sentence, subtitles never
@@ -51,25 +53,24 @@ export function periodLine(
   lastClosed: number,
   firstMonth: number,
 ): string {
-  const w = windowOf(sel.tv, sel.anchor);
+  const w = periodWindow(sel);
   const shown = isComplete(w, firstMonth)
     ? windowLabel(w)
     : `${windowLabel({ start: firstMonth, end: w.end })} (data from ${monthLabel(firstMonth)})`;
   const other: Comparator = sel.cmp === "BUD" ? "PY" : "BUD";
   return [
     `Showing ${shown}`,
-    TIME_VIEW_NAMES[sel.tv],
+    PERIOD_KIND_NAMES[periodKind(w, lastClosed)],
     MARKET_NAMES[sel.market],
     `Actual vs ${CMP_NAMES[sel.cmp]} and ${CMP_NAMES[other]}`,
     `Closed through ${monthLabel(lastClosed)}`,
   ].join(" - ");
 }
 
-/** The applied filters in one short line: "Sep 2026 - Month - vs Budget - All markets". */
-export function filterLine(sel: SalesSelection): string {
+/** The applied filters in one short line: "Q4 2025 - vs Budget - All markets". */
+export function filterLine(sel: SalesSelection, lastClosed: number): string {
   return [
-    windowLabel(windowOf(sel.tv, sel.anchor)),
-    TIME_VIEW_NAMES[sel.tv],
+    periodLabel(periodWindow(sel), lastClosed),
     `vs ${CMP_NAMES[sel.cmp]}`,
     MARKET_NAMES[sel.market],
   ].join(" - ");
@@ -234,12 +235,6 @@ const INFO: Readonly<Record<string, InfoCopy>> = {
     "Count of loans by market × product.",
     `${L} - dim_product`,
   ],
-  l11: [
-    "Loans against a channel target.",
-    "Would show which channel misses its plan.",
-    "Not available: the dataset has no channel targets (fact_target holds market × product and agent rows only).",
-    T,
-  ],
   l12: [
     "Median hours of the two timed legs against the stage SLA.",
     "Shows which leg slows cash out.",
@@ -297,7 +292,7 @@ const INFO: Readonly<Record<string, InfoCopy>> = {
   c8: [
     "First-time applicants by stage in the window.",
     "Where new clients are lost.",
-    "Leads → submitted → approved → disbursed for new applicants; % of the previous stage.",
+    "Leads → submitted → approved → disbursed for new applicants; every step as % of leads.",
     F,
   ],
   c9: [
@@ -307,10 +302,10 @@ const INFO: Readonly<Record<string, InfoCopy>> = {
     `${L} (cohort-curve)`,
   ],
   c10: [
-    "Returning % per market × client segment; repeat share per product.",
-    "Shows where loyalty is strong or weak.",
-    "Matrix: client-weighted returning %; bars: repeat loans ÷ loans per product, tick = company average.",
-    `${L} (window-stats) - dim_client`,
+    "Repeat share of loans per microloan product.",
+    "Shows which products bring clients back.",
+    "Repeat loans ÷ loans per product; tick = company average.",
+    L,
   ],
   c11: [
     "Clients whose first loan falls in the window.",
@@ -385,7 +380,7 @@ const INFO: Readonly<Record<string, InfoCopy>> = {
     P,
   ],
   p12: [
-    "One bubble per product × market.",
+    "One bubble per product; the small filter on the card picks the market.",
     "Shows whether the risky segments are also the big ones.",
     "x = average ticket, y = 30+ DPD by balance, size = outstanding; worst bubble in yellow.",
     `${P} - ${L}`,
@@ -493,7 +488,7 @@ export interface HowToReadVM {
 const LEGEND =
   "▲ up / ▼ down - green = favourable, amber = watch, red = off. ⓘ on each card opens its definition.";
 const FILTERS =
-  "Filters (top right): period (month, quarter or year to date, up to a closed month), comparison (Budget or prior year) and region.";
+  "Filters (top right): period (a month, a quarter, a year or any range of closed months), comparison (Budget or prior year) and region. Returning % and the time medians exist for a month, a quarter, a year or 12 months, not for other ranges.";
 const HOW: Readonly<Record<ViewId, readonly [string, readonly InfoValue[]]>> = {
   overview: [
     "Overview",

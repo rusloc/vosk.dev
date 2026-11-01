@@ -15,7 +15,7 @@ import {
   monthLabel,
   shift,
   trailing13,
-  windowOf,
+  periodWindow,
 } from "./windows";
 
 // View 4 — Portfolio quality (layout-spec §4): period-end metrics at the anchor month (fact_loan_month snapshot).
@@ -35,7 +35,7 @@ export function portfolioView(
   const { cube, m } = ctx;
   const mk = sel.market;
   const a = sel.anchor;
-  const w = windowOf(sel.tv, a);
+  const w = periodWindow(sel);
   const S = m.snap(a, mk);
   const SP = m.snap(a - 12, mk);
   const cor = m.costOfRisk(w, mk);
@@ -269,52 +269,62 @@ export function portfolioView(
     },
   };
 
-  // P12 Segments: size × DPD (one bubble per product × market)
-  const loansCell = cube.loansBy(w, "ALL", (r) => `${r.product}|${r.market}`);
-  const points = products
-    .flatMap((p) =>
-      shownMarkets.map((c) => {
-        const key = `${p.product_code}|${c}`;
-        const l = loansCell.get(key);
-        const s = cell?.get(key) ?? null;
+  // P12 Segments: size × DPD, one bubble per product (2026-11-01, owner: no market breakdown; a small market filter
+  // on the card instead, starting at the page's market)
+  const bubbles = (market: MarketSel) => {
+    const lp = cube.loansBy(w, market, (r) => r.product);
+    const sp = cube.snapshotBy(a, market, (r) => r.product);
+    const pts = products
+      .map((p) => {
+        const l = lp.get(p.product_code);
+        const s = sp?.get(p.product_code) ?? null;
         return {
-          label: `${p.product_name} ${c}`,
+          label: p.product_name,
           x: l && l.loans > 0 ? l.principal / l.loans : 0,
           y: m.dpd30(s) ?? 0,
           size: s?.outstanding ?? 0,
-          cls: (MARKETS.indexOf(c as (typeof MARKETS)[number]) % 3) as
-            0 | 1 | 2,
+          cls: 0 as const,
           highlight: false,
           showLabel: false,
         };
-      }),
-    )
-    .filter((pt) => pt.size > 0);
-  const worst = points.reduce(
-    (w0, pt) => (pt.y > (w0?.y ?? -1) ? pt : w0),
-    points[0],
-  );
-  const top3 = [...points].sort((x, y) => y.size - x.size).slice(0, 3);
-  for (const pt of points) {
-    pt.highlight = pt === worst;
-    pt.showLabel = top3.includes(pt) || pt === worst;
-  }
+      })
+      .filter((pt) => pt.size > 0);
+    const worst = pts.reduce(
+      (w0, pt) => (pt.y > (w0?.y ?? -1) ? pt : w0),
+      pts[0],
+    );
+    // labels on the three largest bubbles and the worst one (all five collide where tickets are close)
+    const top3 = [...pts].sort((x, y) => y.size - x.size).slice(0, 3);
+    for (const pt of pts) {
+      pt.highlight = pt === worst;
+      pt.showLabel = top3.includes(pt) || pt === worst;
+    }
+    return {
+      kind: "bubble" as const,
+      xUnit: "eur" as const,
+      yUnit: "pct" as const,
+      points: pts,
+    };
+  };
   const p12: ChartCard = {
     id: "p12",
     title: "Segments: size × DPD",
     info: info("p12"),
     open: null,
     legend: [
-      ...shownMarkets.map((c) => ({
-        label: MARKET_NAMES[c],
-        role:
-          (["c4", "c3", "c1"] as const)[
-            MARKETS.indexOf(c as (typeof MARKETS)[number])
-          ] ?? "c1",
-      })),
+      { label: "Product", role: "c4" },
       { label: "worst 30+ DPD", role: "selected" as const },
     ],
-    chart: { kind: "bubble", xUnit: "eur", yUnit: "pct", points },
+    chart: bubbles(mk),
+    variants: {
+      label: "Market",
+      value: mk,
+      options: (["ALL", ...MARKETS] as const).map((c) => ({
+        key: c,
+        label: c === "ALL" ? "All" : c,
+        chart: bubbles(c),
+      })),
+    },
   };
 
   return {

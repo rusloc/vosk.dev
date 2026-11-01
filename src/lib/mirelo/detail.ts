@@ -10,14 +10,15 @@ import type {
 } from "./types";
 import type { DetailLoanRow, SlideOverVM } from "./view-model";
 import {
-  TIME_VIEW_NAMES,
+  PERIOD_KIND_NAMES,
   dateLabel,
   dayNumber,
   lastDayOf,
   monthIndex,
   monthLabel,
   windowLabel,
-  windowOf,
+  periodKind,
+  periodWindow,
 } from "./windows";
 import type { Window } from "./windows";
 
@@ -216,8 +217,8 @@ export function slideOver(
   sel: SalesSelection,
   drill: Drill,
 ): SlideOverVM {
-  const w = windowOf(sel.tv, sel.anchor);
-  const win = `${windowLabel(w)} - ${TIME_VIEW_NAMES[sel.tv]}`;
+  const w = periodWindow(sel);
+  const win = `${windowLabel(w)} - ${PERIOD_KIND_NAMES[periodKind(w, cube.closed)]}`;
   const snapshot = `states at ${monthLabel(cube.closed)}`;
   if (!ix)
     return {
@@ -331,9 +332,7 @@ export function slideOver(
       LOAN_COLUMNS.map((c) => c.label),
       rows,
     ),
-    csvName: `mirelo-loans-${market.toLowerCase()}-${sel.tv.toLowerCase()}-${windowLabel(
-      w,
-    )
+    csvName: `mirelo-loans-${market.toLowerCase()}-${windowLabel(w)
       .replace(/[^\w]+/g, "-")
       .toLowerCase()}.csv`,
   };

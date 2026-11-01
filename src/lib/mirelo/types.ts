@@ -39,8 +39,8 @@ export type Drill =
 export interface SalesSelection {
   view: ViewId;
   market: MarketSel;
-  tv: TimeView;
-  anchor: number; // month index of the selected closed month
+  from: number; // first month index of the period (2026-11-01: any closed range, see windows.ts periodKind)
+  anchor: number; // last month index of the period: a closed month
   cmp: Comparator;
   drill: Drill | null;
 }

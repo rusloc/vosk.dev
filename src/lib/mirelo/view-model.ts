@@ -121,6 +121,12 @@ export interface ChartCard {
   open: ViewId | null; // "Open <view> ↗" on Overview why panels
   legend: LegendItem[];
   chart: Chart;
+  /** A small filter on the card itself (P12 market, 2026-11-01): one chart per option, `value` first. */
+  variants?: {
+    label: string;
+    value: string;
+    options: { key: string; label: string; chart: Chart }[];
+  };
 }
 
 /** Status chip: glyph + word (design-tokens §2.3), never colour alone. */
@@ -200,9 +206,11 @@ export interface BandVM {
 export interface HeaderVM {
   title: string;
   periodLine: string;
-  filterLine: string; // the applied filters beside the Filters button: "Sep 2026 - Month - vs Budget - All markets"
+  filterLine: string; // the applied filters beside the Filters button: "Q4 2025 - vs Budget - All markets"
   howToRead: HowToReadVM;
   months: { value: string; label: string }[]; // closed months, newest first
+  first: number; // first month with data (calendar bound)
+  last: number; // last closed month (calendar bound)
 }
 
 export interface DetailLoanRow {

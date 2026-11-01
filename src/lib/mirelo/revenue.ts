@@ -14,7 +14,7 @@ import type {
   TableCard,
   TableRow,
 } from "./view-model";
-import { shift, windowLabel, windowOf } from "./windows";
+import { periodWindow, shift, windowLabel } from "./windows";
 import type { Window } from "./windows";
 
 // View 5 — Revenue & targets (layout-spec §5). Budget REVENUE_LOCAL is set per product: loan products carry interest +
@@ -41,7 +41,7 @@ export function revenueView(ctx: Ctx, sel: SalesSelection): BandVM {
   const { cube, m } = ctx;
   const mk = sel.market;
   const a = sel.anchor;
-  const w = windowOf(sel.tv, a);
+  const w = periodWindow(sel);
   const py = shift(w, -12);
   const rev = m.revenue(w, mk);
   const revPy = m.refRevenue(py, mk);
@@ -369,7 +369,7 @@ export function revenueView(ctx: Ctx, sel: SalesSelection): BandVM {
 
 function streamTable(ctx: Ctx, sel: SalesSelection): TableCard {
   const { cube, m } = ctx;
-  const w = windowOf(sel.tv, sel.anchor);
+  const w = periodWindow(sel);
   const py = shift(w, -12);
   const pyOk = cube.available(py);
   const shownMarkets: MarketSel[] =

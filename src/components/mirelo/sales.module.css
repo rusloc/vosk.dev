@@ -34,6 +34,11 @@
 .page select {
   font-family: inherit;
 }
+/* every button has round corners (owner, 2026-11-01); tabs round their top corners only (below) */
+.page button,
+.page select {
+  border-radius: 6px;
+}
 
 .page :focus-visible {
   outline: 2px solid var(--ink);
@@ -63,9 +68,10 @@
 }
 .brand {
   left: 32px;
-  top: 20px;
+  top: 18px; /* centre y 30, the title's centre (2026-11-01: they were 4 px apart) */
   width: 24px;
   height: 24px;
+  border-radius: 4px;
   background: var(--ink);
   color: var(--white);
   font-size: 14px;
@@ -75,7 +81,7 @@
 }
 .title {
   left: 64px;
-  top: 14px;
+  top: 16px;
   height: 28px;
   margin: 0;
   font-size: 22px;
@@ -158,36 +164,109 @@
   color: var(--g400);
   cursor: not-allowed;
 }
-.fRow {
+/* calendar (2026-11-01): mode row, year stepper, 4 × 3 month grid / quarter tiles / year tiles */
+.cal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.calYear {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--g600);
+  justify-content: space-between;
+  height: 28px;
+  font-size: 13px;
+  font-weight: 700;
 }
-.fSelect {
+.calYear button {
+  width: 28px;
   height: 28px;
   border: 1px solid var(--line);
-  border-radius: 0;
   background: var(--white);
-  padding: 0 6px 0 9px;
+  font-size: 16px;
+  line-height: 24px;
+  cursor: pointer;
+}
+.calYear button:disabled {
+  color: var(--g300);
+  cursor: default;
+}
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.calQ {
+  grid-template-columns: repeat(4, 1fr);
+}
+.calY {
+  grid-template-columns: repeat(3, 1fr);
+}
+.calTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 2px 0;
+  border: 1px solid var(--line);
+  background: var(--white);
   font-size: 13px;
   font-weight: 600;
+  line-height: 16px;
   color: var(--ink);
   cursor: pointer;
 }
+.calTile small {
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 13px;
+  color: var(--g600);
+}
+.calTile:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+.calTile:disabled {
+  border-style: dashed;
+  background: transparent;
+  color: var(--g300);
+  cursor: not-allowed;
+}
+.calIn {
+  border-color: var(--accent);
+  background: var(--accent2);
+}
+.calEdge {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--white);
+}
+.calEdge small {
+  color: var(--g300);
+}
+.calHint {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: var(--g600);
+}
+.fRule {
+  margin: 12px 0 0;
+  border: 0;
+  border-top: 1px solid #1a1a1a;
+  opacity: 0.25;
+}
 .fNote {
-  margin: 14px 0 0;
+  margin: 10px 0 0;
   font-size: 11.5px;
   line-height: 16px;
   color: var(--g600);
 }
 .fFoot {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 .fFoot button {
   height: 28px;
@@ -203,11 +282,6 @@
   color: var(--g400);
   cursor: default;
 }
-.fFoot .fDone {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: var(--white);
-}
 
 .tabs {
   left: 32px;
@@ -218,6 +292,7 @@
 .tabs button {
   height: 36px;
   border: 0;
+  border-radius: 6px 6px 0 0;
   background: transparent;
   padding: 0;
   font-size: 14px;
@@ -298,6 +373,35 @@
   font: inherit;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* ⓘ before the title on chart and table cards (2026-11-01) */
+.ctT {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  margin-left: -6px;
+}
+/* small filter on a card (P12 market, 2026-11-01) */
+.mini {
+  display: inline-flex;
+  gap: 2px;
+}
+.mini button {
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.mini button[aria-checked="true"] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--white);
 }
 .acts {
   display: flex;
@@ -436,7 +540,7 @@
 }
 .legend {
   position: absolute;
-  left: 44px; /* right of the corner ⓘ */
+  left: 16px; /* the ⓘ moved before the title (2026-11-01) */
   bottom: 8px;
   display: flex;
   gap: 14px;
@@ -647,7 +751,7 @@
   overflow: hidden;
   border: 1px solid #1a1a1a;
   border-radius: 12px;
-  background: rgba(244, 243, 240, 0.8);
+  background: rgba(244, 243, 240, 0.6);
   -webkit-backdrop-filter: blur(28px) saturate(1.05);
   backdrop-filter: blur(28px) saturate(1.05);
   box-shadow:
@@ -668,7 +772,7 @@
   right: 0;
   height: 64px;
   padding: 12px 64px 0 24px;
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.3);
   border-bottom: 1px solid var(--line);
 }
 .soHd h2 {
@@ -855,13 +959,11 @@
   right: 12px;
   top: 48px;
 }
-.infoCorner {
-  position: absolute;
-  left: 8px;
-  bottom: 2px;
-  z-index: 2; /* above the hero's stretched button */
-}
 .empty {
   color: var(--g600);
   font-style: italic;
+}
+/* the mask covers the board edge to edge: no round corners on it */
+.page .scrim {
+  border-radius: 0;
 }

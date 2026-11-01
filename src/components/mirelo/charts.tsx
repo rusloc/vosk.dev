@@ -904,6 +904,26 @@ export function Bubble({
   const Y = linear(0, yt.at(-1) ?? 1, height - padB, padT);
   const sMax = Math.max(...chart.points.map((p) => p.size), 1);
   const fills = [C.g300, C.g400, C.ink] as const;
+  const radius = (size: number) => 3 + 11 * Math.sqrt(size / sMax);
+  // Label collision (2026-11-01): the worst bubble first, then by size; a label whose box overlaps one already placed
+  // is dropped (the name stays in the chart's aria-label and the ⓘ).
+  const placed: { x: number; y: number; w: number }[] = [];
+  const labelled = new Set<string>();
+  for (const p of [...chart.points]
+    .filter((q) => q.showLabel)
+    .sort(
+      (a, b) => Number(b.highlight) - Number(a.highlight) || b.size - a.size,
+    )) {
+    const x = X(p.x) + radius(p.size) + 3;
+    const y = Y(p.y);
+    const w = p.label.length * 5.6;
+    if (
+      placed.some((o) => x < o.x + o.w && o.x < x + w && Math.abs(o.y - y) < 12)
+    )
+      continue;
+    placed.push({ x, y, w });
+    labelled.add(p.label);
+  }
   return (
     <svg
       width={width}
@@ -926,7 +946,7 @@ export function Bubble({
       {[...chart.points]
         .sort((a, b) => b.size - a.size)
         .map((p) => {
-          const r = 3 + 11 * Math.sqrt(p.size / sMax);
+          const r = radius(p.size);
           return (
             <g key={p.label}>
               <circle
@@ -937,7 +957,7 @@ export function Bubble({
                 stroke={C.ink}
                 strokeOpacity={0.6}
               />
-              {p.showLabel ? (
+              {labelled.has(p.label) ? (
                 <T
                   x={X(p.x) + r + 3}
                   y={Y(p.y) + 4}

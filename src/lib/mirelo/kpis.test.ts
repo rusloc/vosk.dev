@@ -43,16 +43,21 @@ describe("KPI comparator rows", () => {
 });
 
 describe("filter line", () => {
-  it("window - granularity - comparison - region", () => {
-    expect(
-      filterLine({
-        view: "overview",
-        market: "RO",
-        tv: "Q",
-        anchor: monthIndex("2026-09"),
-        cmp: "PY",
-        drill: null,
-      }),
-    ).toBe("Jul–Sep 2026 - Quarter to date - vs Prior year - Romania");
+  it("period - comparison - region", () => {
+    const closed = monthIndex("2026-09");
+    const s = (from: string, to: string) => ({
+      view: "overview" as const,
+      market: "RO" as const,
+      from: monthIndex(from),
+      anchor: monthIndex(to),
+      cmp: "PY" as const,
+      drill: null,
+    });
+    expect(filterLine(s("2026-07", "2026-09"), closed)).toBe(
+      "Q3 2026 - vs Prior year - Romania",
+    );
+    expect(filterLine(s("2025-06", "2025-09"), closed)).toBe(
+      "Jun–Sep 2025 - vs Prior year - Romania",
+    );
   });
 });

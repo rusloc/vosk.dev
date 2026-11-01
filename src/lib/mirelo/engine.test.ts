@@ -22,15 +22,23 @@ import { monthIndex, windowOf } from "./windows";
 let engine: SalesEngine;
 let cube: Cube;
 let ix: DetailIndex;
-const sel = (patch: Partial<SalesSelection> = {}): SalesSelection => ({
-  view: "overview",
-  market: "ALL",
-  tv: "M",
-  anchor: monthIndex("2026-09"),
-  cmp: "BUD",
-  drill: null,
-  ...patch,
-});
+// `tv` builds the period the old way (Month / QTD / YTD / R12M on the anchor, clamped to the data start): the period
+// is a range `from`…`anchor` since 2026-11-01, and these windows are the ones the window stats cover.
+const sel = ({
+  tv = "M",
+  ...patch
+}: Partial<SalesSelection> & { tv?: TimeView } = {}): SalesSelection => {
+  const anchor = patch.anchor ?? monthIndex("2026-09");
+  return {
+    view: "overview",
+    market: "ALL",
+    from: Math.max(0, windowOf(tv, anchor).start),
+    anchor,
+    cmp: "BUD",
+    drill: null,
+    ...patch,
+  };
+};
 
 beforeAll(async () => {
   const base = await loadSalesBase();
@@ -70,11 +78,11 @@ describe("Overview (default window: Month · Sep 2026 · All markets · vs Budge
     expect(
       engine.header(sel({ market: "RO", tv: "Q", cmp: "PY" })).periodLine,
     ).toBe(
-      "Showing Jul–Sep 2026 - Quarter to date - Romania - Actual vs Prior year and Budget - Closed through Sep 2026",
+      "Showing Jul–Sep 2026 - Quarter - Romania - Actual vs Prior year and Budget - Closed through Sep 2026",
     );
     expect(
       engine.header(sel({ tv: "R", anchor: monthIndex("2024-06") })).periodLine,
-    ).toContain("(data from Jan 2024)");
+    ).toContain("Showing Jan–Jun 2024 - Custom range"); // the window starts at the data start, never before it
   });
 });
 
@@ -112,7 +120,7 @@ describe("ADR-0012: card face = title · value · delta rows · status chip; the
         sel({ view, tv: "R", anchor: monthIndex("2024-06") }),
       ).howToRead;
       expect(h.title).toMatch(/^How to read - /);
-      expect(h.lines[0]?.value).toContain("(data from Jan 2024)"); // the clipped-window note moved here
+      expect(h.lines[0]?.value).toMatch(/^Showing Jan–Jun 2024 - /); // the Showing sentence opens it
     }
     expect(
       new Set(views.map((view) => engine.header(sel({ view })).howToRead.title))

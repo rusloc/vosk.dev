@@ -17,7 +17,7 @@ describe("sales URL codec", () => {
     expect(codec.parse(q(""))).toEqual({
       view: "overview",
       market: "ALL",
-      tv: "M",
+      from: monthIndex("2026-09"),
       anchor: monthIndex("2026-09"),
       cmp: "BUD",
       drill: null,
@@ -27,12 +27,12 @@ describe("sales URL codec", () => {
 
   it("round-trips every key", () => {
     const s =
-      "view=portfolio&market=ro&period=r12m&month=2025-12&cmp=py&drill=client.123456";
+      "view=portfolio&market=ro&from=2025-01&month=2025-12&cmp=py&drill=client.123456";
     const sel = codec.parse(q(s));
     expect(sel).toEqual({
       view: "portfolio",
       market: "RO",
-      tv: "R",
+      from: monthIndex("2025-01"),
       anchor: monthIndex("2025-12"),
       cmp: "PY",
       drill: { kind: "client", client: 123456 },

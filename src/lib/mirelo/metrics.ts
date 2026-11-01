@@ -1,7 +1,7 @@
 import type { Cube, FunnelSum, LoanFilter, LoanSum, Snapshot } from "./cube";
-import type { MarketSel, TimeView } from "./types";
+import type { MarketSel } from "./types";
 import { MARKETS } from "./manifest";
-import { monthKey, windowOf } from "./windows";
+import { monthKey, statView } from "./windows";
 import type { Window } from "./windows";
 
 // Metric definitions of the Mirelo report (ADR-0011 (g) Tier-1, README "Rules to apply in your measures"). Each
@@ -30,25 +30,25 @@ export function createMetrics(cube: Cube) {
   const avgTicket = (s: LoanSum | null) =>
     s ? ratio(s.principal, s.loans) : null;
 
+  /** The window-stats row of exactly this window, or null for a range the stats do not cover (windows.ts statView). */
+  function stat(w: Window, market: MarketSel, segment = "ALL") {
+    const s = statView(w);
+    return s
+      ? cube.windowStat(s.tv, monthKey(s.anchor), market, segment)
+      : null;
+  }
+
   // ---- returning clients (Tier-1 #3): client-weighted from the per-window distinct counts ----
   function returning(
-    tv: TimeView,
-    anchor: number,
+    w: Window,
     market: MarketSel,
     segment = "ALL",
   ): number | null {
-    const r = cube.windowStat(tv, monthKey(anchor), market, segment);
+    const r = stat(w, market, segment);
     return r ? ratio(r.returning, r.borrowers) : null;
   }
-  const refReturning = (
-    tv: TimeView,
-    anchor: number,
-    market: MarketSel,
-    segment = "ALL",
-  ) =>
-    cube.available(windowOf(tv, anchor))
-      ? returning(tv, anchor, market, segment)
-      : null;
+  const refReturning = (w: Window, market: MarketSel, segment = "ALL") =>
+    cube.available(w) ? returning(w, market, segment) : null;
   const repeatShare = (s: LoanSum | null) =>
     s ? ratio(s.repeat, s.loans) : null;
 
@@ -58,22 +58,14 @@ export function createMetrics(cube: Cube) {
     | "median_hours_payout"
     | "median_days_between";
   function median(
-    tv: TimeView,
-    anchor: number,
+    w: Window,
     market: MarketSel,
     field: StatField,
   ): number | null {
-    return cube.windowStat(tv, monthKey(anchor), market)?.[field] ?? null;
+    return stat(w, market)?.[field] ?? null;
   }
-  const refMedian = (
-    tv: TimeView,
-    anchor: number,
-    market: MarketSel,
-    field: StatField,
-  ) =>
-    cube.available(windowOf(tv, anchor))
-      ? median(tv, anchor, market, field)
-      : null;
+  const refMedian = (w: Window, market: MarketSel, field: StatField) =>
+    cube.available(w) ? median(w, market, field) : null;
 
   // ---- funnel ----
   const funnel = (w: Window, market: MarketSel, repeat?: boolean): FunnelSum =>
@@ -243,6 +235,7 @@ export function createMetrics(cube: Cube) {
     refLoans,
     avgTicket,
     returning,
+    stat,
     refReturning,
     repeatShare,
     median,

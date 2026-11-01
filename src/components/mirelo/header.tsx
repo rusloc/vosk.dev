@@ -3,35 +3,20 @@ import type {
   Comparator,
   MarketSel,
   SalesSelection,
-  TimeView,
   ViewId,
 } from "@/lib/mirelo/types";
 import type { HeaderVM } from "@/lib/mirelo/view-model";
-import { monthIndex, monthKey } from "@/lib/mirelo/windows";
+import { Calendar } from "./calendar";
 import { CopyLink, Radios, Tabs } from "./controls";
 import { GlassPopup, usePopup } from "./glass";
 import { HowToReadButton } from "./popup";
 import styles from "./sales.module.css";
 
 // Header (layout-spec §0.1): identical in every view. Since 2026-11-01 (owner) the Market / Period / Month /
-// Comparator controls are gone from the bar: one Filters button opens a glass pop-up with Period (granularity + the
-// closed month it runs to), Comparison and Region; the applied filters read as one line beside the button.
+// Comparator controls are gone from the bar: one Filters button opens a glass pop-up with Period (the calendar:
+// month, quarter, year or custom range), Comparison and Region, then Reset, a rule and the "Showing …" sentence; the
+// applied filters read as one line beside the button. Choices apply at once (no Done button).
 
-const PERIODS: readonly {
-  value: TimeView | "W";
-  label: string;
-  disabledReason?: string;
-}[] = [
-  {
-    value: "W",
-    label: "Week",
-    disabledReason:
-      "The data set is monthly: weekly figures are not in the data.",
-  },
-  { value: "M", label: "Month" },
-  { value: "Q", label: "Quarter to date" },
-  { value: "Y", label: "Year to date" },
-];
 const CMPS: readonly { value: Comparator; label: string }[] = [
   { value: "BUD", label: "Budget" },
   { value: "PY", label: "Prior year" },
@@ -78,7 +63,7 @@ function Filters({
   const { open, close, toggle } = usePopup("filters");
   const opener = useRef<HTMLButtonElement>(null);
   const changed =
-    sel.tv !== defaults.tv ||
+    sel.from !== defaults.from ||
     sel.anchor !== defaults.anchor ||
     sel.cmp !== defaults.cmp ||
     sel.market !== defaults.market;
@@ -109,28 +94,13 @@ function Filters({
             <span id="mf-period" className={styles.fLabel}>
               Period
             </span>
-            <Radios
-              labelledBy="mf-period"
-              options={PERIODS}
-              value={sel.tv}
-              onChange={(tv) => tv !== "W" && onChange({ tv })}
+            <Calendar
+              from={sel.from}
+              anchor={sel.anchor}
+              first={vm.first}
+              last={vm.last}
+              onChange={onChange}
             />
-            <label className={styles.fRow}>
-              <span>Up to</span>
-              <select
-                className={styles.fSelect}
-                value={monthKey(sel.anchor)}
-                onChange={(e) =>
-                  onChange({ anchor: monthIndex(e.target.value) })
-                }
-              >
-                {vm.months.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
-            </label>
           </div>
           <div className={styles.fGroup}>
             <span id="mf-cmp" className={styles.fLabel}>
@@ -154,26 +124,24 @@ function Filters({
               onChange={(market) => onChange({ market })}
             />
           </div>
-          <p className={styles.fNote}>{vm.periodLine}</p>
           <div className={styles.fFoot}>
             <button
               type="button"
               disabled={!changed}
               onClick={() =>
                 onChange({
-                  tv: defaults.tv,
+                  from: defaults.from,
                   anchor: defaults.anchor,
                   cmp: defaults.cmp,
                   market: defaults.market,
                 })
               }
             >
-              Back to default
-            </button>
-            <button type="button" className={styles.fDone} onClick={close}>
-              Done
+              Reset
             </button>
           </div>
+          <hr className={styles.fRule} />
+          <p className={styles.fNote}>{vm.periodLine}</p>
         </GlassPopup>
       ) : null}
     </div>

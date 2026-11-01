@@ -49,3 +49,21 @@ Ten changes, built here and handed to the PNL side as `C:\__PBI\PNL\.sync\2026-1
   (the P&L keeps its own). The detail view is a centred window over a 20 % dark-grey mask, not a right-half slide-over.
 - **Board:** `ReportBoard fill` scales to fit the popup both ways (≤ 1.25×) and grows taller than 810 px; the extra
   height goes to the chart rows and band tables (`sales-app.tsx`). Nordmark keeps the old behaviour.
+
+## 2026-11-01, second round: the calendar and seven smaller changes (not in the `.sync` note yet)
+
+- **The period is a range of closed months** (`SalesSelection.from` … `anchor`, URL `from=` + `month=`; the old
+  `period=qtd|ytd|r12m` is still read and rewritten). The filter pop-up's calendar has four modes: Month, Quarter,
+  Year (the closed part of the current one) and Custom range (two clicks, first month then last, across years).
+  QTD / YTD are gone. **Returning % and the time medians (time to cash, cycle time, days between loans) read "n/a" for
+  a custom range** that is not a month, a quarter or year to its end, or 12 months: `window-stats.parquet` stores those
+  non-additive figures only for Month / QTD / YTD / R12M windows (`windows.ts` `statView`). Every additive figure
+  works for any range.
+- **Filter pop-up:** Reset (was "Back to default"), a rule, then the "Showing …" sentence; no Done.
+- **Look:** brand mark and title on one centre line; every button has 6 px corners (tabs on top only); pop-ups at
+  42 % opacity (were 62 %), the detail window at 60 %.
+- **Visuals:** Attainment by channel (L11, a placeholder) removed, Loans spreads five charts; the new-client funnel
+  shows every step as % of leads and no "lost at the step"; C10 is "Repeat share by product" only; P12 has one bubble
+  per product and a small market filter on the card (starts at the page's market), labels drop when they would overlap.
+- **ⓘ before the title** on every chart and table (it was in the bottom-left corner on charts, right of the title on
+  tables), as on the KPI cards.

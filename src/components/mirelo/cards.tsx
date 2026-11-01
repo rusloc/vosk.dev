@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { CSSProperties } from "react";
 import { useBoardHeight } from "@/components/report-board";
 import type { CmpRow, Status } from "@/lib/mirelo/status";
@@ -49,14 +50,6 @@ const TABS_BOTTOM = 104;
 const POP_W = 360;
 const xSide = (b: Box): CSSProperties =>
   b.x + 8 + POP_W > FRAME_R ? { right: 8 } : { left: 8 };
-/** ⓘ at the bottom-left of a chart card. */
-function belowOrAbove(b: Box, boardH: number): CSSProperties {
-  const down = boardH - (b.y + b.h) - 8;
-  const up = b.y + b.h - 32 - TABS_BOTTOM;
-  return down >= up
-    ? { ...xSide(b), top: b.h + 4, maxHeight: Math.min(420, down) }
-    : { ...xSide(b), bottom: 32, maxHeight: Math.min(420, up) };
-}
 /** ⓘ at the top-left of a hero or KPI card (2026-11-01): the pop-up opens under the card, or over it near the bottom. */
 function underCard(b: Box, boardH: number): CSSProperties {
   const down = boardH - (b.y + b.h) - 8;
@@ -64,12 +57,20 @@ function underCard(b: Box, boardH: number): CSSProperties {
     ? { ...xSide(b), top: b.h + 4, maxHeight: Math.min(420, down) }
     : { ...xSide(b), top: 36, maxHeight: 420 };
 }
-/** ⓘ in a table's title row: tables sit at the bottom of the frame, so the pop-up opens above the card. */
-const aboveCard = (b: Box): CSSProperties => ({
-  right: 8,
-  bottom: b.h + 4,
-  maxHeight: Math.min(420, b.y - TABS_BOTTOM - 4),
-});
+/**
+ * ⓘ before a chart or table title (2026-11-01): the pop-up hangs from the title row (its box is the title row, 16 px
+ * in from the card), downwards when there is room, else upwards over the card above (tables sit at the bottom).
+ */
+function titleInfo(b: Box, boardH: number): CSSProperties {
+  const down = boardH - (b.y + 16 + 22) - 8;
+  return down >= 240
+    ? { left: -8, top: 22, maxHeight: Math.min(420, down) }
+    : {
+        left: -8,
+        bottom: 22,
+        maxHeight: Math.min(420, b.y + 16 - TABS_BOTTOM - 8),
+      };
+}
 
 const HALF_BAR = 72; // hero diverging bar 144 × 6 (16 px card padding kept on the right)
 
@@ -282,9 +283,11 @@ export function ChartCardView({
   onMonth: (m: number) => void;
 }) {
   const boardH = useBoardHeight();
+  const [variant, setVariant] = useState(card.variants?.value ?? "");
   const width = box.w - 32;
-  const height = box.h - 40 - 30; // bottom strip: ⓘ + legend
-  const ch = card.chart;
+  const height = box.h - 40 - 30; // bottom strip: legend
+  const ch =
+    card.variants?.options.find((o) => o.key === variant)?.chart ?? card.chart;
   const size = { width, height };
   return (
     <section
@@ -293,8 +296,35 @@ export function ChartCardView({
       aria-labelledby={`${card.id}-t`}
     >
       <div className={styles.ct}>
-        <h3 id={`${card.id}-t`}>{card.title}</h3>
+        <span className={styles.ctT}>
+          <InfoButton
+            id={card.id}
+            title={card.title}
+            info={card.info}
+            popupStyle={titleInfo(box, boardH)}
+          />
+          <h3 id={`${card.id}-t`}>{card.title}</h3>
+        </span>
         <span className={styles.acts}>
+          {card.variants ? (
+            <span
+              className={styles.mini}
+              role="radiogroup"
+              aria-label={`${card.title}: ${card.variants.label}`}
+            >
+              {card.variants.options.map((o) => (
+                <button
+                  key={o.key}
+                  type="button"
+                  role="radio"
+                  aria-checked={o.key === variant}
+                  onClick={() => setVariant(o.key)}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </span>
+          ) : null}
           {card.open ? (
             <button
               type="button"
@@ -327,13 +357,6 @@ export function ChartCardView({
           {ch.kind === "bubble" ? <Bubble chart={ch} {...size} /> : null}
         </div>
       )}
-      <InfoButton
-        id={card.id}
-        title={card.title}
-        info={card.info}
-        className={styles.infoCorner}
-        popupStyle={belowOrAbove(box, boardH)}
-      />
       <Legend items={card.legend} />
     </section>
   );
@@ -350,6 +373,7 @@ export function TableCardView({
   tight: boolean;
   onAction: (a: RowAction) => void;
 }) {
+  const boardH = useBoardHeight();
   return (
     <section
       className={styles.card}
@@ -357,14 +381,16 @@ export function TableCardView({
       aria-labelledby={`${card.id}-t`}
     >
       <div className={styles.ct}>
-        <h3 id={`${card.id}-t`}>{card.title}</h3>
-        <span className={styles.acts}>
+        <span className={styles.ctT}>
           <InfoButton
             id={card.id}
             title={card.title}
             info={card.info}
-            popupStyle={aboveCard(box)}
+            popupStyle={titleInfo(box, boardH)}
           />
+          <h3 id={`${card.id}-t`}>{card.title}</h3>
+        </span>
+        <span className={styles.acts}>
           {card.action ? (
             <button
               type="button"

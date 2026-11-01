@@ -30,9 +30,11 @@ export function createSalesEngine(base: SalesBase) {
     header: (sel: SalesSelection): HeaderVM => ({
       title: TITLE,
       periodLine: periodLine(sel, cube.closed, cube.first),
-      filterLine: filterLine(sel),
+      filterLine: filterLine(sel, cube.closed),
       howToRead: howToRead(sel, cube.closed, cube.first),
       months: months.map((i) => ({ value: monthKey(i), label: monthLabel(i) })),
+      first: cube.first,
+      last: cube.closed,
     }),
     overview: (sel: SalesSelection): OverviewVM => overview(ctx, sel),
     band: (sel: SalesSelection, ix: DetailIndex | null): BandVM => {

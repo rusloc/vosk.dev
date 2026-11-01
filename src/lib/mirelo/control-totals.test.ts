@@ -85,7 +85,7 @@ describe.each(PERIODS)(
       expect(stat?.returning).toBe(control(mk, period, "returning_clients"));
       expect(
         Math.abs(
-          (m.returning(tv, anchor, mk) ?? NaN) -
+          (m.returning(w, mk) ?? NaN) -
             control(mk, period, "returning_pct_clients"),
         ),
       ).toBeLessThan(RATIO);

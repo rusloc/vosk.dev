@@ -20,10 +20,10 @@ import type { ChartCard, HeroCard, OverviewVM, TableCard } from "./view-model";
 import {
   axisLabel,
   monthIndex,
-  monthKey,
   monthLabel,
   shift,
   trailing13,
+  periodWindow,
   windowLabel,
   windowOf,
 } from "./windows";
@@ -73,7 +73,7 @@ export const quarterLabel = (month: number) =>
 export function overview(ctx: Ctx, sel: SalesSelection): OverviewVM {
   const { cube, m } = ctx;
   const mk = sel.market;
-  const w = windowOf(sel.tv, sel.anchor);
+  const w = periodWindow(sel);
   const py = shift(w, -12);
   const A = m.loans(w, mk);
   const P = m.refLoans(py, mk);
@@ -168,9 +168,9 @@ export function overview(ctx: Ctx, sel: SalesSelection): OverviewVM {
   );
 
   // O3 Returning clients (client-weighted)
-  const ret = m.returning(sel.tv, sel.anchor, mk);
+  const ret = m.returning(w, mk);
   const r180 = m.repeat180(sel.anchor - 6, mk);
-  const stat = cube.windowStat(sel.tv, monthKey(sel.anchor), mk);
+  const stat = m.stat(w, mk);
   const o3 = hero(
     "o3",
     "Returning clients",
@@ -195,12 +195,12 @@ export function overview(ctx: Ctx, sel: SalesSelection): OverviewVM {
       },
       {
         label: "Prior year",
-        value: fmtPct(m.refReturning(sel.tv, sel.anchor - 12, mk)),
+        value: fmtPct(m.refReturning(py, mk)),
       },
       { label: "Budget", value: "none for this ratio" },
     ],
     "ratioUp",
-    { actual: ret, py: m.refReturning(sel.tv, sel.anchor - 12, mk) },
+    { actual: ret, py: m.refReturning(py, mk) },
     "clients",
   );
 
@@ -372,7 +372,7 @@ export function overview(ctx: Ctx, sel: SalesSelection): OverviewVM {
 
 function marketTable(ctx: Ctx, sel: SalesSelection): TableCard {
   const { cube, m } = ctx;
-  const w = windowOf(sel.tv, sel.anchor);
+  const w = periodWindow(sel);
   const cmpName = sel.cmp === "BUD" ? "vs Budget" : "vs PY";
   return {
     id: "o9",
@@ -406,7 +406,7 @@ function marketTable(ctx: Ctx, sel: SalesSelection): TableCard {
           { text: row.text, status: row.status },
           { text: fmtEur(a.principal) },
           { text: fmtCount(a.first) },
-          { text: fmtPct(m.returning(sel.tv, sel.anchor, c)) },
+          { text: fmtPct(m.returning(w, c)) },
           { text: fmtPct(m.dpd30At(sel.anchor, c)) },
           {
             text:

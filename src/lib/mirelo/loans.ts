@@ -26,7 +26,7 @@ import type {
   SeriesRole,
   TableCard,
 } from "./view-model";
-import { shift, windowLabel, windowOf } from "./windows";
+import { periodWindow, shift, windowLabel } from "./windows";
 import type { Window } from "./windows";
 
 // View 2 — Loans issued (layout-spec §2): volume, ticket, funnel, bridge, product mix, cycle time, agents.
@@ -132,7 +132,7 @@ export function bridge(
 export function loansView(ctx: Ctx, sel: SalesSelection): BandVM {
   const { cube, m } = ctx;
   const mk = sel.market;
-  const w = windowOf(sel.tv, sel.anchor);
+  const w = periodWindow(sel);
   const py = shift(w, -12);
   const A = m.loans(w, mk);
   const P = m.refLoans(py, mk);
@@ -141,14 +141,9 @@ export function loansView(ctx: Ctx, sel: SalesSelection): BandVM {
   const F = m.funnel(w, mk);
   const FP = m.refFunnel(py, mk);
   const step12 = m.loans(w, mk, { product: "STEP12" }).loans;
-  const cash = m.median(sel.tv, sel.anchor, mk, "median_hours_to_cash");
+  const cash = m.median(w, mk, "median_hours_to_cash");
 
-  const cashPy = m.refMedian(
-    sel.tv,
-    sel.anchor - 12,
-    mk,
-    "median_hours_to_cash",
-  );
+  const cashPy = m.refMedian(py, mk, "median_hours_to_cash");
   const kpis: KpiCard[] = [
     kpi(
       "l1",
@@ -400,26 +395,13 @@ export function loansView(ctx: Ctx, sel: SalesSelection): BandVM {
     },
   };
 
-  // L11 Attainment by channel: no channel targets in the dataset
-  const l11: ChartCard = {
-    id: "l11",
-    title: "Attainment by channel",
-    info: info("l11"),
-    open: null,
-    legend: [],
-    chart: {
-      kind: "placeholder",
-      text: "Not available - no channel targets", // the reason is in the ⓘ (ADR-0012, MS-13)
-    },
-  };
-
   // L12 Stage cycle time vs SLA (the two timed legs; SLA = dim_funnel_stage.sla_hours)
   const sla = (code: string) =>
     cube.dims.funnel_stage.find((s) => s.stage_code === code)?.sla_hours ??
     null;
   const approveSla = (sla("KYC_PASSED") ?? 0) + (sla("APPROVED") ?? 0) || null;
-  const appr = m.median(sel.tv, sel.anchor, mk, "median_hours_to_approve");
-  const payout = m.median(sel.tv, sel.anchor, mk, "median_hours_payout");
+  const appr = m.median(w, mk, "median_hours_to_approve");
+  const payout = m.median(w, mk, "median_hours_payout");
   const l12: ChartCard = {
     id: "l12",
     title: "Stage cycle time vs SLA",
@@ -460,7 +442,7 @@ export function loansView(ctx: Ctx, sel: SalesSelection): BandVM {
 
   return {
     kpis,
-    charts: [l7, l8, l9, l10, l11, l12],
+    charts: [l7, l8, l9, l10, l12],
     layout: "thirds",
     table: leaderboard(ctx, sel),
   };
@@ -468,7 +450,7 @@ export function loansView(ctx: Ctx, sel: SalesSelection): BandVM {
 
 function leaderboard(ctx: Ctx, sel: SalesSelection): TableCard {
   const { cube } = ctx;
-  const w = windowOf(sel.tv, sel.anchor);
+  const w = periodWindow(sel);
   const now = cube.agents(w);
   const prior = cube.available(shift(w, -12))
     ? cube.agents(shift(w, -12))

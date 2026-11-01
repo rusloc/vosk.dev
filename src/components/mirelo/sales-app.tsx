@@ -97,12 +97,24 @@ const rows2 = (
   ...xs.map((x) => ({ x, y, w, h: h1 })),
   ...xs.map((x) => ({ x, y: y + h1 + gap, w, h: h2 })),
 ];
-function bandBoxes(layout: BandVM["layout"], extra: number) {
+/** n boxes side by side across the frame (x 32 … 1408, 16 px gaps). */
+const spread = (n: number): { x: number; w: number }[] => {
+  const w = Math.floor((1376 - 16 * (n - 1)) / n);
+  return Array.from({ length: n }, (_, k) => ({ x: 32 + k * (w + 16), w }));
+};
+function bandBoxes(layout: BandVM["layout"], count: number, extra: number) {
   const e = Math.floor(extra * 0.3);
-  const xs = layout === "thirds" ? [32, 496, 960] : [32, 728];
-  const w = layout === "thirds" ? 448 : 680;
+  const perRow = layout === "thirds" ? 3 : 2;
+  const h = 162 + e;
+  // the second row spreads whatever is left (Loans has five charts since L11 went, 2026-11-01)
+  const rows = [
+    spread(Math.min(perRow, count)),
+    spread(Math.max(count - perRow, 1)),
+  ];
   return {
-    charts: rows2(xs, w, 252, 162 + e, 162 + e, 16),
+    charts: rows.flatMap((r, k) =>
+      r.map((b) => ({ ...b, y: 252 + k * (h + 16), h })),
+    ),
     table: { x: 32, y: 608 + 2 * e, w: 1376, h: 186 + extra - 2 * e },
   };
 }
@@ -308,7 +320,11 @@ function BandView({
   onMonth: (m: number) => void;
   onAction: (a: RowAction) => void;
 }) {
-  const boxes = bandBoxes(vm.layout, useBoardHeight() - DESIGN_H);
+  const boxes = bandBoxes(
+    vm.layout,
+    vm.charts.length,
+    useBoardHeight() - DESIGN_H,
+  );
   return (
     <>
       {vm.kpis.map((k, i) => (
@@ -320,7 +336,7 @@ function BandView({
       ))}
       {vm.charts.map((c, i) => (
         <ChartCardView
-          key={c.id}
+          key={`${c.id}-${c.variants?.value ?? ""}`}
           card={c}
           box={boxes.charts[i] ?? { x: 32, y: 252, w: 448, h: 162 }}
           onOpen={() => undefined}

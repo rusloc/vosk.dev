@@ -3,18 +3,16 @@ import type { DetailIndex } from "./detail";
 import { cohortClients } from "./detail";
 import { fmtCount, fmtDays, fmtEur0, fmtInt, fmtPct } from "./format";
 import { CATEGORY_ROLES, kpi } from "./loans";
-import { MARKETS } from "./manifest";
 import type { Ctx } from "./overview";
 import { quarterLabel, quarterMonths, trend } from "./overview";
 import type { SalesSelection } from "./types";
 import type { BandVM, ChartCard, TableCard } from "./view-model";
 import {
   dateLabel,
-  monthKey,
   monthLabel,
   shift,
+  periodWindow,
   windowLabel,
-  windowOf,
 } from "./windows";
 
 // View 3 — Clients (layout-spec §3): acquisition and return.
@@ -42,19 +40,19 @@ export function clientsView(
 ): BandVM {
   const { cube, m } = ctx;
   const mk = sel.market;
-  const w = windowOf(sel.tv, sel.anchor);
+  const w = periodWindow(sel);
   const py = shift(w, -12);
   const A = m.loans(w, mk);
   const P = m.refLoans(py, mk);
   const FN = m.funnel(w, mk, false);
   const FNP = m.refFunnel(py, mk, false);
   const r180 = m.repeat180(sel.anchor - 6, mk);
-  const gap = m.median(sel.tv, sel.anchor, mk, "median_days_between");
+  const gap = m.median(w, mk, "median_days_between");
 
-  const ret = m.returning(sel.tv, sel.anchor, mk);
-  const stat = cube.windowStat(sel.tv, monthKey(sel.anchor), mk);
+  const ret = m.returning(w, mk);
+  const stat = m.stat(w, mk);
   const r180py = m.repeat180(sel.anchor - 18, mk);
-  const gapPy = m.refMedian(sel.tv, sel.anchor - 12, mk, "median_days_between");
+  const gapPy = m.refMedian(py, mk, "median_days_between");
   const kpis = [
     kpi(
       "c1",
@@ -88,7 +86,7 @@ export function clientsView(
         },
       ],
       "ratioUp",
-      { actual: ret, py: m.refReturning(sel.tv, sel.anchor - 12, mk) },
+      { actual: ret, py: m.refReturning(py, mk) },
       sel.cmp,
     ),
     kpi(
@@ -200,33 +198,30 @@ export function clientsView(
     },
   };
 
-  // C8 New-client funnel
+  // C8 New-client funnel: every step as % of Leads, step 1 (owner, 2026-11-01); no "lost at the step" bars
   const steps = [
-    ["Leads", FN.leads, null],
-    ["First application", FN.submitted, FN.leads],
-    ["First approval", FN.approved, FN.submitted],
-    ["First loan", FN.disbursed, FN.approved],
+    ["Leads", FN.leads],
+    ["First application", FN.submitted],
+    ["First approval", FN.approved],
+    ["First loan", FN.disbursed],
   ] as const;
   const c8: ChartCard = {
     id: "c8",
     title: "New-client funnel",
     info: info("c8"),
     open: null,
-    legend: [
-      { label: "First-time applicants", role: "actual" },
-      { label: "Lost at the step", role: "c3" },
-    ],
+    legend: [{ label: "First-time applicants", role: "actual" }],
     chart: {
       kind: "funnel",
-      rows: steps.map(([label, v, prev]) => ({
+      rows: steps.map(([label, v], i) => ({
         label,
         value: v,
         text: fmtCount(v),
         sub:
-          prev === null
+          i === 0
             ? windowLabel(w)
-            : `${fmtPct(prev > 0 ? v / prev : null)} of previous`,
-        lost: prev === null ? null : prev - v,
+            : `${fmtPct(FN.leads > 0 ? v / FN.leads : null)} of leads`,
+        lost: null,
       })),
     },
   };
@@ -258,20 +253,14 @@ export function clientsView(
     },
   };
 
-  // C10 Returning % by market × segment, repeat share by product
-  const segments = ["CONSUMER", "MICRO_BUSINESS"];
-  const shownMarkets = mk === "ALL" ? MARKETS : [mk];
-  const cells = shownMarkets.map((c) =>
-    segments.map((s) => m.returning(sel.tv, sel.anchor, c, s)),
-  );
-  const flatBins = bins(cells.flat());
+  // C10 Repeat share by product (2026-11-01, owner: the market × segment matrix is gone)
   const products = cube.dims.product.filter(
     (p) => p.product_line === "Microloan",
   );
   const avg = m.repeatShare(A);
   const c10: ChartCard = {
     id: "c10",
-    title: "Returning % by market × segment - repeat share by product",
+    title: "Repeat share by product",
     info: info("c10"),
     open: null,
     legend: [
@@ -279,29 +268,18 @@ export function clientsView(
       { label: "company average", role: "budget" },
     ],
     chart: {
-      kind: "heat",
-      cols: segments.map((s) => SEGMENT_NAMES[s] ?? s),
-      rows: shownMarkets.map((c, i) => ({
-        label: MARKET_NAMES[c],
-        cells: segments.map((_, j) => ({
-          text: fmtPct(cells[i]?.[j] ?? null),
-          bin: flatBins[i * segments.length + j] ?? null,
-        })),
-      })),
-      side: {
-        title: "Repeat share by product",
-        unit: "pct",
-        rows: products.map((p) => {
-          const s = m.repeatShare(m.loans(w, mk, { product: p.product_code }));
-          return {
-            label: p.product_name,
-            value: s,
-            ghost: null,
-            tick: avg,
-            text: fmtPct(s, 0),
-          };
-        }),
-      },
+      kind: "bars",
+      unit: "pct",
+      rows: products.map((p) => {
+        const s = m.repeatShare(m.loans(w, mk, { product: p.product_code }));
+        return {
+          label: p.product_name,
+          value: s,
+          ghost: null,
+          tick: avg,
+          text: fmtPct(s, 0),
+        };
+      }),
     },
   };
 
@@ -319,7 +297,7 @@ function clientsTable(
   ix: DetailIndex | null,
 ): TableCard {
   const { cube } = ctx;
-  const w = windowOf(sel.tv, sel.anchor);
+  const w = periodWindow(sel);
   const list = ix
     ? cohortClients(ix, cube, w, sel.market, cube.caps.clientsPerCohortMarket)
     : [];

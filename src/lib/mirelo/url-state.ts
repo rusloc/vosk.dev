@@ -8,12 +8,14 @@ import type {
   TimeView,
   ViewId,
 } from "./types";
-import { monthIndex, monthKey } from "./windows";
+import { monthIndex, monthKey, windowOf } from "./windows";
 
-// URL state of the /sales route (layout-spec §6; F-37 analogue): ?view=&market=&period=&month=&cmp=&drill=. The query
+// URL state of the /sales route (layout-spec §6; F-37 analogue): ?view=&market=&from=&month=&cmp=&drill=. The query
 // string is the whole state and the boundary to the engine: each known key is validated with Zod, an invalid value
 // falls back to its default (and the caller rewrites the URL), unknown keys are dropped. Defaults are omitted, so the
-// bare URL is the spec default: Overview · All markets · Month · last closed month · vs Budget.
+// bare URL is the spec default: Overview · All markets · the last closed month · vs Budget.
+// Since 2026-11-01 the period is a range of closed months, `from`…`month` (from omitted = one month). The old
+// `period=qtd|ytd|r12m` is still read (when `from` is absent) and rewritten to its range, so old links keep working.
 
 const VIEWS = [
   "overview",
@@ -42,14 +44,14 @@ const CMP_URL = { budget: "BUD", py: "PY" } as const satisfies Record<
 const invert = <K extends string, V extends string>(o: Record<K, V>) =>
   Object.fromEntries(Object.entries(o).map(([k, v]) => [v, k])) as Record<V, K>;
 const MARKET_KEY = invert(MARKET_URL);
-const PERIOD_KEY = invert(PERIOD_URL);
 const CMP_KEY = invert(CMP_URL);
 
 /** The URL keys: a page URL carrying one of them is a shared report link. */
 export const URL_KEYS = [
   "view",
   "market",
-  "period",
+  "from",
+  "period", // legacy, read only
   "month",
   "cmp",
   "drill",
@@ -103,6 +105,11 @@ export function createUrlCodec(manifest: SalesManifest): UrlCodec {
           return i >= first && i <= last;
         })
         .catch(monthKey(last)),
+      from: z
+        .string()
+        .regex(/^\d{4}-\d{2}$/)
+        .nullable()
+        .catch(null),
       cmp: enumOf(CMP_URL).catch("budget"),
       drill: drill.nullable().catch(null),
     })
@@ -111,7 +118,7 @@ export function createUrlCodec(manifest: SalesManifest): UrlCodec {
   const defaults = (): SalesSelection => ({
     view: "overview",
     market: "ALL",
-    tv: "M",
+    from: last,
     anchor: last,
     cmp: "BUD",
     drill: null,
@@ -127,14 +134,24 @@ export function createUrlCodec(manifest: SalesManifest): UrlCodec {
       market: raw.market ?? "all",
       period: raw.period ?? "month",
       month: raw.month ?? monthKey(last),
+      from: raw.from ?? null,
       cmp: raw.cmp ?? "budget",
       drill: raw.drill ?? null,
     });
+    const anchor = monthIndex(q.month);
+    // from: a closed month in [first data month, anchor]; else the legacy period's window; else one month
+    const fromKey = q.from === null ? null : monthIndex(q.from);
+    const from =
+      fromKey !== null && fromKey >= first && fromKey <= anchor
+        ? fromKey
+        : raw.from === undefined
+          ? Math.max(first, windowOf(PERIOD_URL[q.period], anchor).start)
+          : anchor;
     return {
       view: q.view,
       market: MARKET_URL[q.market],
-      tv: PERIOD_URL[q.period],
-      anchor: monthIndex(q.month),
+      from,
+      anchor,
       cmp: CMP_URL[q.cmp],
       drill: q.drill,
     };
@@ -156,7 +173,7 @@ export function createUrlCodec(manifest: SalesManifest): UrlCodec {
     const p = new URLSearchParams();
     if (sel.view !== d.view) p.set("view", sel.view);
     if (sel.market !== d.market) p.set("market", MARKET_KEY[sel.market]);
-    if (sel.tv !== d.tv) p.set("period", PERIOD_KEY[sel.tv]);
+    if (sel.from !== sel.anchor) p.set("from", monthKey(sel.from));
     if (sel.anchor !== d.anchor) p.set("month", monthKey(sel.anchor));
     if (sel.cmp !== d.cmp) p.set("cmp", CMP_KEY[sel.cmp]);
     if (sel.drill) p.set("drill", drillKey(sel.drill));

@@ -80,3 +80,26 @@ export async function readRows<S extends ColumnSpec>(
   }
   return rows;
 }
+
+/** Validates rows already decoded from JSON (the server route's answer) against `spec`; same contract as readRows. */
+export function checkRows<S extends ColumnSpec>(
+  json: unknown,
+  spec: S,
+  label: string,
+): RowOf<S>[] {
+  if (!Array.isArray(json))
+    throw new Error(`${label}: expected an array of rows`);
+  const entries = Object.entries(spec);
+  json.forEach((row: unknown, i) => {
+    if (row === null || typeof row !== "object")
+      throw new Error(`${label}: row ${i} is not an object`);
+    for (const [name, kind] of entries) {
+      const v = (row as Record<string, unknown>)[name];
+      if (!check(kind, v))
+        throw new Error(
+          `${label}: column ${name} row ${i} is ${String(v)}, expected ${kind}`,
+        );
+    }
+  });
+  return json as RowOf<S>[]; // every value checked against its kind above
+}

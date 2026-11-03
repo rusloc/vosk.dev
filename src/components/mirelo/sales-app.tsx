@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { interFontVariable } from "@/components/inter-font";
 import { ReportBoard, useBoardHeight } from "@/components/report-board";
 import { useReportSearch } from "@/components/report-search";
-import { createSalesLoader } from "@/lib/mirelo/data";
+import { createSalesLoader, jsonSource } from "@/lib/mirelo/data";
 import { createSalesEngine } from "@/lib/mirelo";
 import type {
   DetailParts,
@@ -26,17 +26,19 @@ import { PopupProvider } from "./popup";
 import { SlideOver } from "./slide-over";
 import styles from "./sales.module.css";
 
-// Client root (ADR-0011 (c)): loads public/data/mirelo in the browser, owns the Selection and passes engine view
+// Client root (ADR-0011 (c)): loads the report data from /api/mirelo (Supabase), owns the Selection and passes engine view
 // models down. Orchestration only: every number and string comes from lib/mirelo. Embedded in the site's report
 // popup, the Selection lives in React state as its query string (the standalone app's URL contract), on a
 // 1440-wide board the popup scales to fit; since 2026-11-01 the board also grows taller than 810 px to fill the popup
 // (no empty band under it) and the extra height goes to the chart rows and the band tables.
 
-const loader = createSalesLoader(async (name) => {
-  const res = await fetch(`/data/mirelo/${name}`);
-  if (!res.ok) throw new Error(`${name}: HTTP ${res.status}`);
-  return res.arrayBuffer();
-});
+const loader = createSalesLoader(
+  jsonSource(async (name) => {
+    const res = await fetch(`/api/mirelo/${name}`);
+    if (!res.ok) throw new Error(`${name}: HTTP ${res.status}`);
+    return res.json() as Promise<unknown>;
+  }),
+);
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 

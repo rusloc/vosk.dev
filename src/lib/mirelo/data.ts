@@ -1,7 +1,7 @@
-import { readRows } from "./parquet-columns";
+import { checkRows, readRows } from "./parquet-columns";
 import { DETAIL, FILES, detailIndexSchema, parseManifest } from "./manifest";
 import type { DetailIndexFile, FileKey, SalesManifest } from "./manifest";
-import type { ColumnSpec } from "./parquet-columns";
+import type { ColumnSpec, RowOf } from "./parquet-columns";
 import type {
   ClientRow,
   CohortRow,
@@ -11,12 +11,43 @@ import type {
   SalesBase,
 } from "./types";
 
-// Loader for public/data/sales (ADR-0011 (c)): manifest + base files on first paint; the detail files a drill needs
-// on demand (2026-11-01: the full data in `detail/`, one file per month / cohort / client bucket).
+// Loader for the Mirelo sales data (ADR-0011 (c)): manifest + base files on first paint; the detail files a drill
+// needs on demand (2026-11-01: the full data in `detail/`, one file per month / cohort / client bucket). Since
+// 2026-11-03 the browser reads the same artifacts as JSON from /api/mirelo (Supabase, schema mirelo_demo) while the
+// tests and the load script read the Parquet in data/mirelo/parquet; the ArtifactSource below is that seam.
 // Per-session in-memory cache; a failed read is evicted so the next call retries (same contract as the P&L loader).
 
-/** Reads one public/data/sales artifact by file name: `fetch` in the browser, `fs` in Node tests. */
+/** Reads one Parquet / JSON artifact by file name as bytes (`fs` in Node tests and the load script). */
 export type ReadArtifact = (name: string) => Promise<ArrayBuffer>;
+
+/** Where the artifacts come from: Parquet bytes, or the server route's JSON. */
+export interface ArtifactSource {
+  json(name: string): Promise<unknown>;
+  rows<S extends ColumnSpec>(
+    name: string,
+    spec: S,
+    label: string,
+  ): Promise<RowOf<S>[]>;
+}
+
+export function parquetSource(read: ReadArtifact): ArtifactSource {
+  return {
+    json: async (name) =>
+      JSON.parse(new TextDecoder().decode(await read(name))) as unknown,
+    rows: async (name, spec, label) => readRows(await read(name), spec, label),
+  };
+}
+
+/** The browser's source: `/api/mirelo/<name>` answers with the file's rows (or document) as JSON. */
+export function jsonSource(
+  fetchJson: (name: string) => Promise<unknown>,
+): ArtifactSource {
+  return {
+    json: fetchJson,
+    rows: async (name, spec, label) =>
+      checkRows(await fetchJson(name), spec, label),
+  };
+}
 
 export interface SalesLoader {
   base(): Promise<SalesBase>;
@@ -24,7 +55,7 @@ export interface SalesLoader {
   detail(names: readonly string[]): Promise<DetailParts>;
 }
 
-export function createSalesLoader(read: ReadArtifact): SalesLoader {
+export function createSalesLoader(source: ArtifactSource): SalesLoader {
   let manifest: Promise<SalesManifest> | undefined;
   let base: Promise<SalesBase> | undefined;
   let index: Promise<DetailIndexFile> | undefined;
@@ -37,9 +68,7 @@ export function createSalesLoader(read: ReadArtifact): SalesLoader {
 
   const loadManifest = () =>
     (manifest ??= cached(
-      read("manifest.json").then((b) =>
-        parseManifest(JSON.parse(new TextDecoder().decode(b))),
-      ),
+      source.json("manifest.json").then(parseManifest),
       () => (manifest = undefined),
     ));
 
@@ -48,7 +77,7 @@ export function createSalesLoader(read: ReadArtifact): SalesLoader {
     m: SalesManifest,
   ): Promise<FileRows<K>> {
     const { file: name, columns } = FILES[key];
-    const rows = await readRows(await read(name), columns, name);
+    const rows = await source.rows(name, columns, name);
     const expected = m.files[name]?.rows;
     if (rows.length !== expected)
       throw new Error(
@@ -98,9 +127,9 @@ export function createSalesLoader(read: ReadArtifact): SalesLoader {
 
   const loadIndex = () =>
     (index ??= cached(
-      read(`${DETAIL.dir}/index.json`).then((b) =>
-        detailIndexSchema.parse(JSON.parse(new TextDecoder().decode(b))),
-      ),
+      source
+        .json(`${DETAIL.dir}/index.json`)
+        .then((j) => detailIndexSchema.parse(j)),
       () => (index = undefined),
     ));
   const kindOf = (name: string): ColumnSpec =>
@@ -117,8 +146,8 @@ export function createSalesLoader(read: ReadArtifact): SalesLoader {
           const expected = (await loadIndex()).files[name]?.rows;
           if (expected === undefined)
             throw new Error(`${name}: not in ${DETAIL.dir}/index.json`);
-          const rows = await readRows(
-            await read(`${DETAIL.dir}/${name}`),
+          const rows = await source.rows(
+            `${DETAIL.dir}/${name}`,
             kindOf(name),
             name,
           );

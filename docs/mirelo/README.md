@@ -14,7 +14,9 @@ showcase entry's `powerBi` field when it exists, and the page then shows two but
 | Engine (framework-free, every number and string): cube, metrics, KPIs, the five views, detail sample, copy, formats, URL codec | `src/lib/mirelo/` (the pack's `lib/sales/` flattened; `parquet-columns.ts` beside it) |
 | UI (inline SVG charts, CSS Modules) | `src/components/mirelo/`, root `sales-app.tsx`; `glass.tsx` + `chart-scale.ts` vendored from the P&L app |
 | Showcase entry | `src/lib/work.ts` → `online-sales-report`, platform `js`, report `mirelo` |
-| Data (prebuilt in rusloc/pnl, 915 kB; the loan sample loads on first need) | `public/data/mirelo/` |
+| Data: **Supabase schema `mirelo_demo`** since 2026-11-03 (below); the Parquet it was loaded from (prebuilt in rusloc/pnl + `build_detail.py`) | `data/mirelo/parquet/` (tests and the loader read it; nothing ships in the build) |
+| Server side: artifact name → query, the reader connection, the route | `src/lib/mirelo/artifacts.ts`, `src/lib/mirelo/server.ts`, `src/app/api/mirelo/[...path]/route.ts` |
+| Schema, roles, loader | `data/mirelo/sql/001-schema-and-roles.sql`, `002-schema.sql`, `scripts/mirelo-load.ts` |
 | Test fixtures | `data/mirelo/checks/control_totals_eur.csv` |
 | Tests (92 + 4 skipped: the detail-sample block needs the raw `fact_loan.parquet`, not shipped) | `src/lib/mirelo/*.test.ts` |
 
@@ -133,3 +135,44 @@ Ten changes, built here and handed to the PNL side as `C:\__PBI\PNL\.sync\2026-1
 - **Agent & partner leaderboard is sortable:** each column header is a button (first click: numbers high → low, text
   A → Z; the next click reverses; empty values last; `aria-sort` on the header). Cells carry a raw `sort` key
   (`view-model.ts` `Cell.sort`, `TableCard.sortable`), so "€46k" and "185.3%" sort by value.
+
+## 2026-11-03: the data moved from Parquet files to Supabase (the site is a shopfront for reports)
+
+Owner's decision of 11-02 (`CLAUDE.md` § Supabase): every custom JS report keeps its data in the shared Supabase
+project, a schema per report, read live by the site's own server routes; nothing ships in the Vercel build. Mirelo is
+the first. What changed, and what did not:
+
+- **The artifact names stayed the contract.** The browser used to fetch `manifest.json`, ten base Parquet files and the
+  `detail/` files; it now asks `/api/mirelo/<the same name>` and gets the file's rows (or the document) as JSON. The
+  engine, the Zod schemas, the row-count checks and the tests did not change shape: `data.ts` reads through an
+  `ArtifactSource` (`jsonSource` in the browser, `parquetSource` in Vitest and the loader), and `checkRows` validates
+  JSON rows against the same column kinds `readRows` checks on Parquet.
+- **Schema `mirelo_demo`** (`data/mirelo/sql/002-schema.sql`, applied via the Supabase MCP, not a migration): `document`
+  (the manifest and the detail index, verbatim), ten base tables named after the files with the file order in `seq`,
+  `loan` (613,738 rows; generated `month` and `bucket` = client_id % 64, indexed) and `client` (302,230 rows; the dim
+  columns plus the cohort lists' to-date summary, null outside the 2024-01 … last-close cohorts). Column kinds map
+  str → text, int → integer, num → double precision (JSON carries JS numbers, as Parquet did), bool → boolean.
+- **One query per artifact** (`src/lib/mirelo/artifacts.ts`, pure): `loans-YYYY-MM` = `loan` where month, by loan_id;
+  `overdue` = dpd_close ≥ 30 and outstanding > 0, by loan_id; `client-NN` = bucket, by client_id, disbursed, loan_id (the
+  client card reverses that order); `client-dim-NN` and `cohort-YYYY-MM` from `client`. Same rows, same order as
+  `build_detail.py` wrote them; the loader proves it (below).
+- **Roles** (`001-schema-and-roles.sql`): `mirelo_loader` writes, from the owner's machine only; `mirelo_reader` is the
+  one credential the site holds (`MIRELO_DATABASE_URL`, **Session pooler, port 5432**, Vercel env), hardened like `cube_reader`,
+  denied on real rows in `demo_sales` and `qbo` (`42501`). Passwords are set by the owner in the SQL editor; the
+  connection strings live in `.env.local` (never read by the agent) and in Vercel env. **The shared pooler host for
+  this project is `aws-1-eu-west-1.pooler.supabase.com`**: `aws-0` answers "tenant/user not found".
+- **Loader** `scripts/mirelo-load.ts`: `node --env-file=.env.local --import tsx scripts/mirelo-load.ts` truncates, loads
+  in a transaction (batches of 1,000 rows) and then **verifies every artifact the route can serve against its Parquet
+  file** (deep equality, 208 artifacts); `--verify` runs the check alone. It prints counts, never a value from the env.
+- **Session pooler, not Transaction pooler, for the reader.** Through port 6543 the driver's concurrent reads stalled
+  (ten base files at once: a 25 s timeout even with one connection) and the headless run saw one file answered with
+  another file's columns; `checkRows` caught it. Port 5432 answered the same ten reads in ~1.2 s, no mismatch, so
+  `server.ts` uses the Session pooler with a pool of 2 and a 20 s idle timeout, and throws on a 6543 URL.
+- **Floats:** the server runs `extra_float_digits = 0`, which prints 15 significant digits and loses the last bits of
+  computed doubles (3220153.1100000003 came back as 3220153.11 in 33 artifacts). Both roles set it to 3; note that a
+  role setting reaches the pooler's backends only when they reconnect.
+- **Route** `/api/mirelo/[...path]`: a known name or 404; 503 without the env var; a per-instance rate limit; answers
+  cached by the CDN for a day and served stale while refreshing (the data is a frozen snapshot), so the database sees a
+  handful of reads per artifact. Reachable because `proxy.ts` excludes `/api/*`.
+- **Rebuilding the data** is the same as before up to the Parquet (`build_detail.py` into `data/mirelo/parquet/detail`),
+  then the loader instead of a commit of `public/` files.

@@ -9,6 +9,13 @@
 
 # Backlog
 
+## New on 11-03
+
+- ⏸ **CLAUDE.md → md doorway + Neo4j rule/decision graph** (owner's brief 11-03 19:37; parked 19:57, "not a
+  priority"). Assessment, 33-line doorway draft, 12-scope seed, missing tools and phases 0–5 in
+  `.log/report/2026-11-03-md-to-graph-plan.md`; owner decisions A–E in its §8. Phase 2 (`/start-day`, `/close-day`,
+  `/log` as skills, from the private memory procedure) needs no decision and stands on its own.
+
 ## New on 11-01
 
 - **North Star (owner, 11-01 15:18): all three reports in both flavours,** Power BI and custom JS, on their `/work`

@@ -18,21 +18,40 @@
   back into it or into the repo that produced it.
 - Agents and skills for other repos' work (e.g. Rayfin / Fabric Apps) don't live in this repo's `.claude/`.
 
-### Supabase — one project, two tenants, separated by schema and role
+### Supabase — one project, separate tenants by schema and role (site showcase, `qbo`, site report data)
 
 One project, ref **`howpxpdnjjzdwqrgxkee`**, region `eu-west-1`, org `sudo.opc` (free plan),
-**named `vosk.dev` in the dashboard**. The site itself never connects to it.
+**named `vosk.dev` in the dashboard**. ~~The site itself never connects to it.~~ Since 2026-11-02 the
+site connects only as the per-report read-only logins below.
 _Amended 2026-10-20: the lead engine's `public` tables are gone; `qbo` is the second tenant._
 
 | Schema | Owner | What | Reached by |
 |---|---|---|---|
 | `demo_sales` | **site showcase** | synthetic online-sales star schema — `docs/08-cube-sales-showcase.md` | **only** role `cube_reader`, **only** from Cube |
 | `qbo` | **QBO P&L** — repo `rusloc/qbo`, `C:\__PBI\QBO` | QuickBooks P&L warehouse; that repo's `CLAUDE.md` and ADR-0008 | roles `qbo_etl` (ETL, dbt) and `qbo_reader` (Power BI) |
+| `mirelo_demo` _(live 2026-11-03)_ | **site report data** — the Mirelo custom JS report | synthetic neobank / microlender sales; schema SQL in `data/mirelo/sql/`, loader `scripts/mirelo-load.ts`, read by `/api/mirelo/*` (`docs/mirelo/README.md`, 11-03) | `mirelo_loader` (load, from the owner's machine) and `mirelo_reader` (the site's server routes) |
 
-- **The site holds no Supabase credential at all.** It talks to Cube, Cube talks to Postgres as
-  `cube_reader`, and `cube_reader` can read `demo_sales` and nothing else. **Never grant
-  `cube_reader` anything outside `demo_sales`. Never expose `demo_sales` or `qbo` to the Data API**
-  (`anon` / `authenticated` have no `USAGE` on either — keep it that way). `public` is empty.
+_Amended 2026-11-02: **the site is a shopfront for reports, and report data lives in this project.**_
+Each custom JS report (Track C) gets a schema of its own (`<report>_demo`: Mirelo first, then the
+executive dashboard and the P&L) and reads it at runtime through the site's own server routes.
+Report data does not ship in the Vercel build. **Neon** (hosted Postgres, a project per report) is
+the agreed alternative when the 500 MB free plan runs out or `qbo` needs the room; the seeds, loaders
+and roles are plain Postgres, so a move is a connection-string change.
+
+- **The site holds one credential per report: a `<report>_reader` login that can read its own
+  `<report>_demo` schema and nothing else.** It never holds a credential that reaches `qbo`,
+  `demo_sales` or any other schema; prove each new reader's denials on real rows (`42501`).
+  Readers are hardened like `cube_reader` (`nobypassrls`, `noinherit`, low connection limit,
+  `statement_timeout`, `search_path` = its schema, `default_transaction_read_only = on`), created
+  `NOLOGIN`, and the owner sets the password. Their connection strings live only in Vercel env
+  (`<REPORT>_DATABASE_URL`, server-only, **Session pooler, port 5432**: through the Transaction pooler the site's
+  concurrent reads stall and can get another request's rows, found 2026-11-03; `server.ts` refuses a 6543 URL).
+- The site does not talk to `demo_sales` directly: Cube does, as `cube_reader`, and `cube_reader` can
+  read `demo_sales` and nothing else. **Never grant `cube_reader` anything outside `demo_sales`.
+  Never expose `demo_sales`, `qbo` or any `<report>_demo` schema to the Data API** (`anon` /
+  `authenticated` have no `USAGE` on any of them — keep it that way). `public` is empty.
+- **Space:** the free plan's 500 MB is shared by every schema here. Measure the database before each
+  report load; past ~70 % that report goes to Neon instead.
 - **`qbo` is driven from its own repo and its own VS Code window, not from here.** Its migrations live
   in `C:\__PBI\QBO\supabase\migrations\`, and the project's migration history is `qbo`'s alone.
   Before a real client's books go in, `qbo` moves to a project of its own (`.log/report/2026-10-18-client-data-privacy-flows.html`).
@@ -61,9 +80,12 @@ _Amended 2026-10-20: the lead engine's `public` tables are gone; `qbo` is the se
 - **Content**: local **MDX** files in `content/` (no CMS, no database).
 - **Contact form**: Server Action + **Resend** (transactional email). No DB persistence at v1.
 - **No** Supabase client / auth / ORM / component library **in this app** unless a new need is
-  explicitly agreed. **No Supabase URL or key may appear in this deployment's env** — the shared
-  project holds a client product's warehouse (`qbo`), which must never be reachable from here.
-  The Cube showcase honours it: the app holds a Cube URL + secret, never a database credential.
+  explicitly agreed. _Amended 2026-11-02:_ **the only database credentials in this deployment's env
+  are the per-report read-only Postgres logins** (`<REPORT>_DATABASE_URL`, see the Supabase section).
+  No Supabase API URL, anon / publishable / service key, or any login that can reach `qbo` (a
+  client product's warehouse) may appear here. The Cube showcase still holds only a Cube URL + secret.
+- **Agreed addition (2026-11-02):** a plain Postgres driver (`postgres`, exact version pinned at the
+  build) for the report routes, chosen over a vendor driver so Supabase and Neon stay interchangeable.
 - **Agreed additions (2026-09-27):** **Tremor** for the Cube showcase — the copy-paste components
   from tremor.so, vendored and modified in `src/components/tremor/` (Apache-2.0, `LICENSE` kept there),
   on `recharts` 3 + Radix (`tabs`, `toggle-group`, `toggle`, `slot`), `tailwind-variants`,
@@ -79,7 +101,7 @@ _Amended 2026-10-20: the lead engine's `public` tables are gone; `qbo` is the se
 ```
 src/
   app/            → routes under [locale]/ (home, work, services, contact, blog) + layout, sitemap, robots
-  app/api/        → superset/guest-token — the one Route Handler
+  app/api/        → superset/guest-token; mirelo/[...path] (the Mirelo report's data from Supabase) — the two Route Handlers
   proxy.ts        → locale rewriting middleware; excludes /api/*
   components/     → shared UI (nav, footer, cards, contact-form, mdx-components, primitives)
   lib/            → content.ts (MDX seam), work.ts (showcase registry), schema.ts (Zod), env.ts, site.ts, metadata.ts
@@ -107,7 +129,7 @@ Sub-agents (`.claude/agents/`) are reusable helpers — route to them when usefu
 - **hunter** (qa-test-hunter) — tests, security, edge cases. Now also RLS policy audits.
 - **papa** (product-manager) — scope / prioritization.
 - **chef** (db-chef) — Postgres schema / RLS / grants on the shared Supabase project: the
-  `demo_sales` seed and `cube_reader`. The site has no database; `qbo` has its own chef in its repo.
+  `demo_sales` seed and `cube_reader`, the `<report>_demo` schemas and their loader / reader roles. The site has no database; `qbo` has its own chef in its repo.
 
 Skills in `.claude/skills/` (design, front-end, QA, SEO, PM, etc.) are stack-agnostic — use them freely.
 
@@ -123,6 +145,15 @@ Skills in `.claude/skills/` (design, front-end, QA, SEO, PM, etc.) are stack-agn
 - Files: `kebab-case.ts` / `kebab-case.tsx`.
 - Components: `PascalCase`.
 - Env vars: `SCREAMING_SNAKE_CASE`; `NEXT_PUBLIC_` prefix ONLY for client-safe values.
+
+### `.env.local` — DO NOT READ. NEVER. (owner's rule, 2026-11-03)
+- **`C:\__VOSK__\.env.local` holds the Mirelo connection strings (`MIRELO_LOAD_DATABASE_URL`, `MIRELO_DATABASE_URL`).
+  The agent NEVER opens, reads, prints, greps, copies, diffs or edits it, nor any other `.env*` file, by any tool or
+  command (`cat`, `type`, `Get-Content`, `head`, `node -e`, `python`, `printenv`, `echo $VAR`, dotenv debug output).
+  ONLY THE OWNER OPENS AND READS IT.** Scripts may load it into process env and use the values; they never log,
+  print or echo a value, a connection string or a password-bearing error. Git ignores it (`.gitignore`: `.env*`,
+  `.env.local`); never commit it, never copy it into `.sync` or a report. `.claude/settings.json` denies the tools
+  too; the rule stands even where a tool would allow it.
 
 ### No AI attribution
 - **NEVER mention "developed with Claude"**, or anything like it ("built with Claude", "generated with

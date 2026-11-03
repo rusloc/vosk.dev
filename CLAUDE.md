@@ -117,6 +117,8 @@ public/data/pnl/  → the P&L showcase's frozen data (Parquet + manifest); spec 
 - **`/work` is not MDX.** Showcases are entries in **`src/lib/work.ts`** — a discriminated union by
   `platform` (`power-bi` | `superset` | `cube` | `js`), per `ADR-0002`. There is no `content/work/`.
   Every showcase page is text plus one "Open the live report" button; the report opens in a popup.
+  A showcase with two formats of one report (a `js` entry with `powerBi`) has no popup: two buttons,
+  "Power BI" and "Web report", each opening in a new window; the web report's window is `app/report/[slug]`.
   The `cube` entry is not an embed: the page queries Cube server-side and draws the dashboard
   itself (`components/sales-dashboard.tsx`); it is hidden until `CUBE_API_URL` + `CUBE_API_SECRET` are set.
 - All pages are Server Components / statically rendered. `[slug]` routes use `generateStaticParams()`. Client components are the exception (contact form, theme toggle, mobile menu) — mark them `'use client'`.

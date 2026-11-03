@@ -7,6 +7,7 @@ import { JsonLd } from "@/components/json-ld";
 import { JsReportLazy } from "@/components/js-report-lazy";
 import { REPORT_QUERY_KEYS } from "@/lib/js-reports";
 import { ReportDialog } from "@/components/report-dialog";
+import cta from "@/components/cta-button.module.css";
 import { SalesDashboardLazy } from "@/components/sales-dashboard-lazy";
 import { SupersetEmbed } from "@/components/superset-embed";
 import { getPostBySlug } from "@/lib/content";
@@ -128,79 +129,70 @@ export default async function ShowcasePage({ params }: Props) {
           URL — the SDK mints a guest token per viewer (ADR-0002) — and Cube is drawn
           from rows queried right here, server-side, handed to a client component as
           plain props, so the browser never sees Cube or its token. The JS report
-          needs nothing from the server: it loads its own static data on open. A JS
-          showcase whose Power BI flavour is published gets two buttons, "Power BI"
-          and "Custom" (owner, 10-31); until then only the custom one, under the
-          generic label. */}
+          needs nothing from the server: it loads its own data on open. A showcase with
+          two formats of the same report (a JS one whose Power BI flavour is published)
+          has no popup: two buttons side by side, "Power BI" and "Web report", each
+          opening its report in a new window (owner, 11-03) — the public Power BI URL
+          and the report's own page under /report/. */}
       <div className="mt-5 flex flex-wrap gap-3">
-        {showcase.platform === "js" && showcase.powerBi && (
+        {showcase.platform === "js" && showcase.powerBi ? (
+          <>
+            <a
+              href={showcase.powerBi.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cta.cta}
+            >
+              {t.openPowerBi}
+            </a>
+            <a
+              href={`/report/${showcase.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cta.cta}
+            >
+              {t.openWebReport}
+            </a>
+          </>
+        ) : (
           <ReportDialog
-            label={t.openPowerBi}
-            title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
+            label={t.openLiveReport}
+            title={reportTitle}
             closeLabel={t.closeReport}
-            href={showcase.powerBi.href}
+            href={showcase.platform === "power-bi" ? showcase.href : undefined}
+            openOnQuery={
+              showcase.platform === "js"
+                ? REPORT_QUERY_KEYS[showcase.report]
+                : undefined
+            }
           >
-            <iframe
-              src={showcase.powerBi.embedUrl}
-              title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
-              allowFullScreen
-              className="h-full w-full border-0"
-            />
+            {showcase.platform === "cube" ? (
+              <div className="p-4 sm:p-6">
+                <SalesDashboardLazy
+                  data={await getSalesDashboardData()}
+                  labels={dict.salesDashboard}
+                />
+              </div>
+            ) : showcase.platform === "js" ? (
+              <JsReportLazy report={showcase.report} />
+            ) : showcase.platform === "superset" ? (
+              <SupersetEmbed
+                slug={showcase.slug}
+                embedId={showcase.embedId}
+                title={reportTitle}
+                loadingLabel={t.dashboardLoading}
+                errorLabel={t.dashboardError}
+              />
+            ) : (
+              <iframe
+                src={showcase.embedUrl}
+                title={reportTitle}
+                allowFullScreen
+                className="h-full w-full border-0"
+              />
+            )}
           </ReportDialog>
         )}
-        {/* The same public report in its own window (owner, 11-03): a plain link, no popup. */}
-        {showcase.platform === "js" && showcase.powerBi && (
-          <a
-            href={showcase.powerBi.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="border-border hover:bg-muted inline-flex h-10 items-center gap-1.5 rounded-md border px-5 text-sm font-medium whitespace-nowrap transition-colors"
-          >
-            {t.openPowerBiNewWindow}
-            <span aria-hidden="true">↗</span>
-          </a>
-        )}
-        <ReportDialog
-          label={
-            showcase.platform === "js" && showcase.powerBi
-              ? t.openCustom
-              : t.openLiveReport
-          }
-          title={reportTitle}
-          closeLabel={t.closeReport}
-          href={showcase.platform === "power-bi" ? showcase.href : undefined}
-          openOnQuery={
-            showcase.platform === "js"
-              ? REPORT_QUERY_KEYS[showcase.report]
-              : undefined
-          }
-        >
-          {showcase.platform === "cube" ? (
-            <div className="p-4 sm:p-6">
-              <SalesDashboardLazy
-                data={await getSalesDashboardData()}
-                labels={dict.salesDashboard}
-              />
-            </div>
-          ) : showcase.platform === "js" ? (
-            <JsReportLazy report={showcase.report} />
-          ) : showcase.platform === "superset" ? (
-            <SupersetEmbed
-              slug={showcase.slug}
-              embedId={showcase.embedId}
-              title={reportTitle}
-              loadingLabel={t.dashboardLoading}
-              errorLabel={t.dashboardError}
-            />
-          ) : (
-            <iframe
-              src={showcase.embedUrl}
-              title={reportTitle}
-              allowFullScreen
-              className="h-full w-full border-0"
-            />
-          )}
-        </ReportDialog>
       </div>
 
       <section className="mt-8 max-w-prose">

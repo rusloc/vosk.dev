@@ -18,7 +18,8 @@ import type { JsReport } from "./js-reports";
  *  - JS        → not an embed either: a report built in this repo (components/<report>) that
  *                loads static Parquet files and computes every number in the browser
  *                (docs/<report>/). A JS showcase may also carry the same report's Power BI
- *                flavour, published to web: the page then offers both ("Power BI" / "Custom").
+ *                flavour, published to web: the page then offers both ("Power BI" / "Web report"),
+ *                each in a new window; the web report's own window is app/report/[slug].
  *
  * Server-only in effect: lib/cube.ts is, and this imports it. Every importer is a Server
  * Component, a Route Handler or the sitemap — a client component reaching for this file
@@ -200,12 +201,12 @@ const allShowcases: Showcase[] = [
     slug: "online-sales-report",
     platform: "js",
     report: "mirelo",
-    // Published-to-web Power BI flavour (owner, 11-03). A placeholder report of the owner's
-    // ("Coal trucks") until the Mirelo one is published; swapping it is these two URLs.
+    // Published-to-web Power BI flavour (owner, 11-03): the Mirelo Sales report, published 11-03
+    // (replaced the owner's stand-in "Coal trucks" the same evening). Swapping it is these two URLs.
     powerBi: {
       embedUrl:
-        "https://app.powerbi.com/view?r=eyJrIjoiMmFlNTU1OGMtOGY1OS00M2IyLThiZjEtMzIwNzIzMjE5ODg4IiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9&embedImagePlaceholder=true",
-      href: "https://app.powerbi.com/view?r=eyJrIjoiMmFlNTU1OGMtOGY1OS00M2IyLThiZjEtMzIwNzIzMjE5ODg4IiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
+        "https://app.powerbi.com/view?r=eyJrIjoiMmVmNWU0MWUtNmE1ZS00OWRkLTk2ZTQtZTdlZjY3NjA0MDA3IiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9&embedImagePlaceholder=true",
+      href: "https://app.powerbi.com/view?r=eyJrIjoiMmVmNWU0MWUtNmE1ZS00OWRkLTk2ZTQtZTdlZjY3NjA0MDA3IiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
     },
     title: {
       en: "Sales & revenue for a microlender",

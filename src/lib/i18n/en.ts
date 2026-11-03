@@ -250,10 +250,10 @@ export const en = {
     backToShowcase: "Back to showcase",
     closeReport: "Close the report",
     openLiveReport: "Open the live report",
-    // A showcase with both flavours of the same report shows two buttons (owner, 10-31).
+    // A showcase with both flavours of the same report shows two buttons side by side, each
+    // opening its report in a new window (owner, 10-31; new windows 11-03).
     openPowerBi: "Power BI",
-    openCustom: "Custom",
-    openPowerBiNewWindow: "Power BI in a new window",
+    openWebReport: "Web report",
     writeUp: "Write-up",
     // Guest-token dashboards (Superset) mount client-side, so they need a wait state
     // and a visible failure — an embed that quietly renders nothing reads as a bug.

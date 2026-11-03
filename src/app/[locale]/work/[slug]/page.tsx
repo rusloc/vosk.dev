@@ -148,6 +148,18 @@ export default async function ShowcasePage({ params }: Props) {
             />
           </ReportDialog>
         )}
+        {/* The same public report in its own window (owner, 11-03): a plain link, no popup. */}
+        {showcase.platform === "js" && showcase.powerBi && (
+          <a
+            href={showcase.powerBi.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border-border hover:bg-muted inline-flex h-10 items-center gap-1.5 rounded-md border px-5 text-sm font-medium whitespace-nowrap transition-colors"
+          >
+            {t.openPowerBiNewWindow}
+            <span aria-hidden="true">↗</span>
+          </a>
+        )}
         <ReportDialog
           label={
             showcase.platform === "js" && showcase.powerBi

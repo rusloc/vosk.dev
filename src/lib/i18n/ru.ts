@@ -238,6 +238,7 @@ export const ru: Dictionary = {
     openLiveReport: "Открыть живой отчёт",
     openPowerBi: "Power BI",
     openCustom: "Собственный",
+    openPowerBiNewWindow: "Power BI в новом окне",
     writeUp: "Разбор",
     dashboardLoading: "Загружаем живой дашборд…",
     dashboardError:

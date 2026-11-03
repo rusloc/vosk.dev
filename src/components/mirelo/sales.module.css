@@ -972,6 +972,7 @@ th[aria-sort] .sortBtn span {
   height: 24px;
   padding: 0 10px;
   border: 1px solid var(--ink);
+  border-radius: 6px; /* a span inside the stretched button, so the 6 px button rule above does not reach it (owner, 11-03) */
   background: var(--white);
   font-size: 12px;
   line-height: 22px;

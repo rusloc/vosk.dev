@@ -174,5 +174,9 @@ the first. What changed, and what did not:
 - **Route** `/api/mirelo/[...path]`: a known name or 404; 503 without the env var; a per-instance rate limit; answers
   cached by the CDN for a day and served stale while refreshing (the data is a frozen snapshot), so the database sees a
   handful of reads per artifact. Reachable because `proxy.ts` excludes `/api/*`.
+- **Power BI flavour (11-03, later the same day):** `online-sales-report` carries `powerBi` now, so the page shows
+  "Power BI" (popup, the publish-to-web iframe) and "Custom" side by side, plus a plain link "Power BI in a new
+  window" (`target=_blank`, no popup; owner's ask). The URL is a placeholder report of the owner's ("Coal trucks")
+  until the Mirelo report is published to web; swapping it is the two URLs in `src/lib/work.ts`.
 - **Rebuilding the data** is the same as before up to the Parquet (`build_detail.py` into `data/mirelo/parquet/detail`),
   then the loader instead of a commit of `public/` files.

@@ -253,6 +253,7 @@ export const en = {
     // A showcase with both flavours of the same report shows two buttons (owner, 10-31).
     openPowerBi: "Power BI",
     openCustom: "Custom",
+    openPowerBiNewWindow: "Power BI in a new window",
     writeUp: "Write-up",
     // Guest-token dashboards (Superset) mount client-side, so they need a wait state
     // and a visible failure — an embed that quietly renders nothing reads as a bug.

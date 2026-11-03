@@ -45,3 +45,9 @@ next-env.d.ts
 # python (scripts/ holds one-off asset generators)
 __pycache__/
 *.pyc
+
+# Mirelo report data lives in Supabase (schema mirelo_demo, 2026-11-03). The Parquet it was loaded from stays on
+# disk for the loader (scripts/mirelo-load.ts) and the tests, rebuilt from the generator (docs/mirelo/README.md);
+# 28 MB that no longer belong in git. public/data/pnl and public/data/nordmark stay tracked: the browser still
+# reads those from the deployment until their reports move to Supabase too.
+data/mirelo/parquet/

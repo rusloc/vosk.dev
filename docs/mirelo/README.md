@@ -180,3 +180,6 @@ the first. What changed, and what did not:
   until the Mirelo report is published to web; swapping it is the two URLs in `src/lib/work.ts`.
 - **Rebuilding the data** is the same as before up to the Parquet (`build_detail.py` into `data/mirelo/parquet/detail`),
   then the loader instead of a commit of `public/` files.
+- **`data/mirelo/parquet/` is git-ignored since 11-03 (owner):** the data of record is the Supabase schema; the
+  Parquet is the loader's input and the tests' fixture on the owner's machine only. A fresh clone has to rebuild it
+  (the pack's base files + `build_detail.py`) before `pnpm test` can run the Mirelo suites or the loader can run.

@@ -18,8 +18,7 @@ import type { JsReport } from "./js-reports";
  *  - JS        → not an embed either: a report built in this repo (components/<report>) that
  *                loads static Parquet files and computes every number in the browser
  *                (docs/<report>/). A JS showcase may also carry the same report's Power BI
- *                flavour, published to web: the page then offers both ("Power BI" / "Web report"),
- *                each in a new window; the web report's own window is app/report/[slug].
+ *                flavour, published to web: the page then offers both ("Power BI" / "Web report").
  *
  * Server-only in effect: lib/cube.ts is, and this imports it. Every importer is a Server
  * Component, a Route Handler or the sitemap — a client component reaching for this file

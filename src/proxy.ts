@@ -64,7 +64,6 @@ export const config = {
   // Run on everything except Next internals, API routes, and files with an
   // extension (sitemap.xml, robots.txt, feed.xml, manifest.webmanifest, images, …).
   // `api/` has to be named explicitly: API paths carry no extension, so the
-  // dot rule doesn't cover them and they'd be rewritten under /en and 404. `report/` is the
-  // chrome-less report window (app/report/[slug]), outside the locale segment for the same reason.
-  matcher: ["/((?!_next/|_vercel/|api/|report/|.*\\..*).*)"],
+  // dot rule doesn't cover them and they'd be rewritten under /en and 404.
+  matcher: ["/((?!_next/|_vercel/|api/|.*\\..*).*)"],
 };

@@ -251,7 +251,7 @@ export const en = {
     closeReport: "Close the report",
     openLiveReport: "Open the live report",
     // A showcase with both flavours of the same report shows two buttons side by side, each
-    // opening its report in a new window (owner, 10-31; new windows 11-03).
+    // opening its report in the popup (owner, 10-31; labels 11-03).
     openPowerBi: "Power BI",
     openWebReport: "Web report",
     writeUp: "Write-up",

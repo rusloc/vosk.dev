@@ -176,13 +176,11 @@ the first. What changed, and what did not:
   handful of reads per artifact. Reachable because `proxy.ts` excludes `/api/*`.
 - **Power BI flavour (11-03, later the same day):** `online-sales-report` carries `powerBi` now. ~~The page shows
   "Power BI" (popup, the publish-to-web iframe) and "Custom" side by side, plus a plain link "Power BI in a new
-  window".~~ → **Same evening (owner): a showcase with two formats has no popup.** Two buttons side by side,
-  "Power BI" and "Web report", each `target=_blank`: the public Power BI URL, and the report's own chrome-less
-  window `/report/online-sales-report` (`src/app/report/[slug]/`, outside the locale segment, `noindex`, not in
-  the sitemap; `proxy.ts` leaves `/report/` alone). The report's URL state (F-37) lives on that page now: "Copy
-  link" hands out `/report/online-sales-report?…`, and a link of the old form (`/work/online-sales-report?…`)
-  no longer opens anything. The JS reports load browser-only (`ssr: false`): the window is prerendered, and a
-  report reads `window.location` as it mounts. ~~The Power BI URL is a placeholder report of the owner's ("Coal
+  window".~~ → **Same evening (owner): two buttons side by side, "Power BI" and "Web report", each opening its
+  report in the site's popup** (the Power BI one is a real link to the public URL, so a modified click still opens
+  a tab). A full-window `/report/<slug>` route was built in between (23:39) and taken out again at the owner's ask
+  (23:5x: "window opened on top, styled as the site"); shared links keep the old form, `/work/online-sales-report?…`.
+  ~~The Power BI URL is a placeholder report of the owner's ("Coal
   trucks") until the Mirelo report is published to web~~ → **23:52: the owner handed over the published Mirelo Sales
   report's iframe and its `view?r=…` URL replaced the stand-in**; swapping it again is the two URLs in `src/lib/work.ts`.
 - **Rebuilding the data** is the same as before up to the Parquet (`build_detail.py` into `data/mirelo/parquet/detail`),

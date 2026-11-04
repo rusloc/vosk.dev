@@ -113,13 +113,11 @@ export default async function ShowcasePage({ params }: Props) {
           describes the same Home → Showcase → title hierarchy this link walks up. */}
       <BackLink href={localizedPath(l, "/work")} label={t.backToShowcase} />
 
-      <header className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+      {/* No platform pill beside the title (owner, 11-04): the buttons below name the format. */}
+      <header className="mt-3">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
           {title}
         </h1>
-        <span className="text-muted-foreground border-border rounded-full border px-2.5 py-0.5 text-xs">
-          {PLATFORM_LABEL[platform]}
-        </span>
       </header>
 
       {/* Every showcase is a text page with a button: the report opens in a popup on
@@ -131,8 +129,9 @@ export default async function ShowcasePage({ params }: Props) {
           needs nothing from the server: it loads its own data on open. A showcase with
           two formats of the same report (a JS one whose Power BI flavour is published)
           gets two such buttons side by side, "Power BI" and "Web report" (owner, 10-31;
-          labels 11-03), each opening its report in the same popup; until the Power BI
-          flavour is published, only the web one, under the generic label. */}
+          labels 11-03), each opening its report in the same popup. Every showcase uses
+          the same two names (owner, 11-04): "Power BI" for a Power BI report, "Web report"
+          for everything drawn on the site (JS, Cube, Superset). */}
       <div className="mt-5 flex flex-wrap gap-3">
         {showcase.platform === "js" && showcase.powerBi && (
           <ReportDialog
@@ -151,9 +150,7 @@ export default async function ShowcasePage({ params }: Props) {
         )}
         <ReportDialog
           label={
-            showcase.platform === "js" && showcase.powerBi
-              ? t.openWebReport
-              : t.openLiveReport
+            showcase.platform === "power-bi" ? t.openPowerBi : t.openWebReport
           }
           title={reportTitle}
           closeLabel={t.closeReport}

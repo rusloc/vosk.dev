@@ -243,9 +243,10 @@ const allShowcases: Showcase[] = [
       ru: "Воронка-водопад сверху вниз для парка техники угольного разреза: из общего круглосуточного времени категория за категорией вычитаются простои — вплоть до эффективной работы. Доступны линейный расчёт и взвешенный по объёму ковша.",
     },
     metric: "100%",
+    // The "Trucks" report, published to web from Fabric (owner, 11-04; replaced the earlier app.powerbi.com link).
     embedUrl:
-      "https://app.powerbi.com/view?r=eyJrIjoiY2M3YzU2MjAtNjdlOC00NGU2LThlMTItMzc2MTE2Yjk0MDlkIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9&embedImagePlaceholder=true",
-    href: "https://app.powerbi.com/view?r=eyJrIjoiY2M3YzU2MjAtNjdlOC00NGU2LThlMTItMzc2MTE2Yjk0MDlkIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9&embedImagePlaceholder=true",
+      "https://app.fabric.microsoft.com/view?r=eyJrIjoiODlkMmE2YzUtYmQ0Zi00ZmQwLTk5NjEtNjY3NzZiNTNiMjFkIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
+    href: "https://app.fabric.microsoft.com/view?r=eyJrIjoiODlkMmE2YzUtYmQ0Zi00ZmQwLTk5NjEtNjY3NzZiNTNiMjFkIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
     articleSlug: "power-bi-time-utilization-funnel",
     // The page's own text (the report is an iframe in a popup, opaque to crawlers):
     // short on purpose. The long-form story is the linked `articleSlug` write-up.

@@ -235,7 +235,6 @@ export const ru: Dictionary = {
     empty: "Кейсы скоро появятся.",
     backToShowcase: "Назад в портфолио",
     closeReport: "Закрыть отчёт",
-    openLiveReport: "Открыть живой отчёт",
     openPowerBi: "Power BI",
     openWebReport: "Веб-отчёт",
     writeUp: "Разбор",

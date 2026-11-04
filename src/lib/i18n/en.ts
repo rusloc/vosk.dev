@@ -249,9 +249,9 @@ export const en = {
     empty: "Case studies coming soon.",
     backToShowcase: "Back to showcase",
     closeReport: "Close the report",
-    openLiveReport: "Open the live report",
     // A showcase with both flavours of the same report shows two buttons side by side, each
-    // opening its report in the popup (owner, 10-31; labels 11-03).
+    // opening its report in the popup (owner, 10-31; labels 11-03). Since 11-04 every showcase uses these two
+    // names: "Power BI" for a Power BI report, "Web report" for one drawn on the site.
     openPowerBi: "Power BI",
     openWebReport: "Web report",
     writeUp: "Write-up",

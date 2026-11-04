@@ -116,7 +116,8 @@ public/data/pnl/  → the P&L showcase's frozen data (Parquet + manifest); spec 
 - **`src/lib/content.ts`** is the single seam for reading/listing/validating MDX — pages consume it, never touch the filesystem directly (keeps a future CMS swap cheap).
 - **`/work` is not MDX.** Showcases are entries in **`src/lib/work.ts`** — a discriminated union by
   `platform` (`power-bi` | `superset` | `cube` | `js`), per `ADR-0002`. There is no `content/work/`.
-  Every showcase page is text plus one "Open the live report" button; the report opens in a popup.
+  Every showcase page is text plus one button, "Power BI" (a Power BI report) or "Web report" (drawn on
+  the site: JS, Cube, Superset); the report opens in a popup. No platform pill on the page or the card (11-04).
   A showcase with two formats of one report (a `js` entry with `powerBi`) has two such buttons side by
   side, "Power BI" and "Web report", each opening its report in the popup.
   The `cube` entry is not an embed: the page queries Cube server-side and draws the dashboard

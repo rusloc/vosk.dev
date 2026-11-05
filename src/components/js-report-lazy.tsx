@@ -12,6 +12,9 @@ const REPORTS: Record<JsReport, React.ComponentType> = {
   pnl: dynamic(() => import("./pnl/shell").then((m) => m.Shell)),
   mirelo: dynamic(() => import("./mirelo/sales-app").then((m) => m.SalesApp)),
   nordmark: dynamic(() => import("./nordmark/exec-app").then((m) => m.ExecApp)),
+  marketing: dynamic(() =>
+    import("./marketing/marketing-app").then((m) => m.MarketingApp),
+  ),
 };
 
 export function JsReportLazy({ report }: { report: JsReport }) {

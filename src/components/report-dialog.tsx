@@ -18,6 +18,7 @@ export function ReportDialog({
   closeLabel,
   href,
   openOnQuery,
+  openOnHash,
   children,
 }: {
   label: string;
@@ -26,6 +27,8 @@ export function ReportDialog({
   href?: string;
   /** Open on arrival when the page URL carries one of these keys: a shared link (F-37) lands inside the report. */
   openOnQuery?: readonly string[];
+  /** …or when its hash is one of these (a report whose view travels in the hash, e.g. ACME Marketing's `#campaigns`). */
+  openOnHash?: readonly string[];
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -33,11 +36,12 @@ export function ReportDialog({
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
-    if (!openOnQuery?.some((key) => query.has(key))) return;
+    const hashed = openOnHash?.includes(window.location.hash) ?? false;
+    if (!hashed && !openOnQuery?.some((key) => query.has(key))) return;
     // deferred a tick: the page hydrates closed (it is static), then the shared link opens the report
     const t = setTimeout(() => setOpen(true), 0);
     return () => clearTimeout(t);
-  }, [openOnQuery]);
+  }, [openOnQuery, openOnHash]);
 
   useEffect(() => {
     if (!open) return;

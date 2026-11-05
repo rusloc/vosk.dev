@@ -1,3 +1,7 @@
+import {
+  URL_KEYS as MARKETING_KEYS,
+  VIEW_HASHES as MARKETING_HASHES,
+} from "./marketing/engine/url-state";
 import { URL_KEYS as MIRELO_KEYS } from "./mirelo/url-state";
 import { URL_KEYS as NORDMARK_KEYS } from "./nordmark/engine/url-state";
 import { SELECTION_KEYS } from "./pnl/state/selection-schema";
@@ -9,7 +13,7 @@ import { VIEW_STATE_KEYS } from "./pnl/state/view-state";
  * `public/data/<report>/` and computing every number in the browser. They were handed over as standalone apps
  * (docs/<report>/) and are owned here since.
  */
-export type JsReport = "pnl" | "mirelo" | "nordmark";
+export type JsReport = "pnl" | "mirelo" | "nordmark" | "marketing";
 
 /**
  * The query-string keys each report's state is encoded with. A showcase-page URL carrying one of them is a
@@ -19,4 +23,10 @@ export const REPORT_QUERY_KEYS: Record<JsReport, readonly string[]> = {
   pnl: [...SELECTION_KEYS, ...VIEW_STATE_KEYS],
   mirelo: MIRELO_KEYS,
   nordmark: NORDMARK_KEYS,
+  marketing: MARKETING_KEYS,
+};
+
+/** Reports whose view travels in the URL hash: a shared link with one of these opens the popup as well. */
+export const REPORT_HASHES: Partial<Record<JsReport, readonly string[]>> = {
+  marketing: MARKETING_HASHES,
 };

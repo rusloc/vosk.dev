@@ -30,6 +30,7 @@ _Amended 2026-10-20: the lead engine's `public` tables are gone; `qbo` is the se
 | `demo_sales` | **site showcase** | synthetic online-sales star schema — `docs/08-cube-sales-showcase.md` | **only** role `cube_reader`, **only** from Cube |
 | `qbo` | **QBO P&L** — repo `rusloc/qbo`, `C:\__PBI\QBO` | QuickBooks P&L warehouse; that repo's `CLAUDE.md` and ADR-0008 | roles `qbo_etl` (ETL, dbt) and `qbo_reader` (Power BI) |
 | `mirelo_demo` _(live 2026-11-03)_ | **site report data** — the Mirelo custom JS report | synthetic neobank / microlender sales; schema SQL in `data/mirelo/sql/`, loader `scripts/mirelo-load.ts`, read by `/api/mirelo/*` (`docs/mirelo/README.md`, 11-03) | `mirelo_loader` (load, from the owner's machine) and `mirelo_reader` (the site's server routes) |
+| `marketing_demo` _(loaded 2026-11-05)_ | **site report data** — the ACME Marketing custom JS report | synthetic SaaS paid-acquisition data; schema SQL in `data/marketing/sql/`, loader `scripts/marketing-load.ts`, read by `/api/marketing/*` as columns (`docs/marketing/README.md`) | `marketing_loader` (load, from the owner's machine) and `marketing_reader` (the site's server routes) |
 
 _Amended 2026-11-02: **the site is a shopfront for reports, and report data lives in this project.**_
 Each custom JS report (Track C) gets a schema of its own (`<report>_demo`: Mirelo first, then the
@@ -95,13 +96,15 @@ and roles are plain Postgres, so a move is a connection-string change.
 - **Agreed addition (2026-10-22):** `hyparquet` (exact 1.31.5) for the P&L showcase, which reads static Parquet
   in the browser; IBM Plex Sans (+ Condensed) via `next/font`, scoped to that report only. Its own design
   system (Ledger tokens, CSS Modules) stays inside `components/pnl/`; the site keeps Tailwind and Geist.
+- **Agreed addition (2026-11-05):** Manrope via `next/font` (`components/marketing/manrope-font.ts`), scoped to the ACME
+  Marketing report's root, like IBM Plex for the P&L.
 
 ## Structure — the site
 
 ```
 src/
   app/            → routes under [locale]/ (home, work, services, contact, blog) + layout, sitemap, robots
-  app/api/        → superset/guest-token; mirelo/[...path] (the Mirelo report's data from Supabase) — the two Route Handlers
+  app/api/        → superset/guest-token; mirelo/[...path] and marketing/[...path] (the JS reports' data from Supabase) — the Route Handlers
   proxy.ts        → locale rewriting middleware; excludes /api/*
   components/     → shared UI (nav, footer, cards, contact-form, mdx-components, primitives)
   lib/            → content.ts (MDX seam), work.ts (showcase registry), schema.ts (Zod), env.ts, site.ts, metadata.ts

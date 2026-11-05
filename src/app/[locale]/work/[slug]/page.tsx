@@ -5,7 +5,7 @@ import { BackLink } from "@/components/back-link";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
 import { JsReportLazy } from "@/components/js-report-lazy";
-import { REPORT_QUERY_KEYS } from "@/lib/js-reports";
+import { REPORT_HASHES, REPORT_QUERY_KEYS } from "@/lib/js-reports";
 import { ReportDialog } from "@/components/report-dialog";
 import { SalesDashboardLazy } from "@/components/sales-dashboard-lazy";
 import { SupersetEmbed } from "@/components/superset-embed";
@@ -17,6 +17,7 @@ import {
   PLATFORM_LABEL,
   getShowcase,
   getShowcaseSlugs,
+  isJsReportLive,
   localize,
 } from "@/lib/work";
 import {
@@ -92,6 +93,9 @@ export default async function ShowcasePage({ params }: Props) {
   ];
 
   const reportTitle = `${title} — ${PLATFORM_LABEL[platform]}`;
+  // A JS report whose data is not wired yet (its reader URL unset) shows its Power BI flavour only.
+  const webReport =
+    showcase.platform !== "js" || isJsReportLive(showcase.report);
 
   return (
     <Container className="py-6">
@@ -148,45 +152,52 @@ export default async function ShowcasePage({ params }: Props) {
             />
           </ReportDialog>
         )}
-        <ReportDialog
-          label={
-            showcase.platform === "power-bi" ? t.openPowerBi : t.openWebReport
-          }
-          title={reportTitle}
-          closeLabel={t.closeReport}
-          href={showcase.platform === "power-bi" ? showcase.href : undefined}
-          openOnQuery={
-            showcase.platform === "js"
-              ? REPORT_QUERY_KEYS[showcase.report]
-              : undefined
-          }
-        >
-          {showcase.platform === "cube" ? (
-            <div className="p-4 sm:p-6">
-              <SalesDashboardLazy
-                data={await getSalesDashboardData()}
-                labels={dict.salesDashboard}
+        {webReport && (
+          <ReportDialog
+            label={
+              showcase.platform === "power-bi" ? t.openPowerBi : t.openWebReport
+            }
+            title={reportTitle}
+            closeLabel={t.closeReport}
+            href={showcase.platform === "power-bi" ? showcase.href : undefined}
+            openOnQuery={
+              showcase.platform === "js"
+                ? REPORT_QUERY_KEYS[showcase.report]
+                : undefined
+            }
+            openOnHash={
+              showcase.platform === "js"
+                ? REPORT_HASHES[showcase.report]
+                : undefined
+            }
+          >
+            {showcase.platform === "cube" ? (
+              <div className="p-4 sm:p-6">
+                <SalesDashboardLazy
+                  data={await getSalesDashboardData()}
+                  labels={dict.salesDashboard}
+                />
+              </div>
+            ) : showcase.platform === "js" ? (
+              <JsReportLazy report={showcase.report} />
+            ) : showcase.platform === "superset" ? (
+              <SupersetEmbed
+                slug={showcase.slug}
+                embedId={showcase.embedId}
+                title={reportTitle}
+                loadingLabel={t.dashboardLoading}
+                errorLabel={t.dashboardError}
               />
-            </div>
-          ) : showcase.platform === "js" ? (
-            <JsReportLazy report={showcase.report} />
-          ) : showcase.platform === "superset" ? (
-            <SupersetEmbed
-              slug={showcase.slug}
-              embedId={showcase.embedId}
-              title={reportTitle}
-              loadingLabel={t.dashboardLoading}
-              errorLabel={t.dashboardError}
-            />
-          ) : (
-            <iframe
-              src={showcase.embedUrl}
-              title={reportTitle}
-              allowFullScreen
-              className="h-full w-full border-0"
-            />
-          )}
-        </ReportDialog>
+            ) : (
+              <iframe
+                src={showcase.embedUrl}
+                title={reportTitle}
+                allowFullScreen
+                className="h-full w-full border-0"
+              />
+            )}
+          </ReportDialog>
+        )}
       </div>
 
       <section className="mt-8 max-w-prose">
@@ -194,9 +205,12 @@ export default async function ShowcasePage({ params }: Props) {
           {t.aboutHeading}
         </h2>
         <div className="text-foreground/85 mt-3 space-y-4 leading-relaxed">
-          {details.map((paragraph, i) => (
-            <p key={i}>{paragraph}</p>
-          ))}
+          {/* A dry bullet summary (owner, 11-05): what the report shows and which metrics reveal the detail. */}
+          <ul className="marker:text-muted-foreground list-disc space-y-1.5 pl-5">
+            {details.map((point, i) => (
+              <li key={i}>{point}</li>
+            ))}
+          </ul>
           {/* The long-form story, linked by its own title as the anchor. */}
           {article && (
             <p>

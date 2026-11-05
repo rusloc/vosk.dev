@@ -28,6 +28,9 @@ export type ShowcasePlatform = "power-bi" | "superset" | "cube" | "js";
 
 type ShowcaseBase<Text, Paragraphs> = {
   slug: string;
+  // The sort key of the /work list, newest first. Internal only: never rendered on any page. The dates set the
+  // owner's order (11-05: Cube, exec, P&L, mining, lender, marketing, oldest to newest), not history.
+  published: `${number}-${number}-${number}`;
   title: Text;
   summary: Text; // concise — the list-card blurb
   details: Paragraphs; // the detail page's bullet summary (one point per item, 11-05), under the report buttons
@@ -95,6 +98,7 @@ export type LocalizedShowcase = ShowcaseOf<string, string[]>;
 export function localize(s: Showcase, locale: Locale): LocalizedShowcase {
   const base = {
     slug: s.slug,
+    published: s.published,
     title: s.title[locale],
     summary: s.summary[locale],
     details: s.details[locale],
@@ -142,84 +146,89 @@ const UNSET_EMBED_ID = "REPLACE-WITH-EMBED-UUID";
 const allShowcases: Showcase[] = [
   {
     slug: "pnl-suite",
+    published: "2026-10-30",
     platform: "js",
     report: "pnl",
     title: {
-      en: "Management P&L suite",
-      ru: "Управленческий P&L",
+      en: "Management PnL report",
+      ru: "Управленческий PnL-отчёт",
     },
     summary: {
-      en: "Budget vs actual for a consumer-goods company and an e-commerce SaaS company: statement, Vitals, revenue and profit bridges, largest variances and profitability, built in custom JavaScript.",
-      ru: "Бюджет против факта для компании потребительских товаров и SaaS-компании: отчёт, Vitals, мосты выручки и прибыли, крупнейшие отклонения и рентабельность — на собственном JavaScript.",
+      en: "Budget vs actual P&L for two companies: statement, KPIs, variances, bridges, profitability.",
+      ru: "План против факта P&L двух компаний: отчёт, KPI, отклонения, мосты, прибыльность.",
     },
     metric: "$3.4B",
     // The page's text: what the report does, short on purpose. Spec and build notes: docs/pnl/.
     details: {
       en: [
-        "Management P&L for a two-company group: consumer goods and e-commerce SaaS, one layout for both",
-        "Period: one month, quarter or year to date, last 12 months or full year; USD, EUR or GBP at actual or constant rates",
-        "Statement: every line against two comparators out of Budget, Latest estimate and Prior year, full-year figures alongside; expands from blocks to the account",
-        "Vitals: net revenue, Adj. EBITDA, operating profit, gross margin %, opex % of revenue, each with a status vs Budget",
-        "Driver cards by company: units, revenue per unit, gross-to-net, A&P for consumer goods; GMV, take rate, active merchants, ARR for SaaS; full-year outlook for both",
-        "Analysis: every line to operating profit ranked by variance vs Budget, FX share shown; filter by region, channel, category or price tier, alone or combined",
-        "Bridges: net revenue from comparator to actual by driver at constant currency, then FX; profit from the comparator's Adj. EBITDA to actual operating profit",
-        "Profitability by region at constant currency: revenue, contribution and Adj. EBITDA shares, growth × margin, region × category mix",
-        "Synthetic data; every number reconciles to 552 control totals",
+        "Management P&L for a two-company group: consumer goods and e-commerce SaaS, one layout",
+        "Period: month, quarter or year to date, last 12 months, full year",
+        "Currency: USD, EUR or GBP, at actual or constant rates",
+        "Statement: every line vs budget, latest estimate or prior year, from block down to account",
+        "KPIs: net revenue, adjusted EBITDA, operating profit, gross margin %, opex % of revenue, status vs budget",
+        "Drivers: units, revenue per unit, gross-to-net, A&P; GMV, take rate, active merchants, ARR",
+        "Variances: every line ranked vs budget, FX share, by region, channel, category or price tier",
+        "Bridges: net revenue and profit from budget to actual, by driver, then FX",
+        "Profitability by region and category: revenue, contribution and EBITDA shares, growth vs margin",
+        "Complex ETL under the hood and data prep",
       ],
       ru: [
-        "Управленческий P&L группы из двух компаний: потребительские товары и SaaS для e-commerce, один макет на обе",
-        "Период: месяц, квартал или год с начала, последние 12 месяцев, полный год; USD, EUR или GBP по фактическому или постоянному курсу",
-        "Отчёт: каждая строка против двух баз из бюджета, последнего прогноза и прошлого года, рядом годовые цифры; раскрывается от блоков до счёта",
-        "Vitals: чистая выручка, скорр. EBITDA, операционная прибыль, валовая маржа %, опер. расходы в % выручки, у каждой статус против бюджета",
-        "Карточки драйверов по компании: штуки, выручка на единицу, gross-to-net, A&P для товаров; GMV, take rate, активные мерчанты, ARR для SaaS; прогноз на год для обеих",
-        "Анализ: все строки до операционной прибыли по величине отклонения от бюджета, с долей курса; фильтр по региону, каналу, категории или ценовому сегменту, по одному или вместе",
-        "Мосты: выручка от базы к факту по драйверам в постоянной валюте, затем курс; прибыль от скорр. EBITDA базы к фактической операционной прибыли",
-        "Рентабельность по регионам в постоянной валюте: доли выручки, маржинального дохода и скорр. EBITDA, рост × маржа, микс регион × категория",
-        "Данные синтетические; каждое число сходится с 552 контрольными итогами",
+        "Управленческий P&L группы из двух компаний: потребительские товары и e-commerce SaaS, единый макет",
+        "Период: месяц, квартал или год с начала, последние 12 месяцев, полный год",
+        "Валюта: USD, EUR или GBP, по фактическому или постоянному курсу",
+        "Отчёт: каждая строка против бюджета, последней оценки или прошлого года, от блока до счёта",
+        "KPI: чистая выручка, скорр. EBITDA, операционная прибыль, валовая маржа %, опер. расходы % от выручки, статус против бюджета",
+        "Драйверы: штуки, выручка на штуку, gross-to-net, A&P; GMV, take rate, активные мерчанты, ARR",
+        "Отклонения: каждая строка по отклонению от бюджета, доля FX, по региону, каналу, категории или ценовому сегменту",
+        "Мосты: чистая выручка и прибыль от бюджета к факту по драйверам, затем FX",
+        "Прибыльность по регионам и категориям: доли выручки, вклада и EBITDA, рост против маржи",
+        "Сложный ETL и подготовка данных под капотом",
       ],
     },
   },
   {
     slug: "executive-dashboard",
+    published: "2026-10-29",
     platform: "js",
     report: "nordmark",
     title: {
       en: "Retail executive dashboard",
-      ru: "Дашборд руководителя ритейлера",
+      ru: "Дашборд руководителя розничной сети",
     },
     summary: {
-      en: "Twelve trading metrics for a multi-category reseller on one screen: status at a glance, a retail-calendar period picker, Budget / Last year / Previous, region and category filters, built in custom JavaScript.",
-      ru: "Двенадцать торговых метрик мультикатегорийного ритейлера на одном экране: статус с первого взгляда, выбор периода по торговому календарю, бюджет / прошлый год / предыдущий период, фильтры по региону и категории — на собственном JavaScript.",
+      en: "Twelve retail KPIs vs budget, last year or previous period, by region and category.",
+      ru: "Двенадцать розничных KPI против бюджета, прошлого года или периода, по регионам и категориям.",
     },
     metric: "€68.4M",
     // Spec and build notes: docs/nordmark/.
     details: {
       en: [
-        "Executive dashboard for a fictional reseller: stores in the Netherlands and Belgium, an online shop, a wholesale arm",
-        "Period on the 4-5-4 retail calendar: week, month, quarter or year to date, vs Budget, Last year or the previous period",
-        "Twelve KPI cards; the header counts on track, watch and off track",
-        "Lead cards: net sales, total margin (front plus back), weeks of cover",
-        "Then markdown, availability, EBITDA, like-for-like growth, front gross margin, sell-through, GMROI, supplier OTIF, channel mix",
-        "Each card: value, delta, sparkline, status chip; a pop-up with actual vs target, formula and a worked example; a drill path to the lowest grain",
-        "Filters: region or format, category, KPI group, lever, owner; a card a category can't split says so",
-        "20 more KPIs on an inactive bench",
-        "Synthetic data, checked against 36,657 control rows",
+        "Executive dashboard for a multi-channel retailer: stores in the Netherlands and Belgium, online, wholesale",
+        "Period on the 4-5-4 retail calendar: week, month, quarter or year to date",
+        "Comparison: budget, last year or previous period",
+        "Twelve KPI cards with on track, watch and off track status",
+        "Lead KPIs: net sales, total margin, weeks of cover",
+        "Also: markdown, availability, EBITDA, like-for-like growth, gross margin, sell-through, GMROI, supplier OTIF, channel mix",
+        "Each card: value, delta, trend, target, formula, drill path",
+        "Filters: region or format, category, KPI group, lever, owner",
+        "Complex ETL under the hood and data prep",
       ],
       ru: [
-        "Дашборд руководителя вымышленного ритейлера: магазины в Нидерландах и Бельгии, интернет-магазин, опт",
-        "Период по торговому календарю 4-5-4: неделя, месяц, квартал или год с начала, против бюджета, прошлого года или предыдущего периода",
-        "Двенадцать карточек KPI; в шапке счёт: в норме, под наблюдением, вне плана",
-        "Главные карточки: чистые продажи, общая маржа (фронт плюс бэк), недели покрытия запасом",
-        "Дальше уценки, доступность товара, EBITDA, рост LFL, фронт-маржа, sell-through, GMROI, OTIF поставщиков, микс каналов",
-        "На карточке: значение, отклонение, спарклайн, статус; окно с фактом против цели, формулой и примером расчёта; путь детализации до нижнего уровня",
-        "Фильтры: регион или формат, категория, группа KPI, рычаг, владелец; карточка, которую нельзя разбить по категории, так и пишет",
-        "Ещё 20 KPI на скамейке, выключены",
-        "Данные синтетические, сверены с 36 657 контрольными строками",
+        "Дашборд руководителя для ритейлера: магазины в Нидерландах и Бельгии, онлайн, опт",
+        "Период по розничному календарю 4-5-4: неделя, месяц, квартал или год с начала",
+        "Сравнение: бюджет, прошлый год или прошлый период",
+        "Двенадцать карточек KPI со статусом: в норме, внимание, вне цели",
+        "Ведущие KPI: чистые продажи, общая маржа, недели запаса",
+        "Также: уценки, доступность, EBITDA, рост сопоставимых продаж, валовая маржа, sell-through, GMROI, OTIF поставщиков, структура каналов",
+        "Каждая карточка: значение, отклонение, тренд, цель, формула, путь детализации",
+        "Фильтры: регион или формат, категория, группа KPI, рычаг, ответственный",
+        "Сложный ETL и подготовка данных под капотом",
       ],
     },
   },
   {
     slug: "online-sales-report",
+    published: "2026-11-03",
     platform: "js",
     report: "mirelo",
     // Published-to-web Power BI flavour (owner, 11-03): the Mirelo Sales report, published 11-03
@@ -230,42 +239,45 @@ const allShowcases: Showcase[] = [
       href: "https://app.powerbi.com/view?r=eyJrIjoiMmVmNWU0MWUtNmE1ZS00OWRkLTk2ZTQtZTdlZjY3NjA0MDA3IiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
     },
     title: {
-      en: "Sales & revenue for a microlender",
-      ru: "Продажи и выручка микрокредитора",
+      en: "Lender's Sales & Revenue report",
+      ru: "Отчёт о продажах и выручке кредитора",
     },
     summary: {
-      en: "Loans issued, clients, portfolio quality and revenue against targets for an online lender in three markets, with drill-downs to a market, an agent or a client, built in custom JavaScript.",
-      ru: "Выданные займы, клиенты, качество портфеля и выручка против целей онлайн-кредитора на трёх рынках, с детализацией до рынка, агента или клиента — на собственном JavaScript.",
+      en: "Loans, clients, portfolio quality and revenue vs budget for an online lender in three markets.",
+      ru: "Займы, клиенты, качество портфеля и выручка против бюджета онлайн-кредитора на трёх рынках.",
     },
     metric: "€12.0M",
     // Spec and build notes: docs/mirelo/ (the owner's four review rounds of 11-01; data live from Supabase since 11-03).
     details: {
       en: [
-        "Sales and revenue for a fictional neobank and microlender in Poland, Romania and Portugal, in EUR",
-        "Five views: overview, loans issued, clients, portfolio quality, revenue and targets",
-        "Filters window: a month, quarter, year or custom range of closed months, Jan 2024 to Sep 2026; vs Budget or prior year; market",
-        "Overview: loans and principal, new clients, returning share, 30+ DPD, vs prior year and vs Budget where one exists",
-        "Loans: application funnel, Budget-to-actual bridge, product × market heatmap, cycle time vs SLA, agent and partner leaderboard by quota",
-        "Clients and portfolio: acquisition by channel, cohort repeat heatmap, DPD buckets, vintage curves, roll rates, overdue by product",
-        "Revenue: interest, fees, interchange and subscriptions vs Budget and prior year; attainment by market; new vs churned subscribers",
-        "Drill-downs list every row: a market's or an agent's loans, a channel's clients, a product's overdue loans, then the client card; paged, with full CSV export",
-        "Synthetic data, read live from Supabase and reconciled to the generator's control totals; a Power BI version alongside",
+        "Sales and revenue for an online lender in Poland, Romania and Portugal, in EUR",
+        "Five views: overview, loans, clients, portfolio quality, revenue",
+        "Period: month, quarter, year or custom range; vs budget or prior year; by market",
+        "Overview: loans, principal, new clients, returning share, 30+ DPD",
+        "Loans: application funnel, budget-to-actual bridge, product × market heatmap, cycle time vs SLA, agent leaderboard vs quota",
+        "Clients: acquisition by channel, approval rates, cohort repeat heatmap",
+        "Portfolio: DPD buckets, vintage curves, roll rates, overdue by product",
+        "Revenue: interest, fees, interchange, subscriptions vs budget; new vs churned subscribers",
+        "Drill-down from any total to the loans and the client card, with CSV export",
+        "Complex ETL under the hood and data prep",
       ],
       ru: [
-        "Продажи и выручка вымышленного необанка и микрокредитора в Польше, Румынии и Португалии, в евро",
-        "Пять представлений: обзор, выданные займы, клиенты, качество портфеля, выручка и цели",
-        "Окно фильтров: месяц, квартал, год или произвольный диапазон закрытых месяцев, с января 2024 по сентябрь 2026; против бюджета или прошлого года; рынок",
-        "Обзор: займы и сумма выдач, новые клиенты, доля повторных, просрочка 30+, против прошлого года и против бюджета, где он есть",
-        "Займы: воронка заявок, мост от бюджета к факту, тепловая карта продукт × рынок, время этапов против SLA, рейтинг агентов и партнёров по выполнению квоты",
-        "Клиенты и портфель: привлечение по каналам, тепловая карта повторных займов по когортам, корзины просрочки, винтажи, roll rates, просрочка по продуктам",
-        "Выручка: проценты, комиссии, интерчейндж и подписки против бюджета и прошлого года; выполнение плана по рынкам; новые и ушедшие подписчики",
-        "Детализация показывает все строки: займы рынка или агента, клиенты канала, просроченные займы продукта, затем карточка клиента; по страницам, с выгрузкой всего списка в CSV",
-        "Данные синтетические, читаются из Supabase и сверены с контрольными итогами генератора; рядом версия в Power BI",
+        "Продажи и выручка онлайн-кредитора в Польше, Румынии и Португалии, в евро",
+        "Пять представлений: обзор, займы, клиенты, качество портфеля, выручка",
+        "Период: месяц, квартал, год или произвольный диапазон; против бюджета или прошлого года; по рынкам",
+        "Обзор: займы, сумма выдач, новые клиенты, доля повторных, просрочка 30+",
+        "Займы: воронка заявок, мост от бюджета к факту, тепловая карта продукт × рынок, срок рассмотрения против SLA, рейтинг агентов против квоты",
+        "Клиенты: привлечение по каналам, уровень одобрения, тепловая карта повторных займов по когортам",
+        "Портфель: корзины просрочки, кривые винтажей, переходы между корзинами, просрочка по продуктам",
+        "Выручка: проценты, комиссии, интерчейндж, подписки против бюджета; новые и ушедшие подписчики",
+        "Детализация от любого итога до займов и карточки клиента, с выгрузкой в CSV",
+        "Сложный ETL и подготовка данных под капотом",
       ],
     },
   },
   {
     slug: "marketing-acquisition-dashboard",
+    published: "2026-11-05",
     platform: "js",
     report: "marketing",
     // The ACME Marketing report published to web from Fabric (owner, 11-05). The web flavour reads Supabase schema
@@ -276,48 +288,53 @@ const allShowcases: Showcase[] = [
       href: "https://app.fabric.microsoft.com/view?r=eyJrIjoiNTY2MTc5YjYtY2JkMy00YzM0LWE4ZmQtNTAwNmU3MDhjNTM0IiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
     },
     title: {
-      en: "Paid acquisition dashboard for a SaaS product",
+      en: "Marketing dashboard for a SaaS",
+      ru: "Маркетинговый дашборд SaaS-продукта",
     },
     summary: {
-      en: "Spend, new clients, conversion into paid, CAC and 90-day ROAS for a SaaS product on web, iOS and Android, down to campaign, keyword and cohort payback.",
+      en: "Spend, CAC, ROAS, conversion into paid and cohort payback by channel and campaign.",
+      ru: "Расходы, CAC, ROAS, конверсия в оплату и окупаемость когорт по каналам и кампаниям.",
     },
     metric: "$188.4k",
     // Spec and build notes: docs/marketing/ (the pack of 11-05 and what changed here).
     details: {
       en: [
-        "Paid-acquisition console for a fictional SaaS analytics product: web, iOS, Android; 6 channels, 8 networks, 19 campaigns; Jan 2025 to Nov 2026, USD",
-        "Vitals: spend, new clients, conversion into paid, time to activation, CAC, ROAS 90 d, each vs last year, with a daily dynamics pop-up",
-        "Filters window: last 7 or 30 days, month or quarter to date, custom range; vs previous period, last year or plan; platform, market, sales tier, channel, network, campaign, attribution model",
-        "Overview: acquisition funnel, guardrails, spend and paid customers by channel, anomalies, top movers by ROAS change, spend vs plan with paid CAC",
-        "Channels: matrix of spend, CAC, ROAS, pacing and flags, expandable to platform; web vs app funnel; a row click scopes the other cards",
-        "Campaigns: table with pacing, CPA, ROAS, CTR trend, frequency and fatigue flags; keywords and placements; churn and refunds by channel",
-        "Journey: landing and store pages, onboarding steps of paid traffic, time to activation, activation by platform",
-        "Cohorts: payback by acquisition month, retention grid, LTV:CAC and payback months by channel",
-        "Synthetic data, read from Supabase, reconciled to the generator's 28,660 control totals; a Power BI version alongside",
+        "Paid acquisition across web, iOS and Android: 6 channels, 8 networks, 19 campaigns",
+        "Vitals: spend, new clients, conversion into paid, time to activation, CAC, 90-day ROAS, each vs last year",
+        "Daily dynamics per vital, against the same days last year",
+        "Period: last 7 or 30 days, month or quarter to date, custom range; vs previous period, last year or plan",
+        "Filters: platform, market, sales tier, channel, network, campaign, attribution model",
+        "Overview: acquisition funnel, guardrails, anomalies, top movers by ROAS change, spend vs plan with paid CAC",
+        "Channels: spend, CAC, ROAS, pacing, web vs app funnel, down to platform",
+        "Campaigns: pacing, CPA, ROAS, CTR trend, frequency, fatigue flags; keywords and placements; churn and refunds",
+        "Journey and cohorts: landing pages, onboarding steps, activation; payback, retention, LTV:CAC by channel",
+        "Complex ETL under the hood and data prep",
       ],
       ru: [
-        "Консоль платного привлечения вымышленного SaaS-продукта для аналитики: веб, iOS, Android; 6 каналов, 8 сетей, 19 кампаний; с января 2025 по ноябрь 2026, в долларах",
-        "Ключевые показатели: расходы, новые клиенты, конверсия в оплату, время до активации, CAC, ROAS за 90 дней, каждый против прошлого года, с окном дневной динамики",
-        "Окно фильтров: последние 7 или 30 дней, месяц или квартал с начала, произвольный диапазон; против прошлого периода, прошлого года или плана; платформа, рынок, тип продаж, канал, сеть, кампания, модель атрибуции",
-        "Обзор: воронка привлечения, контрольные метрики, расходы и платящие клиенты по каналам, аномалии, лидеры изменения ROAS, расходы против плана с платным CAC",
-        "Каналы: матрица с расходами, CAC, ROAS, темпом бюджета и флагами, раскрывается до платформы; воронка веб против приложения; клик по строке сужает остальные карточки",
-        "Кампании: таблица с темпом бюджета, CPA, ROAS, динамикой CTR, частотой и флагами выгорания; ключевые слова и площадки; отток и возвраты по каналам",
-        "Путь: посадочные страницы и страницы сторов, шаги онбординга платного трафика, время до активации, активация по платформам",
-        "Когорты: окупаемость по месяцу привлечения, сетка удержания, LTV:CAC и срок окупаемости по каналам",
-        "Данные синтетические, читаются из Supabase и сверены с 28 660 контрольными итогами генератора; рядом версия в Power BI",
+        "Платное привлечение на вебе, iOS и Android: 6 каналов, 8 сетей, 19 кампаний",
+        "Ключевые показатели: расходы, новые клиенты, конверсия в оплату, время до активации, CAC, ROAS за 90 дней, каждый против прошлого года",
+        "Дневная динамика каждого показателя против тех же дней прошлого года",
+        "Период: последние 7 или 30 дней, месяц или квартал с начала, произвольный диапазон; против прошлого периода, прошлого года или плана",
+        "Фильтры: платформа, рынок, тип продаж, канал, сеть, кампания, модель атрибуции",
+        "Обзор: воронка привлечения, контрольные метрики, аномалии, лидеры изменения ROAS, расходы против плана с платным CAC",
+        "Каналы: расходы, CAC, ROAS, темп бюджета, воронка веб против приложения, до платформы",
+        "Кампании: темп бюджета, CPA, ROAS, динамика CTR, частота, флаги выгорания; ключевые слова и площадки; отток и возвраты",
+        "Путь и когорты: посадочные страницы, шаги онбординга, активация; окупаемость, удержание, LTV:CAC по каналам",
+        "Сложный ETL и подготовка данных под капотом",
       ],
     },
   },
   {
     slug: "mining-time-utilization",
+    published: "2026-10-31",
     platform: "power-bi",
     title: {
-      en: "Mining fleet time utilization",
-      ru: "Использование времени горной техники",
+      en: "Coalmining machinery time utilization",
+      ru: "Использование времени техники угольного разреза",
     },
     summary: {
-      en: "A top-down waterfall funnel for a coal-mining fleet — total 24/7 time deducted category by category down to effective work, with linear and ladle-weighted views.",
-      ru: "Воронка-водопад сверху вниз для парка техники угольного разреза: из общего круглосуточного времени категория за категорией вычитаются простои — вплоть до эффективной работы. Доступны линейный расчёт и взвешенный по объёму ковша.",
+      en: "Where a mining fleet's 24/7 hours go: from calendar time down to effective work, vs plan.",
+      ru: "Куда уходят круглосуточные часы горной техники: от календарного времени до эффективной работы, против плана.",
     },
     metric: "100%",
     // The "Trucks" report, published to web from Fabric (owner, 11-04; replaced the earlier app.powerbi.com link).
@@ -330,74 +347,70 @@ const allShowcases: Showcase[] = [
     details: {
       en: [
         "Fleet time utilization for a coal-mining company: where each machine's 24/7 hours go",
-        "Top-down waterfall funnel from 100% of calendar time to effective work time",
-        "Maintenance and each idle category deducted in turn, as a share of total time",
-        "Breakpoints: Ready for work, after major maintenance; Effective work time, on the main job",
-        "Linear utilization or an average weighted by excavator ladle volume",
-        "Actuals against weekly and monthly plans, one category hierarchy for all three",
-        "Business week from Saturday to Friday",
-        "Built in Power BI on a stock stacked bar chart and DAX measures, no custom visual",
-        "Real client report; all figures altered to protect the client's data",
+        "Top-down waterfall from 100% of calendar time to effective work time",
+        "Maintenance and every idle category deducted in turn, as a share of total time",
+        "Breakpoints: ready for work, effective work time",
+        "Linear utilization or weighted by excavator ladle volume",
+        "Actuals vs weekly and monthly plans",
+        "Complex ETL under the hood and data prep",
       ],
       ru: [
-        "Использование времени парка техники угледобывающей компании: куда уходят круглосуточные часы каждой машины",
-        "Воронка-водопад сверху вниз: от 100% календарного времени до эффективной работы",
-        "Обслуживание и каждая категория простоев вычитаются по очереди, в долях от общего времени",
-        "Контрольные точки: «Готов к работе», после крупного обслуживания; «Эффективное рабочее время», на основной работе",
-        "Линейный расчёт или средневзвешенный по объёму ковша экскаватора",
-        "Факт против недельного и месячного планов, одна иерархия категорий на все три",
-        "Рабочая неделя с субботы по пятницу",
-        "Power BI, обычная линейчатая диаграмма с накоплением и меры DAX, без кастомных визуалов",
-        "Отчёт реального клиента; все цифры изменены, чтобы защитить его данные",
+        "Использование времени техники угольного разреза: куда уходят круглосуточные часы каждой машины",
+        "Водопад сверху вниз от 100% календарного времени до эффективной работы",
+        "Обслуживание и каждая категория простоев вычитаются по очереди, как доля от общего времени",
+        "Контрольные точки: готовность к работе, эффективное рабочее время",
+        "Линейный расчёт или взвешенный по объёму ковша экскаватора",
+        "Факт против недельного и месячного плана",
+        "Сложный ETL и подготовка данных под капотом",
       ],
     },
   },
   {
     slug: "finance-pl-overview",
+    published: "2026-07-31",
     platform: "superset",
     title: {
       en: "Finance P&L overview",
       ru: "Финансовый обзор P&L",
     },
     summary: {
-      en: "Budget versus actual, margin waterfall and cost-centre breakdown across three fiscal years — built in Apache Superset on a Postgres warehouse.",
-      ru: "План против факта, водопад маржи и разбивка по центрам затрат за три финансовых года — собрано в Apache Superset на хранилище Postgres.",
+      en: "Budget vs actual, margin waterfall and cost-centre variances for a finance team over three fiscal years.",
+      ru: "План против факта, водопад маржи и отклонения по центрам затрат финансовой команды за три года.",
     },
     metric: "$18.4M",
     embedId: UNSET_EMBED_ID,
     details: {
       en: [
-        "Monthly P&L for one company, FY2023 to FY2025: Actual, Budget, Forecast",
+        "Monthly P&L over three fiscal years: actual, budget, forecast",
         "Budget vs actual by account and cost centre",
         "Margin waterfall from revenue down to operating profit",
-        "Variance view: the few lines worth explaining",
+        "Variances: the lines worth explaining",
         "Costs across 8 cost centres in four regions",
         "Filters: fiscal year, scenario, cost centre",
-        "Apache Superset on a Postgres star schema: month × account × cost centre × scenario",
-        "Synthetic data from versioned SQL, with four planted anomalies",
+        "Complex ETL under the hood and data prep",
       ],
       ru: [
-        "Ежемесячный P&L одной компании, с 2023 по 2025 финансовый год: факт, бюджет, прогноз",
+        "Ежемесячный P&L за три финансовых года: факт, бюджет, прогноз",
         "План против факта по счетам и центрам затрат",
         "Водопад маржи от выручки до операционной прибыли",
-        "Отклонения: те немногие строки, которые стоит объяснять",
-        "Затраты по 8 центрам в четырёх регионах",
+        "Отклонения: строки, которые стоит объяснить",
+        "Затраты по 8 центрам затрат в четырёх регионах",
         "Фильтры: финансовый год, сценарий, центр затрат",
-        "Apache Superset на схеме «звезда» в Postgres: месяц × счёт × центр затрат × сценарий",
-        "Данные синтетические, из версионируемого SQL, с четырьмя заложенными аномалиями",
+        "Сложный ETL и подготовка данных под капотом",
       ],
     },
   },
   {
     slug: "online-sales-cube",
+    published: "2026-09-21",
     platform: "cube",
     title: {
-      en: "Online sales on a semantic layer",
-      ru: "Онлайн-продажи на семантическом слое",
+      en: "Cube.dev for online sales reporting",
+      ru: "Cube.dev для отчётности онлайн-продаж",
     },
     summary: {
-      en: "Revenue, orders, margin and channel mix for an online shop — a Postgres star schema, measures defined once in a Cube semantic layer, and a custom Tremor front end instead of a BI tool.",
-      ru: "Выручка, заказы, маржа и структура каналов интернет-магазина — схема «звезда» в Postgres, меры, один раз определённые в семантическом слое Cube, и собственный фронтенд на Tremor вместо BI-инструмента.",
+      en: "Revenue, profit, orders and margin for an online shop by month, category, country and channel.",
+      ru: "Выручка, прибыль, заказы и маржа интернет-магазина по месяцам, категориям, странам и каналам.",
     },
     metric: "$4.77M",
     articleSlug: "your-own-bi-front-end-with-cube",
@@ -407,26 +420,24 @@ const allShowcases: Showcase[] = [
     // other showcase. Facts from docs/08 §7, the as-built dashboard.
     details: {
       en: [
-        "Sales dashboard for a synthetic online shop, Jan 2024 to Aug 2026, USD",
-        "KPI tiles: revenue, profit, orders, margin, each vs the same months of the prior year",
+        "Sales dashboard for an online shop, in USD",
+        "KPIs: revenue, profit, orders, margin, each vs the same months last year",
         "Revenue, profit and orders by month",
         "Top 5 categories or countries by revenue, profit or margin",
-        "Sales by channel: revenue, profit, orders, margin, as a table or bars",
-        "Year is the only filter, so order counts never double up",
-        "Postgres star schema; each measure defined once in a Cube semantic layer; margin recomputed from sums at every level",
-        "Queried server-side: three queries, 240 rows, drawn with Tremor; cached for a day",
-        "Synthetic data, no client figures",
+        "Sales by channel: revenue, profit, orders, margin",
+        "One definition per metric across every chart",
+        "Filter: year",
+        "Complex ETL under the hood and data prep",
       ],
       ru: [
-        "Дашборд продаж синтетического интернет-магазина, с января 2024 по август 2026, в долларах",
-        "Плитки: выручка, прибыль, заказы, маржа, каждая против тех же месяцев прошлого года",
+        "Дашборд продаж интернет-магазина, в долларах",
+        "KPI: выручка, прибыль, заказы, маржа, каждый против тех же месяцев прошлого года",
         "Выручка, прибыль и заказы по месяцам",
         "Топ-5 категорий или стран по выручке, прибыли или марже",
-        "Продажи по каналам: выручка, прибыль, заказы, маржа, таблицей или столбиками",
-        "Единственный фильтр, год, поэтому заказы не задваиваются",
-        "Схема «звезда» в Postgres; каждая мера определена один раз в семантическом слое Cube; маржа пересчитывается из сумм на каждом уровне",
-        "Запросы на сервере: три запроса, 240 строк, графики на Tremor; кэш на сутки",
-        "Данные синтетические, цифр клиентов нет",
+        "Продажи по каналам: выручка, прибыль, заказы, маржа",
+        "Одно определение каждой метрики во всех графиках",
+        "Фильтр: год",
+        "Сложный ETL и подготовка данных под капотом",
       ],
     },
   },
@@ -440,16 +451,21 @@ const allShowcases: Showcase[] = [
  * Filtering here (rather than at the call site) keeps the list page, generateStaticParams,
  * the sitemap and the 404 path automatically in sync.
  */
-export const showcases: Showcase[] = allShowcases.filter((s) => {
-  switch (s.platform) {
-    case "superset":
-      return !!env.NEXT_PUBLIC_SUPERSET_DOMAIN && s.embedId !== UNSET_EMBED_ID;
-    case "cube":
-      return isCubeConfigured();
-    default:
-      return true;
-  }
-});
+export const showcases: Showcase[] = allShowcases
+  .filter((s) => {
+    switch (s.platform) {
+      case "superset":
+        return (
+          !!env.NEXT_PUBLIC_SUPERSET_DOMAIN && s.embedId !== UNSET_EMBED_ID
+        );
+      case "cube":
+        return isCubeConfigured();
+      default:
+        return true;
+    }
+  })
+  // newest first; Array.prototype.sort is stable, so a day's entries keep their order above
+  .sort((a, b) => b.published.localeCompare(a.published));
 
 /**
  * The env var a JS report's data needs on the server, for the reports that read Supabase through a server route

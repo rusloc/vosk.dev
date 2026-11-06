@@ -254,6 +254,9 @@ export const en = {
     // names: "Power BI" for a Power BI report, "Web report" for one drawn on the site.
     openPowerBi: "Power BI",
     openWebReport: "Web report",
+    // The AI chat beside a report (ADR-0005, 11-06): its own glowing button and popup.
+    askAi: "Ask AI",
+    aiAssistant: "AI assistant",
     writeUp: "Write-up",
     // Guest-token dashboards (Superset) mount client-side, so they need a wait state
     // and a visible failure — an embed that quietly renders nothing reads as a bug.

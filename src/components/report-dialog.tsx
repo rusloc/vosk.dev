@@ -19,6 +19,8 @@ export function ReportDialog({
   href,
   openOnQuery,
   openOnHash,
+  trigger,
+  size = "full",
   children,
 }: {
   label: string;
@@ -29,6 +31,10 @@ export function ReportDialog({
   openOnQuery?: readonly string[];
   /** …or when its hash is one of these (a report whose view travels in the hash, e.g. ACME Marketing's `#campaigns`). */
   openOnHash?: readonly string[];
+  /** A trigger of its own (the AI chat button, 11-06): its class and an icon before the label. Default: the CTA. */
+  trigger?: { className?: string; icon?: ReactNode };
+  /** "full": near-full-screen, for a report. "panel": a narrow, tall window, for the chat. */
+  size?: "full" | "panel";
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -84,8 +90,9 @@ export function ReportDialog({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className={styles.cta}
+          className={trigger?.className ?? styles.cta}
         >
+          {trigger?.icon}
           {label}
         </button>
       )}
@@ -102,7 +109,7 @@ export function ReportDialog({
               aria-modal="true"
               aria-label={title}
               onClick={(e) => e.stopPropagation()}
-              className="border-border bg-background flex h-full w-full max-w-[1600px] flex-col overflow-hidden rounded-lg border shadow-xl"
+              className={`border-border bg-background flex w-full flex-col overflow-hidden rounded-lg border shadow-xl ${size === "panel" ? "h-[min(760px,100%)] max-w-[560px]" : "h-full max-w-[1600px]"}`}
             >
               <div className="border-border flex items-center justify-between gap-4 border-b py-1.5 pr-1.5 pl-4">
                 <p className="truncate text-sm font-medium">{title}</p>
@@ -130,7 +137,9 @@ export function ReportDialog({
                 </button>
               </div>
               {/* Scrolls for a native dashboard taller than the box; an iframe fills it. */}
-              <div className="bg-muted min-h-0 flex-1 overflow-auto">
+              <div
+                className={`min-h-0 flex-1 ${size === "panel" ? "overflow-hidden" : "bg-muted overflow-auto"}`}
+              >
                 {children}
               </div>
             </div>

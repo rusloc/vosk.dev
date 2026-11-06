@@ -7,6 +7,8 @@ import { JsonLd } from "@/components/json-ld";
 import { JsReportLazy } from "@/components/js-report-lazy";
 import { REPORT_HASHES, REPORT_QUERY_KEYS } from "@/lib/js-reports";
 import { ReportDialog } from "@/components/report-dialog";
+import { MIRELO_SUGGESTIONS, askAiTrigger } from "@/components/chat/ask-ai";
+import { ChatPanel } from "@/components/chat/chat-panel";
 import { SalesDashboardLazy } from "@/components/sales-dashboard-lazy";
 import { SupersetEmbed } from "@/components/superset-embed";
 import { getPostBySlug } from "@/lib/content";
@@ -96,6 +98,12 @@ export default async function ShowcasePage({ params }: Props) {
   // A JS report whose data is not wired yet (its reader URL unset) shows its Power BI flavour only.
   const webReport =
     showcase.platform !== "js" || isJsReportLive(showcase.report);
+  // The AI chat (ADR-0005, 11-06): Mirelo only, beside its live web report, and only while CHAT_ENABLED is "1" at build.
+  const chat =
+    showcase.platform === "js" &&
+    showcase.report === "mirelo" &&
+    webReport &&
+    process.env.CHAT_ENABLED === "1";
 
   return (
     <Container className="py-6">
@@ -196,6 +204,20 @@ export default async function ShowcasePage({ params }: Props) {
                 className="h-full w-full border-0"
               />
             )}
+          </ReportDialog>
+        )}
+        {chat && (
+          <ReportDialog
+            label={t.askAi}
+            title={t.aiAssistant}
+            closeLabel={t.closeReport}
+            trigger={askAiTrigger}
+            size="panel"
+          >
+            <ChatPanel
+              endpoint="/api/chat/mirelo"
+              suggestions={MIRELO_SUGGESTIONS}
+            />
           </ReportDialog>
         )}
       </div>

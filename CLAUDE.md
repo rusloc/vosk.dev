@@ -85,6 +85,7 @@ and roles are plain Postgres, so a move is a connection-string change.
   are the per-report read-only Postgres logins** (`<REPORT>_DATABASE_URL`, see the Supabase section).
   No Supabase API URL, anon / publishable / service key, or any login that can reach `qbo` (a
   client product's warehouse) may appear here. The Cube showcase still holds only a Cube URL + secret.
+  _Amended 2026-11-06:_ plus **one LLM API key** (`CHAT_LLM_API_KEY`, server-only) for the report AI chat (ADR-0005).
 - **Agreed addition (2026-11-02):** a plain Postgres driver (`postgres`, exact version pinned at the
   build) for the report routes, chosen over a vendor driver so Supabase and Neon stay interchangeable.
 - **Agreed additions (2026-09-27):** **Tremor** for the Cube showcase — the copy-paste components
@@ -98,13 +99,16 @@ and roles are plain Postgres, so a move is a connection-string change.
   system (Ledger tokens, CSS Modules) stays inside `components/pnl/`; the site keeps Tailwind and Geist.
 - **Agreed addition (2026-11-05):** Manrope via `next/font` (`components/marketing/manrope-font.ts`), scoped to the ACME
   Marketing report's root, like IBM Plex for the P&L.
+- **Agreed addition (2026-11-06):** `@anthropic-ai/sdk` (exact 1.5.0), the LLM SDK for the report AI chat: a closed set of
+  tools over the report engine, run server-side in `/api/chat/<report>` (ADR-0005; `src/lib/chat/`,
+  `src/lib/mirelo/chat-tools.ts`, `src/components/chat/`). No text-to-SQL, no report data in the build.
 
 ## Structure — the site
 
 ```
 src/
   app/            → routes under [locale]/ (home, work, services, contact, blog) + layout, sitemap, robots
-  app/api/        → superset/guest-token; mirelo/[...path] and marketing/[...path] (the JS reports' data from Supabase) — the Route Handlers
+  app/api/        → superset/guest-token; mirelo/[...path] and marketing/[...path] (the JS reports' data from Supabase); chat/mirelo (the AI chat, ADR-0005) — the Route Handlers
   proxy.ts        → locale rewriting middleware; excludes /api/*
   components/     → shared UI (nav, footer, cards, contact-form, mdx-components, primitives)
   lib/            → content.ts (MDX seam), work.ts (showcase registry), schema.ts (Zod), env.ts, site.ts, metadata.ts
@@ -186,6 +190,8 @@ git push
 ### Branching / deploy
 - `main` → production on Vercel; PRs → preview deploys.
 - Site runtime env: `NEXT_PUBLIC_SITE_URL`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL` — validated in `src/lib/env.ts` (build fails if missing).
+  Optional, server-only (11-06): `CHAT_LLM_API_KEY`, `CHAT_ENABLED` (`1` = the Ask AI button and route are on; read at
+  build for the button), `CHAT_DAILY_CAP_USD` (default 0.5), `CHAT_IP_HASH_SALT`.
 
 ### Testing / verification
 - **Site**: run `pnpm typecheck && pnpm lint && pnpm build` before considering a change done. Manual /

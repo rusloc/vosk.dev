@@ -18,6 +18,7 @@ showcase entry's `powerBi` field when it exists, and the page then shows two but
 | Server side: artifact name → query, the reader connection, the route | `src/lib/mirelo/artifacts.ts`, `src/lib/mirelo/server.ts`, `src/app/api/mirelo/[...path]/route.ts` |
 | Schema, roles, loader | `data/mirelo/sql/001-schema-and-roles.sql`, `002-schema.sql`, `scripts/mirelo-load.ts` |
 | Test fixtures | `data/mirelo/checks/control_totals_eur.csv` |
+| AI chat ("Ask AI", ADR-0005): flow, prompts, parsing, history, limits | [`ai-chat.md`](ai-chat.md) |
 | Tests (92 + 4 skipped: the detail-sample block needs the raw `fact_loan.parquet`, not shipped) | `src/lib/mirelo/*.test.ts` |
 
 ## Decisions taken here (2026-10-31)

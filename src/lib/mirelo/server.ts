@@ -11,8 +11,14 @@ import { resolveArtifact, runArtifact } from "./artifacts";
 // even on one connection, and a reply can land on another request (the browser asks for seven files at once and
 // got the wrong columns for one). Session mode answered the same ten concurrent reads in ~1.2 s with no mismatch.
 // A small pool with a short idle timeout keeps the backend count low; the role's connection limit is the ceiling.
+//
+// Released when idle (2026-11-06): a Vercel instance is frozen between requests, so `idle_timeout` never fires and
+// its connections stay open. One visit (seven files at once, spread over several instances) held all 10 of the role's
+// slots for minutes, and the chat route could not connect ("too many connections for role"). So the pool ends as
+// soon as no read is in flight on this instance; the next burst opens a fresh one.
 
 let client: Sql | undefined;
+let reading = 0;
 
 /** The reader connection, or null when MIRELO_DATABASE_URL is unset (the route answers 503 instead of failing the build). */
 function db(): Sql | null {
@@ -38,5 +44,13 @@ export async function readArtifact(name: string): Promise<ArtifactResult> {
   if (!query) return { status: 404 };
   const sql = db();
   if (!sql) return { status: 503 };
-  return { status: 200, body: await runArtifact(sql, query) };
+  reading++;
+  try {
+    return { status: 200, body: await runArtifact(sql, query) };
+  } finally {
+    if (--reading === 0) {
+      client = undefined; // a read that starts now opens a new pool
+      await sql.end({ timeout: 5 });
+    }
+  }
 }

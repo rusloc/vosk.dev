@@ -1,7 +1,7 @@
 # ADR-0005 — AI chat over the report engines: closed tools, run on the server
 
-- **Status:** accepted 2026-11-06 (owner: "ok, start building"); step 1 built (`src/lib/mirelo/chat-tools.ts`),
-  the relay route and panel not yet
+- **Status:** accepted 2026-11-06 (owner: "ok, start building"); tools, relay route and panel built and live 11-06
+  (`27c6f68`); how it works: `docs/mirelo/ai-chat.md`
 - **Date:** 2026-11-06
 - **Relates to:** the 11-02 data rule in `CLAUDE.md` (report data lives in Supabase, read by `<report>_reader`);
   `.log/report/2026-11-05-ai-chat-in-reports-plan.md` (assessment); `.log/report/2026-11-06-mirelo-chat-prototype.md`

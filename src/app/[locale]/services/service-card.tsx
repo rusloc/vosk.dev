@@ -7,9 +7,10 @@ import styles from "../blog/title-bar.module.css";
  * moves. Fills the slide's height so the price pins to the bottom.
  *
  * The title is right-aligned on every card, over a blurred orange bar that
- * spans the card edge to edge: `titleBleed` is the slide's own negative margin
- * + padding, so the heading box is the card's full width and the text still
- * lines up with the content column.
+ * starts at the card's left edge and stops 1rem short of its right edge (owner,
+ * 11-06: it must not touch the edge): `titleBleed` is the slide's own negative
+ * margin + padding, so the heading box is the card's full width and the text
+ * still lines up with the content column.
  *
  * `feature` is the subscription card: cream on maroon. On desktop the title
  * runs across both columns at display size, with the description on the left
@@ -28,10 +29,12 @@ export type ServiceCardProps = {
 // Same orange as the blog bars, fading in from the card's own background
 // (transparent) at its left edge. The text is right-aligned, so it always sits
 // in the solid end: on the maroon card dark text on bare maroon is 1.3:1, and
-// from 45% on the bar is ≥ 75% orange (≥ 5:1), wider than any title.
+// from 45% on the bar is ≥ 75% orange (≥ 5:1), wider than any title. The
+// right end sits 1rem inside the card (padding is 24–36px, so still past the
+// text) and is rounded, like the home and blog bars.
 const BAR_STYLE = {
-  inset: "-0.1em 0",
-  borderRadius: 0,
+  inset: "-0.1em 1rem -0.1em 0",
+  borderRadius: "0 8px 8px 0",
   background:
     "linear-gradient(to right, transparent, rgba(var(--accent-rgb), 0.75) 45%, rgba(var(--accent-rgb), 0.9))",
 };

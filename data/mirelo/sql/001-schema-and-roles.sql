@@ -45,7 +45,7 @@ alter role mirelo_loader set extra_float_digits = 3;
 
 -- Reader: hardened like cube_reader. default_transaction_read_only is a guard rail, not a boundary
 -- (applies at LOGIN only; `set role` in the tests does not exercise it).
-alter role mirelo_reader connection limit 10;
+alter role mirelo_reader connection limit 30; -- 10 until 11-06: the report's parallel reads over several instances filled it and the chat got none
 alter role mirelo_reader set statement_timeout = '15s';
 alter role mirelo_reader set search_path = mirelo_demo;
 alter role mirelo_reader set default_transaction_read_only = on;

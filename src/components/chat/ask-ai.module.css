@@ -1,211 +1,135 @@
-/* The "Ask AI" button (owner's neon design, 11-06): red-orange neon (owner, 11-06: was cyan) on the near-black face of the site's CTA, so it sits
-   beside "Power BI" / "Web report" at their size and 6px corners. At rest the border and the text flicker like a
-   tube, the second letter on its own beat, and a glow pools on the floor below. On hover / focus it lights up solid.
-   - `isolation` keeps the ::after fill (z-index -1) above the face and below the label.
-   - The whole button's opacity flickers (border-flicker), as in the design.
-   Still for anyone who asks for reduced motion. `.compact` is the 30px version in the Mirelo report's header. */
+/* The "Ask AI" button (11-06, the first design; red / orange since 12:30 at the owner's ask): the same 40px pill as
+   the CTA, set apart by a light that runs round its edge and a slow glow. The edge is a conic gradient spun through a
+   registered custom property (an angle can be animated only when it is typed); a background layer on top leaves a
+   1.5px ring. Red and the site's warm orange (--accent-rgb) only. Still for anyone who asks for reduced motion.
+   `.compact` is the 30px version in the Mirelo report's header, with that report's 6px button corners. */
+
+@property --ask-ai-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
 
 .glow {
-  --glow-color: hsl(14 100% 58%); /* red-orange */
+  --red: 234, 51, 35;
+  --orange: var(--accent-rgb);
+  --r: 0.375rem;
+  --face: var(--background);
   position: relative;
   isolation: isolate;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
   height: 2.5rem;
   padding: 0 1.25rem;
-  border: 2px solid var(--glow-color);
-  border-radius: 0.375rem;
-  background: var(--foreground);
-  color: var(--glow-color);
-  perspective: 2em;
+  border-radius: var(--r);
+  color: var(--foreground);
   font-size: 0.875rem;
-  font-weight: 900;
+  font-weight: 500;
   line-height: 1;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
   white-space: nowrap;
   cursor: pointer;
-  box-shadow:
-    inset 0 0 0.5em 0 var(--glow-color),
-    0 0 0.5em 0 var(--glow-color);
-  animation: border-flicker 2s linear infinite;
+  animation: ask-ai-pulse 2.8s ease-in-out infinite;
 }
 
 .compact {
+  --r: 6px;
+  --face: #ffffff;
   height: 30px;
   padding: 0 12px;
-  border-width: 1.5px;
-  border-radius: 6px;
-  font-size: 12px;
+  gap: 6px;
+  color: #111111;
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.txt {
-  font-family:
-    var(--font-raleway), sans-serif; /* here, not on the button: the Mirelo report sets every button's font */
-  margin-right: -0.2em; /* cancels the letter-spacing after the last letter, so the label stays centred */
-  text-shadow:
-    0 0 0.125em hsl(0 0% 100% / 0.3),
-    0 0 0.45em var(--glow-color);
-  animation: text-flicker 3s linear infinite;
-}
-
-.faulty {
-  opacity: 0.5;
-  animation: faulty-flicker 2s linear infinite;
-}
-
-/* The glow pooled on the floor below the button. */
 .glow::before {
   content: "";
   position: absolute;
   inset: 0;
-  opacity: 0.7;
-  filter: blur(1em);
-  transform: translateY(120%) rotateX(95deg) scale(1, 0.35);
-  background: var(--glow-color);
-  pointer-events: none;
-}
-
-/* No floor glow in the report's header: it would spill onto the row below ("How to read", "Copy link"). */
-.compact::before {
-  display: none;
+  z-index: -2;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--ask-ai-angle),
+    rgba(var(--orange), 0.35),
+    rgba(var(--red), 1) 18%,
+    rgba(255, 255, 255, 0.9) 24%,
+    rgba(var(--orange), 1) 30%,
+    rgba(var(--orange), 0.35) 50%,
+    rgba(var(--orange), 0.35)
+  );
+  animation: ask-ai-spin 3.2s linear infinite;
 }
 
 .glow::after {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: 1.5px;
   z-index: -1;
-  opacity: 0;
-  border-radius: inherit;
-  background-color: var(--glow-color);
-  box-shadow: 0 0 2em 0.2em var(--glow-color);
-  transition: opacity 100ms linear;
-}
-
-.glow:hover,
-.glow:focus-visible {
-  color: rgba(0, 0, 0, 0.8);
-  animation: none;
-}
-
-.glow:hover .txt,
-.glow:focus-visible .txt {
-  text-shadow: none;
-  animation: none;
-}
-
-.glow:hover .faulty,
-.glow:focus-visible .faulty {
-  opacity: 1;
-  animation: none;
-}
-
-.glow:hover::before,
-.glow:focus-visible::before {
-  filter: blur(1.5em);
-  opacity: 1;
+  border-radius: calc(var(--r) - 1.5px);
+  background: var(--face);
+  transition: background-color 0.3s ease;
 }
 
 .glow:hover::after,
 .glow:focus-visible::after {
-  opacity: 1;
+  background:
+    linear-gradient(rgba(var(--red), 0.1), rgba(var(--red), 0.1)), var(--face);
 }
 
 .glow:focus-visible {
-  outline: 2px solid var(--glow-color);
-  outline-offset: 3px;
+  outline: 2px solid rgb(var(--red));
+  outline-offset: 2px;
 }
 
-@keyframes faulty-flicker {
+.icon {
+  width: 1rem;
+  height: 1rem;
+  color: rgb(var(--red));
+  animation: ask-ai-twinkle 2.8s ease-in-out infinite;
+}
+
+.compact .icon {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes ask-ai-spin {
+  to {
+    --ask-ai-angle: 360deg;
+  }
+}
+
+@keyframes ask-ai-pulse {
   0%,
-  2% {
-    opacity: 0.1;
-  }
-  4%,
-  19% {
-    opacity: 0.5;
-  }
-  21% {
-    opacity: 0.1;
-  }
-  23%,
-  80% {
-    opacity: 1;
-  }
-  83% {
-    opacity: 0.4;
-  }
-  87%,
   100% {
-    opacity: 1;
+    box-shadow: 0 0 8px rgba(var(--red), 0.25);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(var(--orange), 0.6);
   }
 }
 
-@keyframes text-flicker {
-  0% {
-    opacity: 0.1;
-  }
-  2% {
-    opacity: 1;
-  }
-  8% {
-    opacity: 0.1;
-  }
-  9% {
-    opacity: 1;
-  }
-  12% {
-    opacity: 0.1;
-  }
-  20% {
-    opacity: 1;
-  }
-  25% {
-    opacity: 0.3;
-  }
-  30%,
-  70% {
-    opacity: 1;
-  }
-  72% {
-    opacity: 0.2;
-  }
-  77%,
+@keyframes ask-ai-twinkle {
+  0%,
   100% {
-    opacity: 0.9;
+    transform: scale(1) rotate(0deg);
+    opacity: 0.85;
   }
-}
-
-@keyframes border-flicker {
-  0% {
-    opacity: 0.1;
-  }
-  2% {
-    opacity: 1;
-  }
-  4% {
-    opacity: 0.1;
-  }
-  8% {
-    opacity: 1;
-  }
-  70% {
-    opacity: 0.7;
-  }
-  100% {
+  50% {
+    transform: scale(1.15) rotate(15deg);
     opacity: 1;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .glow,
-  .txt,
-  .faulty {
+  .glow::before,
+  .icon {
     animation: none;
   }
-  .glow::after {
-    transition: none;
+  .glow {
+    box-shadow: 0 0 12px rgba(var(--red), 0.35);
   }
 }

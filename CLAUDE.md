@@ -99,8 +99,6 @@ and roles are plain Postgres, so a move is a connection-string change.
   system (Ledger tokens, CSS Modules) stays inside `components/pnl/`; the site keeps Tailwind and Geist.
 - **Agreed addition (2026-11-05):** Manrope via `next/font` (`components/marketing/manrope-font.ts`), scoped to the ACME
   Marketing report's root, like IBM Plex for the P&L.
-- **Agreed addition (2026-11-06):** Raleway 900 via `next/font` (`components/chat/raleway-font.ts`), scoped to the neon
-  Ask AI button (the owner's design), not the site.
 - **Agreed addition (2026-11-06):** `@anthropic-ai/sdk` (exact 1.5.0), the LLM SDK for the report AI chat: a closed set of
   tools over the report engine, run server-side in `/api/chat/<report>` (ADR-0005; `src/lib/chat/`,
   `src/lib/mirelo/chat-tools.ts`, `src/components/chat/`). No text-to-SQL, no report data in the build.

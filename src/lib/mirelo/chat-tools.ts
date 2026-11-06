@@ -343,6 +343,11 @@ export function createChatTools(engine: SalesEngine) {
       return `The visitor is looking at the ${ctx.view} view: ${scopeOf(ctx)}.`;
     },
 
+    /** The selection a report state (its query string, as the browser sends it) stands for: the codec validates every key and drops the rest; no drill. */
+    selectionFrom(query: string): SalesSelection {
+      return { ...engine.codec.parse(new URLSearchParams(query)), drill: null };
+    },
+
     catalogue,
     /** The report default (Overview · All markets · last closed month · vs Budget): the context of a question asked outside the report. */
     defaults,

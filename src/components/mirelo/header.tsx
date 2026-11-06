@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import type { ReactNode } from "react";
 import type {
   Comparator,
   MarketSel,
@@ -55,11 +56,13 @@ function Filters({
   sel,
   defaults,
   onChange,
+  askAi,
 }: {
   vm: HeaderVM;
   sel: SalesSelection;
   defaults: SalesSelection;
   onChange: (patch: Partial<SalesSelection>) => void;
+  askAi?: ReactNode;
 }) {
   const { open, close, toggle } = usePopup("filters");
   const opener = useRef<HTMLButtonElement>(null);
@@ -145,6 +148,7 @@ function Filters({
           <p className={styles.fNote}>{vm.periodLine}</p>
         </GlassPopup>
       ) : null}
+      {askAi}
     </div>
   );
 }
@@ -156,6 +160,7 @@ export function Header({
   panelId,
   shareUrl,
   onChange,
+  askAi,
 }: {
   vm: HeaderVM;
   sel: SalesSelection;
@@ -163,6 +168,8 @@ export function Header({
   panelId: string;
   shareUrl: string;
   onChange: (patch: Partial<SalesSelection>) => void;
+  /** The site's Ask AI button (11-06), at the end of the Filters row; absent when the chat is off. */
+  askAi?: ReactNode;
 }) {
   return (
     <header>
@@ -173,7 +180,13 @@ export function Header({
         M
       </div>
       <h1 className={`${styles.abs} ${styles.title}`}>{vm.title}</h1>
-      <Filters vm={vm} sel={sel} defaults={defaults} onChange={onChange} />
+      <Filters
+        vm={vm}
+        sel={sel}
+        defaults={defaults}
+        onChange={onChange}
+        askAi={askAi}
+      />
       <Tabs
         tabs={TABS}
         value={sel.view}

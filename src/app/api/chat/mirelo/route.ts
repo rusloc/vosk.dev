@@ -48,6 +48,8 @@ const body = z
       )
       .min(1)
       .max(10),
+    /** What the visitor is looking at in the web report: its query string ("view=revenue&market=pl"). */
+    state: z.string().max(400).optional(),
   })
   .strict()
   .refine(
@@ -154,7 +156,10 @@ export async function POST(req: Request) {
         const usage = await runChat({
           client,
           tools: ready,
-          ctx: ready.defaults,
+          ctx:
+            parsed.data.state === undefined
+              ? ready.defaults
+              : ready.selectionFrom(parsed.data.state),
           turns: parsed.data.messages,
           emit: send,
           signal: req.signal,

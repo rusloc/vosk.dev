@@ -1,7 +1,11 @@
-/* The "Ask AI" button (11-06): the same 40px pill as the CTA, set apart by a light that runs round its edge and a
-   slow glow. The edge is a conic gradient spun through a registered custom property (an angle can be animated
-   only when it is typed); a background layer on top leaves a 1.5px ring. Brand blue only, so it reads as the
-   site's accent, not a second palette. Still for anyone who asks for reduced motion. */
+/* The "Ask AI" button (11-06). At rest: a light that runs round its edge and a slow glow. On hover / focus: glowing
+   vertical bars run across the face (owner, 11-06), and the glow holds at full strength.
+   - The edge is a conic gradient spun through a registered custom property (an angle animates only when typed);
+     the face (::after) sits 1.5px inside it, leaving a ring.
+   - The bars are one 24px tile (a soft-edged 6px bar) repeated across the face and slid one tile per cycle, so
+     the run is seamless.
+   Brand blue only. Still for anyone who asks for reduced motion. `.compact` is the 30px version in the Mirelo
+   report's header (its buttons are 30px tall and square-cornered). */
 
 @property --ask-ai-angle {
   syntax: "<angle>";
@@ -10,6 +14,8 @@
 }
 
 .glow {
+  --r: 0.375rem;
+  --face: var(--background);
   position: relative;
   isolation: isolate;
   display: inline-flex;
@@ -18,7 +24,7 @@
   gap: 0.5rem;
   height: 2.5rem;
   padding: 0 1.25rem;
-  border-radius: 0.375rem;
+  border-radius: var(--r);
   color: var(--foreground);
   font-size: 0.875rem;
   font-weight: 500;
@@ -26,6 +32,17 @@
   white-space: nowrap;
   cursor: pointer;
   animation: ask-ai-pulse 2.8s ease-in-out infinite;
+}
+
+.compact {
+  --r: 2px;
+  --face: #ffffff;
+  height: 30px;
+  padding: 0 12px;
+  gap: 6px;
+  color: #111111;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .glow::before {
@@ -51,14 +68,30 @@
   position: absolute;
   inset: 1.5px;
   z-index: -1;
-  border-radius: calc(0.375rem - 1.5px);
-  background: var(--background);
-  transition: background-color 0.3s ease;
+  border-radius: calc(var(--r) - 1.5px);
+  background: var(--face);
+}
+
+.glow:hover,
+.glow:focus-visible {
+  animation: none;
+  box-shadow: 0 0 22px rgba(var(--primary-rgb), 0.6);
 }
 
 .glow:hover::after,
 .glow:focus-visible::after {
-  background: rgba(var(--primary-rgb), 0.12);
+  background:
+    linear-gradient(
+        90deg,
+        transparent 0 9px,
+        rgba(var(--primary-rgb), 0.18) 10px,
+        rgba(var(--primary-rgb), 0.6) 12px,
+        rgba(var(--primary-rgb), 0.18) 14px,
+        transparent 15px
+      )
+      0 0 / 24px 100% repeat-x,
+    var(--face);
+  animation: ask-ai-bars 0.7s linear infinite;
 }
 
 .glow:focus-visible {
@@ -73,9 +106,22 @@
   animation: ask-ai-twinkle 2.8s ease-in-out infinite;
 }
 
+.compact .icon {
+  width: 14px;
+  height: 14px;
+}
+
 @keyframes ask-ai-spin {
   to {
     --ask-ai-angle: 360deg;
+  }
+}
+
+@keyframes ask-ai-bars {
+  to {
+    background-position:
+      24px 0,
+      0 0;
   }
 }
 
@@ -104,6 +150,8 @@
 @media (prefers-reduced-motion: reduce) {
   .glow,
   .glow::before,
+  .glow:hover::after,
+  .glow:focus-visible::after,
   .icon {
     animation: none;
   }

@@ -219,6 +219,25 @@ describe("refusals (readable, never thrown)", () => {
   });
 });
 
+describe("selectionFrom (the report state the browser sends)", () => {
+  it("reads a valid state, drops unknown keys and falls back on invalid values", () => {
+    expect(tools.selectionFrom("view=revenue&market=pl&cmp=py")).toMatchObject({
+      view: "revenue",
+      market: "PL",
+      cmp: "PY",
+    });
+    const odd = tools.selectionFrom("view=sql&market=de&evil=1&drill=client:1");
+    expect(odd).toMatchObject({ view: "overview", market: "ALL", drill: null });
+    expect(tools.selectionFrom("")).toEqual(ctx);
+  });
+
+  it("makes the tools default to that state", () => {
+    const sel = tools.selectionFrom("view=loans&market=ro&month=2026-03");
+    const r = tools.run("report_snapshot", { view: "loans" }, sel);
+    expect(r.scope).toBe("Mar 2026 - vs Budget - Romania");
+  });
+});
+
 describe("definitions and prompt", () => {
   it("defines the four tools as closed JSON Schemas", () => {
     expect(tools.definitions.map((d) => d.name)).toEqual([

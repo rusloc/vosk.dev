@@ -2,7 +2,13 @@
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import {
+  MIRELO_SUGGESTIONS,
+  askAiTriggerCompact,
+} from "@/components/chat/ask-ai";
+import { ChatPanel } from "@/components/chat/chat-panel";
 import { interFontVariable } from "@/components/inter-font";
+import { ReportDialog } from "@/components/report-dialog";
 import { ReportBoard, useBoardHeight } from "@/components/report-board";
 import { useReportSearch } from "@/components/report-search";
 import { createSalesLoader, jsonSource } from "@/lib/mirelo/data";
@@ -47,7 +53,8 @@ type Load =
   | { status: "error"; message: string }
   | { status: "ready"; base: SalesBase };
 
-export function SalesApp() {
+/** `chat`: show the Ask AI button in the header (the page passes CHAT_ENABLED, ADR-0005). */
+export function SalesApp({ chat = false }: { chat?: boolean }) {
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -61,7 +68,8 @@ export function SalesApp() {
     };
   }, [attempt]);
 
-  if (load.status === "ready") return <Dashboard base={load.base} />;
+  if (load.status === "ready")
+    return <Dashboard base={load.base} chat={chat} />;
   return (
     <ReportBoard fill className={`${styles.page} ${interFontVariable}`}>
       <div className={styles.board}>
@@ -136,7 +144,7 @@ function overviewBoxes(extra: number) {
 type Detail =
   { key: string; parts: DetailParts } | { key: string; error: string } | null;
 
-function Dashboard({ base }: { base: SalesBase }) {
+function Dashboard({ base, chat }: { base: SalesBase; chat: boolean }) {
   const engine = useMemo(() => createSalesEngine(base), [base]);
   const { search, go: setSearch, shareUrl } = useReportSearch();
   const sel = useMemo(
@@ -217,6 +225,30 @@ function Dashboard({ base }: { base: SalesBase }) {
             panelId={panelId}
             shareUrl={shareUrl}
             onChange={update}
+            askAi={
+              chat ? (
+                // The chat asks about what the visitor is looking at; a figures card's link applies its state here.
+                <ReportDialog
+                  label="Ask AI"
+                  title="AI assistant"
+                  closeLabel="Close the assistant"
+                  trigger={askAiTriggerCompact}
+                  size="panel"
+                >
+                  {(close) => (
+                    <ChatPanel
+                      endpoint="/api/chat/mirelo"
+                      suggestions={MIRELO_SUGGESTIONS}
+                      state={canonical}
+                      onOpenReport={(link) => {
+                        setSearch(link);
+                        close();
+                      }}
+                    />
+                  )}
+                </ReportDialog>
+              ) : null
+            }
           />
           <div
             id={panelId}

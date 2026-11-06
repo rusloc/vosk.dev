@@ -8,7 +8,7 @@ import type { JsReport } from "@/lib/js-reports";
  * <SalesDashboardLazy>: only the page that renders a report downloads it, and only when the popup opens. The
  * report's data files load after that, in the browser.
  */
-const REPORTS: Record<JsReport, React.ComponentType> = {
+const REPORTS: Record<JsReport, React.ComponentType<{ chat?: boolean }>> = {
   pnl: dynamic(() => import("./pnl/shell").then((m) => m.Shell)),
   mirelo: dynamic(() => import("./mirelo/sales-app").then((m) => m.SalesApp)),
   nordmark: dynamic(() => import("./nordmark/exec-app").then((m) => m.ExecApp)),
@@ -17,7 +17,14 @@ const REPORTS: Record<JsReport, React.ComponentType> = {
   ),
 };
 
-export function JsReportLazy({ report }: { report: JsReport }) {
+/** `chat`: the report shows the site's Ask AI button (Mirelo only so far; the others ignore it). */
+export function JsReportLazy({
+  report,
+  chat = false,
+}: {
+  report: JsReport;
+  chat?: boolean;
+}) {
   const Report = REPORTS[report];
-  return <Report />;
+  return <Report chat={chat} />;
 }

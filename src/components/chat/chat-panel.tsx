@@ -37,9 +37,15 @@ const STATUS_TEXT: Record<number, string> = {
 export function ChatPanel({
   endpoint,
   suggestions,
+  state,
+  onOpenReport,
 }: {
   endpoint: string;
   suggestions: readonly string[];
+  /** The report state the visitor is looking at (its query string), sent with each question; none = the report default. */
+  state?: string;
+  /** Inside the report: apply a figures card's state in place. Without it, "Open in report" is a page link. */
+  onOpenReport?: (link: string) => void;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -85,7 +91,11 @@ export function ChatPanel({
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify(
+          state === undefined
+            ? { messages: history }
+            : { messages: history, state },
+        ),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
@@ -188,12 +198,22 @@ export function ChatPanel({
                       ? f.text.slice(f.scope.length).trimStart()
                       : f.text}
                   </pre>
-                  <a
-                    href={`?${f.link || "view=overview"}`}
-                    className="text-primary block px-3 pb-2 font-medium hover:underline"
-                  >
-                    Open in report →
-                  </a>
+                  {onOpenReport ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpenReport(f.link ?? "")}
+                      className="text-primary block cursor-pointer px-3 pb-2 font-medium hover:underline"
+                    >
+                      Show in the report →
+                    </button>
+                  ) : (
+                    <a
+                      href={`?${f.link || "view=overview"}`}
+                      className="text-primary block px-3 pb-2 font-medium hover:underline"
+                    >
+                      Open in report →
+                    </a>
+                  )}
                 </details>
               ))}
             </div>

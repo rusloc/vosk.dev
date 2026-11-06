@@ -187,7 +187,7 @@ export default async function ShowcasePage({ params }: Props) {
                 />
               </div>
             ) : showcase.platform === "js" ? (
-              <JsReportLazy report={showcase.report} />
+              <JsReportLazy report={showcase.report} chat={chat} />
             ) : showcase.platform === "superset" ? (
               <SupersetEmbed
                 slug={showcase.slug}

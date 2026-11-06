@@ -35,7 +35,8 @@ export function ReportDialog({
   trigger?: { className?: string; icon?: ReactNode };
   /** "full": near-full-screen, for a report. "panel": a narrow, tall window, for the chat. */
   size?: "full" | "panel";
-  children: ReactNode;
+  /** The popup content; a function gets `close`, for content that closes its own popup (the chat's "Open in report"). */
+  children: ReactNode | ((close: () => void) => ReactNode);
 }) {
   const [open, setOpen] = useState(false);
   const dialog = useRef<HTMLDivElement>(null);
@@ -62,10 +63,12 @@ export function ReportDialog({
       setOpen(false);
     };
     window.addEventListener("keydown", onKey);
+    // Restore what was there: a popup opened over another (the chat over the web report) must leave it locked.
+    const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      document.body.style.overflow = overflow;
     };
   }, [open]);
 
@@ -140,7 +143,9 @@ export function ReportDialog({
               <div
                 className={`min-h-0 flex-1 ${size === "panel" ? "overflow-hidden" : "bg-muted overflow-auto"}`}
               >
-                {children}
+                {typeof children === "function"
+                  ? children(() => setOpen(false))
+                  : children}
               </div>
             </div>
           </div>,

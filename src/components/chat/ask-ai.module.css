@@ -1,4 +1,4 @@
-/* The "Ask AI" button (owner's neon design, 11-06): cyan neon on the near-black face of the site's CTA, so it sits
+/* The "Ask AI" button (owner's neon design, 11-06): red-orange neon (owner, 11-06: was cyan) on the near-black face of the site's CTA, so it sits
    beside "Power BI" / "Web report" at their size and 6px corners. At rest the border and the text flicker like a
    tube, the second letter on its own beat, and a glow pools on the floor below. On hover / focus it lights up solid.
    - `isolation` keeps the ::after fill (z-index -1) above the face and below the label.
@@ -6,7 +6,7 @@
    Still for anyone who asks for reduced motion. `.compact` is the 30px version in the Mirelo report's header. */
 
 .glow {
-  --glow-color: hsl(186 100% 69%);
+  --glow-color: hsl(14 100% 58%); /* red-orange */
   position: relative;
   isolation: isolate;
   display: inline-flex;
@@ -114,7 +114,7 @@
 }
 
 .glow:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--glow-color);
   outline-offset: 3px;
 }
 

@@ -329,7 +329,7 @@ const allShowcases: Showcase[] = [
     published: "2026-10-31",
     platform: "power-bi",
     title: {
-      en: "Coalmining machinery time utilization",
+      en: "Coal mining machinery time utilization",
       ru: "Использование времени техники угольного разреза",
     },
     summary: {
@@ -346,7 +346,7 @@ const allShowcases: Showcase[] = [
     // short on purpose. The long-form story is the linked `articleSlug` write-up.
     details: {
       en: [
-        "Fleet time utilization for a coal-mining company: where each machine's 24/7 hours go",
+        "Fleet time utilization for a coal mining company: where each machine's 24/7 hours go",
         "Top-down waterfall from 100% of calendar time to effective work time",
         "Maintenance and every idle category deducted in turn, as a share of total time",
         "Breakpoints: ready for work, effective work time",

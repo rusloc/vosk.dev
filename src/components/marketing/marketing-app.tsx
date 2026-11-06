@@ -7,8 +7,14 @@ import type {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
 } from "react";
+import {
+  MARKETING_SUGGESTIONS,
+  askAiTriggerCompact,
+} from "@/components/chat/ask-ai";
+import { ChatPanel } from "@/components/chat/chat-panel";
 import { interFontVariable } from "@/components/inter-font";
 import { ReportBoard, useBoardScale } from "@/components/report-board";
+import { ReportDialog } from "@/components/report-dialog";
 import { columnsSource, createLoader } from "@/lib/marketing/data/loader";
 import {
   BRAND,
@@ -93,7 +99,17 @@ type Load =
   | { status: "error"; message: string }
   | { status: "ready"; ds: Dataset };
 
-export function MarketingApp() {
+/**
+ * `chat`: show the Ask AI button in the header (the page passes CHAT_ENABLED, ADR-0005). `chatOpen`: open its chat as
+ * soon as the report is up (the page's Ask AI button, 11-06).
+ */
+export function MarketingApp({
+  chat = false,
+  chatOpen = false,
+}: {
+  chat?: boolean;
+  chatOpen?: boolean;
+}) {
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -114,7 +130,7 @@ export function MarketingApp() {
   return (
     <ReportBoard fill className="bg-[#eef1f6]">
       {load.status === "ready" ? (
-        <Board ds={load.ds} />
+        <Board ds={load.ds} chat={chat} chatOpen={chatOpen} />
       ) : (
         <div className={ROOT_CLASS}>
           <LoadState
@@ -161,7 +177,15 @@ const ROOT_CLASS = `acme-marketing ${interFontVariable} ${manropeFontVariable}`;
 
 const FOCUSABLE =
   'button:not([disabled]),input:not([disabled]),select,[tabindex="0"],a[href]';
-function Board({ ds }: { ds: Dataset }) {
+function Board({
+  ds,
+  chat,
+  chatOpen,
+}: {
+  ds: Dataset;
+  chat: boolean;
+  chatOpen: boolean;
+}) {
   const root = useRef<HTMLDivElement>(null);
   // ---------- URL (the report's state: "?query#view", seeded from the page URL a shared link arrived with) ----------
   const [loc, setLoc] = useState(
@@ -524,6 +548,29 @@ function Board({ ds }: { ds: Dataset }) {
             >
               Copy link
             </button>
+            {chat ? (
+              // The chat asks about what the visitor is looking at; a figures card's link applies its state here.
+              <ReportDialog
+                label="Ask AI"
+                title="AI assistant"
+                closeLabel="Close the assistant"
+                trigger={askAiTriggerCompact("Ask AI", "marketing")}
+                size="panel"
+                defaultOpen={chatOpen}
+              >
+                {(closeChat) => (
+                  <ChatPanel
+                    endpoint="/api/chat/marketing"
+                    suggestions={MARKETING_SUGGESTIONS}
+                    state={canonical}
+                    onOpenReport={(link) => {
+                      setLoc(`?${link}`);
+                      closeChat();
+                    }}
+                  />
+                )}
+              </ReportDialog>
+            ) : null}
           </div>
         </header>
 

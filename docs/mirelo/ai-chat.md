@@ -22,7 +22,8 @@ the conversation lives in the browser tab and is gone when the chat closes.
 | Chat window (input, streaming, figures cards, history) | `src/components/chat/chat-panel.tsx` |
 | Where the chat is mounted (report header, inside a `ReportDialog`) | `src/components/mirelo/sales-app.tsx` |
 | Page button that opens the report with the chat up | `src/app/[locale]/work/[slug]/page.tsx` (`chatOpen`) |
-| Server route: limits, validation, streaming, logging | `src/app/api/chat/mirelo/route.ts` |
+| Server route: limits, validation, streaming, logging | `src/lib/chat/route.ts` (`chatRoute`, shared since 11-06), mounted by `src/app/api/chat/mirelo/route.ts` |
+| Shared tool plumbing: result and definition shapes, strict run, definitions from Zod | `src/lib/chat/tools.ts` |
 | The loop: model calls, tool calls, caps, cost | `src/lib/chat/run-chat.ts` (+ `run-chat.test.ts`) |
 | The tools, the system prompt, the report-state parser | `src/lib/mirelo/chat-tools.ts` (+ `chat-tools.test.ts`) |
 | Report data the tools read | `src/lib/mirelo/server.ts` (`readArtifact`, as `mirelo_reader`) |
@@ -212,6 +213,9 @@ All of these are server-only and set in Vercel, never in the browser:
 - **Prompt wording** is `systemPrompt()` in `chat-tools.ts`. Keep per-request text out of it (it is the cached part);
   per-question context goes in `selectionNote()`.
 - **Model, caps, prices** are the constants at the top of `run-chat.ts`.
-- **Rate limits and body limits** are the constants at the top of `route.ts`.
-- **A second report** gets its own `chat-tools.ts` and `POST /api/chat/<report>` route. `runChat`, `ChatPanel` and
-  the buttons are shared.
+- **Rate limits and body limits** are the constants at the top of `src/lib/chat/route.ts` (the longest report state is
+  each route's `maxState`).
+- **A second report** gets its own `chat-tools.ts` (a `ChatToolset`, `src/lib/chat/tools.ts`) and a
+  `POST /api/chat/<report>` route that calls `chatRoute`. `runChat`, `ChatPanel` and the buttons are shared. ACME
+  Marketing is the second (11-06): `src/lib/marketing/chat-tools.ts`, `src/app/api/chat/marketing/route.ts`, notes in
+  `docs/marketing/README.md`.

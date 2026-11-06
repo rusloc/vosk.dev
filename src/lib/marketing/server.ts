@@ -8,8 +8,13 @@ import { toColumns } from "./data/loader";
 // `marketing_demo` and nothing else (data/marketing/sql/001-schema-and-roles.sql). The URL lives only in the server
 // env (MARKETING_DATABASE_URL, **Session pooler, port 5432**: the Transaction pooler stalls concurrent reads, found on
 // Mirelo 2026-11-03, src/lib/mirelo/server.ts); this module never leaves the server bundle.
+//
+// Released when idle (2026-11-06, as Mirelo's): a Vercel instance is frozen between requests, so `idle_timeout` never
+// fires and its connections stay open; enough frozen instances fill the role's connection limit and the next one (the
+// chat route's, say) cannot connect. So the pool ends as soon as no read is in flight on this instance.
 
 let client: Sql | undefined;
+let reading = 0;
 
 /** The reader connection, or null when MARKETING_DATABASE_URL is unset (the route answers 503 instead of failing the build). */
 function db(): Sql | null {
@@ -36,12 +41,20 @@ export async function readArtifact(name: string): Promise<ArtifactResult> {
   if (!query) return { status: 404 };
   const sql = db();
   if (!sql) return { status: 503 };
-  const body = await runArtifact(sql, query);
-  return {
-    status: 200,
-    body:
-      query.kind === "rows"
-        ? toColumns(body as Record<string, unknown>[], query.columns)
-        : body,
-  };
+  reading++;
+  try {
+    const body = await runArtifact(sql, query);
+    return {
+      status: 200,
+      body:
+        query.kind === "rows"
+          ? toColumns(body as Record<string, unknown>[], query.columns)
+          : body,
+    };
+  } finally {
+    if (--reading === 0) {
+      client = undefined; // a read that starts now opens a new pool
+      await sql.end({ timeout: 5 });
+    }
+  }
 }

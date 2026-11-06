@@ -29,10 +29,10 @@ export function askAiTrigger(label: string) {
   return { className: styles.glow, content: <SparkleLabel label={label} /> };
 }
 
-/** The same button at 30px, for a report's own header (Mirelo, 11-06). */
-export function askAiTriggerCompact(label: string) {
+/** The same button at 30px, for a report's own header (Mirelo, 11-06); `"marketing"`: ACME Marketing's 32px buttons and themes. */
+export function askAiTriggerCompact(label: string, report?: "marketing") {
   return {
-    className: `${styles.glow} ${styles.compact}`,
+    className: `${styles.glow} ${styles.compact}${report === "marketing" ? ` ${styles.marketing}` : ""}`,
     content: <SparkleLabel label={label} />,
   };
 }
@@ -42,4 +42,11 @@ export const MIRELO_SUGGESTIONS = [
   "Which market grew most vs last year?",
   "How has the approval rate moved over the last six months?",
   "Where is revenue behind budget?",
+] as const;
+
+/** Questions the ACME Marketing chat offers before the first one is typed (11-06). */
+export const MARKETING_SUGGESTIONS = [
+  "Which channel brings paying customers at the lowest CAC?",
+  "Which campaigns are flagged, and why?",
+  "How has CAC moved over the last eight weeks?",
 ] as const;

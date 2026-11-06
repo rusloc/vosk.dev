@@ -24,6 +24,7 @@ Power BI flavour is the owner's, published to web from Fabric; its URL is the en
 | Data the tests and the loader read (the pack's `public/data`, 1.55 MB, tracked) | `data/marketing/parquet/` |
 | Test fixtures | `data/marketing/checks/control_totals_usd.csv` (28,660 rows), `src/lib/marketing/test-utils/parity/` |
 | Tests (88 + 3 skipped: the source manifest and the two PBIP mirror checks need rusloc/pnl) | `src/lib/marketing/**/*.test.ts`, `src/components/marketing/layers.test.tsx` |
+| AI chat (11-06, ADR-0005): the tools over the engine, its route, the Ask AI button in the header | `src/lib/marketing/chat-tools.ts` (+ test), `src/app/api/chat/marketing/route.ts`, `marketing-app.tsx` |
 
 ## Decisions taken here (2026-11-05)
 
@@ -52,6 +53,19 @@ Power BI flavour is the owner's, published to web from Fabric; its URL is the en
   `:root` / `html` / `body` became the root itself, `100dvh` → `100%`, the How-to-read panel's `100vw` arithmetic →
   `right: 16px`. The theme attribute (`theme=light|dark`, else the system) sits on that root, not on `<html>`; the
   channel hues are injected for the same root.
+
+## AI chat (2026-11-06)
+
+The Mirelo chat's recipe (`docs/mirelo/ai-chat.md`): the same loop, panel, limits and switch (`CHAT_ENABLED`), its own
+closed tools. **Four tools**: `report_snapshot` (a view: the six vitals and that view's cards and tables, for a window and
+the platform / channel / market filters), `metric_trend` (one vital week by week or month by month, each vs the same
+dates last year), `campaign_detail` (one campaign: settings, vitals, its table row, top keywords or placements) and
+`explain_metric` (a card's ⓘ text, spec references dropped). Every figure is a string the engine formats for the board.
+The tools need the full dataset, so the route loads all eight artifacts once per instance (Journey and Campaigns too).
+The report state travels as the report's own `<query>#<view>` (url-state.ts), up to 1,200 characters; a figures card's
+"Show in the report" applies it in place. The button sits at the right of the header, after Copy link: 32px with 9px
+corners like Filters, on the report's surface and ink in both themes. `marketing_reader` is released when no read is
+in flight (`server.ts`, as Mirelo's), so frozen instances do not hold its 10 slots.
 
 ## Loading the data (owner)
 

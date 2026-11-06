@@ -101,14 +101,15 @@ and roles are plain Postgres, so a move is a connection-string change.
   Marketing report's root, like IBM Plex for the P&L.
 - **Agreed addition (2026-11-06):** `@anthropic-ai/sdk` (exact 1.5.0), the LLM SDK for the report AI chat: a closed set of
   tools over the report engine, run server-side in `/api/chat/<report>` (ADR-0005; `src/lib/chat/`,
-  `src/lib/mirelo/chat-tools.ts`, `src/components/chat/`). No text-to-SQL, no report data in the build.
+  `src/lib/mirelo/chat-tools.ts`, `src/lib/marketing/chat-tools.ts`, `src/components/chat/`). Mirelo and ACME Marketing
+  (11-06). No text-to-SQL, no report data in the build.
 
 ## Structure — the site
 
 ```
 src/
   app/            → routes under [locale]/ (home, work, services, contact, blog) + layout, sitemap, robots
-  app/api/        → superset/guest-token; mirelo/[...path] and marketing/[...path] (the JS reports' data from Supabase); chat/mirelo (the AI chat, ADR-0005) — the Route Handlers
+  app/api/        → superset/guest-token; mirelo/[...path] and marketing/[...path] (the JS reports' data from Supabase); chat/mirelo and chat/marketing (the AI chat, ADR-0005) — the Route Handlers
   proxy.ts        → locale rewriting middleware; excludes /api/*
   components/     → shared UI (nav, footer, cards, contact-form, mdx-components, primitives)
   lib/            → content.ts (MDX seam), work.ts (showcase registry), schema.ts (Zod), env.ts, site.ts, metadata.ts

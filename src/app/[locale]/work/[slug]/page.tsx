@@ -97,12 +97,16 @@ export default async function ShowcasePage({ params }: Props) {
   // A JS report whose data is not wired yet (its reader URL unset) shows its Power BI flavour only.
   const webReport =
     showcase.platform !== "js" || isJsReportLive(showcase.report);
-  // The AI chat (ADR-0005, 11-06): Mirelo only, beside its live web report, and only while CHAT_ENABLED is "1" at build.
-  const chat =
+  // The AI chat (ADR-0005, 11-06): Mirelo and ACME Marketing, beside their live web report, and only while
+  // CHAT_ENABLED is "1" at build.
+  const chatReport =
     showcase.platform === "js" &&
-    showcase.report === "mirelo" &&
+    (showcase.report === "mirelo" || showcase.report === "marketing") &&
     webReport &&
-    process.env.CHAT_ENABLED === "1";
+    process.env.CHAT_ENABLED === "1"
+      ? showcase.report
+      : null;
+  const chat = chatReport !== null;
 
   return (
     <Container className="py-6">
@@ -207,14 +211,14 @@ export default async function ShowcasePage({ params }: Props) {
         )}
         {/* Ask AI opens the web report with its chat already up (owner, 11-06): the chat then asks about the
             report's view, and a figures card's link applies in place, as from the report's own button. */}
-        {chat && (
+        {chatReport && (
           <ReportDialog
             label={t.askAi}
             title={reportTitle}
             closeLabel={t.closeReport}
             trigger={askAiTrigger(t.askAi)}
           >
-            <JsReportLazy report="mirelo" chat chatOpen />
+            <JsReportLazy report={chatReport} chat chatOpen />
           </ReportDialog>
         )}
       </div>

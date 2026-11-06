@@ -2,7 +2,8 @@
    the CTA, set apart by a light that runs round its edge and a slow glow. The edge is a conic gradient spun through a
    registered custom property (an angle can be animated only when it is typed); a background layer on top leaves a
    1.5px ring. Red and the site's warm orange (--accent-rgb) only. Still for anyone who asks for reduced motion.
-   `.compact` is the 30px version in the Mirelo report's header, with that report's 6px button corners. */
+   `.compact` is the 30px version in the Mirelo report's header, with that report's 6px button corners; `.marketing`
+   adjusts it to ACME Marketing's header. */
 
 @property --ask-ai-angle {
   syntax: "<angle>";
@@ -88,6 +89,24 @@
   height: 1rem;
   color: rgb(var(--red));
   animation: ask-ai-twinkle 2.8s ease-in-out infinite;
+}
+
+/* In ACME Marketing's header (11-06): that report's 32px buttons with 9px corners, on its own surface and ink in both
+   themes. Three classes, so the report's global reset (padding), `button` (font: inherit) and `:focus-visible` rules
+   don't win. */
+.glow.compact.marketing {
+  --r: 9px;
+  --face: linear-gradient(var(--solid), var(--solid)), var(--bg);
+  padding: 0 12px;
+  gap: 6px;
+  height: 32px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.glow.compact.marketing:focus-visible {
+  outline: 2px solid rgb(var(--red));
 }
 
 .compact .icon {

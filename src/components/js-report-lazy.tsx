@@ -21,7 +21,7 @@ const REPORTS: Record<
 };
 
 /**
- * `chat`: the report shows the site's Ask AI button (Mirelo only so far; the others ignore it). `chatOpen`: its chat
+ * `chat`: the report shows the site's Ask AI button (Mirelo and ACME Marketing; the others ignore it). `chatOpen`: its chat
  * opens as soon as the report is up (the page's Ask AI button, 11-06).
  */
 export function JsReportLazy({

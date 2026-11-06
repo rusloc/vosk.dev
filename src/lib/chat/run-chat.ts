@@ -1,11 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { ChatTools } from "@/lib/mirelo/chat-tools";
-import type { SalesSelection } from "@/lib/mirelo/types";
+import type { ChatToolset } from "./tools";
 
 // One question, answered (ADR-0005): the LLM picks from the report's closed tools, the engine runs them on the
 // server, the answer streams back. Caps per question: 3 model calls (the last with tools off), 4 tool calls,
 // 1,024 output tokens per call. Events go to `emit` as they happen: text deltas, each tool result as a "figures"
-// card, then the usage. Framework-free, so a script can run the same loop over the Parquet (the smoke test).
+// card, then the usage. Framework-free, so a script can run the same loop over the Parquet (the smoke test). Any
+// report's toolset (ChatToolset): Mirelo's and ACME Marketing's run through this one loop.
 
 export const CHAT_MODEL = "claude-haiku-5-5";
 
@@ -43,7 +43,7 @@ export interface ChatUsage {
   stop: string | null;
 }
 
-export async function runChat({
+export async function runChat<C>({
   client,
   tools,
   ctx,
@@ -52,8 +52,8 @@ export async function runChat({
   signal,
 }: {
   client: Anthropic;
-  tools: ChatTools;
-  ctx: SalesSelection;
+  tools: ChatToolset<C>;
+  ctx: C;
   turns: readonly ChatTurn[];
   emit: (e: ChatEvent) => void;
   signal?: AbortSignal;

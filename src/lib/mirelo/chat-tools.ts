@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { capText, fail, runTool, toolDefinitions } from "@/lib/chat/tools";
+import type { ToolResult } from "@/lib/chat/tools";
 import { CMP_NAMES, MARKET_NAMES, TITLE } from "./copy";
 import type { SalesEngine } from "./index";
 import type { MarketCode, SalesSelection, ViewId } from "./types";
@@ -92,30 +94,8 @@ const DESCRIPTIONS: Record<ChatToolName, string> = {
     "What a card measures, why it matters and its formula, as the report's info pop-up states it.",
 };
 
-/** A tool's answer: `text` goes back to the model; `link` and `scope` feed the panel's figures card. */
-export interface ToolResult {
-  ok: boolean;
-  text: string;
-  scope: string | null; // "Q3 2026 - vs Budget - Poland"
-  link: string | null; // report state as a query string: "view=revenue&market=pl"
-}
-
-/** A tool definition in the shape the LLM API takes (name, description, JSON Schema). */
-export interface ToolDefinition {
-  name: ChatToolName;
-  description: string;
-  input_schema: Record<string, unknown>;
-}
-
-const cap = (text: string) =>
-  text.length <= RESULT_CAP ? text : `${text.slice(0, RESULT_CAP - 1)}…`;
-
-const fail = (text: string): ToolResult => ({
-  ok: false,
-  text,
-  scope: null,
-  link: null,
-});
+// A link here is the report state as a query string: "view=revenue&market=pl".
+const cap = (text: string) => capText(text, RESULT_CAP);
 
 /** "24.4k (€9.6m) · vs Budget ▲ +0.4% · vs PY ▲ +15.2% · ▲ Good": value, comparators and status, as the card shows them. */
 function figures(c: HeroCard | KpiCard): string {
@@ -281,31 +261,11 @@ export function createChatTools(engine: SalesEngine) {
 
   return {
     /** The tool definitions for the model (JSON Schema from the same Zod schemas that validate the calls). */
-    definitions: (Object.keys(SCHEMAS) as ChatToolName[]).map(
-      (name): ToolDefinition => {
-        const input_schema: Record<string, unknown> = z.toJSONSchema(
-          SCHEMAS[name],
-        );
-        delete input_schema.$schema; // a draft marker, not part of the tool contract
-        return { name, description: DESCRIPTIONS[name], input_schema };
-      },
-    ),
+    definitions: toolDefinitions(SCHEMAS, DESCRIPTIONS),
 
     /** Runs one tool call. Never throws for bad input: an unknown tool or invalid arguments come back as `ok: false` with a reason the model can read. */
     run(name: string, input: unknown, ctx: SalesSelection): ToolResult {
-      if (!Object.hasOwn(SCHEMAS, name)) return fail(`Unknown tool "${name}".`);
-      const key = name as ChatToolName;
-      const parsed = SCHEMAS[key].safeParse(input);
-      if (!parsed.success)
-        return fail(
-          `Invalid arguments for ${key}: ${parsed.error.issues
-            .map((i) => `${i.path.join(".") || "input"} ${i.message}`)
-            .join("; ")}.`,
-        );
-      return (run[key] as (a: unknown, c: SalesSelection) => ToolResult)(
-        parsed.data,
-        ctx,
-      );
+      return runTool(SCHEMAS, run, name, input, ctx);
     },
 
     /** The fixed system prompt: role, rules and the card catalogue (no per-request text, so it can be cached). */

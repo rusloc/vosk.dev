@@ -238,7 +238,6 @@ export const ru: Dictionary = {
     openPowerBi: "Power BI",
     openWebReport: "Веб-отчёт",
     askAi: "Спросить ИИ",
-    aiAssistant: "ИИ-ассистент",
     writeUp: "Разбор",
     dashboardLoading: "Загружаем живой дашборд…",
     dashboardError:

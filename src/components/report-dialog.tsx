@@ -21,6 +21,7 @@ export function ReportDialog({
   openOnHash,
   trigger,
   size = "full",
+  defaultOpen = false,
   children,
 }: {
   label: string;
@@ -31,14 +32,16 @@ export function ReportDialog({
   openOnQuery?: readonly string[];
   /** …or when its hash is one of these (a report whose view travels in the hash, e.g. ACME Marketing's `#campaigns`). */
   openOnHash?: readonly string[];
-  /** A trigger of its own (the AI chat button, 11-06): its class and an icon before the label. Default: the CTA. */
-  trigger?: { className?: string; icon?: ReactNode };
+  /** A trigger of its own (the AI chat button, 11-06): its class and what it shows instead of the label. Default: the CTA. */
+  trigger?: { className?: string; content?: ReactNode };
   /** "full": near-full-screen, for a report. "panel": a narrow, tall window, for the chat. */
   size?: "full" | "panel";
+  /** Open as soon as it mounts: the report's chat when the page's Ask AI opened the report (11-06). Client-mounted only. */
+  defaultOpen?: boolean;
   /** The popup content; a function gets `close`, for content that closes its own popup (the chat's "Open in report"). */
   children: ReactNode | ((close: () => void) => ReactNode);
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const dialog = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -63,6 +66,8 @@ export function ReportDialog({
       setOpen(false);
     };
     window.addEventListener("keydown", onKey);
+    // Focus moves into the popup, so Escape closes the top one only (the chat over the report, 11-06).
+    dialog.current?.focus();
     // Restore what was there: a popup opened over another (the chat over the web report) must leave it locked.
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -95,8 +100,7 @@ export function ReportDialog({
           onClick={() => setOpen(true)}
           className={trigger?.className ?? styles.cta}
         >
-          {trigger?.icon}
-          {label}
+          {trigger?.content ?? label}
         </button>
       )}
 
@@ -111,8 +115,9 @@ export function ReportDialog({
               role="dialog"
               aria-modal="true"
               aria-label={title}
+              tabIndex={-1}
               onClick={(e) => e.stopPropagation()}
-              className={`border-border bg-background flex w-full flex-col overflow-hidden rounded-lg border shadow-xl ${size === "panel" ? "h-[min(760px,100%)] max-w-[560px]" : "h-full max-w-[1600px]"}`}
+              className={`border-border bg-background flex w-full flex-col overflow-hidden rounded-lg border shadow-xl outline-none ${size === "panel" ? "h-[min(760px,100%)] max-w-[560px]" : "h-full max-w-[1600px]"}`}
             >
               <div className="border-border flex items-center justify-between gap-4 border-b py-1.5 pr-1.5 pl-4">
                 <p className="truncate text-sm font-medium">{title}</p>

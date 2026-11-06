@@ -7,8 +7,7 @@ import { JsonLd } from "@/components/json-ld";
 import { JsReportLazy } from "@/components/js-report-lazy";
 import { REPORT_HASHES, REPORT_QUERY_KEYS } from "@/lib/js-reports";
 import { ReportDialog } from "@/components/report-dialog";
-import { MIRELO_SUGGESTIONS, askAiTrigger } from "@/components/chat/ask-ai";
-import { ChatPanel } from "@/components/chat/chat-panel";
+import { askAiTrigger } from "@/components/chat/ask-ai";
 import { SalesDashboardLazy } from "@/components/sales-dashboard-lazy";
 import { SupersetEmbed } from "@/components/superset-embed";
 import { getPostBySlug } from "@/lib/content";
@@ -206,18 +205,16 @@ export default async function ShowcasePage({ params }: Props) {
             )}
           </ReportDialog>
         )}
+        {/* Ask AI opens the web report with its chat already up (owner, 11-06): the chat then asks about the
+            report's view, and a figures card's link applies in place, as from the report's own button. */}
         {chat && (
           <ReportDialog
             label={t.askAi}
-            title={t.aiAssistant}
+            title={reportTitle}
             closeLabel={t.closeReport}
-            trigger={askAiTrigger}
-            size="panel"
+            trigger={askAiTrigger(t.askAi)}
           >
-            <ChatPanel
-              endpoint="/api/chat/mirelo"
-              suggestions={MIRELO_SUGGESTIONS}
-            />
+            <JsReportLazy report="mirelo" chat chatOpen />
           </ReportDialog>
         )}
       </div>

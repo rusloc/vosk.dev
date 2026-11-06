@@ -1,28 +1,32 @@
 import styles from "./ask-ai.module.css";
+import { ralewayFontVariable } from "./raleway-font";
 
-function Sparkle() {
+/** The neon label: the second letter is the "faulty" one that flickers on its own (owner's design, 11-06). */
+function NeonLabel({ label }: { label: string }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={styles.icon}
-      aria-hidden="true"
-    >
-      <path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9L12 2.5z" />
-      <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z" />
-    </svg>
+    <span className={styles.txt}>
+      {label.slice(0, 1)}
+      <span className={styles.faulty}>{label.slice(1, 2)}</span>
+      {label.slice(2)}
+    </span>
   );
 }
 
-/** The "Ask AI" trigger for <ReportDialog>: the glowing pill and its sparkle (11-06). */
-export const askAiTrigger = { className: styles.glow, icon: <Sparkle /> };
+/** The "Ask AI" trigger for <ReportDialog>: the neon button (11-06). */
+export function askAiTrigger(label: string) {
+  return {
+    className: `${styles.glow} ${ralewayFontVariable}`,
+    content: <NeonLabel label={label} />,
+  };
+}
 
 /** The same button at 30px, for a report's own header (Mirelo, 11-06). */
-export const askAiTriggerCompact = {
-  className: `${styles.glow} ${styles.compact}`,
-  icon: <Sparkle />,
-};
+export function askAiTriggerCompact(label: string) {
+  return {
+    className: `${styles.glow} ${styles.compact} ${ralewayFontVariable}`,
+    content: <NeonLabel label={label} />,
+  };
+}
 
 /** Questions the Mirelo chat offers before the first one is typed (owner, 11-06). */
 export const MIRELO_SUGGESTIONS = [

@@ -53,8 +53,17 @@ type Load =
   | { status: "error"; message: string }
   | { status: "ready"; base: SalesBase };
 
-/** `chat`: show the Ask AI button in the header (the page passes CHAT_ENABLED, ADR-0005). */
-export function SalesApp({ chat = false }: { chat?: boolean }) {
+/**
+ * `chat`: show the Ask AI button in the header (the page passes CHAT_ENABLED, ADR-0005). `chatOpen`: open its chat as
+ * soon as the report is up (the showcase page's Ask AI button, 11-06).
+ */
+export function SalesApp({
+  chat = false,
+  chatOpen = false,
+}: {
+  chat?: boolean;
+  chatOpen?: boolean;
+}) {
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -69,7 +78,7 @@ export function SalesApp({ chat = false }: { chat?: boolean }) {
   }, [attempt]);
 
   if (load.status === "ready")
-    return <Dashboard base={load.base} chat={chat} />;
+    return <Dashboard base={load.base} chat={chat} chatOpen={chatOpen} />;
   return (
     <ReportBoard fill className={`${styles.page} ${interFontVariable}`}>
       <div className={styles.board}>
@@ -144,7 +153,15 @@ function overviewBoxes(extra: number) {
 type Detail =
   { key: string; parts: DetailParts } | { key: string; error: string } | null;
 
-function Dashboard({ base, chat }: { base: SalesBase; chat: boolean }) {
+function Dashboard({
+  base,
+  chat,
+  chatOpen,
+}: {
+  base: SalesBase;
+  chat: boolean;
+  chatOpen: boolean;
+}) {
   const engine = useMemo(() => createSalesEngine(base), [base]);
   const { search, go: setSearch, shareUrl } = useReportSearch();
   const sel = useMemo(
@@ -232,8 +249,9 @@ function Dashboard({ base, chat }: { base: SalesBase; chat: boolean }) {
                   label="Ask AI"
                   title="AI assistant"
                   closeLabel="Close the assistant"
-                  trigger={askAiTriggerCompact}
+                  trigger={askAiTriggerCompact("Ask AI")}
                   size="panel"
+                  defaultOpen={chatOpen}
                 >
                   {(close) => (
                     <ChatPanel

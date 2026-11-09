@@ -1,0 +1,52 @@
+key,expected,question
+effective_work_time||||trucks+onspot|month|weighted|plan,0.527053234399299,How does effective work time compare with plan?
+effective_work_time||||trucks+onspot|month|weighted|fact,0.505843638704403,How does effective work time compare with plan?
+truck_loading||||trucks+onspot|month|weighted|plan,0.416154945810734,How does truck loading compare with plan?
+truck_loading||||trucks+onspot|month|weighted|fact,0.438617138821868,How does truck loading compare with plan?
+performance_per_truck||||trucks+onspot|month|weighted|plan,886.4560789245422,What is performance per truck against plan?
+performance_per_truck||||trucks+onspot|month|weighted|fact,763.8331625624303,What is performance per truck against plan?
+ready_for_work||||trucks+onspot|month|weighted|fact,0.766428459650444,What share of total time was ready for work?
+ready_for_work||||trucks+onspot|month|weighted|plan,0.766758264015044,What was the planned share of ready for work?
+ready_for_work||||trucks+onspot|month|weighted|delta,-0.000329804364600061,"How far is ready for work from plan, in percentage points?"
+maintenance||||trucks+onspot|month|weighted|fact,0.0509857984227829,What share of total time went to maintenance?
+capital_repairs||||trucks+onspot|month|weighted|plan,0.0935116232530461,What share of time was planned for capital repairs?
+accidents||||trucks+onspot|month|weighted|fact,0.078078221496312,How much of the total time was lost to accidents?
+shift_change||||trucks+onspot|month|weighted|delta,-0.00566293005264887,"How far is shift change from plan, in percentage points?"
+lunch||||trucks+onspot|month|weighted|fact,0.0223935392270521,What share of total time goes to lunch?
+awaiting_trucks||||trucks+onspot|month|weighted|fact,0.0634534664125613,What share of time do loaders spend awaiting trucks?
+awaiting_trucks||||trucks+onspot|month|weighted|plan,0.0547523256893481,What is the plan for awaiting trucks as a share of time?
+refueling||||trucks+onspot|month|weighted|fact,0.00215372428814581,What share of total time is refueling?
+other_idles||||trucks+onspot|month|weighted|plan,0.0357270876219547,What share of time was planned for other idles?
+not_classified||||trucks+onspot|month|weighted|fact,0.0223650897268025,"How much time is not classified, as a share of the total?"
+auxiliary_work||||trucks+onspot|month|weighted|fact,0.0672264998825356,What share of time goes to auxiliary work?
+mass_loaded_per_truck||||trucks+onspot|month|weighted|fact,143178.571484,"How much mass was loaded per truck, in thousand cubic metres?"
+mass_loaded_per_truck||||trucks+onspot|month|weighted|plan,87006.43,What is the plan for mass loaded per truck?
+mass_loaded_per_truck||||trucks+onspot|month|weighted|delta,56172.14148399999,How far is mass loaded per truck from plan?
+performance_per_truck||||trucks+onspot|month|weighted|delta,-122.62291636211194,How far is performance per truck from plan?
+maintenance_hours|2023-09|||trucks+onspot|month|weighted|fact,9.074457850707855,How many maintenance hours were there in week 9 of 2023?
+effective_work_time_hours|2023-09|||trucks+onspot|month|weighted|plan,71.54743243243242,How many hours of effective work were planned in week 9 of 2023?
+effective_work_time|2023-09|||trucks+onspot|month|weighted|fact,0.52328470803628,What was effective work time in week 9 of 2023?
+effective_work_time|2023-09|||trucks+onspot|month|weighted|plan,0.529032318907671,What was the plan for effective work time in week 9 of 2023?
+effective_work_time|2023-09|||trucks+onspot|month|weighted|delta,-0.00574761087139131,"In week 9 of 2023, how far was effective work time from plan in percentage points?"
+truck_loading|2023-09|||trucks+onspot|month|weighted|fact,0.461602672476074,What was truck loading in week 9 of 2023?
+spare_part|2023-09|||trucks+onspot|month|weighted|fact,0.00359195807482609,"In week 9 of 2023, what share of time was lost waiting for spare parts?"
+awaiting_trucks|2023-09|||trucks+onspot|month|weighted|delta,0.00662257003329612,"In week 9 of 2023, how far was awaiting trucks from plan in percentage points?"
+performance_per_truck|2023-09|||trucks+onspot|month|weighted|fact,753.4772201555679,What was performance per truck in week 9 of 2023?
+mass_loaded_per_truck|2023-09|||trucks+onspot|month|weighted|fact,7070.292666,How much mass was loaded per truck in week 9 of 2023?
+maintenance_hours|2023-09|||trucks+onspot|month|weighted|plan,14.297779922779922,How many maintenance hours were planned in week 9 of 2023?
+truck_loading|2023-10|||trucks+onspot|month|weighted|fact,0.453487368220992,What was truck loading in week 10 of 2023?
+performance_per_truck|2023-10|||trucks+onspot|month|weighted|plan,847.046822201518,What was the plan for performance per truck in week 10 of 2023?
+mass_loaded_per_truck|2023-10|||trucks+onspot|month|weighted|fact,7028.802957,How much mass was loaded per truck in week 10 of 2023?
+effective_work_time|2022-44|||trucks+onspot|month|weighted|fact,0.5120741238392683,What was effective work time in week 44 of 2022?
+truck_loading|2022-44|||trucks+onspot|month|weighted|fact,0.41991835770556807,What was truck loading in week 44 of 2022?
+maintenance|2022-44|||trucks+onspot|month|weighted|fact,0.05965654585359138,"In week 44 of 2022, what share of time went to maintenance?"
+mass_loaded_per_truck|2022-44|||trucks+onspot|month|weighted|fact,4046.542145,How much mass was loaded per truck in week 44 of 2022?
+performance_per_truck|2022-44|||trucks+onspot|month|weighted|plan,,What was the plan for performance per truck in week 44 of 2022?
+truck_loading||||trucks+onspot|week|linear|plan,0.39603231172116427,"Against the week plan with the linear calculation, what is planned truck loading across all weeks?"
+truck_loading||||trucks+onspot|week|linear|fact,0.41396718311857694,"With the linear calculation and the week plan, what was truck loading across all weeks?"
+performance_per_truck||||trucks+onspot|week|linear|fact,812.7463678444125,"With the linear calculation and the week plan, what was performance per truck across all weeks?"
+mass_loaded_per_truck||||trucks+onspot|week|linear|plan,142816.28,"What is the week plan for mass loaded per truck across all weeks, with the linear calculation?"
+effective_work_time|2023-05|k3||trucks+onspot+undefined|month|linear|fact,0.4466305030618233,"For office K3 in week 5 of 2023, all work types and the linear calculation, what was effective work time?"
+performance_per_truck|2023-05|k3||trucks+onspot+undefined|month|linear|fact,845.4408876152972,"For office K3 in week 5 of 2023, all work types and the linear calculation, what was performance per truck?"
+truck_loading||k1+t1||trucks+onspot+undefined|month|linear|fact,0.42427006248945187,"For offices K1 and T1, all work types and the linear calculation across all weeks, what was truck loading?"
+mass_loaded_per_truck||k1+t1||trucks+onspot+undefined|month|linear|fact,57051.319404,"For offices K1 and T1, all work types and the linear calculation across all weeks, how much mass was loaded per truck?"

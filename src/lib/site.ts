@@ -38,6 +38,9 @@ export const siteConfig = {
     linkedin: "https://www.linkedin.com/in/kirill-vosk/",
     upwork: "https://www.upwork.com/freelancers/~01a960a706057bdf85",
   },
+  // A credential, not a profile: kept out of `social`, which feeds the Person's `sameAs`.
+  dp600Url:
+    "https://learn.microsoft.com/api/credentials/share/en-us/KirillBezzubkinISSGHQ-1802/65289BC12515DA2B?sharingId=617FA0AB7D498F12",
 } as const;
 
 /**

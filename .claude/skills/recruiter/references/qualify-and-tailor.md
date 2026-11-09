@@ -33,7 +33,7 @@ Output, in this order:
 5. **Gaps & honest framing**: what to say if asked about each gap, plus one quick thing he could do (a lab, an Applied Skills credential, a demo) to close it.
 6. **Cover note or proposal opener** (see Workflow 4).
 
-Resume conventions: one page for contracts (two max for perm), reverse chronological, numbers in the first half of each bullet, no photo for UK/US perm roles (a photo is fine on freelance platforms), PDF named `Kirill_Vosk_<Role>_<Company>.pdf`, certifications near the top with the Credly link.
+Resume conventions: one page for contracts (two max for perm), reverse chronological, numbers in the first half of each bullet, no photo for UK/US perm roles (a photo is fine on freelance platforms), PDF named `Kirill_Vosk_<Role>_<Company>.pdf`, certifications near the top with the Microsoft Learn transcript link.
 
 For **platform profiles** (Upwork, Contra, LinkedIn, Toptal, etc.): give field-by-field copy within the platform's limits. Headline = specialism + cert + outcome, not job title. Portfolio items = problem → what he built → result, with visuals on sample data.
 

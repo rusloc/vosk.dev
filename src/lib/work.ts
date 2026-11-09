@@ -327,7 +327,8 @@ const allShowcases: Showcase[] = [
   {
     slug: "mining-time-utilization",
     published: "2026-10-31",
-    platform: "power-bi",
+    platform: "js",
+    report: "trucks",
     title: {
       en: "Coal mining machinery time utilization",
       ru: "Использование времени техники угольного разреза",
@@ -337,10 +338,14 @@ const allShowcases: Showcase[] = [
       ru: "Куда уходят круглосуточные часы горной техники: от календарного времени до эффективной работы, против плана.",
     },
     metric: "100%",
-    // The "Trucks" report, published to web from Fabric (owner, 11-04; replaced the earlier app.powerbi.com link).
-    embedUrl:
-      "https://app.fabric.microsoft.com/view?r=eyJrIjoiODlkMmE2YzUtYmQ0Zi00ZmQwLTk5NjEtNjY3NzZiNTNiMjFkIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
-    href: "https://app.fabric.microsoft.com/view?r=eyJrIjoiODlkMmE2YzUtYmQ0Zi00ZmQwLTk5NjEtNjY3NzZiNTNiMjFkIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
+    // The "Trucks" report, published to web from Fabric (owner, 11-04; replaced the earlier app.powerbi.com link). The
+    // web flavour (11-09) reads Supabase schema trucks_demo through /api/trucks; its button shows once
+    // TRUCKS_DATABASE_URL is set (isJsReportLive).
+    powerBi: {
+      embedUrl:
+        "https://app.fabric.microsoft.com/view?r=eyJrIjoiODlkMmE2YzUtYmQ0Zi00ZmQwLTk5NjEtNjY3NzZiNTNiMjFkIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
+      href: "https://app.fabric.microsoft.com/view?r=eyJrIjoiODlkMmE2YzUtYmQ0Zi00ZmQwLTk5NjEtNjY3NzZiNTNiMjFkIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
+    },
     articleSlug: "power-bi-time-utilization-funnel",
     // The page's own text (the report is an iframe in a popup, opaque to crawlers):
     // short on purpose. The long-form story is the linked `articleSlug` write-up.
@@ -475,6 +480,7 @@ export const showcases: Showcase[] = allShowcases
 const REPORT_DATA_ENV: Partial<Record<JsReport, string>> = {
   marketing: "MARKETING_DATABASE_URL",
   pnl: "PNL_DATABASE_URL", // 2026-11-09: the P&L rows moved to Supabase (pnl_demo)
+  trucks: "TRUCKS_DATABASE_URL", // 2026-11-09
 };
 
 /** Whether the "Web report" of a JS showcase can open (read at build / regeneration, server-side only). */
@@ -485,7 +491,16 @@ export function isJsReportLive(report: JsReport): boolean {
 
 /** Platform labels of the showcases on the site, in list order — the /work intro names these. */
 export function getShowcasePlatformLabels(): string[] {
-  return [...new Set(showcases.map((s) => PLATFORM_LABEL[s.platform]))];
+  return [
+    ...new Set(
+      showcases.flatMap((s) => [
+        PLATFORM_LABEL[s.platform],
+        ...(s.platform === "js" && s.powerBi
+          ? [PLATFORM_LABEL["power-bi"]]
+          : []),
+      ]),
+    ),
+  ];
 }
 
 export function getShowcaseSlugs(): string[] {

@@ -13,7 +13,7 @@ Produce a one-page brief:
 ## Workflow 7: Close & deliver
 
 - SOW within 24 h of a positive call: scope, deliverables, timeline, price, 50% upfront (or milestone escrow on a platform), change-request rate.
-- Payments: Wise / Payoneer / Deel; check Turkey support for the client's country.
+- Payments: crypto or the personal bank account in Georgia, the platform's own withdrawal, or Deel; Wise and PayPal don't work for Turkey residents (`funnel-profiles.md`).
 - First visible result within 3 days. At handover, ask for a testimonial, a LinkedIn recommendation and one introduction, then offer the retainer.
 
 ## Workflow 8: Weekly review

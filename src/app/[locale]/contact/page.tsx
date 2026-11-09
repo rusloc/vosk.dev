@@ -138,6 +138,19 @@ export default async function ContactPage({ params }: Props) {
               pending={t.linkPending}
             />
           </dd>
+
+          <dt className="text-muted-foreground">{t.labelDp600}</dt>
+          <dd>
+            <a
+              href={siteConfig.dp600Url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${t.labelDp600}: ${t.linkCertificate}`}
+              className="text-primary hover:underline"
+            >
+              {t.linkCertificate}
+            </a>
+          </dd>
         </dl>
       </div>
 

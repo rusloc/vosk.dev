@@ -18,6 +18,7 @@ const REPORTS: Record<
   marketing: dynamic(() =>
     import("./marketing/marketing-app").then((m) => m.MarketingApp),
   ),
+  trucks: dynamic(() => import("./trucks/trucks-app").then((m) => m.TrucksApp)),
 };
 
 /**

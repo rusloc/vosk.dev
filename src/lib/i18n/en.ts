@@ -166,9 +166,11 @@ export const en = {
     labelLinkedin: "LinkedIn",
     labelUpwork: "Upwork",
     labelGithub: "GitHub",
+    labelDp600: "DP-600",
     // Link text for a profile row — the same for every platform; the row label
     // names it, and the link's aria-label joins the two.
     linkProfile: "see profile",
+    linkCertificate: "see certificate",
     // Shown in place of a profile link until siteConfig.social holds a real URL.
     linkPending: "Coming soon",
   },

@@ -35,7 +35,7 @@ export function askAiTrigger(label: string) {
  */
 export function askAiTriggerCompact(
   label: string,
-  report?: "marketing" | "pnl",
+  report?: "marketing" | "pnl" | "trucks",
 ) {
   return {
     className: `${styles.glow} ${styles.compact}${report ? ` ${styles[report]}` : ""}`,
@@ -55,6 +55,13 @@ export const PNL_SUGGESTIONS = [
   "Where are we against budget on net revenue and EBITDA?",
   "Which lines drove the variance vs budget?",
   "What is the full-year outlook vs budget?",
+] as const;
+
+/** Questions the ACME Trucks chat offers before the first one is typed (11-09); each is in its answer key. */
+export const TRUCKS_SUGGESTIONS = [
+  "How does effective work time compare with plan?",
+  "How does truck loading compare with plan?",
+  "What is performance per truck against plan?",
 ] as const;
 
 /** Questions the ACME Marketing chat offers before the first one is typed (11-06). */

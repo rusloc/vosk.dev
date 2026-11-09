@@ -14,6 +14,10 @@ import { formatValue as formatMarketingValue } from "@/lib/marketing/chat-metric
 import { createChatTools as createPnlTools } from "@/lib/pnl/chat-tools";
 import { formatValue as formatPnlValue } from "@/lib/pnl/chat-metrics";
 import { loadPublicDataset as loadPnlDataset } from "@/lib/pnl/test-utils/public-data";
+import { createChatTools as createTrucksTools } from "@/lib/trucks/chat-tools";
+import { formatValue as formatTrucksValue } from "@/lib/trucks/chat-metrics";
+import type { Column as TrucksColumn } from "@/lib/trucks/chat-metrics";
+import { loadDataset as loadTrucksDataset } from "@/lib/trucks/test-utils/trucks-data";
 
 // The chat's answer key, level 2 (plan .log/report/2026-11-07-ai-chat-metrics-plan.md §2): every question of
 // data/<report>/checks/chat-golden.csv goes through the real chat loop (the LLM + the report's tools over the local
@@ -79,6 +83,22 @@ const REPORTS: Record<string, Report> = {
           const unit = tools.metrics.byId.get(id)?.unit;
           return unit ? formatMarketingValue(unit, raw) : null;
         },
+      };
+    },
+  },
+  trucks: {
+    dir: "data/trucks/",
+    async load() {
+      const tools = createTrucksTools(await loadTrucksDataset());
+      return {
+        tools: tools as unknown as AnyTools,
+        format: (id, raw, key) =>
+          tools.metrics.byId.has(id)
+            ? formatTrucksValue(
+                tools.metrics.unitOf(id, key.split("|")[7] as TrucksColumn),
+                raw,
+              )
+            : null,
       };
     },
   },

@@ -28,7 +28,9 @@ one change for next week.
 
 - **The agent never sends, applies or signs up.** It prepares; the owner acts.
 - **Never invent** experience, employers, metrics, postings or contacts. An unconfirmed posting is marked UNVERIFIED.
-- **The Excel is the tracker.** The sheet carries the skill's tracker row for the owner to paste; it is not a second
+- **Site presence is tracked in `.claude/skills/recruiter/references/funnel-profiles.md`**: every site, registered or
+  not, profile state. The owner reports; the row is updated the same turn. Setup comes first until the P1 rows are done.
+- **The Excel is the lead tracker.** The sheet carries the skill's tracker row for the owner to paste; it is not a second
   tracker. A row is `prepared` until the owner says it went out.
 - **Counts are derived from the rows**, never carried forward by hand.
 - **Priority:** at the start of a day, job steps 1–5 come before any site task. Site work ranks by what it does for the
@@ -59,8 +61,12 @@ Found 2026-11-09. The outreach promises things a visitor can't find on the page 
 4. **Urgent is priced differently:** the site says $300+, the skill $450 (48 h).
 5. **The Full-time card says "TBD"**, the first thing a hiring manager prices.
 
+## P1 setup
+
+`docs/job/p1-setup.md`: copy and steps for every P1 site, target 2026-11-09.
+
 ## Inputs still to come
 
 - The owner's summary of the manual search so far (`docs/job/manual-start-2026-11-09.md` once received): who has been
   contacted, so nobody is messaged twice.
-- The current resume. The skill's baseline profile is only a fallback.
+- The current resume arrived 2026-11-09: `docs/job/cv/`. Open points are in that day's log.

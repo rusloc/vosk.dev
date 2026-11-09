@@ -6,6 +6,7 @@ import { URL_KEYS as MIRELO_KEYS } from "./mirelo/url-state";
 import { URL_KEYS as NORDMARK_KEYS } from "./nordmark/engine/url-state";
 import { SELECTION_KEYS } from "./pnl/state/selection-schema";
 import { VIEW_STATE_KEYS } from "./pnl/state/view-state";
+import { URL_KEYS as TRUCKS_KEYS } from "./trucks/engine/url-state";
 
 /**
  * The reports built in this repo (`platform: "js"` showcases): each is a client component under
@@ -13,7 +14,7 @@ import { VIEW_STATE_KEYS } from "./pnl/state/view-state";
  * `public/data/<report>/` and computing every number in the browser. They were handed over as standalone apps
  * (docs/<report>/) and are owned here since.
  */
-export type JsReport = "pnl" | "mirelo" | "nordmark" | "marketing";
+export type JsReport = "pnl" | "mirelo" | "nordmark" | "marketing" | "trucks";
 
 /**
  * The query-string keys each report's state is encoded with. A showcase-page URL carrying one of them is a
@@ -24,6 +25,7 @@ export const REPORT_QUERY_KEYS: Record<JsReport, readonly string[]> = {
   mirelo: MIRELO_KEYS,
   nordmark: NORDMARK_KEYS,
   marketing: MARKETING_KEYS,
+  trucks: TRUCKS_KEYS,
 };
 
 /** Reports whose view travels in the URL hash: a shared link with one of these opens the popup as well. */

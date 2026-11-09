@@ -10,7 +10,7 @@ Loop: **find → qualify → prepare → apply/outreach → follow up → close 
 ## Route first, then load only what you need
 | Request | Read |
 |---|---|
-| Find leads, which platforms/recruiters/companies, where to place profile | `references/sources.md` |
+| Find leads, which platforms/recruiters/companies, where to place profile | `references/sources.md` + `references/funnel-profiles.md` |
 | "Worth it?", job post review, tailor CV/resume, platform profile copy | `references/qualify-and-tailor.md` |
 | Proposal, DM, cold email, follow-up, reply to recruiter, contract terms | `references/outreach.md` |
 | Call/interview prep, SOW, payment, closing, weekly funnel review | `references/calls-close-review.md` |
@@ -24,9 +24,10 @@ Most requests need one file; a pasted post + "apply" needs qualify-and-tailor, t
 When in doubt, pick what becomes paid work fastest.
 
 ## Baseline profile (a newer resume or rate he shares wins; say what changed)
+- **Current resume: `docs/job/cv/Kirill_Vosk_BI_Engineer_CV.html`. It wins over this list.**
 - Kirill Vosk · BI engineer · **Microsoft Fabric, DP-600** · Turkey, remote, EU/UK hours.
 - Stack: Fabric Lakehouse/Warehouse, OneLake, Direct Lake, semantic models, DAX, RLS, Dataflows Gen2, pipelines, dbt, SQL/PostgreSQL, Git CI/CD (Azure DevOps), deployment pipelines, org apps, Superset, Cube, AI-assisted dev.
-- Proof: org-app reporting for **300+ employees**; data discovery **hours → minutes**.
+- Proof: BI distribution for **300+ users**; reporting and ad-hoc delivery **1–2 days → a few hours**. The older "hours → minutes" claim is not in the resume: confirm before reusing it.
 - Links: vosk.dev · linkedin.com/in/kirill-vosk · vosk.dev@gmail.com
 - Rates: retainer $1,500/~40h · $2,200/~60h · $3,000/~80h (discounted tier) · hourly ≥ $50 · fixed ≈ $45–55/h effective.
 - Packages: Migration Assessment 1wk $1,200 · Direct Lake migration 2wk $2,400/model · CI/CD setup 1wk $1,200 · Model tune-up 3–5d $900 · dbt multi-source foundation 2–3wk $2,800 · AI automation 1–2wk from $1,500 · Urgent fix 48h $450 · Audit 3d $650.
@@ -37,7 +38,7 @@ When in doubt, pick what becomes paid work fastest.
 - **Verify time-sensitive facts with web search** (Turkey eligibility/payouts, fees, whether a firm is active or a post is open). Mark anything unverified.
 - **Copy-ready**: messages in quote blocks, [brackets] only for blanks, within platform limits (LinkedIn note 300 chars, Contra one-liner 60).
 - **Buyer language**: "one source of truth", "Power BI to Fabric migration", "reports nobody trusts", "manual deployments", "chat with your data", "automate routine reporting".
-- **Brief**: deliverable first, one line of reasoning only if it changes his decision. No trackers; he uses his own Excel.
+- **Brief**: deliverable first, one line of reasoning only if it changes his decision. No lead trackers; he uses his own Excel. His site presence is the table in `references/funnel-profiles.md`: keep it current.
 
 ## Tracker row (end every lead-related answer with these)
 `Date | Channel | Company/Platform | Contact & role | Lead/Role | Trigger | Offer/Package | Rate | Status | Next action | Next date | Link`

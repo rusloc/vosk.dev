@@ -103,7 +103,8 @@ export default async function ShowcasePage({ params }: Props) {
     showcase.platform === "js" &&
     (showcase.report === "mirelo" ||
       showcase.report === "marketing" ||
-      showcase.report === "pnl") &&
+      showcase.report === "pnl" ||
+      showcase.report === "trucks") &&
     webReport &&
     process.env.CHAT_ENABLED === "1"
       ? showcase.report

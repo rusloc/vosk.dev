@@ -109,6 +109,22 @@
   outline: 2px solid rgb(var(--red));
 }
 
+/* In the ACME Trucks header (11-09): beside its 18px Copy link, on the white surface. */
+.glow.compact.trucks {
+  --r: 4px;
+  --face: linear-gradient(var(--surface), var(--surface)), var(--surface);
+  padding: 0 8px;
+  gap: 4px;
+  height: 22px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.glow.compact.trucks:focus-visible {
+  outline: 2px solid rgb(var(--red));
+}
+
 /* In the P&L's toolbar (11-09): the Ledger's 36px buttons with 8px corners on its surface and ink, the light and the
    sparkle in the company colour (--acc-rgb, theme.ts) instead of red and orange. Three classes for the same reason. */
 .glow.compact.pnl {

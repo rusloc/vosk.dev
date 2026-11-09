@@ -676,6 +676,36 @@ const QUESTIONS: [string, string][] = [
     "FY_EBITDA_ATTAINMENT|P|2026|9|YTD|A|USD|ACT|base|",
     "Will Consumer Products reach its 2026 EBITDA budget: what is the attainment?",
   ],
+  // the chat's starter questions, word for word (PNL_SUGGESTIONS, ask-ai.tsx), at the report's opening view. The third
+  // chip, "Which lines drove the variance vs budget?", is a ranking: it has no single figure, so no row here.
+  [
+    "NR|P|2026|9|YTD|A|USD|ACT|base|",
+    "Where are we against budget on net revenue and EBITDA?",
+  ],
+  [
+    "NR|P|2026|9|YTD|A|USD|ACT|B|",
+    "Where are we against budget on net revenue and EBITDA?",
+  ],
+  [
+    "EBITDA|P|2026|9|YTD|A|USD|ACT|base|",
+    "Where are we against budget on net revenue and EBITDA?",
+  ],
+  [
+    "EBITDA|P|2026|9|YTD|A|USD|ACT|B|",
+    "Where are we against budget on net revenue and EBITDA?",
+  ],
+  [
+    "FY_NR_LE|P|2026|9|YTD|A|USD|ACT|base|",
+    "What is the full-year outlook vs budget?",
+  ],
+  [
+    "FY_NR_ATTAINMENT|P|2026|9|YTD|A|USD|ACT|base|",
+    "What is the full-year outlook vs budget?",
+  ],
+  [
+    "FY_EBITDA_ATTAINMENT|P|2026|9|YTD|A|USD|ACT|base|",
+    "What is the full-year outlook vs budget?",
+  ],
   // the Group
   [
     "NR|GROUP|2025|12|FY|A|USD|ACT|base|",

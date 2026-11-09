@@ -121,7 +121,7 @@ engine on 10-20; the other ten did not move. Line 0's question is still open:
     default `aws-0-…` is wrong), sign in as `qbo_reader.<ref>`, refresh. Then publish to the service
     and **Publish to web** (a tenant setting) for the site's embed URL. _New 10-21._
 18. ↗ _(10-22: not this repo's — scope rule)_ **QBO: a Fabric capacity for the app flavor, and what "Ryfin" is** (T.11). _New 10-21._
-19. ◐ _(unblocked 10-23 11:32: the P&L showcase is live for the profiles to link)_ **Contra, Malt, Upwork; LinkedIn messages to HRs** (T.12). _New 10-21._
+19. ↗ _(11-09: moved to the job flow, `docs/job/README.md`)_ ◐ _(unblocked 10-23 11:32: the P&L showcase is live for the profiles to link)_ **Contra, Malt, Upwork; LinkedIn messages to HRs** (T.12). _New 10-21._
 
 ## T. Today
 

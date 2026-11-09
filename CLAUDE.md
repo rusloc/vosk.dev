@@ -7,9 +7,16 @@
 > history keeps them). Its companies list survives in `.log/report/2026-10-20-lead-engine-companies-export.html`.
 > Leads are tracked by hand now; there is no second project driven from this folder._
 
+## The job flow — #1 priority, every day (owner, 2026-11-09)
+
+Paying clients or a high-paid job come before all site work. **`docs/job/README.md`** is the routine, the
+`recruiter` skill (`.claude/skills/recruiter/`) the method, `.log/job/job-<date>.md` the day sheet. A day's first work
+is its job steps; site tasks rank by what they do for the funnel. The agent prepares, the owner sends. Never invent a
+fact or a posting. The owner's Excel is the tracker.
+
 ## Scope — this repo and its agent are a pair (decided 2026-10-22)
 
-- **The agent's duty is vosk.dev and help with client acquisition** (profiles, outreach copy,
+- **The agent's duty is the job flow (above), vosk.dev and help with client acquisition** (profiles, outreach copy,
   the funnel). Nothing else is driven from here.
 - **Don't read, check or log other repos** (`C:\__PBI\QBO`, `C:\__PBI\Rayfin`, anything else) unless
   the owner names a specific folder. Their work, agents, skills and trails stay there.
@@ -31,7 +38,7 @@ _Amended 2026-10-20: the lead engine's `public` tables are gone; `qbo` is the se
 | `qbo` | **QBO P&L** — repo `rusloc/qbo`, `C:\__PBI\QBO` | QuickBooks P&L warehouse; that repo's `CLAUDE.md` and ADR-0008 | roles `qbo_etl` (ETL, dbt) and `qbo_reader` (Power BI) |
 | `mirelo_demo` _(live 2026-11-03)_ | **site report data** — the Mirelo custom JS report | synthetic neobank / microlender sales; schema SQL in `data/mirelo/sql/`, loader `scripts/mirelo-load.ts`, read by `/api/mirelo/*` (`docs/mirelo/README.md`, 11-03) | `mirelo_loader` (load, from the owner's machine) and `mirelo_reader` (the site's server routes) |
 | `marketing_demo` _(loaded 2026-11-05)_ | **site report data** — the ACME Marketing custom JS report | synthetic SaaS paid-acquisition data; schema SQL in `data/marketing/sql/`, loader `scripts/marketing-load.ts`, read by `/api/marketing/*` as columns (`docs/marketing/README.md`) | `marketing_loader` (load, from the owner's machine) and `marketing_reader` (the site's server routes) |
-| `pnl_demo` _(schema + roles 2026-11-09; rows: owner's load)_ | **site report data** — the management P&L custom JS report | synthetic two-company P&L (334,700 + 88,012 fact rows, ops, the manifest's lookups); schema SQL in `data/pnl/sql/`, loader `scripts/pnl-load.ts`, read by `/api/pnl/*` as JSON columns in chunks of one version × 12 months (`docs/pnl/README.md`, 11-09) | `pnl_loader` (load, from the owner's machine) and `pnl_reader` (the site's server routes) |
+| `pnl_demo` _(loaded 2026-11-09)_ | **site report data** — the management P&L custom JS report | synthetic two-company P&L (334,700 + 88,012 fact rows, ops, the manifest's lookups); schema SQL in `data/pnl/sql/`, loader `scripts/pnl-load.ts`, read by `/api/pnl/*` as JSON columns in chunks of one version × 12 months (`docs/pnl/README.md`, 11-09) | `pnl_loader` (load, from the owner's machine) and `pnl_reader` (the site's server routes) |
 
 _Amended 2026-11-02: **the site is a shopfront for reports, and report data lives in this project.**_
 Each custom JS report (Track C) gets a schema of its own (`<report>_demo`: Mirelo first, then the

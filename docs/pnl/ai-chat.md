@@ -53,7 +53,7 @@ consolidation for the Group.
 
 | Level | What | Where | Cost |
 |---|---|---|---|
-| 1. numbers | the generator's 552 control totals (P / S / Group × Actual / Budget / LE × 4 windows × 23 lines) read through the catalogue, within $0.01; and 56 golden rows for what they do not carry (EUR / GBP, constant currency, MTD / QTD / LTM, slices and their allocation, Budget / PY / LE columns, drivers, FY outlook, the Group, shares, five traps that must read n/a), computed by `scripts/pnl-golden.ts` with plain loops over the Parquet written from the data contract, not from the engine | `src/lib/pnl/chat-metrics.test.ts`; `data/pnl/checks/chat-golden.csv` | free, in `pnpm test` |
+| 1. numbers | the generator's 552 control totals (P / S / Group × Actual / Budget / LE × 4 windows × 23 lines) read through the catalogue, within $0.01; and 63 golden rows for what they do not carry (EUR / GBP, constant currency, MTD / QTD / LTM, slices and their allocation, Budget / PY / LE columns, drivers, FY outlook, the Group, shares, five traps that must read n/a), computed by `scripts/pnl-golden.ts` with plain loops over the Parquet written from the data contract, not from the engine | `src/lib/pnl/chat-metrics.test.ts`; `data/pnl/checks/chat-golden.csv` | free, in `pnpm test` |
 | 2. the model | every golden question through the real chat loop; passes when the answer quotes the expected figure as the report formats it (a right figure reached through a synonym id is flagged, not failed) | `scripts/chat-eval.ts pnl` → `.log/report/<day>-chat-eval-pnl.md` | ≈ $0.001 a question, run by hand |
 
 Adding a metric: a definition in `chat-metrics.ts`, its formula in `scripts/pnl-golden.ts` with a question row, re-run

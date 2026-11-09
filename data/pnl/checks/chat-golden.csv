@@ -49,6 +49,13 @@ UNITS|S|2026|9|YTD|A|USD|ACT|base|,,How many units did Commerce Cloud sell?
 FY_NR_LE|P|2026|9|YTD|A|USD|ACT|base|,4908087890.128394,What is the full-year 2026 revenue outlook for Consumer Products?
 FY_NR_ATTAINMENT|S|2026|9|YTD|A|USD|ACT|base|,0.9876444179814211,Commerce Cloud full-year revenue attainment vs budget?
 FY_EBITDA_ATTAINMENT|P|2026|9|YTD|A|USD|ACT|base|,0.9641819691700736,Will Consumer Products reach its 2026 EBITDA budget: what is the attainment?
+NR|P|2026|9|YTD|A|USD|ACT|base|,3398521942.6604214,Where are we against budget on net revenue and EBITDA?
+NR|P|2026|9|YTD|A|USD|ACT|B|,3464798688.448975,Where are we against budget on net revenue and EBITDA?
+EBITDA|P|2026|9|YTD|A|USD|ACT|base|,682594931.6447417,Where are we against budget on net revenue and EBITDA?
+EBITDA|P|2026|9|YTD|A|USD|ACT|B|,701037782.2519575,Where are we against budget on net revenue and EBITDA?
+FY_NR_LE|P|2026|9|YTD|A|USD|ACT|base|,4908087890.128394,What is the full-year outlook vs budget?
+FY_NR_ATTAINMENT|P|2026|9|YTD|A|USD|ACT|base|,0.9759211679560139,What is the full-year outlook vs budget?
+FY_EBITDA_ATTAINMENT|P|2026|9|YTD|A|USD|ACT|base|,0.9641819691700736,What is the full-year outlook vs budget?
 NR|GROUP|2025|12|FY|A|USD|ACT|base|,5216205047.75417,What was the Group's consolidated net revenue in 2025?
 EBITDA|GROUP|2026|9|YTD|A|USD|ACT|base|,760378089.3982018,Group adjusted EBITDA year to date September 2026?
 OP|GROUP|2026|9|YTD|A|USD|ACT|B|,624169918.307969,The Group's budgeted operating profit for January to September 2026?

@@ -474,6 +474,7 @@ export const showcases: Showcase[] = allShowcases
  */
 const REPORT_DATA_ENV: Partial<Record<JsReport, string>> = {
   marketing: "MARKETING_DATABASE_URL",
+  pnl: "PNL_DATABASE_URL", // 2026-11-09: the P&L rows moved to Supabase (pnl_demo)
 };
 
 /** Whether the "Web report" of a JS showcase can open (read at build / regeneration, server-side only). */

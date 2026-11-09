@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadPublicDataset } from "../test-utils/public-data";
-import { createDatasetLoader } from "./dataset";
+import { createDatasetLoader, parquetSource } from "./dataset";
 
 // The built artifacts read back through the same loader the browser uses (ADR-0002 §2.7).
 describe("dataset loader", () => {
@@ -14,10 +14,12 @@ describe("dataset loader", () => {
 
   it("caches per session and loads only the entities asked for", async () => {
     const names: string[] = [];
-    const loader = createDatasetLoader(async (name) => {
-      names.push(name);
-      return new ArrayBuffer(0);
-    });
+    const loader = createDatasetLoader(
+      parquetSource(async (name) => {
+        names.push(name);
+        return new ArrayBuffer(0);
+      }),
+    );
     await expect(loader.load([])).rejects.toThrow(); // empty bytes are not a manifest …
     await expect(loader.load([])).rejects.toThrow(); // … and a failed read is retried, not cached
     expect(names).toEqual(["manifest.json", "manifest.json"]);

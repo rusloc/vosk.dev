@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { capText, fail, runTool, toolDefinitions } from "@/lib/chat/tools";
 import type { ToolResult } from "@/lib/chat/tools";
+import {
+  createMetricCatalogue,
+  formatDelta,
+  formatValue,
+} from "./chat-metrics";
+import type { Dim, MetricDef, MetricQuery } from "./chat-metrics";
 import { CMP_NAMES, MARKET_NAMES, TITLE } from "./copy";
 import type { SalesEngine } from "./index";
 import type { MarketCode, SalesSelection, ViewId } from "./types";
@@ -79,6 +85,48 @@ const SCHEMAS = {
     })
     .strict(),
   explain_metric: z.object({ metric }).strict(),
+  get_metric: z
+    .object({
+      metrics: z
+        .array(z.string())
+        .min(1)
+        .max(4)
+        .describe(
+          "1–4 metric ids from the metric catalogue in the instructions, e.g. approval_rate.",
+        ),
+      market: market.optional(),
+      from: month.optional().describe("First month of the period, YYYY-MM."),
+      to: month.optional().describe("Last month of the period, YYYY-MM."),
+      product: z
+        .string()
+        .optional()
+        .describe(
+          "Keep one product (a code from the instructions, e.g. FLEX30).",
+        ),
+      channel: z
+        .string()
+        .optional()
+        .describe("Keep one acquisition channel: APP, PAID, PARTNER or AGENT."),
+      client: z
+        .enum(["NEW", "RETURNING"])
+        .optional()
+        .describe("Keep new or returning clients only."),
+      stream: z
+        .enum(["INTEREST", "FEE", "INTERCHANGE", "SUBSCRIPTION"])
+        .optional()
+        .describe("Keep one revenue stream."),
+      tier: z
+        .enum(["PLUS", "PRO"])
+        .optional()
+        .describe("Keep one paying subscription tier."),
+      by: z
+        .enum(["market", "product", "channel", "client", "stream", "tier"])
+        .optional()
+        .describe(
+          "Break the figures down: one row per market, product, channel, client type, stream or tier.",
+        ),
+    })
+    .strict(),
 };
 
 export type ChatToolName = keyof typeof SCHEMAS;
@@ -92,6 +140,8 @@ const DESCRIPTIONS: Record<ChatToolName, string> = {
     "One view's KPI cards for Poland, Romania and Portugal side by side, for one period.",
   explain_metric:
     "What a card measures, why it matters and its formula, as the report's info pop-up states it.",
+  get_metric:
+    "Named metrics from the metric catalogue for a period, market and optional filters or breakdown: each value with Budget (where one exists) and the prior year, the change vs each, and the formula. Use it for any specific figure.",
 };
 
 // A link here is the report state as a query string: "view=revenue&market=pl".
@@ -138,6 +188,70 @@ export function createChatTools(engine: SalesEngine) {
     for (const c of cardsOf({ ...defaults, view: v }))
       catalogue.set(c.id, { view: v, label: c.label });
 
+  // ---- the metric catalogue (chat-metrics.ts): any named figure, with Budget, PY and a breakdown ----
+  const metrics = createMetricCatalogue(engine.cube, engine.metrics);
+  const { dims } = engine.cube;
+  const PRODUCT_NAMES = new Map(
+    dims.product.map((p) => [p.product_code, p.product_name]),
+  );
+  const CHANNEL_NAMES = new Map(
+    dims.channel.map((c) => [c.channel_code, c.channel_name]),
+  );
+  const STREAM_NAMES = new Map(
+    dims.revenue_type.map((r) => [r.revenue_type_code, r.revenue_type_name]),
+  );
+  const OTHER_NAMES: Record<string, string> = {
+    NEW: "New clients",
+    RETURNING: "Returning clients",
+    PLUS: "Plus",
+    PRO: "Pro",
+  };
+  const MEMBERS: Record<Dim, readonly string[]> = {
+    market: COUNTRIES,
+    product: [...PRODUCT_NAMES.keys()],
+    channel: [...CHANNEL_NAMES.keys()],
+    client: ["NEW", "RETURNING"],
+    stream: [...STREAM_NAMES.keys()],
+    tier: ["PLUS", "PRO"],
+  };
+  const memberName = (dim: Dim, code: string): string =>
+    (dim === "market"
+      ? MARKET_NAMES[code as MarketCode]
+      : (PRODUCT_NAMES.get(code) ??
+        CHANNEL_NAMES.get(code) ??
+        STREAM_NAMES.get(code) ??
+        OTHER_NAMES[code])) ?? code;
+  const FILTER_DIMS = [
+    "product",
+    "channel",
+    "client",
+    "stream",
+    "tier",
+  ] as const satisfies readonly Dim[];
+
+  /** "62.4% · Budget €1.2m (+€0.10m, +8.9%) · PY 60.1% (+2.3pp)": the value, then each comparator and the change to it. */
+  function metricFigures(d: MetricDef, q: MetricQuery): string {
+    const v = d.value(q);
+    if (v === null) return `n/a${d.naNote ? ` (${d.naNote})` : ""}`;
+    const parts = [formatValue(d.unit, v)];
+    if (d.budget) {
+      const b = d.budget(q);
+      parts.push(
+        b === null
+          ? "Budget: none for this cut"
+          : `Budget ${formatValue(d.unit, b)} (${formatDelta(d.unit, v, b)})`,
+      );
+    }
+    const pq = metrics.pyQuery(d, q);
+    const py = pq ? d.value(pq) : null;
+    parts.push(
+      py === null
+        ? "PY n/a"
+        : `PY ${formatValue(d.unit, py)} (${formatDelta(d.unit, v, py)})`,
+    );
+    return parts.join(" · ");
+  }
+
   const link = (sel: SalesSelection) =>
     engine.codec.serialize({ ...sel, drill: null });
   const scopeOf = (sel: SalesSelection) => engine.header(sel).filterLine;
@@ -171,7 +285,7 @@ export function createChatTools(engine: SalesEngine) {
     );
   }
 
-  const run: {
+  const runners: {
     [K in ChatToolName]: (
       a: z.infer<(typeof SCHEMAS)[K]>,
       ctx: SalesSelection,
@@ -257,6 +371,79 @@ export function createChatTools(engine: SalesEngine) {
         link: link({ ...defaults, view: card.view }),
       };
     },
+
+    get_metric(a, ctx) {
+      const unknown = a.metrics.filter((id) => !metrics.byId.has(id));
+      if (unknown.length)
+        return fail(
+          `Unknown metric ${unknown.map((x) => `"${x}"`).join(", ")}. Use ids from the metric catalogue.`,
+        );
+      if (a.product !== undefined && !PRODUCT_NAMES.has(a.product))
+        return fail(
+          `Unknown product "${a.product}". Products: ${MEMBERS.product.join(", ")}.`,
+        );
+      if (a.channel !== undefined && !CHANNEL_NAMES.has(a.channel))
+        return fail(
+          `Unknown channel "${a.channel}". Channels: ${MEMBERS.channel.join(", ")}.`,
+        );
+      const p = periodOf(a, ctx);
+      if (typeof p === "string") return fail(p);
+      const q: MetricQuery = {
+        w: { start: p.from, end: p.anchor },
+        market: a.market ?? ctx.market,
+        product: a.product,
+        channel: a.channel,
+        client: a.client,
+        stream: a.stream,
+        tier: a.tier,
+      };
+      const filters = FILTER_DIMS.filter((dim) => q[dim] !== undefined);
+      const scope = [
+        periodLabel(q.w, last),
+        MARKET_NAMES[q.market],
+        ...filters.map((dim) => memberName(dim, q[dim]!)),
+      ].join(" - ");
+      const lines = [scope];
+      for (const id of a.metrics) {
+        const d = metrics.byId.get(id)!;
+        const head = `${d.name}${d.derived ? " [derived: not on a card]" : ""}`;
+        const off = [...filters, ...(a.by ? [a.by] : [])].filter(
+          (dim) => !d.dims.includes(dim),
+        );
+        if (off.length) {
+          lines.push(
+            `${head}: cannot be cut by ${off.join(", ")} (its cuts: ${d.dims.join(", ")}).`,
+          );
+          continue;
+        }
+        if (!a.by) lines.push(`${head}: ${metricFigures(d, q)}`);
+        else {
+          lines.push(`${head} by ${a.by}:`);
+          const before = lines.length;
+          for (const code of MEMBERS[a.by]) {
+            const mq: MetricQuery = { ...q, [a.by]: code };
+            const v = d.value(mq);
+            if (v === null || v === 0) continue; // no data for this member in the cut
+            lines.push(`  ${memberName(a.by, code)}: ${metricFigures(d, mq)}`);
+          }
+          if (lines.length === before)
+            lines.push(
+              `  n/a for every ${a.by}${d.naNote ? ` (${d.naNote})` : ""}`,
+            );
+        }
+        lines.push(`  Formula: ${d.formula}`);
+      }
+      const view = metrics.byId.get(a.metrics[0]!)!.view;
+      const sel: SalesSelection = {
+        ...ctx,
+        from: p.from,
+        anchor: p.anchor,
+        market: q.market,
+        view,
+        drill: null,
+      };
+      return { ok: true, text: cap(lines.join("\n")), scope, link: link(sel) };
+    },
   };
 
   return {
@@ -265,7 +452,7 @@ export function createChatTools(engine: SalesEngine) {
 
     /** Runs one tool call. Never throws for bad input: an unknown tool or invalid arguments come back as `ok: false` with a reason the model can read. */
     run(name: string, input: unknown, ctx: SalesSelection): ToolResult {
-      return runTool(SCHEMAS, run, name, input, ctx);
+      return runTool(SCHEMAS, runners, name, input, ctx);
     },
 
     /** The fixed system prompt: role, rules and the card catalogue (no per-request text, so it can be cached). */
@@ -282,6 +469,9 @@ export function createChatTools(engine: SalesEngine) {
         "",
         "Rules:",
         "- Answer only from tool results. Never estimate, calculate or round a figure; quote figures exactly as a tool gives them.",
+        "- For a specific figure (a count, amount, rate, share or median), call get_metric with its catalogue id; ask for up to four metrics, with filters or a breakdown, in one call. Use report_snapshot for a general question about a view.",
+        "- When a result marks a metric [derived: not on a card], say it is derived from the report's data and not shown on a card.",
+        "- Quote Budget only where a result shows one; where it says none, say this cut has no Budget.",
         '- Say in a few words which period, market and comparator the answer covers (e.g. "Sep 2026, all markets, vs Budget").',
         "- Never mention tools, views, lookups or what a tool did or did not return; if a figure is missing, say it is not in the report.",
         "- When the visitor names no period, market or comparator, leave those arguments out: the tools then use what the visitor is looking at.",
@@ -295,6 +485,13 @@ export function createChatTools(engine: SalesEngine) {
         "",
         "Cards by view (id label):",
         ...byView,
+        "",
+        "Metric catalogue for get_metric (id: name; other names; cuts besides market; [derived] = on no card):",
+        ...metrics.defs.map(
+          (d) =>
+            `- ${d.id}: ${d.name}; ${d.aliases}; ${d.dims.filter((x) => x !== "market").join(", ") || "market only"}${d.budget ? "; has Budget" : ""}${d.derived ? " [derived]" : ""}`,
+        ),
+        `Products: ${[...PRODUCT_NAMES].map(([c, n]) => `${c} ${n}`).join("; ")}. Channels: ${[...CHANNEL_NAMES].map(([c, n]) => `${c} ${n}`).join("; ")}.`,
       ].join("\n");
     },
 

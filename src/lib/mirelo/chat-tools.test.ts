@@ -239,12 +239,13 @@ describe("selectionFrom (the report state the browser sends)", () => {
 });
 
 describe("definitions and prompt", () => {
-  it("defines the four tools as closed JSON Schemas", () => {
+  it("defines the five tools as closed JSON Schemas", () => {
     expect(tools.definitions.map((d) => d.name)).toEqual([
       "report_snapshot",
       "metric_trend",
       "compare_markets",
       "explain_metric",
+      "get_metric",
     ]);
     for (const d of tools.definitions) {
       expect(d.input_schema.type).toBe("object");
@@ -259,7 +260,7 @@ describe("definitions and prompt", () => {
     for (const id of tools.catalogue.keys()) expect(p).toContain(`${id} `);
     expect(p).toContain("2024-01 to 2026-09");
     expect(p).not.toMatch(/synthetic|fictional/i);
-    expect(p.length).toBeLessThan(3000); // ≈ 750 tokens
+    expect(p.length).toBeLessThan(8000); // ≈ 2k tokens, cached (the metric catalogue, 11-07)
     expect(tools.selectionNote(ctx)).toBe(
       "The visitor is looking at the overview view: Sep 2026 - vs Budget - All markets.",
     );

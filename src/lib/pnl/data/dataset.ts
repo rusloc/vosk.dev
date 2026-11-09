@@ -10,11 +10,30 @@ export interface Dataset {
   ops: OpsColumns; // both entities, small (first-load budget, build-data.ts): units, GMV, merchants for the Vitals view
 }
 
-/** Reads one public/data artifact by file name: `fetch` in the browser, `fs` in Node tests. */
+/** Reads one data artifact by file name as bytes (`fs` in Node tests and the load script). */
 export type ReadArtifact = (name: string) => Promise<ArrayBuffer>;
 
+/**
+ * Where the data comes from (2026-11-09): the Parquet files (tests, the load script, the chat eval) or the server
+ * route's JSON columns (the browser and the chat route, from Supabase schema `pnl_demo`; columns-loader.ts).
+ */
+export interface DatasetSource {
+  manifest(): Promise<unknown>;
+  pl(entity: EntityCode, m: Manifest): Promise<PlColumns>;
+  ops(m: Manifest): Promise<OpsColumns>;
+}
+
+export function parquetSource(read: ReadArtifact): DatasetSource {
+  return {
+    manifest: async () =>
+      JSON.parse(new TextDecoder().decode(await read("manifest.json"))),
+    pl: async (entity, m) => readPlColumns(await read(PL_FILES[entity]), m),
+    ops: async (m) => readOpsColumns(await read(OPS_FILE), m),
+  };
+}
+
 /** Loader with a per-session in-memory cache; a failed read is evicted so the next call retries. */
-export function createDatasetLoader(read: ReadArtifact) {
+export function createDatasetLoader(source: DatasetSource) {
   let manifest: Promise<Manifest> | undefined;
   const pl = new Map<EntityCode, Promise<PlColumns>>();
   let ops: Promise<OpsColumns> | undefined;
@@ -26,9 +45,7 @@ export function createDatasetLoader(read: ReadArtifact) {
 
   function loadManifest(): Promise<Manifest> {
     manifest ??= cached(
-      read("manifest.json").then((bytes) =>
-        parseManifest(JSON.parse(new TextDecoder().decode(bytes))),
-      ),
+      source.manifest().then(parseManifest),
       () => (manifest = undefined),
     );
     return manifest;
@@ -37,24 +54,19 @@ export function createDatasetLoader(read: ReadArtifact) {
   function loadPl(entity: EntityCode, m: Manifest): Promise<PlColumns> {
     let p = pl.get(entity);
     if (!p) {
-      p = cached(
-        read(PL_FILES[entity]).then((bytes) => readPlColumns(bytes, m)),
-        () => pl.delete(entity),
-      );
+      p = cached(source.pl(entity, m), () => pl.delete(entity));
       pl.set(entity, p);
     }
     return p;
   }
 
   function loadOps(m: Manifest): Promise<OpsColumns> {
-    ops ??= cached(
-      read(OPS_FILE).then((bytes) => readOpsColumns(bytes, m)),
-      () => (ops = undefined),
-    );
+    ops ??= cached(source.ops(m), () => (ops = undefined));
     return ops;
   }
 
   return {
+    /** The manifest and the named entities' rows (plus ops), from the cache where already loaded. */
     async load(entities: readonly EntityCode[]): Promise<Dataset> {
       const m = await loadManifest();
       const [columns, opsColumns] = await Promise.all([

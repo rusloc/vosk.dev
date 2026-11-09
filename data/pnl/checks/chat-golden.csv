@@ -1,0 +1,57 @@
+key,expected,question
+NR|P|2025|12|FY|A|EUR|ACT|base|,4051545277.0428467,What was Consumer Products' net revenue in 2025 in euros?
+EBITDA|S|2026|9|YTD|A|GBP|ACT|base|,57235565.76086536,Commerce Cloud adjusted EBITDA year to date September 2026 in pounds?
+NR|P|2026|9|YTD|A|USD|CC|base|,3369007232.568672,Consumer Products net revenue YTD September 2026 at constant currency?
+FX_EFFECT_NR|P|2026|9|YTD|A|USD|ACT|base|,29514710.09174919,How much of Consumer Products' year-to-date revenue is FX effect?
+NR_GROWTH_ORGANIC|P|2026|9|YTD|A|USD|ACT|base|,0.06078695751629091,What is Consumer Products' organic revenue growth year to date?
+NR_GROWTH|S|2026|9|YTD|A|USD|ACT|base|,0.29515385270114536,"How fast is Commerce Cloud revenue growing year on year, YTD September 2026?"
+NR|S|2026|9|MTD|A|USD|ACT|base|,73007299.47959752,Commerce Cloud net revenue in September 2026?
+OP|P|2026|9|QTD|A|USD|ACT|base|,190417410.86681223,Consumer Products operating profit in Q3 2026?
+NR|P|2026|9|LTM|A|USD|ACT|base|,4834347770.582261,Consumer Products net revenue over the last twelve months to September 2026?
+NR|P|2025|6|LTM|A|USD|ACT|base|,4345546544.683398,Consumer Products trailing twelve-month net revenue to June 2025?
+EBITDA|S|2026|3|QTD|A|USD|ACT|base|,24659226.17800747,Commerce Cloud adjusted EBITDA in Q1 2026?
+NR|P|2026|9|YTD|A|USD|ACT|B|,3464798688.448975,What was Consumer Products' budgeted net revenue for January to September 2026?
+NR|P|2026|9|YTD|A|USD|ACT|PY|,3139602664.4617577,Consumer Products net revenue in the same period of 2025 (January to September)?
+EBITDA|S|2026|9|YTD|A|USD|ACT|PY|,60542986.299972355,What was Commerce Cloud's adjusted EBITDA for January to September 2025?
+NR|P|2026|12|FY|LE|USD|ACT|base|,4908087890.128394,What is the latest estimate of Consumer Products' full-year 2026 net revenue?
+NP|S|2026|12|FY|B|USD|ACT|base|,54391035.23897496,Commerce Cloud's budgeted net profit for full year 2026?
+NR|P|2024|12|FY|A|USD|ACT|PY|,,Consumer Products net revenue in 2023?
+NR|P|2025|12|FY|A|USD|ACT|base|region=EU,1268505725.3162086,Consumer Products net revenue in Continental Europe in 2025?
+EBITDA|P|2026|9|YTD|A|USD|ACT|base|region=NA,299444296.31000125,"Consumer Products adjusted EBITDA in North America, YTD September 2026?"
+GP|P|2026|9|YTD|A|USD|ACT|base|channel=D2C,239403672.20462555,"Gross profit of Consumer Products' own D2C webstore, year to date September 2026?"
+EBITDA|P|2026|9|YTD|A|USD|ACT|base|channel=GRO,272103774.38383555,"Adjusted EBITDA of the grocery and mass retail channel, YTD September 2026?"
+OP|P|2025|12|FY|A|USD|ACT|base|line=HOME,209573737.78954422,Operating profit of Consumer Products' home care category in 2025?
+CM|S|2026|9|YTD|A|USD|ACT|base|segment=ENT,92446372.53143528,"Commerce Cloud contribution margin from enterprise customers, YTD September 2026?"
+NR|S|2026|9|YTD|A|USD|ACT|base|line=SUB,223368362.83778343,Commerce Cloud platform subscription revenue year to date September 2026?
+NR|S|2026|9|YTD|A|EUR|ACT|base|region=UK,53605219.71309739,"Commerce Cloud net revenue in UK & Ireland year to date, in euros?"
+NR|P|2026|9|YTD|A|USD|ACT|B|region=AP,533479103.04575074,"Consumer Products' budgeted net revenue for Asia-Pacific, January to September 2026?"
+NP|P|2026|9|YTD|A|USD|ACT|base|segment=PREM,161829921.54156718,"Net profit of Consumer Products' premium segment, YTD September 2026?"
+GM_PCT|P|2025|12|FY|A|USD|ACT|base|,0.4894785003821116,What was Consumer Products' gross margin in 2025?
+EBITDA_PCT|S|2026|9|YTD|A|USD|ACT|base|,0.13051574127443627,Commerce Cloud adjusted EBITDA margin year to date September 2026?
+OPEX_PCT|P|2026|9|YTD|A|USD|ACT|base|,0.19260974944695555,"Consumer Products opex as a percentage of revenue, YTD September 2026?"
+GTN_PCT|P|2026|9|YTD|A|USD|ACT|base|,0.21348738290481684,What is Consumer Products' gross-to-net percentage year to date?
+AP_PCT|P|2026|9|YTD|A|USD|ACT|base|,0.08030806466157223,"Consumer Products A&P as a share of net revenue, year to date September 2026?"
+ETR_PCT|S|2025|12|FY|A|USD|ACT|base|,0.21999999994495908,What was Commerce Cloud's effective tax rate in 2025?
+SM_PCT|S|2026|9|YTD|A|USD|ACT|base|,0.14173072062997505,"Commerce Cloud sales and marketing as a percentage of revenue, YTD September 2026?"
+GM_PCT|P|2026|9|YTD|A|USD|ACT|base|region=EU,0.49400775925220364,"Consumer Products gross margin in Continental Europe, YTD September 2026?"
+UNITS|P|2025|12|FY|A|USD|ACT|base|,569256242,How many units did Consumer Products sell in 2025?
+NR_PER_UNIT|P|2026|9|YTD|A|USD|ACT|base|,8.094838449827131,"Consumer Products net revenue per unit, year to date September 2026?"
+UNITS|P|2026|9|YTD|A|USD|ACT|base|region=NA,189017059,"Units sold by Consumer Products in North America, YTD September 2026?"
+GMV|S|2026|9|YTD|A|USD|ACT|base|,11284983967.402323,GMV processed by Commerce Cloud year to date September 2026?
+TAKE_RATE|S|2026|9|YTD|A|USD|ACT|base|,0.02655047893985631,What is Commerce Cloud's payments take rate year to date?
+ACTIVE_MERCHANTS|S|2026|9|YTD|A|USD|ACT|base|,138726,How many active merchants did Commerce Cloud have at the end of September 2026?
+ACTIVE_MERCHANTS|S|2025|12|FY|A|USD|ACT|base|,124291,How many active merchants did Commerce Cloud have at the end of 2025?
+ARR|S|2026|9|YTD|A|USD|ACT|base|,320001855.6507126,What is Commerce Cloud's ARR run-rate as of September 2026?
+SUB_SHARE|S|2026|9|YTD|A|USD|ACT|base|,0.37479948481178427,"What share of Commerce Cloud revenue comes from platform subscriptions, YTD September 2026?"
+AP_SPEND|P|2026|9|YTD|A|USD|ACT|base|,-272928719.9249452,How much did Consumer Products spend on advertising and promotion year to date?
+GMV|P|2026|9|YTD|A|USD|ACT|base|,,GMV processed by Consumer Products?
+UNITS|S|2026|9|YTD|A|USD|ACT|base|,,How many units did Commerce Cloud sell?
+FY_NR_LE|P|2026|9|YTD|A|USD|ACT|base|,4908087890.128394,What is the full-year 2026 revenue outlook for Consumer Products?
+FY_NR_ATTAINMENT|S|2026|9|YTD|A|USD|ACT|base|,0.9876444179814211,Commerce Cloud full-year revenue attainment vs budget?
+FY_EBITDA_ATTAINMENT|P|2026|9|YTD|A|USD|ACT|base|,0.9641819691700736,Will Consumer Products reach its 2026 EBITDA budget: what is the attainment?
+NR|GROUP|2025|12|FY|A|USD|ACT|base|,5216205047.75417,What was the Group's consolidated net revenue in 2025?
+EBITDA|GROUP|2026|9|YTD|A|USD|ACT|base|,760378089.3982018,Group adjusted EBITDA year to date September 2026?
+OP|GROUP|2026|9|YTD|A|USD|ACT|B|,624169918.307969,The Group's budgeted operating profit for January to September 2026?
+NR_SHARE|P|2025|12|FY|A|USD|ACT|base|region=NA,0.44392860670451756,What share of Consumer Products' 2025 revenue came from North America?
+EBITDA_SHARE|S|2026|9|YTD|A|USD|ACT|base|segment=SMB,0.42229621333757256,"What share of Commerce Cloud's EBITDA comes from small business customers, YTD September 2026?"
+NR_SHARE|P|2026|9|YTD|A|USD|ACT|base|,,Consumer Products' share of net revenue?

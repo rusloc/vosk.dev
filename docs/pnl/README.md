@@ -61,6 +61,36 @@ has the two pages, so a re-issued pack must carry this change (or it is re-appli
   the largest cell (a heatmap of the mix), no longer by the column's GM %, which stays in the header.
 - **Still a divergence from the `pnl/js-app/` pack**, like the page merge above: a re-issue must carry both.
 
+## 2026-11-09: the data in Supabase, and "Ask AI" with verified answers
+
+**The rows left the build.** As Mirelo's (11-03) and ACME Marketing's (11-05), the P&L's data now lives in the shared
+Supabase project, schema **`pnl_demo`**, read by the site through its own server route. The owner asked for it with the
+chat ("move data into Supabase"); the rule is CLAUDE.md § Supabase.
+
+- **Schema and roles:** `data/pnl/sql/001-schema-and-roles.sql` (`pnl_loader`, `pnl_reader`: NOLOGIN until the owner sets
+  passwords; the reader hardened like the others, connection limit 30, `search_path = pnl_demo`, read-only, 15 s
+  statements) and `002-schema.sql` (`document` for the manifest; `pl_p`, `pl_s`, `ops` with the Parquet's integer codes
+  and cents plus `seq`; the manifest's lookups `dict_code`, `dim_month`, `dim_account`, `dim_region`, `fact_fx_rate` for
+  SQL over the facts). Applied 11-09 via MCP as `postgres`; denials proven on real rows (42501 for both roles against
+  `qbo` and `demo_sales`), the privilege sweep shows `pnl_demo` only, `anon` / `authenticated` have no USAGE,
+  advisors(security) zero lints. Database before the load: 257 MB (the P&L adds roughly 30 MB).
+- **Loader:** `scripts/pnl-load.ts` (`node --env-file=.env.local --import tsx scripts/pnl-load.ts`, as `pnl_loader`
+  through `PNL_LOAD_DATABASE_URL`): truncates, loads the three fact tables and the lookups in one transaction, then
+  verifies every chunk the route serves against the Parquet (`--verify` alone re-checks).
+- **The route:** `/api/pnl/<name>` (`src/app/api/pnl/[...path]/route.ts` → `src/lib/pnl/server.ts`, `pnl_reader`,
+  released when idle) serves `manifest.json`, `ops.json` and **nine chunks per company** of one version × twelve
+  months (`pl-P/v0-m0-11.json` …), as JSON columns: a whole company is ≈ 10 MB of JSON, more than one function
+  response may carry, a chunk ≈ 1–2 MB. `src/lib/pnl/artifacts.ts` maps the names to queries; the request contributes
+  only a validated version index and month range.
+- **The browser:** `src/lib/pnl/data/columns-loader.ts` (`columnsSource`) fetches the chunks and rebuilds the same typed
+  arrays `parquet-loader.ts` built from the files; `dataset.ts` takes a `DatasetSource` (`parquetSource` for the
+  tests and scripts, `columnsSource` for the site). The engine did not change.
+- **The page:** the "Web report" button shows only when `PNL_DATABASE_URL` is set (`isJsReportLive`, like ACME
+  Marketing). **Set it in Vercel before pushing**, or the P&L page has no report button until it is.
+
+**Ask AI** on `/work/pnl-suite` and in the report's toolbar (Ledger palette), with a 61-metric catalogue and an
+answer key: `ai-chat.md` in this folder; the executive metric list in `.log/report/2026-11-09-pnl-exec-metrics.md`.
+
 ## Where things are (10-22, kept)
 
 | What | Path |
@@ -68,7 +98,7 @@ has the two pages, so a re-issued pack must carry this change (or it is re-appli
 | Engine, loader, state (framework-free, every number) | `src/lib/pnl/` |
 | UI (Ledger design, CSS Modules) | `src/components/pnl/`, entry `src/components/pnl-report-lazy.tsx` |
 | Showcase entry | `src/lib/work.ts` → `unified-management-pnl`, platform `js` |
-| Data (frozen; built 2026-10-22) | `public/data/pnl/` — `manifest.json`, `pl-P.parquet`, `pl-S.parquet`, `ops.parquet` |
+| Data (frozen; built 2026-10-28) | ~~`public/data/pnl/`~~ → since 11-09 `data/pnl/parquet/` (`manifest.json`, `pl-P.parquet`, `pl-S.parquet`, `ops.parquet`) for the tests and the loader; the site reads Supabase schema `pnl_demo` through `/api/pnl/*` (see the 11-09 section) |
 | Test fixtures | `data/pnl/checks/` — `control_totals_usd.csv` (T-06), `allocation_parity.csv` (C-31 parity) |
 | Tests | `src/lib/pnl/**/*.test.ts`, `src/components/pnl/statement-table.test.tsx` — 148 of the site's own tests run beside them |
 | Spec (copied, read-only reference) | this folder: `requirements.md`, `adr-0002-…`, `adr-0007-…`, `design-requirements.md`, `kpi-card-v2.md`, `info-popovers.md`, `data-contract.md`, `design-mockup/`, the two hand-off notes |

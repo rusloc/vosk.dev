@@ -109,6 +109,26 @@
   outline: 2px solid rgb(var(--red));
 }
 
+/* In the P&L's toolbar (11-09): the Ledger's 36px buttons with 8px corners on its surface and ink, the light and the
+   sparkle in the company colour (--acc-rgb, theme.ts) instead of red and orange. Three classes for the same reason. */
+.glow.compact.pnl {
+  --red: var(--acc-rgb);
+  --orange: var(--acc-rgb);
+  --r: 8px;
+  --face: var(--surface);
+  height: 36px;
+  padding: 0 12px;
+  gap: 6px;
+  color: var(--ink-900);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.glow.compact.pnl:focus-visible {
+  outline: 2px solid rgb(var(--red));
+}
+
 .compact .icon {
   width: 14px;
   height: 14px;

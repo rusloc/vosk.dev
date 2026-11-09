@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ComponentType } from "react";
+import { useRef, useState, type ComponentType, type ReactNode } from "react";
 import type { FilterRow } from "@/lib/pnl/engine/header";
 import type { Notice } from "@/lib/pnl/engine/notices";
 import type { Selection } from "@/lib/pnl/engine/types";
@@ -57,6 +57,7 @@ export function Header({
   onChange,
   pager,
   howToRead,
+  chat,
 }: {
   sel: Selection;
   status: string;
@@ -70,6 +71,8 @@ export function Header({
   /** Profitability sub-pages (‹ › and "n / 2", ADR-0004 in-view pager); null on the one-page views. */
   pager: { page: 1 | 2; onPage: (page: 1 | 2) => void } | null;
   howToRead: HowToReadVM | null; // one per view (ADR-0012)
+  /** The site's Ask AI button and its chat (ADR-0005, 11-09); null when the chat is off. */
+  chat?: ReactNode;
 }) {
   const [copy, setCopy] = useState<"idle" | "copied" | "failed">("idle");
   const copyLink = () =>
@@ -167,6 +170,7 @@ export function Header({
               popupStyle={{ top: 44, right: 0, width: 520 }}
             />
           ) : null}
+          {chat}
           {/* F-37: the link reopens the same selection */}
           <button
             type="button"

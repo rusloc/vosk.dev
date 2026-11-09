@@ -2,7 +2,10 @@
 
 - **Status:** accepted 2026-11-06 (owner: "ok, start building"); tools, relay route and panel built and live 11-06
   (`27c6f68`); how it works: `docs/mirelo/ai-chat.md`. ACME Marketing's chat added 11-06 on the same loop and a shared
-  route (`src/lib/chat/route.ts`), its own tools in `src/lib/marketing/chat-tools.ts`
+  route (`src/lib/chat/route.ts`), its own tools in `src/lib/marketing/chat-tools.ts`. 11-07 → 11-09: a metric catalogue
+  and a `get_metric` tool per report, with an answer key in `pnpm test` and a chat-level eval (`docs/mirelo/ai-chat.md`
+  § the catalogue, `docs/marketing/README.md` § AI chat); the P&L's chat added 11-09 (`docs/pnl/ai-chat.md`) after its
+  data moved to Supabase (`pnl_demo`)
 - **Date:** 2026-11-06
 - **Relates to:** the 11-02 data rule in `CLAUDE.md` (report data lives in Supabase, read by `<report>_reader`);
   `.log/report/2026-11-05-ai-chat-in-reports-plan.md` (assessment); `.log/report/2026-11-06-mirelo-chat-prototype.md`

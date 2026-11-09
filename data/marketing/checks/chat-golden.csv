@@ -1,0 +1,59 @@
+key,expected,question
+activated|2026-10-05|2026-11-03|market=NA,1013,How many North America sign-ups activated in the last 30 days?
+activation_rate|2026-10-05|2026-11-03|market=GLOBAL,0.399856938483548,What is the activation rate for the Global market in the last 30 days?
+arpa|2026-10-05|2026-11-03|market=NA,139.953464053719,What is the ARPA of North America customers in the last 30 days?
+attribution_gap|2026-07-01|2026-09-30|,0.310941234756098,What was the attribution gap in Q3 2026 (July to September)?
+blended_cac|2026-07-01|2026-09-30|,476.922515243902,What was the blended CAC in Q3 2026 (July 1 to September 30)?
+brand_share|2026-07-01|2026-09-30|,0.366207801121843,What share of search spend went to brand terms in Q3 2026?
+churn_monthly|2026-10-05|2026-11-03|market=NA,0.0270123278320139,What is the monthly churn for North America in the last 30 days?
+churned_customers|2026-10-05|2026-11-03|channels=PAID_SOCIAL,128.2311,How many paid social customers churned in the trailing three months?
+click_signup_rate|2026-10-05|2026-11-03|tier=SELF_SERVE,0.0307193309910701,What is the click to sign-up rate for self-serve campaigns in the last 30 days?
+clicks|2026-07-01|2026-09-30|market=EMEA,37025,How many clicks did EMEA campaigns get in Q3 2026?
+cohort_cac|2026-10-05|2026-11-03|cohort=2026-03;channels=PAID_SOCIAL,550.45120713345,What was the cohort CAC of paid social customers acquired in March 2026?
+cohort_size|2026-10-05|2026-11-03|cohort=2026-05;market=NA,198.4862,How many North America customers were acquired in the May 2026 cohort?
+conversion_paid|2026-07-01|2026-09-30|,0.07105719237435,What was the conversion into paid in Q3 2026 (July to September)?
+conversion_paid|2026-10-05|2026-11-03|market=NA;model=LAST_CLICK,0.0721823554242296,What is the conversion into paid for North America under last click attribution in the last 30 days?
+cost_per_activated|2026-07-01|2026-09-30|,61.4987228158389,What was the cost per activated user in Q3 2026?
+cpc|2026-07-01|2026-09-30|channels=PAID_SEARCH,0.68187850984439,What was the paid search CPC in Q3 2026 (July to September)?
+cpl|2026-10-05|2026-11-03|market=EMEA,31.4133333333333,What is the cost per sign-up in EMEA over the last 30 days?
+cpm|2026-10-05|2026-11-03|networks=LINKEDIN,29.5929217743715,What is the CPM on LinkedIn in the last 30 days?
+ctr|2026-10-05|2026-11-03|networks=GOOGLE_ADS,0.0187949216098,What is the CTR of Google Ads campaigns in the last 30 days?
+impressions|2026-10-05|2026-11-03|networks=TIKTOK,1255687,How many impressions did TikTok deliver in the last 30 days?
+install_signup_rate|2026-07-01|2026-09-30|market=GLOBAL,0.158826917538639,What was the install to sign-up rate in the Global market in Q3 2026?
+installs|2026-07-01|2026-09-30|platforms=ANDROID,26162,How many Android installs were there in Q3 2026 (July to September)?
+landing_signup_rate|2026-07-01|2026-09-30|market=NA,0.0337463863910397,What was the landing to sign-up rate for North America in Q3 2026?
+new_mrr|2026-10-05|2026-11-03|tier=SALES_ASSISTED,6035.46,How much new MRR came from sales-assisted campaigns in the last 30 days?
+onboarding_step|2026-07-01|2026-09-30|step=CONNECT_SOURCE,0.590933708838821,What share of sign-ups connected a data source in Q3 2026?
+onboarding_step|2026-10-05|2026-11-03|step=INVITE;channels=PAID_SEARCH,0.227772685609533,What share of paid search sign-ups invited a teammate in the last 30 days?
+pacing|2026-07-01|2026-09-30|,1.00104835178326,What was the spend pacing against plan in Q3 2026?
+page_bounce|2026-07-01|2026-09-30|page=LP_HOME,0.553671918345061,What was the bounce rate of the home page in Q3 2026?
+page_cvr|2026-07-01|2026-09-30|page=LP_PLAY_STORE,0.280560649443962,What was the Google Play page conversion in Q3 2026 (July to September)?
+page_cvr|2026-10-05|2026-11-03|page=LP_PRICING;market=NA,0.0341666666666667,What is the pricing page conversion for North America traffic in the last 30 days?
+page_lcp|2026-07-01|2026-09-30|page=LP_SIGNUP,1524.52606923405,What was the LCP of the signup page in Q3 2026?
+page_visits|2026-10-05|2026-11-03|page=LP_APP_STORE;market=GLOBAL,16604,How many App Store page views came from Global campaigns in the last 30 days?
+paid_cac|2026-10-05|2026-11-03|campaigns=RT_META_RETENTION,,What is the CAC of the Meta retention retargeting campaign (RT_META_RETENTION) in the last 30 days?
+paid_cac|2026-10-05|2026-11-03|networks=META,498.470351465,What is the CAC on Meta in the last 30 days?
+paid_customers|2026-10-05|2026-11-03|market=NA,182.6545,How many paid customers came from North America in the last 30 days?
+paid_customers|2026-10-05|2026-11-03|model=PLATFORM;market=GLOBAL,343.9431,How many paid customers does the platform attribution model report for the Global market in the last 30 days?
+payback_share|2026-10-05|2026-11-03|cohort=2026-01;offset=6;channels=PAID_SEARCH,0.834703161374429,How much of its CAC had the January 2026 paid search cohort paid back by month 6?
+refund_rate|2026-10-05|2026-11-03|tier=SELF_SERVE,0.0209606618659534,What is the refund rate of self-serve customers over the last 30 days window?
+refunds|2026-07-01|2026-09-30|networks=META,21.4311,How many refunds did Meta cohorts have for the window July 1 to September 30 2026?
+retention|2026-10-05|2026-11-03|cohort=2026-06;day=30;market=NA,0.149268292682927,What was the day 30 retention of the June 2026 North America cohort?
+retention|2026-10-05|2026-11-03|cohort=2026-10;day=90,,What is the day 90 retention of the October 2026 cohort?
+segment_activation|2026-07-01|2026-09-30|segment=IOS_18,0.498703543647364,What was the activation rate of iOS 18 sign-ups in Q3 2026?
+segment_activation|2026-10-05|2026-11-03|segment=WEB_MOBILE;market=NA,0.378437843784378,What is the activation rate of mobile web sign-ups from North America in the last 30 days?
+sessions|2026-07-01|2026-09-30|channels=RETARGETING,31729,How many web sessions did retargeting bring in Q3 2026?
+signups|2026-10-05|2026-11-03|market=EMEA,417,How many sign-ups came from EMEA in the last 30 days?
+spend_share|2026-10-05|2026-11-03|channels=PAID_SOCIAL,0.340233545647558,What share of spend went to paid social in the last 30 days?
+spend|2026-07-01|2026-09-30|,489222.339999998,How much did we spend in Q3 2026 (July 1 to September 30)?
+spend|2026-10-05|2026-11-03|market=NA,85897.8900000001,How much was spent on North America campaigns in the last 30 days?
+spend|2026-10-05|2026-11-03|tier=SALES_ASSISTED,23600,How much did sales-assisted campaigns spend in the last 30 days?
+store_views|2026-10-05|2026-11-03|networks=APPLE_SEARCH_ADS,13717,How many store views came from Apple Search Ads in the last 30 days?
+term_cpc|2026-07-01|2026-09-30|campaigns=SOC_META_LAL2;term=SOC_META_LAL2-T1,0.743372032274917,What was the CPC of placement SOC_META_LAL2-T1 of the Meta Lookalike 2% campaign in Q3 2026?
+term_cvr|2026-07-01|2026-09-30|campaigns=SRCH_NONBRAND_ANALYTICS;term=SRCH_NONBRAND_ANALYTICS-T3,0.0497076023391813,What was the conversion rate of the keyword SRCH_NONBRAND_ANALYTICS-T3 (looker alternative) in Q3 2026?
+"trial_rate|2026-10-01|2026-10-31|platforms=IOS,ANDROID",0.371271358239212,What share of mobile (iOS and Android) sign-ups started a trial in October 2026?
+trial_to_paid|2026-07-01|2026-09-30|platforms=WEB,0.159929393823866,What was the trial to paid rate on web in Q3 2026 (July to September)?
+trials|2026-07-01|2026-09-30|tier=SELF_SERVE,7979,How many trials did self-serve campaigns start in Q3 2026?
+install_quality|2026-10-05|2026-11-03|channels=PAID_SEARCH,,What is the install quality delta for paid search in the last 30 days?
+frequency_7d|2026-10-28|2026-11-03|,,What was the ad frequency for the week October 28 to November 3 2026?
+brand_share|2026-10-05|2026-11-03|channels=PAID_SOCIAL,,What is the brand share of spend for paid social in the last 30 days?

@@ -219,3 +219,24 @@ All of these are server-only and set in Vercel, never in the browser:
   `POST /api/chat/<report>` route that calls `chatRoute`. `runChat`, `ChatPanel` and the buttons are shared. ACME
   Marketing is the second (11-06): `src/lib/marketing/chat-tools.ts`, `src/app/api/chat/marketing/route.ts`, notes in
   `docs/marketing/README.md`.
+
+## The metric catalogue and the answer key (2026-11-07)
+
+The four tools only quote cards, so a figure on no card ("approval rate of the partner channel", "revenue per loan in
+Portugal") had no answer. A fifth tool, **`get_metric`**, reads a **metric catalogue**
+(`src/lib/mirelo/chat-metrics.ts`): about 60 metrics, each with an id, a name, other names (EN + RU), the formula, the
+cuts it takes (market, product, channel, new / returning, revenue stream, tier) and, where one exists, its Budget. One
+call asks for up to four metrics with filters or a breakdown (`by`) and gets back each value, Budget, prior year, the
+changes and the formula, formatted the way the report formats them. The catalogue reads the same cube and metrics as
+the cards (`engine.cube`, `engine.metrics`). A metric no card shows is marked **derived**, and the answer says so.
+The catalogue (ids, names, cuts) is in the cached system prompt (≈ 2k tokens).
+
+**The answer key** keeps the chat honest; visitors do not see it:
+
+| Level | What | Where | Cost |
+|---|---|---|---|
+| 1. numbers | every catalogue metric that the generator's control totals carry (16 codes × 4 markets × 5 periods), and 51 golden rows computed by SQL straight from `mirelo_demo`, written from the formulas and not from the engine | `src/lib/mirelo/chat-metrics.test.ts`; `data/mirelo/checks/golden.sql` → `chat-golden.csv` | free, in `pnpm test` |
+| 2. the model | every golden question through the real chat loop; passes when the answer quotes the expected figure and `get_metric` asked for that metric | `scripts/chat-eval.ts` → `.log/report/<day>-chat-eval-mirelo.md` | ≈ $0.001 a question, run by hand |
+
+Adding a metric: a definition in `chat-metrics.ts`, a query in `golden.sql`, its frozen row in `chat-golden.csv`
+(with a visitor-style question), then both levels.

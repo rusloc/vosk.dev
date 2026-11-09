@@ -22,12 +22,13 @@ beforeAll(async () => {
 });
 
 describe("definitions", () => {
-  it("are four closed tools with object schemas and no draft marker", () => {
+  it("are five closed tools with object schemas and no draft marker", () => {
     expect(tools.definitions.map((d) => d.name)).toEqual([
       "report_snapshot",
       "metric_trend",
       "campaign_detail",
       "explain_metric",
+      "get_metric",
     ]);
     for (const d of tools.definitions) {
       expect(d.input_schema.type).toBe("object");
@@ -174,11 +175,13 @@ describe("bad calls", () => {
 });
 
 describe("prompt and state", () => {
-  it("names every campaign, channel and card in the system prompt", () => {
+  it("names every campaign, channel, card and metric in the system prompt, under 9,000 characters", () => {
     const p = tools.systemPrompt();
     for (const c of ds.m.campaigns) expect(p).toContain(c.campaign_key);
     for (const c of ds.m.channels) expect(p).toContain(c.channel_code);
     for (const c of CARDS) expect(p).toContain(`${c.code} ${c.title}`);
+    for (const d of tools.metrics.defs) expect(p).toContain(`- ${d.id}: `);
+    expect(p.length).toBeLessThan(9_000);
   });
 
   it("reads the report's state with or without the leading ?", () => {

@@ -1,0 +1,51 @@
+key,expected,question
+active_loans|ALL|2026-09|2026-09|,104873,How many loans were active at the end of September 2026?
+agent_attainment|ALL|2026-07|2026-09|,4.11640646398247,How did agents do against their loan quota in Q3 2026?
+applications|PL|2026-09|2026-09|,23651,How many loan applications were submitted in Poland in September 2026?
+approval_rate|ALL|2025-01|2025-12|client=NEW,0.371841103615519,What was the approval rate for first-time applicants in 2025?
+approval_rate|ALL|2026-01|2026-09|channel=PARTNER,0.475731280255433,What is the approval rate of the partner channel so far in 2026?
+approval_rate|PL|2026-07|2026-09|,0.566889527618096,What was the approval rate in Poland in Q3 2026?
+approval_rate|RO|2026-09|2026-09|client=RETURNING,0.807844047342771,What share of returning clients' applications were approved in Romania in September 2026?
+approved|ALL|2026-07|2026-09|,77000,How many applications were approved in Q3 2026?
+avg_ticket|PT|2026-07|2026-09|,523.427100034009,What was the average loan size in Portugal in Q3 2026?
+balance_1_29|PT|2026-09|2026-09|,189117.51,How much balance was 1 to 29 days past due in Portugal at the end of September 2026?
+budget:loans|PL|2026-07|2026-09|,32499,What was the loans Budget for Poland in Q3 2026?
+budget:new_clients|ALL|2025-01|2025-12|,107471,What was the Budget for new clients in 2025?
+budget:revenue|PT|2026-09|2026-09|,457988.99,What was Portugal's revenue Budget for September 2026?
+cost_of_risk|PT|2026-07|2026-09|,0.11412194776974,What was the cost of risk in Portugal in Q3 2026?
+dpd30_count|PL|2026-09|2026-09|,0.0463966954340931,What share of loans in Poland were 30+ days overdue at the end of September 2026?
+dpd30|PL|2026-09|2026-09|product=STEP12,0.0317906425945867,What is the 30+ DPD rate of Step 12 loans in Poland at the end of September 2026?
+dpd90|RO|2026-06|2026-06|product=FLEX30,0.0978541854942099,What was the 90+ DPD rate for Flex 30 in Romania at the end of June 2026?
+early_default_6m|ALL|2026-09|2026-09|,0.0291753737341263,What is the early default rate (90+ within 6 months) as of September 2026?
+hours_to_cash|PT|2026-09|2026-09|,3.3,How long did it take from application to cash in Portugal in September 2026?
+kyc_pass_rate|ALL|2026-09|2026-09|,0.92866943703936,What share of submitted applications passed KYC in September 2026?
+lead_to_loan|RO|2026-04|2026-06|,0.164855797640152,What was the lead to loan conversion in Romania in Q2 2026?
+leads|PL|2026-09|2026-09|,54502,How many leads did Poland get in September 2026?
+lending_yield|PT|2026-01|2026-09|,0.457724015457648,What is the lending yield in Portugal year to date 2026?
+loans|ALL|2026-09|2026-09|client=RETURNING,14614,How many loans went to returning clients in September 2026?
+loans|PL|2026-07|2026-09|product=FLEX30,10079,How many Flex 30 loans were disbursed in Poland in Q3 2026?
+mrr_per_subscriber|PT|2026-09|2026-09|tier=PLUS,4.99,What is MRR per Plus subscriber in Portugal in September 2026?
+mrr|PT|2026-09|2026-09|,28441.98,What was MRR in Portugal at the end of September 2026?
+new_clients|ALL|2025-01|2025-12|channel=AGENT,7125,How many new clients came through agents in 2025?
+outstanding|PT|2026-09|2026-09|product=FLEX90,3094880,What is the outstanding balance of Flex 90 in Portugal at the end of September 2026?
+principal|PT|2025-01|2025-12|channel=APP,16579290,How much principal did the organic app channel disburse in Portugal in 2025?
+provision|PT|2026-09|2026-09|,103331.05,What was the provision in Portugal at the end of September 2026?
+repeat_loans|RO|2026-07|2026-09|,9581,How many repeat loans were disbursed in Romania in Q3 2026?
+revenue_lending|PT|2025-01|2025-12|,2664918.08,What was lending revenue (interest and fees) in Portugal in 2025?
+revenue_per_loan|PT|2026-07|2026-09|,59.0540752076957,What was lending revenue per loan in Portugal in Q3 2026?
+revenue|PT|2026-07|2026-09|product=CARD,209321.69,How much revenue did the debit card bring in Portugal in Q3 2026?
+roll_1_30|PT|2026-08|2026-08|,0.684634365992438,What was the 1-29 to 30+ roll rate in Portugal in August 2026?
+roll_30_60|PT|2026-09|2026-09|,0.789650109792996,What was the 30 to 60 roll rate in Portugal in September 2026?
+second_loan_30d|PL|2026-07|2026-07|,0,What share of Poland's July 2026 first-loan clients took a second loan within 30 days?
+second_loan_90d|ALL|2026-01|2026-03|,0.282572259278262,What share of Q1 2026 new clients took a second loan within 90 days?
+share_of_loans|ALL|2026-09|2026-09|channel=PAID,0.133428922572716,What share of September 2026 loans came from paid channels?
+share_of_loans|PL|2026-01|2026-09|product=STEP6,0.20985617302971,What share of Poland's loans in 2026 so far are Step 6?
+start_rate|PT|2026-07|2026-09|,0.539594611607705,What share of leads started an application in Portugal in Q3 2026?
+subscriber_churn_rate|ALL|2025-01|2025-12|,0.0213032529293013,What was the subscriber churn rate in 2025?
+subscribers_churned|ALL|2025-01|2025-12|,5118,How many paying subscribers churned in 2025?
+subscribers_new|PL|2026-07|2026-09|,943,How many new paying subscribers did Poland get in Q3 2026?
+subscribers|ALL|2026-09|2026-09|,23408,How many paying subscribers were there at the end of September 2026?
+subscribers|RO|2026-09|2026-09|tier=PRO,2222,How many Pro subscribers does Romania have at the end of September 2026?
+take_up|ALL|2026-01|2026-09|channel=PAID,0.836827668455575,What is the take-up rate of the paid channel in 2026 so far?
+take_up|PT|2026-09|2026-09|product=STEP12,,What was the take-up of Step 12 in Portugal in September 2026?
+written_off|PT|2025-01|2025-12|,460924.54,How much was written off in Portugal in 2025?

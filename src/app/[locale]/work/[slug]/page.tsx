@@ -97,11 +97,13 @@ export default async function ShowcasePage({ params }: Props) {
   // A JS report whose data is not wired yet (its reader URL unset) shows its Power BI flavour only.
   const webReport =
     showcase.platform !== "js" || isJsReportLive(showcase.report);
-  // The AI chat (ADR-0005, 11-06): Mirelo and ACME Marketing, beside their live web report, and only while
-  // CHAT_ENABLED is "1" at build.
+  // The AI chat (ADR-0005, 11-06; the P&L 11-09): Mirelo, ACME Marketing and the P&L, beside their live web report,
+  // and only while CHAT_ENABLED is "1" at build.
   const chatReport =
     showcase.platform === "js" &&
-    (showcase.report === "mirelo" || showcase.report === "marketing") &&
+    (showcase.report === "mirelo" ||
+      showcase.report === "marketing" ||
+      showcase.report === "pnl") &&
     webReport &&
     process.env.CHAT_ENABLED === "1"
       ? showcase.report

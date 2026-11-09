@@ -67,6 +67,29 @@ The report state travels as the report's own `<query>#<view>` (url-state.ts), up
 corners like Filters, on the report's surface and ink in both themes. `marketing_reader` is released when no read is
 in flight (`server.ts`, as Mirelo's), so frozen instances do not hold its 10 slots.
 
+### The metric catalogue and the answer key (2026-11-08)
+
+The four tools only quote cards, so a figure on no card ("CPM on LinkedIn", "conversion into paid for North America
+under last click", "the May cohort's size") had no answer. A fifth tool, **`get_metric`**, reads a **metric catalogue**
+(`src/lib/marketing/chat-metrics.ts`): 60 metrics, each with an id, a name, other names (EN + RU), the formula in words
+and the cuts it takes. Every metric can be filtered or broken down (`by`) by channel, platform, network, campaign, market
+and tier; page, segment, step and term metrics take one member (or list them all); cohort metrics take an acquisition
+month (`cohort`), a retention day (`day`) or a payback offset (`offset`). One call asks for up to four metrics and gets
+back each value, the same dates last year with the change (as the vitals compare), the plan and pacing for spend, and
+the formula, formatted the way the report formats them. Every value comes from the engine's own functions
+(`metrics.ts`, `cohorts.ts`, `rank.ts`); nothing is computed twice. A metric no card shows (ARPA, LTV) is marked
+**derived**, and the answer says so. The catalogue (ids, names, cuts) is in the cached system prompt (≈ 2k tokens).
+
+**The answer key** keeps the chat honest; visitors do not see it:
+
+| Level | What | Where | Cost |
+|---|---|---|---|
+| 1. numbers | every row of the generator's control totals whose code the catalogue carries (about 14,500 rows: 50+ metrics × every scope and period key, cohort and term rows too), and 58 golden rows computed by SQL straight from `marketing_demo` for the cuts the control totals lack (market, tier, network, custom windows, pages, segments, steps, terms, cohorts; five traps that must read n/a), written from the formulas and not from the engine | `src/lib/marketing/chat-metrics.test.ts`; `data/marketing/checks/golden.sql` → `chat-golden.csv` | free, in `pnpm test` |
+| 2. the model | every golden question through the real chat loop; passes when the answer quotes the expected figure and `get_metric` asked for that metric | `scripts/chat-eval.ts marketing` → `.log/report/<day>-chat-eval-marketing.md` | ≈ $0.001 a question, run by hand |
+
+Adding a metric: a definition in `chat-metrics.ts`, a query in `golden.sql`, its frozen row in `chat-golden.csv`
+(with a visitor-style question), then both levels.
+
 ## Loading the data (owner)
 
 1. In the Supabase SQL editor, give both roles a password (32+ characters, generated):

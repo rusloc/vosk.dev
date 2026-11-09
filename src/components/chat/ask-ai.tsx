@@ -29,10 +29,16 @@ export function askAiTrigger(label: string) {
   return { className: styles.glow, content: <SparkleLabel label={label} /> };
 }
 
-/** The same button at 30px, for a report's own header (Mirelo, 11-06); `"marketing"`: ACME Marketing's 32px buttons and themes. */
-export function askAiTriggerCompact(label: string, report?: "marketing") {
+/**
+ * The same button at 30px, for a report's own header (Mirelo, 11-06); `"marketing"`: ACME Marketing's 32px buttons and
+ * themes; `"pnl"`: the P&L's 36px toolbar buttons in the Ledger palette, the glow in the company colour (11-09).
+ */
+export function askAiTriggerCompact(
+  label: string,
+  report?: "marketing" | "pnl",
+) {
   return {
-    className: `${styles.glow} ${styles.compact}${report === "marketing" ? ` ${styles.marketing}` : ""}`,
+    className: `${styles.glow} ${styles.compact}${report ? ` ${styles[report]}` : ""}`,
     content: <SparkleLabel label={label} />,
   };
 }
@@ -42,6 +48,13 @@ export const MIRELO_SUGGESTIONS = [
   "Which market grew most vs last year?",
   "How has the approval rate moved over the last six months?",
   "Where is revenue behind budget?",
+] as const;
+
+/** Questions the P&L chat offers before the first one is typed (11-09). */
+export const PNL_SUGGESTIONS = [
+  "Where are we against budget on net revenue and EBITDA?",
+  "Which lines drove the variance vs budget?",
+  "What is the full-year outlook vs budget?",
 ] as const;
 
 /** Questions the ACME Marketing chat offers before the first one is typed (11-06). */

@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { capText, fail, runTool, toolDefinitions } from "@/lib/chat/tools";
 import type { ToolResult } from "@/lib/chat/tools";
+import {
+  MEMBER_DIMS,
+  SCOPE_DIMS,
+  createMetricCatalogue,
+  formatDelta,
+  formatValue,
+} from "./chat-metrics";
+import type { Dim, MetricDef, MetricQuery } from "./chat-metrics";
 import { MODELS, STATUSES } from "./data/manifest";
 import type { Status } from "./data/manifest";
 import {
@@ -9,6 +17,7 @@ import {
   MARKET_NAMES,
   RANK_MODES,
   STATUS_NAMES,
+  TIER_NAMES,
   VIEWS,
 } from "./engine/copy";
 import type { Dataset } from "./engine/data";
@@ -71,7 +80,12 @@ const DESCRIPTIONS = {
     "One campaign: its settings, its six vitals, its row of the campaign table (spend, pacing, CPA, ROAS, CTR trend, frequency, flags) and its top keywords or placements.",
   explain_metric:
     "What a card or vital measures, its formula and its note, as the report's info pop-up states it.",
+  get_metric:
+    "Named metrics from the metric catalogue for a window, filters (platform, channel, network, campaign, market, tier, attribution model) and an optional breakdown: each value with the same dates last year and the change, the plan for spend, and the formula. Use it for any specific figure.",
 } as const;
+
+const TREND_MEMBER_ROWS = 8;
+const COHORT_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 const label = (view: ViewKey) =>
   VIEWS.find((v) => v.key === view)?.label ?? view;
@@ -137,6 +151,85 @@ export function createChatTools(ds: Dataset) {
       .describe("Channel codes to keep."),
     market: z.enum(codes(cat.markets)).optional().describe("One market code."),
   };
+
+  const metricsCat = createMetricCatalogue(ds);
+  const SCHEMA_GET_METRIC = z
+    .object({
+      metrics: z
+        .array(z.string())
+        .min(1)
+        .max(4)
+        .describe(
+          "1–4 metric ids from the metric catalogue in the instructions, e.g. paid_cac.",
+        ),
+      ...window,
+      ...filters,
+      networks: z
+        .array(z.enum(codes(cat.networks)))
+        .min(1)
+        .optional()
+        .describe("Network codes to keep (e.g. META, GOOGLE_ADS)."),
+      campaigns: z
+        .array(z.enum(codes(cat.campaigns)))
+        .min(1)
+        .optional()
+        .describe("Campaign keys to keep."),
+      tier: z
+        .enum(codes(cat.tiers))
+        .optional()
+        .describe("One sales tier: SELF_SERVE or SALES_ASSISTED."),
+      page: z
+        .enum(codes(ds.m.pages.map((x) => x.page_key)))
+        .optional()
+        .describe("One landing or store page (page metrics)."),
+      segment: z
+        .enum(codes(ds.m.segments.map((x) => x.segment_code)))
+        .optional()
+        .describe("One platform / OS segment (segment metrics)."),
+      step: z
+        .enum(codes(ds.m.steps.map((x) => x.step_code)))
+        .optional()
+        .describe("One onboarding step (onboarding_step)."),
+      term: z
+        .string()
+        .optional()
+        .describe(
+          "One keyword / placement key, <campaign>-T<n> (term metrics); leave out to get the campaign's top terms.",
+        ),
+      cohort: z
+        .string()
+        .regex(COHORT_MONTH)
+        .optional()
+        .describe(
+          "Acquisition month YYYY-MM for cohort metrics; default the latest month with customers.",
+        ),
+      day: z
+        .union([
+          z.literal(1),
+          z.literal(3),
+          z.literal(7),
+          z.literal(14),
+          z.literal(30),
+          z.literal(60),
+          z.literal(90),
+        ])
+        .optional()
+        .describe("Retention day N for the retention metric (default 30)."),
+      offset: z
+        .number()
+        .int()
+        .min(0)
+        .max(23)
+        .optional()
+        .describe("Months since acquisition for payback_share (default 3)."),
+      by: z
+        .enum([...SCOPE_DIMS, ...MEMBER_DIMS] as [Dim, ...Dim[]])
+        .optional()
+        .describe(
+          "Break the figures down: one row per channel, platform, network, campaign, market, tier, page, segment, step or term.",
+        ),
+    })
+    .strict();
 
   const SCHEMAS = {
     report_snapshot: z
@@ -204,6 +297,7 @@ export function createChatTools(ds: Dataset) {
           .describe("A card code from the catalogue, e.g. V5 or C1."),
       })
       .strict(),
+    get_metric: SCHEMA_GET_METRIC,
   };
 
   const range = `The data runs ${cal.iso(0)} to ${cal.iso(cal.asOf)}.`;
@@ -393,6 +487,137 @@ export function createChatTools(ds: Dataset) {
     cohorts: cohortsLines,
   };
 
+  // ---------- get_metric (chat-metrics.ts): any named figure, with last year, the plan and a breakdown ----------
+
+  /** "$412 · LY $380 (+8.4%) · Plan $176.0k (107%)": the value, then each comparator and the change to it. */
+  function metricFigures(d: MetricDef, q: MetricQuery): string {
+    const v = d.value(q);
+    if (v === null) return `n/a${d.naNote ? ` (${d.naNote})` : ""}`;
+    const parts = [formatValue(d.unit, v)];
+    const lq = metricsCat.lyQuery(d, q);
+    if (d.ly) {
+      const ly = lq ? d.value(lq) : null;
+      parts.push(
+        ly === null
+          ? "LY n/a"
+          : `LY ${formatValue(d.unit, ly)} (${formatDelta(d.unit, v, ly)})`,
+      );
+    }
+    if (d.plan) {
+      const plan = metricsCat.byId.get("plan")!.value(q);
+      const pacing = metricsCat.byId.get("pacing")!.value(q);
+      parts.push(
+        plan === null || pacing === null
+          ? "Plan: none for this cut"
+          : `Plan ${formatValue("money", plan)} (pacing ${formatValue("pct0", pacing)})`,
+      );
+    }
+    return parts.join(" · ");
+  }
+
+  const campaignAttr: Record<
+    Exclude<Dim, "campaign" | (typeof MEMBER_DIMS)[number]>,
+    (c: (typeof ds.campaigns)[number]) => string
+  > = {
+    channel: (c) => c.channel_code,
+    platform: (c) => c.platform_code,
+    network: (c) => c.network_code,
+    market: (c) => c.market_code,
+    tier: (c) => c.tier_code,
+  };
+  const dimMembers: Record<Dim, () => { code: string; name: string }[]> = {
+    channel: () =>
+      ds.m.channels.map((x) => ({
+        code: x.channel_code,
+        name: x.channel_name,
+      })),
+    platform: () =>
+      ds.m.platforms.map((x) => ({
+        code: x.platform_code,
+        name: x.platform_name,
+      })),
+    network: () =>
+      ds.m.networks.map((x) => ({
+        code: x.network_code,
+        name: x.network_name,
+      })),
+    campaign: () =>
+      ds.campaigns.map((x) => ({
+        code: x.campaign_key,
+        name: x.campaign_name,
+      })),
+    market: () =>
+      cat.markets.map((code) => ({
+        code,
+        name: MARKET_NAMES[code as keyof typeof MARKET_NAMES] ?? code,
+      })),
+    tier: () =>
+      cat.tiers.map((code) => ({
+        code,
+        name: TIER_NAMES[code as keyof typeof TIER_NAMES] ?? code,
+      })),
+    page: () =>
+      ds.m.pages.map((x) => ({ code: x.page_key, name: x.page_name })),
+    segment: () =>
+      ds.m.segments.map((x) => ({
+        code: x.segment_code,
+        name: x.segment_name,
+      })),
+    step: () =>
+      ds.m.steps.map((x) => ({ code: x.step_code, name: x.step_name })),
+    term: () =>
+      ds.m.terms.map((x) => ({
+        code: x.term_key,
+        name: `${x.term_text} (${x.campaign_key})`,
+      })),
+  };
+
+  /** One row per member of `by` that has a value in the cut; terms are the scope's, the top rows by value. */
+  function breakdown(
+    d: MetricDef,
+    q: MetricQuery,
+    by: Dim,
+  ): { name: string; q: MetricQuery }[] {
+    const rows: { name: string; q: MetricQuery; v: number }[] = [];
+    for (const m of dimMembers[by]()) {
+      let mq: MetricQuery;
+      if (by === "campaign") {
+        const i = ds.campIndex.get(m.code) ?? -1;
+        if (!q.scope.includes(i)) continue;
+        mq = { ...q, scope: [i] };
+      } else if (by in campaignAttr) {
+        const attr = campaignAttr[by as keyof typeof campaignAttr];
+        const scope = q.scope.filter((i) => {
+          const c = ds.campaigns[i];
+          return c !== undefined && attr(c) === m.code;
+        });
+        if (scope.length === 0) continue;
+        mq = { ...q, scope };
+      } else mq = { ...q, [by]: m.code };
+      const v = d.value(mq);
+      if (v === null || (v === 0 && d.unit === "count")) continue;
+      rows.push({ name: m.name, q: mq, v });
+    }
+    if (by === "term") rows.sort((x, y) => y.v - x.v).splice(TREND_MEMBER_ROWS);
+    return rows;
+  }
+
+  /** The view "Show in the report" opens for a metric: where the nearest card lives. */
+  function homeView(id: string, by: Dim | undefined): ViewKey {
+    if (by === "channel" || by === "platform") return "channels";
+    if (by === "campaign" || by === "term" || id.startsWith("term_"))
+      return "campaigns";
+    if (/^(cohort_|payback|retention|ltv|churn|refund|d7_|d30_)/.test(id))
+      return "cohorts";
+    if (
+      /^(page_|segment_|onboarding_step|time_to_activation|activation_rate)/.test(
+        id,
+      )
+    )
+      return "journey";
+    return "overview";
+  }
+
   const run: {
     [K in keyof typeof SCHEMAS]: (
       a: z.infer<(typeof SCHEMAS)[K]>,
@@ -523,6 +748,111 @@ export function createChatTools(ds: Dataset) {
       return { ok: true, text: cap(lines.join("\n")), scope, link: link(sel) };
     },
 
+    get_metric(a, ctx) {
+      const unknown = a.metrics.filter((id) => !metricsCat.byId.has(id));
+      if (unknown.length)
+        return fail(
+          `Unknown metric ${unknown.map((x) => `"${x}"`).join(", ")}. Use ids from the metric catalogue.`,
+        );
+      if (
+        a.term !== undefined &&
+        !ds.m.terms.some((t) => t.term_key === a.term)
+      )
+        return fail(`Unknown term "${a.term}". Terms are <campaign key>-T<n>.`);
+      const w = windowOf(a, ctx);
+      if (typeof w === "string") return fail(w);
+      let cohortIx: number | undefined;
+      if (a.cohort !== undefined) {
+        const [y, m] = a.cohort.split("-").map(Number) as [number, number];
+        cohortIx = (y - cal.firstYear) * 12 + (m - 1);
+        if (cohortIx < 0 || cal.monthStart(cohortIx) > cal.asOf)
+          return fail(
+            `${a.cohort} is outside the report: acquisition months run ${cal.monthKey(0)} to ${cal.monthKey(cal.monthOf(cal.asOf))}.`,
+          );
+      }
+      const sel: Selection = {
+        ...selectionOf(a, w, ctx, "overview"),
+        networks: a.networks ?? ctx.networks,
+        campaigns: a.campaigns ?? ctx.campaigns,
+        tier: a.tier ?? ctx.tier,
+        // a named campaign counts whatever its status; otherwise the visitor's status pick stays
+        statuses: a.campaigns ? null : ctx.statuses,
+        cross: null,
+      };
+      const c = context(ds, sel);
+      if (c.winScope.length === 0)
+        return fail("No campaign matches these filters.");
+      const q: MetricQuery = {
+        w: c.w,
+        scope: c.winScope,
+        model: sel.model,
+        page: a.page,
+        segment: a.segment,
+        step: a.step,
+        term: a.term,
+        cohort: cohortIx,
+        day: a.day,
+        offset: a.offset,
+      };
+      const used: Dim[] = [
+        ...(sel.channels.length ? (["channel"] as const) : []),
+        ...(sel.platforms.length ? (["platform"] as const) : []),
+        ...(sel.networks.length ? (["network"] as const) : []),
+        ...(sel.campaigns.length ? (["campaign"] as const) : []),
+        ...(sel.market ? (["market"] as const) : []),
+        ...(sel.tier ? (["tier"] as const) : []),
+        ...MEMBER_DIMS.filter((m) => q[m] !== undefined),
+      ];
+      const scope = scopeOf(c);
+      const lines = [
+        `${scope}${a.cohort ? ` | cohort ${monthName(a.cohort)}` : ""}`,
+      ];
+      for (const id of a.metrics) {
+        const d = metricsCat.byId.get(id)!;
+        const name =
+          id === "retention"
+            ? d.name.replace("day N", `day ${a.day ?? 30}`)
+            : id === "payback_share"
+              ? d.name.replace("month N", `month ${a.offset ?? 3}`)
+              : d.name;
+        const head = `${name}${d.derived ? " [derived: not on a card]" : ""}`;
+        const member = d.dims.find((x): x is (typeof MEMBER_DIMS)[number] =>
+          MEMBER_DIMS.includes(x as (typeof MEMBER_DIMS)[number]),
+        );
+        // a member metric asked without its member and without a breakdown lists every member
+        const by =
+          a.by ?? (member && q[member] === undefined ? member : undefined);
+        const off = [...used, ...(by ? [by] : [])].filter(
+          (dim) => !d.dims.includes(dim),
+        );
+        if (off.length) {
+          lines.push(
+            `${head}: cannot be cut by ${[...new Set(off)].join(", ")} (its cuts: ${d.dims.join(", ")}).`,
+          );
+          continue;
+        }
+        if (!by) lines.push(`${head}: ${metricFigures(d, q)}`);
+        else {
+          lines.push(`${head} by ${by}:`);
+          const before = lines.length;
+          for (const row of breakdown(d, q, by))
+            lines.push(`  ${row.name}: ${metricFigures(d, row.q)}`);
+          if (lines.length === before)
+            lines.push(
+              `  n/a for every ${by}${d.naNote ? ` (${d.naNote})` : ""}`,
+            );
+        }
+        lines.push(`  Formula: ${d.formula}`);
+      }
+      const home: Selection = { ...sel, view: homeView(a.metrics[0]!, a.by) };
+      return {
+        ok: true,
+        text: cap(lines.join("\n")),
+        scope,
+        link: link(home),
+      };
+    },
+
     explain_metric(a) {
       const card = CARDS.find((x) => x.code === a.card);
       if (!card) return fail(`Unknown card "${a.card}".`);
@@ -566,6 +896,8 @@ export function createChatTools(ds: Dataset) {
         "",
         "Rules:",
         "- Answer only from tool results. Never estimate, calculate or round a figure; quote figures exactly as a tool gives them.",
+        "- For a specific figure (a count, amount, rate, cost or ratio), call get_metric with its catalogue id; ask for up to four metrics, with filters or a breakdown, in one call. Use report_snapshot for a general question about a view.",
+        "- When a result marks a metric [derived: not on a card], say it is derived from the report's data and not shown on a card.",
         '- Say in a few words which window and filters the answer covers (e.g. "Oct 7 – Nov 5, all channels").',
         "- The six vitals always compare with the same dates last year; the comparison setting (prev, ly, plan, none) applies to Anomalies and Top movers only.",
         "- Never mention tools, views, lookups or what a tool did or did not return; if a figure is missing, say it is not in the report.",
@@ -588,6 +920,21 @@ export function createChatTools(ds: Dataset) {
         "",
         "Cards by view (code title):",
         ...byView,
+        "",
+        "Metric catalogue for get_metric (id: name; other names; extra cut; [derived] = on no card). Every metric takes channel, platform, network, campaign, market and tier unless noted:",
+        ...metricsCat.defs.map((d) => {
+          const extra = d.dims.filter(
+            (x) => !SCOPE_DIMS.includes(x as (typeof SCOPE_DIMS)[number]),
+          );
+          const cuts =
+            d.dims.length < SCOPE_DIMS.length
+              ? `; cuts: ${d.dims.join(", ")}`
+              : extra.length
+                ? `; per ${extra.join(", ")}`
+                : "";
+          return `- ${d.id}: ${d.name}; ${d.aliases}${cuts}${d.derived ? " [derived]" : ""}`;
+        }),
+        `Pages: ${ds.m.pages.map((x) => named(x.page_key, x.page_name)).join("; ")}. Segments: ${ds.m.segments.map((x) => named(x.segment_code, x.segment_name)).join("; ")}. Steps: ${ds.m.steps.map((x) => x.step_code).join(", ")}. Tiers: ${cat.tiers.join(", ")}. Networks: ${cat.networks.join(", ")}.`,
       ].join("\n");
     },
 
@@ -608,6 +955,8 @@ export function createChatTools(ds: Dataset) {
       return { ...sel, dyn: null };
     },
 
+    /** The metric catalogue get_metric reads (tests, the eval script). */
+    metrics: metricsCat,
     /** The report default (Overview · last 30 days · vs prior period · DDA): the context of a question asked outside the report. */
     defaults: DEFAULT_SELECTION,
   };

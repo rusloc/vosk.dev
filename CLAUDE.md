@@ -31,6 +31,7 @@ _Amended 2026-10-20: the lead engine's `public` tables are gone; `qbo` is the se
 | `qbo` | **QBO P&L** — repo `rusloc/qbo`, `C:\__PBI\QBO` | QuickBooks P&L warehouse; that repo's `CLAUDE.md` and ADR-0008 | roles `qbo_etl` (ETL, dbt) and `qbo_reader` (Power BI) |
 | `mirelo_demo` _(live 2026-11-03)_ | **site report data** — the Mirelo custom JS report | synthetic neobank / microlender sales; schema SQL in `data/mirelo/sql/`, loader `scripts/mirelo-load.ts`, read by `/api/mirelo/*` (`docs/mirelo/README.md`, 11-03) | `mirelo_loader` (load, from the owner's machine) and `mirelo_reader` (the site's server routes) |
 | `marketing_demo` _(loaded 2026-11-05)_ | **site report data** — the ACME Marketing custom JS report | synthetic SaaS paid-acquisition data; schema SQL in `data/marketing/sql/`, loader `scripts/marketing-load.ts`, read by `/api/marketing/*` as columns (`docs/marketing/README.md`) | `marketing_loader` (load, from the owner's machine) and `marketing_reader` (the site's server routes) |
+| `pnl_demo` _(schema + roles 2026-11-09; rows: owner's load)_ | **site report data** — the management P&L custom JS report | synthetic two-company P&L (334,700 + 88,012 fact rows, ops, the manifest's lookups); schema SQL in `data/pnl/sql/`, loader `scripts/pnl-load.ts`, read by `/api/pnl/*` as JSON columns in chunks of one version × 12 months (`docs/pnl/README.md`, 11-09) | `pnl_loader` (load, from the owner's machine) and `pnl_reader` (the site's server routes) |
 
 _Amended 2026-11-02: **the site is a shopfront for reports, and report data lives in this project.**_
 Each custom JS report (Track C) gets a schema of its own (`<report>_demo`: Mirelo first, then the
@@ -101,24 +102,26 @@ and roles are plain Postgres, so a move is a connection-string change.
   Marketing report's root, like IBM Plex for the P&L.
 - **Agreed addition (2026-11-06):** `@anthropic-ai/sdk` (exact 1.5.0), the LLM SDK for the report AI chat: a closed set of
   tools over the report engine, run server-side in `/api/chat/<report>` (ADR-0005; `src/lib/chat/`,
-  `src/lib/mirelo/chat-tools.ts`, `src/lib/marketing/chat-tools.ts`, `src/components/chat/`). Mirelo and ACME Marketing
-  (11-06). No text-to-SQL, no report data in the build.
+  `src/lib/mirelo/chat-tools.ts`, `src/lib/marketing/chat-tools.ts`, `src/lib/pnl/chat-tools.ts`, `src/components/chat/`).
+  Mirelo and ACME Marketing (11-06), the P&L (11-09). Each report has a **metric catalogue** (`<report>/chat-metrics.ts`,
+  a `get_metric` tool) and an **answer key** (`data/<report>/checks/chat-golden.csv`, checked in `pnpm test`; the
+  chat-level eval `scripts/chat-eval.ts <report>` runs by hand). No text-to-SQL, no report data in the build.
 
 ## Structure — the site
 
 ```
 src/
   app/            → routes under [locale]/ (home, work, services, contact, blog) + layout, sitemap, robots
-  app/api/        → superset/guest-token; mirelo/[...path] and marketing/[...path] (the JS reports' data from Supabase); chat/mirelo and chat/marketing (the AI chat, ADR-0005) — the Route Handlers
+  app/api/        → superset/guest-token; mirelo/[...path], marketing/[...path] and pnl/[...path] (the JS reports' data from Supabase); chat/mirelo, chat/marketing and chat/pnl (the AI chat, ADR-0005) — the Route Handlers
   proxy.ts        → locale rewriting middleware; excludes /api/*
   components/     → shared UI (nav, footer, cards, contact-form, mdx-components, primitives)
   lib/            → content.ts (MDX seam), work.ts (showcase registry), schema.ts (Zod), env.ts, site.ts, metadata.ts
   lib/pnl/        → the P&L showcase's engine, loader and state (framework-free); components/pnl/ its UI
 content/
   blog/*.mdx      → articles
-data/             → synthetic demo warehouses as plain SQL: P&L (Superset), sales/ (Cube)
+data/             → synthetic demo warehouses as plain SQL: P&L (Superset), sales/ (Cube); <report>/parquet + checks + sql for the JS reports
 public/images/    → work/<slug>/… and blog/<slug>/… assets
-public/data/pnl/  → the P&L showcase's frozen data (Parquet + manifest); spec and decisions in docs/pnl/
+data/pnl/parquet/ → the P&L showcase's frozen data (Parquet + manifest; was public/data/pnl until 11-09, now loaded into pnl_demo); spec and decisions in docs/pnl/
 ```
 
 - **`src/lib/content.ts`** is the single seam for reading/listing/validating MDX — pages consume it, never touch the filesystem directly (keeps a future CMS swap cheap).
@@ -192,7 +195,9 @@ git push
 - `main` → production on Vercel; PRs → preview deploys.
 - Site runtime env: `NEXT_PUBLIC_SITE_URL`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL` — validated in `src/lib/env.ts` (build fails if missing).
   Optional, server-only (11-06): `CHAT_LLM_API_KEY`, `CHAT_ENABLED` (`1` = the Ask AI button and route are on; read at
-  build for the button), `CHAT_DAILY_CAP_USD` (default 0.5), `CHAT_IP_HASH_SALT`.
+  build for the button), `CHAT_DAILY_CAP_USD` (default 0.5), `CHAT_IP_HASH_SALT`. Per-report readers, server-only:
+  `MIRELO_DATABASE_URL`, `MARKETING_DATABASE_URL`, `PNL_DATABASE_URL` (11-09); a JS report whose reader URL is unset
+  shows no "Web report" button (`isJsReportLive`).
 
 ### Testing / verification
 - **Site**: run `pnpm typecheck && pnpm lint && pnpm build` before considering a change done. Manual /

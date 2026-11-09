@@ -24,6 +24,9 @@ export function createSalesEngine(base: SalesBase) {
     (_, i) => cube.closed - i,
   );
   return {
+    /** The cube and metrics the cards read: the chat's metric catalogue reads them too (chat-metrics.ts). */
+    cube,
+    metrics: ctx.m,
     codec: createUrlCodec(base.manifest),
     header: (sel: SalesSelection): HeaderVM => ({
       title: TITLE,

@@ -8,6 +8,13 @@
       "type": "http",
       "url": "https://mcp.vercel.com/yaga/vosk-dev"
     },
+    "n8n": {
+      "type": "http",
+      "url": "https://pwx.imv.mybluehost.me/mcp-server/http",
+      "headers": {
+        "Authorization": "Bearer ${N8N_MCP_TOKEN}"
+      }
+    },
     "fallow": {
       "type": "stdio",
       "command": "cmd",

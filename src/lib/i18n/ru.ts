@@ -228,6 +228,7 @@ export const ru: Dictionary = {
     metaTitle: "Кейсы BI-дашбордов",
     breadcrumbHome: "Главная",
     aboutHeading: "О проекте",
+    clientLabel: "Клиент",
     metaDescription:
       "Кейсы BI-дашбордов с живыми отчётами: клиентские проекты с изменёнными цифрами и демо на синтетических данных, сделано в {platforms}.",
     intro: {

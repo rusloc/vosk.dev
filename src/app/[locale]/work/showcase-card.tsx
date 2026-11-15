@@ -13,11 +13,13 @@ import titleStyles from "../blog/title-bar.module.css";
 export function ShowcaseCard({
   showcase,
   locale,
+  clientLabel,
 }: {
   showcase: LocalizedShowcase;
   locale: Locale;
+  clientLabel: string;
 }) {
-  const { slug, title, summary, metric } = showcase;
+  const { slug, title, summary, client, metric } = showcase;
   const href = localizedPath(locale, `/work/${slug}`);
 
   return (
@@ -36,7 +38,11 @@ export function ShowcaseCard({
           </span>
         </h2>
 
-        <p className="text-muted-foreground mt-2 max-w-md">{summary}</p>
+        <p className="mt-2 text-sm">
+          <span className="text-muted-foreground">{clientLabel}:</span>{" "}
+          <span className="font-medium">{client}</span>
+        </p>
+        <p className="text-muted-foreground mt-1 max-w-md">{summary}</p>
       </div>
 
       {/* Middle — report illustration (hidden on small screens) */}

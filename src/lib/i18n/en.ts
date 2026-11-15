@@ -241,6 +241,8 @@ export const en = {
     metaTitle: "BI Dashboard Case Studies",
     breadcrumbHome: "Home",
     aboutHeading: "About this project",
+    // The client type under a showcase title and on its card (owner, 11-15).
+    clientLabel: "Client",
     metaDescription:
       "BI dashboard case studies with live reports to explore: client work with the figures altered and demos on synthetic data, built in {platforms}.",
     // The platform list after `lead` is built from the showcases on the site (lib/work.ts).

@@ -136,6 +136,13 @@ export default async function ShowcasePage({ params }: Props) {
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
           {title}
         </h1>
+        {/* The client type, stated plainly (owner, 11-15). */}
+        <p className="text-muted-foreground mt-1.5">
+          {t.clientLabel}:{" "}
+          <span className="text-foreground font-medium">
+            {showcase.client}
+          </span>
+        </p>
       </header>
 
       {/* Every showcase is a text page with a button: the report opens in a popup on

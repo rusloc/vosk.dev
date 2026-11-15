@@ -175,22 +175,26 @@ https://himalayas.app/ . Create an account, use the LinkedIn About text as the b
 
 https://jobs.workable.com/ (Jobs by Workable, the candidate side of the Workable ATS). Added 2026-11-13: World Business Lenders and Shiftmove take applications through it. Sign Up is top right; use Google (vosk.dev@gmail.com), LinkedIn or Microsoft. Upload the CV: Workable reads it into the profile, then check the fields under your avatar → My Profile. If it asks for a summary, use the LinkedIn About text. Search "Microsoft Fabric" and "Power BI", remote. I couldn't confirm it offers job alerts.
 
-**Done (owner, 11-13):** registered, CV attached. **Summary** (written 11-13 from the full CV):
+**Done (owner, 11-13):** registered, CV attached. **Summary** (11-13 from the full CV; rewritten 11-15 for BI + AI roles, then made informal. n8n and Copilot sit in the scope and stack lines only: the CV records no delivered work with them):
 
-> BI engineer, 8+ years. Microsoft Certified: Fabric Analytics Engineer (DP-600).
+> BI and AI engineer. 8+ years, DP-600 certified (Microsoft Fabric Analytics Engineer).
 >
-> I build reporting people trust: one source of truth, from raw sources to the dashboard.
+> My thing is reporting people actually trust. Once the numbers hold up, I put AI on top of them, so agents and automations answer from the same model the dashboards use.
 >
-> - Built a logistics company's Microsoft Fabric platform end to end: dbt, Git, automation, 10+ reports. Secured BI for 300+ users. Regular and ad-hoc reporting cut from 1-2 days to a few hours.
-> - Owned BI for a digital lending product: portfolio, repayments, delinquency. One set of numbers for product, risk and ops.
-> - Lead BI developer at a top digital agency (Sber, Alfa-Bank, X5 Group): dbt marts, Power BI, new-client setup cut from weeks to days.
-> - First data hire at an agri-tech marketplace: ETL from 10+ sources, about half of recurring reporting automated.
+> Some of what I've shipped:
 >
-> Stack: Microsoft Fabric (Lakehouse, Warehouse, Direct Lake, Data Agents), Power BI, DAX, SQL, dbt, Git CI/CD.
+> - Fabric Data Agents at a logistics company. People there ask the semantic model questions in plain English and get the real numbers back. Before that I built the whole Fabric platform: dbt, Git, 10+ reports, BI locked down for 300+ users. Reporting that took a day or two now takes a few hours.
+> - AI chat in four live reports on my site. The model can only answer through tools over the report's own engine, and each report carries an answer key of 50+ questions that runs with every test.
+> - Owned BI for a digital lending product. Everyone from risk to ops read the same numbers.
+> - Lead BI dev at a big digital agency (Sber, Alfa-Bank, X5 Group). dbt marts and Power BI templates got new-client setup down from weeks to days.
 >
-> Interested in: Power BI to Fabric migrations, chat with your data on governed models, automating routine reporting.
+> What I want more of: Fabric agent and Copilot setups, chat with your data on governed models, n8n and agent automations that take routine reporting off people's plates, Power BI to Fabric migrations.
 >
-> Remote contract or full-time, EU/UK hours. Live reports: vosk.dev/work
+> Stack, for the search box: Microsoft Fabric (Lakehouse, Warehouse, Direct Lake, Data Agents), Copilot, Power BI, DAX, SQL, dbt, n8n, Git CI/CD.
+>
+> Remote, EU/UK hours. Contract or full-time.
+>
+> The live reports, AI chat included, are at vosk.dev/work
 
 ## 7. Arc.dev
 

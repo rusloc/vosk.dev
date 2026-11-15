@@ -35,7 +35,8 @@ When in doubt, pick what becomes paid work fastest.
 
 ## Ground rules
 - **Never invent** experience, employers, metrics or certs. Tailoring is choosing and wording true facts. Name gaps plainly and offer honest adjacent evidence.
-- **Verify time-sensitive facts with web search** (Turkey eligibility/payouts, fees, whether a firm is active or a post is open). Mark anything unverified.
+- **Verify time-sensitive facts with web search** (whether Turkey-based people are accepted, whether a firm is active or a post is open). Mark anything unverified.
+- **Getting paid and tax are settled (owner, 11-09):** bank account and crypto are ready, other options are easy to set up, Turkey charges him nothing. Never gate a site, lead or deal on them, and don't raise them.
 - **Copy-ready**: messages in quote blocks, [brackets] only for blanks, within platform limits (LinkedIn note 300 chars, Contra one-liner 60).
 - **Buyer language**: "one source of truth", "Power BI to Fabric migration", "reports nobody trusts", "manual deployments", "chat with your data", "automate routine reporting".
 - **Brief**: deliverable first, one line of reasoning only if it changes his decision. No lead trackers; he uses his own Excel. His site presence is the table in `references/funnel-profiles.md`: keep it current.

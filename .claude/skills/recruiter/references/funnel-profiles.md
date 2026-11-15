@@ -4,20 +4,20 @@ The live table of every site in the job and client funnel. Read it for any quest
 look. The owner reports status by hand; update the row the same turn and change `Last updated`. Never mark something
 done from a guess: `?` means nobody has told us yet.
 
-**Last updated:** 2026-11-09 (owner reported rows 5, 6, 13, 14, 24, 32, 33; passwords are never recorded here)
+**Last updated:** 2026-11-13 (owner reported row 32, added row 53 as P1 and reported it registered, CV attached; on 11-09 rows 2, 5, 6, 13, 14, 24, 32, 33; passwords are never recorded here)
 
 **Priority:** P1 set up now · P2 after P1 · P3 only if time · drop = do not use.
-**Turkey:** can a Turkey resident register and get paid: `no` · `conditional` (some evidence, see Next step) · `per posting` (the board is open, each job sets its own limit) · `unknown` (no evidence found, not a no) · `n/a`.
+**Turkey:** can a Turkey resident register (getting paid is settled, see the payout plan below): `no` · `conditional` (some evidence, see Next step) · `per posting` (the board is open, each job sets its own limit) · `unknown` (no evidence found, not a no) · `n/a`.
 **Registered / Profile:** `yes` · `no` · `partial` · `?`
 
 | # | Site | Group | Priority | Turkey | Registered | Profile | URL | Next step |
 |---|---|---|---|---|---|---|---|---|
 | 1 | vosk.dev | own proof | P1 | n/a | yes | partial | https://vosk.dev | Add DP-600, proof numbers, packages (`docs/job/README.md`) |
-| 2 | LinkedIn | identity + jobs | P1 | n/a | yes | ? | https://www.linkedin.com/in/kirill-vosk/ | Owner to report state; copy in `docs/job/p1-setup.md` |
+| 2 | LinkedIn | identity + jobs | P1 | n/a | yes | yes | https://www.linkedin.com/in/kirill-vosk/ | Complete (owner, 11-09): the main page is written as a client landing. Keep it in step with other profiles |
 | 3 | GitHub | identity | P3 | n/a | yes | ? | https://github.com/rusloc | Owner to report state |
 | 4 | Microsoft Learn transcript (DP-600 link) | cert proof | P1 | n/a | yes | yes | https://learn.microsoft.com/api/credentials/share/en-us/KirillBezzubkinISSGHQ-1802/65289BC12515DA2B?sharingId=617FA0AB7D498F12 | On vosk.dev/contact since 11-09 (owner's ask). The URL carries the name Bezzubkin: owner to decide before it goes on profiles under Vosk |
-| 5 | Upwork | marketplace | P1 | conditional | yes | no | https://www.upwork.com/freelancers/~01a960a706057bdf85 | Login: email vosk.dev@gmail.com. Check withdrawal works, then fill from `docs/job/p1-setup.md` |
-| 6 | Contra | marketplace | P1 | unknown | yes | partial | https://contra.com/kirill_vosk_vfzoci3r | Login: Google vosk.dev@gmail.com. Has headline, bio. Rate $25-50 is below the floor; add services, portfolio, skills; check payout country (`docs/job/p1-setup.md`) |
+| 5 | Upwork | marketplace | P1 | conditional | yes | no | https://www.upwork.com/freelancers/~01a960a706057bdf85 | Login: email vosk.dev@gmail.com. Fill from `docs/job/p1-setup.md` |
+| 6 | Contra | marketplace | P1 | unknown | yes | partial | https://contra.com/kirill_vosk_vfzoci3r | Login: Google vosk.dev@gmail.com. Has headline, bio. Bio's hours-to-minutes claim is not in the CV: replace it. Rate $25-50 is below the floor; add services, portfolio, skills (`docs/job/p1-setup.md`) |
 | 7 | Malt | marketplace | P3 | unknown | ? | ? | | Outside FR/ES/DE/IT/BE/UK/CH a registered company looks required (inference); check the country list first |
 | 8 | Fiverr Pro | marketplace | P3 | unknown | ? | ? | | Pays through Payoneer; depends on that working |
 | 9 | Freelancer.com | marketplace | P3 | conditional | ? | ? | | TRY express withdrawal listed; only if Upwork fails |
@@ -43,7 +43,7 @@ done from a guess: `?` means nobody has told us yet.
 | 29 | Indeed | job board | P2 | per posting | ? | ? | | Read each location line |
 | 30 | Glassdoor | job board | P3 | per posting | ? | ? | | Read each location line |
 | 31 | Kariyer.net | job board (Turkey) | P3 | unknown | ? | ? | | Local employers; low fit for the rate |
-| 32 | Nigel Frank (Tenth Revolution) | recruiter | P1 | unknown | no | no | https://www.nigelfrank.com/ | No register page found: apply to a live listing or message a consultant; ask about Turkey (`docs/job/p1-setup.md`) |
+| 32 | Nigel Frank (Tenth Revolution) | recruiter | P1 | unknown | yes | yes | https://www.nigelfrank.com/ | Done (owner, 11-13): applied to a listing or messaged a consultant. Follow up on day 5–7 if no reply; Turkey answer still to come |
 | 33 | Harnham | recruiter | P1 | unknown | no | no | https://www.harnham.com/contract-freelance-data/ | Upload CV, then message the contract team; ask about Turkey (`docs/job/p1-setup.md`) |
 | 34 | Computer Futures | recruiter | P2 | unknown | ? | ? | | Ask first whether they place Turkey-based contractors |
 | 35 | Hays Technology | recruiter | P2 | unknown | ? | ? | | Ask first whether they place Turkey-based contractors |
@@ -63,7 +63,8 @@ done from a guess: `?` means nobody has told us yet.
 | 49 | Deel | getting paid | P2 | unknown | ? | ? | | Client-initiated; check withdrawal options when a client proposes it |
 | 50 | PayPal | getting paid | drop | no | ? | ? | | Shut down in Turkey in 2016 after the licence was refused; no report of a return |
 | 51 | Remote.com | getting paid | P2 | conditional | ? | ? | | Pays contractors in Türkiye when the client is on Remote; run its Payout Explorer |
-| 52 | Easystaff | getting paid + marketplace | P1 | unknown | ? | ? | https://easystaff.io/signup | Invoice product to get paid by foreign clients, Connect profile for clients. Turkey and fees not confirmed; test a small payment first (`docs/job/p1-setup.md`) |
+| 52 | Easystaff | getting paid + marketplace | P1 | unknown | ? | ? | https://easystaff.io/signup | Connect profile for clients; Invoice is there if wanted (`docs/job/p1-setup.md`) |
+| 53 | Workable (Jobs by Workable) | job board + employer ATS | P1 | per posting | yes | partial | https://jobs.workable.com/ | Added by owner 11-13; registered, CV attached (owner, 11-13). Summary drafted 11-13; check the fields the CV filled in. World Business Lenders and Shiftmove apply through it. Job alerts not confirmed (`docs/job/p1-setup.md`) |
 
 ## Evidence for the Turkey column (checked 2026-11-09)
 
@@ -78,4 +79,4 @@ Only Wise and Contra's fee page were read in full at the source. Upwork, Malt, T
 - Remote.com: https://remote.com/country-explorer/turkey/contractor-management
 - Malt invoicing from abroad: https://help.malt.com/kb/guide/en/can-the-freelancer-invoice-me-from-abroad-jPWGhMi1MK/Steps/
 
-**Payout plan (owner, 11-09):** crypto and a personal bank account in Georgia are ready. On platforms, use their own withdrawal to that account. Payoneer dropped; do not plan on Wise or PayPal.
+**Payout plan (owner, 11-09): settled, and tax too.** Bank account and crypto are ready, other options are easy to set up, Turkey charges him nothing. No site is gated on payout or tax. Payoneer dropped; do not plan on Wise or PayPal.

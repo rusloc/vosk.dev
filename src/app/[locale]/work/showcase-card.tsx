@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { LocalizedShowcase } from "@/lib/work";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
-import { ReportMock } from "./report-mock";
+import { FlowMock, ReportMock } from "./report-mock";
 import titleStyles from "../blog/title-bar.module.css";
 
 /**
@@ -47,7 +47,11 @@ export function ShowcaseCard({
 
       {/* Middle — report illustration (hidden on small screens) */}
       <div className="hidden shrink-0 self-center md:block md:w-[170px] lg:w-[190px]">
-        <ReportMock metric={metric} />
+        {showcase.platform === "automation" ? (
+          <FlowMock />
+        ) : (
+          <ReportMock metric={metric} />
+        )}
       </div>
 
       {/* Right — arrow link, same style/size as the blog list card */}

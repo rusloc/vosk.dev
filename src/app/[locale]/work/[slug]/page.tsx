@@ -5,6 +5,7 @@ import { BackLink } from "@/components/back-link";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
 import { JsReportLazy } from "@/components/js-report-lazy";
+import { N8nWorkflow } from "@/components/n8n-workflow";
 import { REPORT_HASHES, REPORT_QUERY_KEYS } from "@/lib/js-reports";
 import { ReportDialog } from "@/components/report-dialog";
 import { askAiTrigger } from "@/components/chat/ask-ai";
@@ -94,17 +95,21 @@ export default async function ShowcasePage({ params }: Props) {
   ];
 
   const reportTitle = `${title} — ${PLATFORM_LABEL[platform]}`;
-  // A JS report whose data is not wired yet (its reader URL unset) shows its Power BI flavour only.
+  // A JS report whose data is not wired yet (its reader URL unset) shows its Power BI flavour only. An n8n workflow
+  // has no report: its one button sits under "How to test" instead (below).
   const webReport =
-    showcase.platform !== "js" || isJsReportLive(showcase.report);
-  // The AI chat (ADR-0005, 11-06; the P&L 11-09): Mirelo, ACME Marketing and the P&L, beside their live web report,
+    showcase.platform === "js"
+      ? isJsReportLive(showcase.report)
+      : showcase.platform !== "automation";
+  // The AI chat (ADR-0005, 11-06; the P&L and ACME Trucks 11-09, Nordmark 11-15): beside each live web report,
   // and only while CHAT_ENABLED is "1" at build.
   const chatReport =
     showcase.platform === "js" &&
     (showcase.report === "mirelo" ||
       showcase.report === "marketing" ||
       showcase.report === "pnl" ||
-      showcase.report === "trucks") &&
+      showcase.report === "trucks" ||
+      showcase.report === "nordmark") &&
     webReport &&
     process.env.CHAT_ENABLED === "1"
       ? showcase.report
@@ -139,9 +144,7 @@ export default async function ShowcasePage({ params }: Props) {
         {/* The client type, stated plainly (owner, 11-15). */}
         <p className="text-muted-foreground mt-1.5">
           {t.clientLabel}:{" "}
-          <span className="text-foreground font-medium">
-            {showcase.client}
-          </span>
+          <span className="text-foreground font-medium">{showcase.client}</span>
         </p>
       </header>
 
@@ -157,81 +160,87 @@ export default async function ShowcasePage({ params }: Props) {
           labels 11-03), each opening its report in the same popup. Every showcase uses
           the same two names (owner, 11-04): "Power BI" for a Power BI report, "Web report"
           for everything drawn on the site (JS, Cube, Superset). */}
-      <div className="mt-5 flex flex-wrap gap-3">
-        {showcase.platform === "js" && showcase.powerBi && (
-          <ReportDialog
-            label={t.openPowerBi}
-            title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
-            closeLabel={t.closeReport}
-            href={showcase.powerBi.href}
-          >
-            <iframe
-              src={showcase.powerBi.embedUrl}
+      {showcase.platform !== "automation" && (
+        <div className="mt-5 flex flex-wrap gap-3">
+          {showcase.platform === "js" && showcase.powerBi && (
+            <ReportDialog
+              label={t.openPowerBi}
               title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
-              allowFullScreen
-              className="h-full w-full border-0"
-            />
-          </ReportDialog>
-        )}
-        {webReport && (
-          <ReportDialog
-            label={
-              showcase.platform === "power-bi" ? t.openPowerBi : t.openWebReport
-            }
-            title={reportTitle}
-            closeLabel={t.closeReport}
-            href={showcase.platform === "power-bi" ? showcase.href : undefined}
-            openOnQuery={
-              showcase.platform === "js"
-                ? REPORT_QUERY_KEYS[showcase.report]
-                : undefined
-            }
-            openOnHash={
-              showcase.platform === "js"
-                ? REPORT_HASHES[showcase.report]
-                : undefined
-            }
-          >
-            {showcase.platform === "cube" ? (
-              <div className="p-4 sm:p-6">
-                <SalesDashboardLazy
-                  data={await getSalesDashboardData()}
-                  labels={dict.salesDashboard}
-                />
-              </div>
-            ) : showcase.platform === "js" ? (
-              <JsReportLazy report={showcase.report} chat={chat} />
-            ) : showcase.platform === "superset" ? (
-              <SupersetEmbed
-                slug={showcase.slug}
-                embedId={showcase.embedId}
-                title={reportTitle}
-                loadingLabel={t.dashboardLoading}
-                errorLabel={t.dashboardError}
-              />
-            ) : (
+              closeLabel={t.closeReport}
+              href={showcase.powerBi.href}
+            >
               <iframe
-                src={showcase.embedUrl}
-                title={reportTitle}
+                src={showcase.powerBi.embedUrl}
+                title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
                 allowFullScreen
                 className="h-full w-full border-0"
               />
-            )}
-          </ReportDialog>
-        )}
-        {/* Ask AI opens the web report with its chat already up (owner, 11-06): the chat then asks about the
+            </ReportDialog>
+          )}
+          {webReport && (
+            <ReportDialog
+              label={
+                showcase.platform === "power-bi"
+                  ? t.openPowerBi
+                  : t.openWebReport
+              }
+              title={reportTitle}
+              closeLabel={t.closeReport}
+              href={
+                showcase.platform === "power-bi" ? showcase.href : undefined
+              }
+              openOnQuery={
+                showcase.platform === "js"
+                  ? REPORT_QUERY_KEYS[showcase.report]
+                  : undefined
+              }
+              openOnHash={
+                showcase.platform === "js"
+                  ? REPORT_HASHES[showcase.report]
+                  : undefined
+              }
+            >
+              {showcase.platform === "cube" ? (
+                <div className="p-4 sm:p-6">
+                  <SalesDashboardLazy
+                    data={await getSalesDashboardData()}
+                    labels={dict.salesDashboard}
+                  />
+                </div>
+              ) : showcase.platform === "js" ? (
+                <JsReportLazy report={showcase.report} chat={chat} />
+              ) : showcase.platform === "superset" ? (
+                <SupersetEmbed
+                  slug={showcase.slug}
+                  embedId={showcase.embedId}
+                  title={reportTitle}
+                  loadingLabel={t.dashboardLoading}
+                  errorLabel={t.dashboardError}
+                />
+              ) : (
+                <iframe
+                  src={showcase.embedUrl}
+                  title={reportTitle}
+                  allowFullScreen
+                  className="h-full w-full border-0"
+                />
+              )}
+            </ReportDialog>
+          )}
+          {/* Ask AI opens the web report with its chat already up (owner, 11-06): the chat then asks about the
             report's view, and a figures card's link applies in place, as from the report's own button. */}
-        {chatReport && (
-          <ReportDialog
-            label={t.askAi}
-            title={reportTitle}
-            closeLabel={t.closeReport}
-            trigger={askAiTrigger(t.askAi)}
-          >
-            <JsReportLazy report={chatReport} chat chatOpen />
-          </ReportDialog>
-        )}
-      </div>
+          {chatReport && (
+            <ReportDialog
+              label={t.askAi}
+              title={reportTitle}
+              closeLabel={t.closeReport}
+              trigger={askAiTrigger(t.askAi)}
+            >
+              <JsReportLazy report={chatReport} chat chatOpen />
+            </ReportDialog>
+          )}
+        </div>
+      )}
 
       <section className="mt-8 max-w-prose">
         <h2 className="text-lg font-semibold tracking-tight">
@@ -258,6 +267,76 @@ export default async function ShowcasePage({ params }: Props) {
           )}
         </div>
       </section>
+
+      {/* An n8n workflow (11-16): what it does (above), how to try it on the live demo, then one button that opens
+          its canvas in the popup (owner's order). The canvas comes from n8n's hosted preview; our server is private. */}
+      {showcase.platform === "automation" && (
+        <section className="mt-8 max-w-prose">
+          <h2 className="text-lg font-semibold tracking-tight">
+            {t.howToTestHeading}
+          </h2>
+          <ol className="text-foreground/85 marker:text-muted-foreground mt-3 list-decimal space-y-1.5 pl-5 leading-relaxed">
+            {showcase.test.steps.map((step, i) => (
+              <li key={i}>
+                {step.split(/(\{email\}|\{sheet\})/).map((part, j) =>
+                  part === "{email}" ? (
+                    <a
+                      key={j}
+                      href={`mailto:${showcase.test.email}`}
+                      className="text-primary font-medium break-all hover:underline"
+                    >
+                      {showcase.test.email}
+                    </a>
+                  ) : part === "{sheet}" ? (
+                    <a
+                      key={j}
+                      href={showcase.test.sheetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary font-medium hover:underline"
+                    >
+                      {t.sheetLink}
+                    </a>
+                  ) : (
+                    part
+                  ),
+                )}
+              </li>
+            ))}
+          </ol>
+          {showcase.test.samples && (
+            <div className="mt-4">
+              <p className="text-sm font-medium">{t.samplesLabel}</p>
+              <ul className="mt-1.5 space-y-1 text-sm">
+                {showcase.test.samples.map((sample) => (
+                  <li key={sample.href}>
+                    <a
+                      href={sample.href}
+                      download
+                      className="text-primary hover:underline"
+                    >
+                      {sample.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className="mt-6">
+            <ReportDialog
+              label={t.openWorkflow}
+              title={`${title} — ${PLATFORM_LABEL.automation}`}
+              closeLabel={t.closeReport}
+            >
+              <N8nWorkflow
+                flow={showcase.workflow}
+                loadingLabel={t.workflowLoading}
+                errorLabel={t.workflowError}
+              />
+            </ReportDialog>
+          </div>
+        </section>
+      )}
     </Container>
   );
 }

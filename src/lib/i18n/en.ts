@@ -266,6 +266,14 @@ export const en = {
     dashboardLoading: "Loading the live dashboard…",
     dashboardError:
       "The dashboard couldn't be loaded. Try refreshing the page.",
+    // An n8n workflow showcase (11-16): its button opens the interactive canvas in the popup, under "How to test".
+    openWorkflow: "n8n workflow",
+    howToTestHeading: "How to test",
+    sheetLink: "the public Google Sheet",
+    samplesLabel: "Sample invoices (PDF)",
+    workflowLoading: "Loading the workflow…",
+    workflowError:
+      "The workflow preview couldn't be loaded. Try again in a minute.",
     paginationAria: "Showcase pages",
   },
   // The Cube-backed online-sales dashboard (components/sales-dashboard.tsx). `{period}` is

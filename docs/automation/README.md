@@ -9,7 +9,7 @@ CV has no delivered n8n work. This showcase is the proof a client can click.
 ## Flow 0 — inbox to a masked sheet (built 2026-11-16, owner's spec)
 
 The first, simplest flow, ahead of Flows 1 and 2. n8n workflow **"Inbox to sheet (public demo)"**, id `5kDrsYnKqUKpNX7c`,
-personal project, created through MCP, **active since 2026-11-16 ~12:00** (credentials "Gmail account", "Google Sheets account").
+personal project, created through MCP, **active since 2026-11-16 ~12:00; AI version live 12:21 (b9d75d07)** (credentials "Gmail account", "Google Sheets account").
 
 - Anyone emails `n8n.opc@gmail.com`. Gmail Trigger polls every minute: `in:inbox -from:me`, unread, up to 10 a poll.
 - One row per email in the Google Sheet **"Inbox demo - email log"** (owner's, in n8n.opc's Drive, anyone with the link
@@ -25,7 +25,7 @@ personal project, created through MCP, **active since 2026-11-16 ~12:00** (crede
 - n8n credentials (fixed scopes, set by n8n): Gmail OAuth2 = `gmail.labels`, `gmail.addons.current.action.compose`,
   `gmail.addons.current.message.action`, `https://mail.google.com/`, `gmail.modify`, `gmail.compose`; Google Sheets OAuth2
   = `drive.file`, `spreadsheets`, `drive.metadata`. The consent screen's Data access must list them all.
-- **AI step (owner's amendment, 2026-11-16; draft until the Anthropic credential exists):** the full message is fetched
+- **AI step (owner's amendment, 2026-11-16; live 12:21):** the full message is fetched
   with the Gmail API (`format=full`: text parts decoded, attachments only counted, never downloaded; this replaces the
   `multipart/mixed` guess). Quoted replies are cut, the body capped at 4,000 chars. An Information Extractor on the
   Anthropic model (`claude-haiku-5-5`, 400 tokens out) returns `topic` (one English sentence, no personal data) and
@@ -34,7 +34,32 @@ personal project, created through MCP, **active since 2026-11-16 ~12:00** (crede
   and links removed, lengths capped, date format checked) into two more columns `Topic | Deadline` (8 in all; `About` renamed `Subject` 11-16) (implied deadlines read
   `2026-11-20 (implied: by Friday)`). Max 200 AI reads a day; past it, or on a model error, the row is still written
   (`(not analyzed)` / `(could not analyze)`). The reply shows both.
-- Not in it yet: attachment parsing (Flow 1), any public n8n address (none needed).
+- **Newest 10 (owner, 11-16):** after each run the log is read, the new rows merged, sorted newest first (date + time)
+  and the tab rewritten with the 10 newest (clear data rows, append). Mark-read and the reply branch from "Build sheet row".
+  Trigger skips mail to `n8n.opc+invoices@gmail.com` (that address belongs to the invoice flow). Live 11-16 (11e63e4f).
+
+## Invoice PDF flow (built 2026-11-16, owner's spec)
+
+n8n workflow **"Invoice PDF to sheet (public demo)"**, id `wX39nm0905Ypn6Nn`, 20 nodes, credentials auto-assigned.
+Address **`n8n.opc+invoices@gmail.com`** (a Gmail plus-address of the demo inbox, so the two flows never take the same mail).
+
+- Poll every minute: `to:n8n.opc+invoices@gmail.com -from:me`, unread. Emails of 5 MB or more are marked read and skipped.
+- The email is downloaded with its attachments; **only the first PDF** is read (owner: 1 attachment, 5 MB). No PDF → a reply
+  saying so, no row.
+- Extract from File reads the text (5 pages max). Under 40 characters of text → "no text layer (scanned PDF?)", no AI call.
+- Information Extractor + `claude-haiku-5-5`: is_invoice, vendor, invoice no., invoice date, due date (computed from terms
+  like Net 30), currency, subtotal, tax, total, line items. The prompt treats the PDF as untrusted and forbids correcting
+  arithmetic.
+- Code checks: line sum vs subtotal (or vs total when no subtotal/tax), subtotal + tax vs total (±0.02), due date after
+  invoice date; `Check` = `OK` or `check: …`. Tested locally on 4 cases.
+- Tab **`invoices`** in the same public sheet keeps the 10 newest, newest first: `Received | From | File | Vendor | Invoice no |
+  Invoice date | Due date | Currency | Subtotal | Tax | Total | Items | Check`. Sender masked, cells RAW, vendor and invoice
+  no. scrubbed of emails and links.
+- One reply per email with the full result incl. up to 15 line items. Caps: 3 replies per sender, 100 a day, 100 AI reads a day.
+- Three synthetic sample invoices for visitors live on the site (the showcase page), one with a deliberate sum mistake.
+- Not active until the `invoices` tab exists with that header row.
+
+- Not in it yet: any public n8n address (none needed).
 
 **Showcasing (D5, accepted by the owner 2026-11-16):** workflows are shown on vosk.dev `/work/<slug>` (an `automation`
 platform kind, ADR-0002 amendment): text, a canvas image, and a button opening the interactive canvas in the popup via

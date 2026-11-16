@@ -2,6 +2,7 @@ import { isCubeConfigured } from "./cube";
 import { env } from "./env";
 import type { Locale } from "./i18n/config";
 import type { JsReport } from "./js-reports";
+import type { N8nFlow } from "./n8n-flows";
 
 /**
  * Work showcase data — client dashboards written up like case studies on /work.
@@ -19,12 +20,16 @@ import type { JsReport } from "./js-reports";
  *                loads static Parquet files and computes every number in the browser
  *                (docs/<report>/). A JS showcase may also carry the same report's Power BI
  *                flavour, published to web: the page then offers both ("Power BI" / "Web report").
+ *  - Automation → an n8n workflow, not a report (ADR-0002 amendment, 11-16): the page says what the flow does and
+ *                how to try it on the live demo inbox, and the button opens the workflow's canvas, drawn from a
+ *                sanitized copy of its JSON (data/n8n/) by n8n's <n8n-demo> component. The n8n server stays private.
  *
  * Server-only in effect: lib/cube.ts is, and this imports it. Every importer is a Server
  * Component, a Route Handler or the sitemap — a client component reaching for this file
  * now fails the build, which is the right answer.
  */
-export type ShowcasePlatform = "power-bi" | "superset" | "cube" | "js";
+export type ShowcasePlatform =
+  "power-bi" | "superset" | "cube" | "js" | "automation";
 
 type ShowcaseBase<Text, Paragraphs> = {
   slug: string;
@@ -71,7 +76,24 @@ type ShowcaseOf<Text, Paragraphs> =
       platform: "js";
       report: JsReport;
       powerBi?: PowerBiEmbed;
+    })
+  // An n8n workflow (11-16): its canvas in the popup, and the steps to try the live demo on the page.
+  | (ShowcaseBase<Text, Paragraphs> & {
+      platform: "automation";
+      workflow: N8nFlow;
+      test: AutomationTest<Text, Paragraphs>;
     });
+
+/**
+ * "How to test" for a live workflow. A step may say `{email}` (the demo address, as a mailto link) and `{sheet}` (a
+ * link to the public sheet); `samples` are files in public/ the visitor sends as the attachment.
+ */
+type AutomationTest<Text, Paragraphs> = {
+  email: string;
+  sheetUrl: string;
+  steps: Paragraphs;
+  samples?: { href: string; label: Text }[];
+};
 
 /** A Power BI report published to web, as the `power-bi` platform carries it. */
 export type PowerBiEmbed = { embedUrl: string; href: string };
@@ -127,6 +149,21 @@ export function localize(s: Showcase, locale: Locale): LocalizedShowcase {
         report: s.report,
         powerBi: s.powerBi,
       };
+    case "automation":
+      return {
+        ...base,
+        platform: s.platform,
+        workflow: s.workflow,
+        test: {
+          email: s.test.email,
+          sheetUrl: s.test.sheetUrl,
+          steps: s.test.steps[locale],
+          samples: s.test.samples?.map((x) => ({
+            href: x.href,
+            label: x.label[locale],
+          })),
+        },
+      };
   }
 }
 
@@ -135,7 +172,12 @@ export const PLATFORM_LABEL: Record<ShowcasePlatform, string> = {
   superset: "Superset",
   cube: "Cube + Tremor",
   js: "Custom JS",
+  automation: "n8n",
 };
+
+/** The public demo sheet both n8n workflows write to (view-only for anyone with the link). */
+const DEMO_SHEET =
+  "https://docs.google.com/spreadsheets/d/1sKfTp-kvGpnRggH5G-mCFKRymL4Jg8pyEXgvhIjnGyM";
 
 /** Placeholder marker — an entry still carrying this is not publishable. */
 const UNSET_EMBED_ID = "REPLACE-WITH-EMBED-UUID";
@@ -146,6 +188,90 @@ const UNSET_EMBED_ID = "REPLACE-WITH-EMBED-UUID";
  * actual story — goal → data → what the dashboard changed.
  */
 const allShowcases: Showcase[] = [
+  {
+    slug: "inbox-to-sheet-ai",
+    published: "2026-11-16",
+    platform: "automation",
+    // n8n workflow "Inbox to sheet (public demo)", live since 11-16 (docs/automation/README.md, Flow 0). Its public
+    // copy is data/n8n/inbox-to-sheet.json: re-export it (scripts/n8n-export.ts) after every change in n8n.
+    workflow: "inbox-to-sheet",
+    title: { en: "Email inbox to a Google Sheet, read by AI" },
+    summary: {
+      en: "Every email to a demo inbox becomes a row in a public sheet, with the topic and deadline picked out by an LLM.",
+    },
+    client: { en: "Small team with a shared inbox" },
+    details: {
+      en: [
+        "A shared inbox collects requests all day, and someone has to read each one to see what it asks and by when. This n8n workflow does that first read and logs every email in a Google Sheet about a minute after it lands.",
+        'An LLM (Claude Haiku) reads the text and fills two cells: the topic in one sentence, and the deadline if the email has one. "By the end of this week" becomes the date of that Sunday.',
+        "Personal data stays out of the sheet. Addresses are masked to s***n@example.com, the model is told to leave names out, and its answer is stripped of links and long numbers before it is written.",
+        "Attachments are counted, never downloaded. The sheet keeps the 10 newest emails, newest first, written as plain text, so a formula in a subject line can't run.",
+        "Built for a public inbox. The prompt treats the email as untrusted input, and replies are capped at 3 per sender and 100 a day, with none to bounces or no-reply senders.",
+      ],
+    },
+    test: {
+      email: "n8n.opc@gmail.com",
+      sheetUrl: DEMO_SHEET,
+      steps: {
+        en: [
+          'Send an email to {email}, in any language. Ask for something with a deadline in it ("can you send the report by Friday?") and attach a file if you like.',
+          "Wait a minute or two. A reply comes back with your row as the sheet shows it, the topic and deadline included.",
+          "Open {sheet}. Your email sits at the top. It's public, so don't send anything private.",
+        ],
+      },
+    },
+  },
+  {
+    slug: "invoice-pdf-parser",
+    published: "2026-11-16",
+    platform: "automation",
+    // n8n workflow "Invoice PDF to sheet (public demo)" (11-16), public copy in data/n8n/invoice-pdf-to-sheet.json.
+    // The samples are synthetic, made for this page (public/samples/automation/).
+    workflow: "invoice-pdf-to-sheet",
+    title: { en: "Invoice PDF parser" },
+    summary: {
+      en: "Email a PDF invoice and get it back as a sheet row, with the sums checked.",
+    },
+    client: { en: "Finance team of a small company" },
+    details: {
+      en: [
+        "Accounts payable still retypes PDF invoices into spreadsheets. This n8n workflow takes the invoice from an email and turns it into a row, with nobody typing.",
+        'An LLM (Claude Haiku) reads the PDF text and pulls out vendor, invoice number, invoice and due dates, currency, subtotal, tax, total and every line item. Payment terms like "Net 30" become a due date.',
+        "The numbers get checked rather than trusted. The lines must add up to the subtotal, subtotal plus tax to the total, and the due date must fall after the invoice date. Anything off lands in the Check column.",
+        "A scanned PDF without a text layer is reported as one, never guessed. The PDF is untrusted input, the sender is masked, and replies and AI reads have daily caps.",
+        "The public sheet keeps the 10 newest invoices. The sender gets the full result by email, line items included.",
+      ],
+    },
+    test: {
+      email: "n8n.opc+invoices@gmail.com",
+      sheetUrl: DEMO_SHEET,
+      steps: {
+        en: [
+          "Download one of the sample invoices below. The companies on them are made up.",
+          "Email it to {email} as an attachment. One PDF per email (only the first is read), up to 5 MB.",
+          'Within a minute or two a reply arrives with everything the workflow read, and the invoice appears in the "invoices" tab of {sheet}.',
+        ],
+      },
+      samples: [
+        {
+          href: "/samples/automation/sample-invoice-eur-vat.pdf",
+          label: { en: "EUR, with VAT and 4 lines" },
+        },
+        {
+          href: "/samples/automation/sample-invoice-usd-net30.pdf",
+          label: {
+            en: '"Net 30" instead of a due date: the workflow works the date out (USD, 2 lines)',
+          },
+        },
+        {
+          href: "/samples/automation/sample-invoice-gbp-mismatch.pdf",
+          label: {
+            en: "The lines don't add up to the subtotal: watch the Check column (GBP)",
+          },
+        },
+      ],
+    },
+  },
   {
     slug: "pnl-suite",
     published: "2026-10-30",
@@ -187,6 +313,8 @@ const allShowcases: Showcase[] = [
     published: "2026-10-29",
     platform: "js",
     report: "nordmark",
+    // Reads Supabase schema nordmark_demo through /api/nordmark since 11-15; its button shows once
+    // NORDMARK_DATABASE_URL is set (isJsReportLive). No Power BI flavour yet, so until then the page has no button.
     title: {
       en: "Retail executive dashboard",
       ru: "Дашборд руководителя розничной сети",
@@ -459,6 +587,7 @@ const REPORT_DATA_ENV: Partial<Record<JsReport, string>> = {
   marketing: "MARKETING_DATABASE_URL",
   pnl: "PNL_DATABASE_URL", // 2026-11-09: the P&L rows moved to Supabase (pnl_demo)
   trucks: "TRUCKS_DATABASE_URL", // 2026-11-09
+  nordmark: "NORDMARK_DATABASE_URL", // 2026-11-15: the executive dashboard's rows moved to Supabase (nordmark_demo)
 };
 
 /** Whether the "Web report" of a JS showcase can open (read at build / regeneration, server-side only). */

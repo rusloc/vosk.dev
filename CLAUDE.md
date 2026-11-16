@@ -40,6 +40,7 @@ _Amended 2026-10-20: the lead engine's `public` tables are gone; `qbo` is the se
 | `marketing_demo` _(loaded 2026-11-05)_ | **site report data** — the ACME Marketing custom JS report | synthetic SaaS paid-acquisition data; schema SQL in `data/marketing/sql/`, loader `scripts/marketing-load.ts`, read by `/api/marketing/*` as columns (`docs/marketing/README.md`) | `marketing_loader` (load, from the owner's machine) and `marketing_reader` (the site's server routes) |
 | `pnl_demo` _(loaded 2026-11-09)_ | **site report data** — the management P&L custom JS report | synthetic two-company P&L (334,700 + 88,012 fact rows, ops, the manifest's lookups); schema SQL in `data/pnl/sql/`, loader `scripts/pnl-load.ts`, read by `/api/pnl/*` as JSON columns in chunks of one version × 12 months (`docs/pnl/README.md`, 11-09) | `pnl_loader` (load, from the owner's machine) and `pnl_reader` (the site's server routes) |
 | `trucks_demo` _(loaded 2026-11-09)_ | **site report data** — the ACME Trucks custom JS report | **real aggregated operating figures** under anonymised names (9,414 rows + manifest); schema SQL in `data/trucks/sql/`, loader `scripts/trucks-load.ts`, read by `/api/trucks/*` as columns (`docs/trucks/README.md`) | `trucks_loader` (load, from the owner's machine) and `trucks_reader` (the site's server routes) |
+| `nordmark_demo` _(created 2026-11-15, load pending)_ | **site report data** — the Nordmark retail executive dashboard custom JS report | synthetic retail cubes (4,599 + 1,029 + 95 + 190 rows + manifest); schema SQL in `data/nordmark/sql/`, loader `scripts/nordmark-load.ts`, read by `/api/nordmark/*` as columns (`docs/nordmark/README.md`, 11-15) | `nordmark_loader` (load, from the owner's machine) and `nordmark_reader` (the site's server routes) |
 
 _Amended 2026-11-02: **the site is a shopfront for reports, and report data lives in this project.**_
 Each custom JS report (Track C) gets a schema of its own (`<report>_demo`: Mirelo first, then the
@@ -110,17 +111,21 @@ and roles are plain Postgres, so a move is a connection-string change.
   Marketing report's root, like IBM Plex for the P&L.
 - **Agreed addition (2026-11-06):** `@anthropic-ai/sdk` (exact 1.5.0), the LLM SDK for the report AI chat: a closed set of
   tools over the report engine, run server-side in `/api/chat/<report>` (ADR-0005; `src/lib/chat/`,
-  `src/lib/mirelo/chat-tools.ts`, `src/lib/marketing/chat-tools.ts`, `src/lib/pnl/chat-tools.ts`, `src/lib/trucks/chat-tools.ts`, `src/components/chat/`).
-  Mirelo and ACME Marketing (11-06), the P&L and ACME Trucks (11-09). Each report has a **metric catalogue** (`<report>/chat-metrics.ts`,
+  `src/lib/mirelo/chat-tools.ts`, `src/lib/marketing/chat-tools.ts`, `src/lib/pnl/chat-tools.ts`, `src/lib/trucks/chat-tools.ts`, `src/lib/nordmark/chat-tools.ts`, `src/components/chat/`).
+  Mirelo and ACME Marketing (11-06), the P&L and ACME Trucks (11-09), Nordmark (11-15). Each report has a **metric catalogue** (`<report>/chat-metrics.ts`,
   a `get_metric` tool) and an **answer key** (`data/<report>/checks/chat-golden.csv`, checked in `pnpm test`; the
   chat-level eval `scripts/chat-eval.ts <report>` runs by hand). No text-to-SQL, no report data in the build.
+- **Agreed addition (2026-11-16):** `@n8n_io/n8n-demo-component` (exact 1.0.20, on `lit`), n8n's `<n8n-demo>` web
+  component for the n8n workflow showcases: it draws a workflow's canvas through n8n's hosted preview service, from a
+  sanitized copy of the JSON in `data/n8n/` (`scripts/n8n-export.ts`: no credentials, ids or private host). Loaded only
+  when the popup opens (`components/n8n-workflow.tsx`). Our n8n server is never linked from the site.
 
 ## Structure — the site
 
 ```
 src/
   app/            → routes under [locale]/ (home, work, services, contact, blog) + layout, sitemap, robots
-  app/api/        → superset/guest-token; mirelo/[...path], marketing/[...path], pnl/[...path] and trucks/[...path] (the JS reports' data from Supabase); chat/mirelo, chat/marketing, chat/pnl and chat/trucks (the AI chat, ADR-0005) — the Route Handlers
+  app/api/        → superset/guest-token; mirelo/[...path], marketing/[...path], pnl/[...path], trucks/[...path] and nordmark/[...path] (the JS reports' data from Supabase); chat/mirelo, chat/marketing, chat/pnl, chat/trucks and chat/nordmark (the AI chat, ADR-0005) — the Route Handlers
   proxy.ts        → locale rewriting middleware; excludes /api/*
   components/     → shared UI (nav, footer, cards, contact-form, mdx-components, primitives)
   lib/            → content.ts (MDX seam), work.ts (showcase registry), schema.ts (Zod), env.ts, site.ts, metadata.ts
@@ -134,13 +139,15 @@ data/pnl/parquet/ → the P&L showcase's frozen data (Parquet + manifest; was pu
 
 - **`src/lib/content.ts`** is the single seam for reading/listing/validating MDX — pages consume it, never touch the filesystem directly (keeps a future CMS swap cheap).
 - **`/work` is not MDX.** Showcases are entries in **`src/lib/work.ts`** — a discriminated union by
-  `platform` (`power-bi` | `superset` | `cube` | `js`), per `ADR-0002`. There is no `content/work/`.
+  `platform` (`power-bi` | `superset` | `cube` | `js` | `automation`), per `ADR-0002`. There is no `content/work/`.
   Every showcase page is text plus one button, "Power BI" (a Power BI report) or "Web report" (drawn on
   the site: JS, Cube, Superset); the report opens in a popup. No platform pill on the page or the card (11-04).
   A showcase with two formats of one report (a `js` entry with `powerBi`) has two such buttons side by
   side, "Power BI" and "Web report", each opening its report in the popup.
   The `cube` entry is not an embed: the page queries Cube server-side and draws the dashboard
   itself (`components/sales-dashboard.tsx`); it is hidden until `CUBE_API_URL` + `CUBE_API_SECRET` are set.
+  An `automation` entry (11-16) is an n8n workflow: its text, then "How to test" on the live demo inbox, then one
+  "n8n workflow" button that opens the canvas in the popup.
 - All pages are Server Components / statically rendered. `[slug]` routes use `generateStaticParams()`. Client components are the exception (contact form, theme toggle, mobile menu) — mark them `'use client'`.
 
 ## Available agents & skills
@@ -204,7 +211,7 @@ git push
 - Site runtime env: `NEXT_PUBLIC_SITE_URL`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL` — validated in `src/lib/env.ts` (build fails if missing).
   Optional, server-only (11-06): `CHAT_LLM_API_KEY`, `CHAT_ENABLED` (`1` = the Ask AI button and route are on; read at
   build for the button), `CHAT_DAILY_CAP_USD` (default 0.5), `CHAT_IP_HASH_SALT`. Per-report readers, server-only:
-  `MIRELO_DATABASE_URL`, `MARKETING_DATABASE_URL`, `PNL_DATABASE_URL`, `TRUCKS_DATABASE_URL` (11-09); a JS report whose reader URL is unset
+  `MIRELO_DATABASE_URL`, `MARKETING_DATABASE_URL`, `PNL_DATABASE_URL`, `TRUCKS_DATABASE_URL` (11-09), `NORDMARK_DATABASE_URL` (11-15); a JS report whose reader URL is unset
   shows no "Web report" button (`isJsReportLive`).
 
 ### Testing / verification

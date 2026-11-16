@@ -57,3 +57,14 @@ own filtered index, that is a new list page reading the same registry — not a 
 - **Embedding dashboards inside blog posts** via the existing
   [`ReportEmbed`](../../../src/components/report-embed.tsx) — that component takes a public URL and
   cannot mint tokens. Still valid for Power BI in articles; not a route to Superset embedding.
+
+## Amendment — 2026-11-16: `automation`, an n8n workflow as a showcase
+
+The owner's call (D5 in `docs/automation/README.md`): n8n workflows are shown on `/work` like the reports, one
+post per workflow, and the n8n server itself is never exposed or linked. The union gains a fifth kind,
+`platform: "automation"`, carrying `workflow` (which public copy in `data/n8n/` to draw) and `test` (the demo
+address, the public sheet and the steps, plus optional sample files in `public/samples/automation/`). The page reads
+the general logic, then "How to test", then one "n8n workflow" button; the popup draws the canvas with n8n's
+`<n8n-demo>` web component (`@n8n_io/n8n-demo-component`, rendered by n8n's hosted preview service), loaded only when
+it opens. The JSON is sanitized by `scripts/n8n-export.ts` (no credentials, ids, webhook ids or private host) and must be
+re-exported after each change to the live workflow.

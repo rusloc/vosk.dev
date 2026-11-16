@@ -49,7 +49,7 @@ export function N8nWorkflow({
         if (cancelled) return;
         demo = document.createElement("n8n-demo");
         demo.setAttribute("workflow", JSON.stringify(json.default));
-        demo.setAttribute("theme", "light");
+        demo.setAttribute("theme", "dark"); // owner, 11-16: the light canvas is grey stripes; dark has the contrast
         demo.setAttribute("collapseformobile", "false"); // the popup is the place to look at it, phone or not
         demo.setAttribute("hidecanvaserrors", "true");
         demo.style.display = "block";

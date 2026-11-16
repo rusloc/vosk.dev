@@ -37,13 +37,35 @@ personal project, created through MCP, **active since 2026-11-16 ~12:00; AI vers
 - **Newest 10 (owner, 11-16):** after each run the log is read, the new rows merged, sorted newest first (date + time)
   and the tab rewritten with the 10 newest (clear data rows, append). Mark-read and the reply branch from "Build sheet row".
   Trigger skips mail to `n8n.opc+invoices@gmail.com` (that address belongs to the invoice flow). Live 11-16 (11e63e4f).
+- ~~**Routing by content (owner, 11-16 14:00)**~~ (complementary Gmail queries, PDF guard, live 4fc36bb1): superseded
+  the same afternoon by the router below. Why it started: at 13:42 an invoice sent to the plain address was logged as an
+  inbox row and answered with the sheet link.
+
+## Demo inbox router (owner, 2026-11-16 afternoon)
+
+n8n workflow **"Demo inbox router (public demo)"**, id `NEWtvOtSGRoE3XK2`, 7 nodes. **The only Gmail poller** on
+`n8n.opc@gmail.com`, so every email is handled exactly once: every minute `in:inbox -from:me`, unread → Gmail API
+`messages.get` with a `fields` mask (attachment names and size only, nothing downloaded) → "Pick the flow" → one Execute
+Sub-workflow call per email, waiting for it:
+
+- **Invoice parser** (`wX39nm0905Ypn6Nn`) when one of the three site samples is attached: `sample-invoice-eur-vat.pdf`,
+  `sample-invoice-usd-net30.pdf`, `sample-invoice-gbp-mismatch.pdf`; case-insensitive, a browser copy such as
+  `sample-invoice-eur-vat (1).pdf` counts (owner's rule, 11-16).
+- **Email parser** (`5kDrsYnKqUKpNX7c`, the inbox flow) for everything else, other PDFs included.
+
+Both sub-flows start with "Called by the inbox router" (Execute Workflow Trigger, accept all data: `id`, `sizeEstimate`,
+`route`, `sampleFile`, `attachments`) and mark their email as read. Switched over at 14:30: the sub-flows were published
+first, then the router, so no email had two pollers; mail in the seconds between had none (Gmail trigger starts from
+its activation time). The `+invoices` plus-address has no meaning any more.
 
 ## Invoice PDF flow (built 2026-11-16, owner's spec)
 
 n8n workflow **"Invoice PDF to sheet (public demo)"**, id `wX39nm0905Ypn6Nn`, 20 nodes, credentials auto-assigned.
-Address **`n8n.opc+invoices@gmail.com`** (a Gmail plus-address of the demo inbox, so the two flows never take the same mail).
+Address **`n8n.opc@gmail.com`**. Since the 11-16 afternoon a **sub-flow of the Demo inbox router** (above): called when a
+site sample invoice is attached. Before that it had its own Gmail trigger on `n8n.opc+invoices@gmail.com`, then (14:00)
+a complementary `filename:pdf` query; both are gone.
 
-- Poll every minute: `to:n8n.opc+invoices@gmail.com -from:me`, unread. Emails of 5 MB or more are marked read and skipped.
+- Input from the router: the message id and size. Emails of 5 MB or more are marked read and skipped.
 - The email is downloaded with its attachments; **only the first PDF** is read (owner: 1 attachment, 5 MB). No PDF → a reply
   saying so, no row.
 - Extract from File reads the text (5 pages max). Under 40 characters of text → "no text layer (scanned PDF?)", no AI call.
@@ -52,12 +74,14 @@ Address **`n8n.opc+invoices@gmail.com`** (a Gmail plus-address of the demo inbox
   arithmetic.
 - Code checks: line sum vs subtotal (or vs total when no subtotal/tax), subtotal + tax vs total (±0.02), due date after
   invoice date; `Check` = `OK` or `check: …`. Tested locally on 4 cases.
-- Tab **`invoices`** in the same public sheet keeps the 10 newest, newest first: `Received | From | File | Vendor | Invoice no |
-  Invoice date | Due date | Currency | Subtotal | Tax | Total | Items | Check`. Sender masked, cells RAW, vendor and invoice
-  no. scrubbed of emails and links.
+- Its own public book **`n8n-invoice`** (`1JLRIXDWSOEjCvY0FFsUgZDuReg5NtRw9gNc7QUnVTjY`, owner, 11-16), sheet **`Invoice`**, keeps
+  the 10 newest, newest first: `Received | From | Subject | File | Vendor | Invoice no | Invoice date | Due date | Currency |
+  Subtotal | Tax | Total | Items | Check` (14; `Subject` added 11-16, scrubbed of addresses and links). Sender masked,
+  cells RAW, vendor and invoice no. scrubbed of emails and links. The demo book's first tab is now `Email` (gid 0).
 - One reply per email with the full result incl. up to 15 line items. Caps: 3 replies per sender, 100 a day, 100 AI reads a day.
 - Three synthetic sample invoices for visitors live on the site (the showcase page), one with a deliberate sum mistake.
-- Not active until the `invoices` tab exists with that header row.
+- Published 11-16 afternoon with the router. The book must be writable by the n8n Google Sheets credential
+  (n8n.opc@gmail.com), and the `Invoice` sheet needs the 14-column header row.
 
 - Not in it yet: any public n8n address (none needed).
 

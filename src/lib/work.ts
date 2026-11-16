@@ -176,9 +176,11 @@ export const PLATFORM_LABEL: Record<ShowcasePlatform, string> = {
   automation: "n8n",
 };
 
-/** The public demo sheet both n8n workflows write to (view-only for anyone with the link). */
+/** The public sheets the n8n workflows write to (view-only for anyone with the link): emails, and parsed invoices. */
 const DEMO_SHEET =
   "https://docs.google.com/spreadsheets/d/1sKfTp-kvGpnRggH5G-mCFKRymL4Jg8pyEXgvhIjnGyM";
+const INVOICE_SHEET =
+  "https://docs.google.com/spreadsheets/d/1JLRIXDWSOEjCvY0FFsUgZDuReg5NtRw9gNc7QUnVTjY";
 
 /** Placeholder marker — an entry still carrying this is not publishable. */
 const UNSET_EMBED_ID = "REPLACE-WITH-EMBED-UUID";
@@ -241,12 +243,12 @@ const allShowcases: Showcase[] = [
     },
     test: {
       email: "n8n.opc@gmail.com",
-      sheetUrl: DEMO_SHEET,
+      sheetUrl: INVOICE_SHEET,
       steps: {
         en: [
-          "Download a sample invoice below (the companies are made up).",
+          "Download a sample invoice below (the companies are made up). Only these three are parsed; other mail goes to the inbox demo.",
           "Email it to {email} as an attachment: one PDF, up to 5 MB.",
-          'A reply with what was read comes back in a minute or two, and the invoice shows in the "invoices" tab of {sheet}.',
+          "A reply with what was read comes back in a minute or two, and the invoice shows in {sheet}.",
         ],
       },
       samples: [

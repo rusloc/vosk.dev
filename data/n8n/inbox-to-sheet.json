@@ -2,25 +2,15 @@
   "name": "Inbox to sheet (public demo)",
   "nodes": [
     {
-      "name": "New email in demo inbox",
-      "type": "n8n-nodes-base.gmailTrigger",
-      "typeVersion": 1.4,
+      "name": "Called by the inbox router",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
       "position": [
         0,
         300
       ],
       "parameters": {
-        "pollTimes": {
-          "item": [
-            {
-              "mode": "everyMinute"
-            }
-          ]
-        },
-        "filters": {
-          "q": "in:inbox -from:me -to:n8n.opc+invoices@gmail.com",
-          "readStatus": "unread"
-        }
+        "inputSource": "passthrough"
       }
     },
     {
@@ -221,7 +211,7 @@
         -260
       ],
       "parameters": {
-        "content": "## Inbox to sheet (public demo)\nAnyone emails n8n.opc@gmail.com. Every minute the workflow picks up unread inbox mail, reads the text (attachments are counted, never downloaded) and adds one row per email to the public sheet: date, time, masked from/to, subject, attachment yes/no, AI topic, AI deadline. The sheet keeps the 10 newest emails, newest first. Then it replies with the sheet link.\n\nMasking: first and last letter of the local part, domain kept (s***n@example.com). Display names dropped. Cells written RAW (no formulas).\n\nAI (Claude Haiku): one-sentence topic and any explicit or implied deadline, resolved against the received date. The email is treated as untrusted data; the output is scrubbed of addresses, numbers and links before it reaches the sheet. Max 200 AI reads a day.\n\nReplies: none to bounces, no-reply senders or itself; max 3 per sender and 100 in total per day (Istanbul time).",
+        "content": "## Inbox to sheet (public demo)\nCalled by the Demo inbox router for every email to n8n.opc@gmail.com that does not carry one of the three sample invoices from vosk.dev (those go to the invoice parser). Reads the text (attachments are counted, never downloaded) and adds one row per email to the public sheet (tab Email): date, time, masked from/to, subject, attachment yes/no, AI topic, AI deadline. The sheet keeps the 10 newest emails, newest first. Then it replies with the sheet link.\n\nMasking: first and last letter of the local part, domain kept (s***n@example.com). Display names dropped. Cells written RAW (no formulas).\n\nAI (Claude Haiku): one-sentence topic and any explicit or implied deadline, resolved against the received date. The email is treated as untrusted data; the output is scrubbed of addresses, numbers and links before it reaches the sheet. Max 200 AI reads a day.\n\nReplies: none to bounces, no-reply senders or itself; max 3 per sender and 100 in total per day (Istanbul time).",
         "height": 480,
         "width": 432,
         "color": 7
@@ -431,7 +421,7 @@
         ]
       ]
     },
-    "New email in demo inbox": {
+    "Called by the inbox router": {
       "main": [
         [
           {

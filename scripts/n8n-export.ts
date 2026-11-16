@@ -6,7 +6,9 @@
  * The raw export is what n8n's MCP `get_workflow_details` (or the editor's Download) returns, saved outside the
  * repo. Kept per node: name, type, typeVersion, position, parameters and the execution flags (retries, onError…),
  * plus connections and sticky notes. Dropped: credentials, ids, webhookId, pinData, versionId, meta, settings,
- * tags and node groups. The public demo addresses and the public sheet id stay: they are meant to be public.
+ * tags and node groups (n8n's preview service draws a blank canvas when `nodeGroups` is present, tested 11-16; placeholder
+ * credentials don't clear the canvas's credential triangles either). The public demo addresses and the public sheet id
+ * stay: they are meant to be public.
  * Refuses to write if the result still names the private n8n host or looks like it carries a secret.
  */
 import { readFileSync, writeFileSync } from "node:fs";

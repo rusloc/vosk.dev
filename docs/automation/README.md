@@ -1,10 +1,46 @@
 # Inbox automation — the AI automation showcase (draft, 2026-11-15)
 
-Status: **draft, nothing built.** Owner's ask 2026-11-15: a public, try-it-yourself AI automation as its own showcase
+Status: **Flow 0 built and ACTIVE 2026-11-16** (below). Owner's ask 2026-11-15: a public, try-it-yourself AI automation as its own showcase
 item, two flows in one solution, n8n (or a better tool) under the hood, on a Gmail inbox the owner provides.
 
 Why it exists: the profiles now sell "n8n workflows and automation agents" (Workable summary, Upwork skills), and the
 CV has no delivered n8n work. This showcase is the proof a client can click.
+
+## Flow 0 — inbox to a masked sheet (built 2026-11-16, owner's spec)
+
+The first, simplest flow, ahead of Flows 1 and 2. n8n workflow **"Inbox to sheet (public demo)"**, id `5kDrsYnKqUKpNX7c`,
+personal project, created through MCP, **active since 2026-11-16 ~12:00** (credentials "Gmail account", "Google Sheets account").
+
+- Anyone emails `n8n.opc@gmail.com`. Gmail Trigger polls every minute: `in:inbox -from:me`, unread, up to 10 a poll.
+- One row per email in the Google Sheet **"Inbox demo - email log"** (owner's, in n8n.opc's Drive, anyone with the link
+  can view; id `1sKfTp-kvGpnRggH5G-mCFKRymL4Jg8pyEXgvhIjnGyM` since 11-16 12:15, first tab, by id; the first sheet, made from another account, gave 403 on append), columns `Date | Time | From | To | Subject |
+  Attachment`. Date and time in Europe/Istanbul. Cells written RAW (no formulas, so no formula injection).
+- **Masking:** the local part keeps its first and last character, `***` between, domain kept: `sara.chen@example.com` →
+  `s***n@example.com`; a one-letter local part → `x***@…`. Display names are dropped. Every address in `To` is masked.
+- `About` = the subject (120 chars), else the snippet. `Has attachment` = the message is `multipart/mixed` (a heuristic
+  on the simplified Gmail output, which carries no attachment list; check it on the first real emails).
+- The email is marked read after its row is written (no duplicate rows on a re-poll).
+- Reply to the sender with the sheet link and their row. No reply to bounces, no-reply / notification senders or the
+  inbox itself; at most 3 replies a sender and 100 in all a day (workflow static data, production runs only).
+- n8n credentials (fixed scopes, set by n8n): Gmail OAuth2 = `gmail.labels`, `gmail.addons.current.action.compose`,
+  `gmail.addons.current.message.action`, `https://mail.google.com/`, `gmail.modify`, `gmail.compose`; Google Sheets OAuth2
+  = `drive.file`, `spreadsheets`, `drive.metadata`. The consent screen's Data access must list them all.
+- **AI step (owner's amendment, 2026-11-16; draft until the Anthropic credential exists):** the full message is fetched
+  with the Gmail API (`format=full`: text parts decoded, attachments only counted, never downloaded; this replaces the
+  `multipart/mixed` guess). Quoted replies are cut, the body capped at 4,000 chars. An Information Extractor on the
+  Anthropic model (`claude-haiku-5-5`, 400 tokens out) returns `topic` (one English sentence, no personal data) and
+  `deadline_kind` / `deadline_date` / `deadline_phrase` (explicit, or implied and resolved against the received date and
+  weekday). The prompt treats the email as untrusted data. A Code node scrubs the output (addresses masked, long numbers
+  and links removed, lengths capped, date format checked) into two more columns `Topic | Deadline` (8 in all; `About` renamed `Subject` 11-16) (implied deadlines read
+  `2026-11-20 (implied: by Friday)`). Max 200 AI reads a day; past it, or on a model error, the row is still written
+  (`(not analyzed)` / `(could not analyze)`). The reply shows both.
+- Not in it yet: attachment parsing (Flow 1), any public n8n address (none needed).
+
+**Showcasing (D5, accepted by the owner 2026-11-16):** workflows are shown on vosk.dev `/work/<slug>` (an `automation`
+platform kind, ADR-0002 amendment): text, a canvas image, and a button opening the interactive canvas in the popup via
+n8n's `<n8n-demo>` component (rendered by n8n's hosted preview service). The JSON is exported through MCP and stripped
+of credentials and IDs. `n8n.vosk.dev` stays private: never linked, `X-Robots-Tag: noindex`, later reachable over
+Tailscale only. `n8n.vosk.dev/{name}` was considered and rejected (subdomain splits SEO, exposes the login host).
 
 ## The two flows
 
@@ -60,7 +96,7 @@ the trial); real use is a few runs per visitor.
 
 ## Accounts and keys (owner sets up; the agent never sees a secret)
 
-1. **A dedicated Gmail**, e.g. `vosk.inbox.demo@gmail.com`: nothing private in it, ever. Owner provides it (D1).
+1. **A dedicated Gmail**, **`n8n.opc@gmail.com`** (D1, owner 2026-11-15): nothing private in it, ever.
 2. **Google credential in n8n** for Gmail + Sheets + Drive, signed in as that Gmail. If n8n asks for your own Google
    Cloud OAuth app: set the consent screen to *In production*, because a *Testing* app's tokens expire after 7 days and
    the flows stop silently. The unverified-app warning appears only to you at sign-in.
@@ -92,15 +128,24 @@ whatever D3 lands on. Copy is written with the text-writer skill when the flows 
 
 ## Decisions for the owner
 
-- **D1.** The Gmail address for the demo inbox (a new, empty one).
+- **D1.** The Gmail address for the demo inbox (a new, empty one). **Answered 2026-11-15: `n8n.opc@gmail.com`.**
 - **D2.** Flow 1 parses invoices (recommended) or any attachment into a generic table.
 - **D3.** Flow 2's topic scope: requests to a finance team (recommended) or something else.
-- **D4.** The tool: n8n Cloud (recommended), n8n on a VPS, or Apps Script.
+- **D4.** The tool: **n8n, hosted** (owner, 2026-11-15); **not Bluehost** (cancelled the account). **Provider: Hostinger**
+  (owner, 2026-11-16), its n8n VPS. Still a VPS we look after (firewall, backups, updates), with n8n preinstalled.
+  Its default host name ends in `hstgr.cloud`, which is on the public suffix list: in Google's authorized domains
+  enter the **full host name** (e.g. `srv123456.hstgr.cloud`), not `hstgr.cloud`.
+  Step-by-step: **`n8n-hostinger-setup.md`**.
 - **D5.** A new `automation` platform kind on `/work` with the "Try it" page (recommended), or a plain page with links.
+  **Answered 2026-11-16: the `automation` kind on vosk.dev, interactive canvas in the popup, n8n stays private** (Flow 0 above).
 
 ## Self-hosted n8n: what it takes (assessed 2026-11-15)
 
-**D4 answered 2026-11-15: self-hosted, on a Bluehost VPS** (1 core, 2 GB RAM, 50 GB NVMe, IP 129.121.173.84) that came
+**D4, second answer 2026-11-15 (late evening): a hosted n8n, provider to be chosen by the owner. Bluehost is not
+reliable and is not to be used:** it cancelled the owner's payment and account after two outages the same day.
+n8n stays the tool. The paragraph below is history.
+
+~~D4 answered 2026-11-15: self-hosted, on a Bluehost VPS~~ (1 core, 2 GB RAM, 50 GB NVMe, IP 129.121.162.175) that came
 with n8n preinstalled behind Traefik. The step-by-step guide is **`n8n-server-setup.md`**; it supersedes the generic
 plan below where they differ (no Postgres or Caddy: Bluehost's n8n + Traefik stay, with HTTPS added).
 

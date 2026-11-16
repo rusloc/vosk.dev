@@ -40,7 +40,7 @@ _Amended 2026-10-20: the lead engine's `public` tables are gone; `qbo` is the se
 | `marketing_demo` _(loaded 2026-11-05)_ | **site report data** — the ACME Marketing custom JS report | synthetic SaaS paid-acquisition data; schema SQL in `data/marketing/sql/`, loader `scripts/marketing-load.ts`, read by `/api/marketing/*` as columns (`docs/marketing/README.md`) | `marketing_loader` (load, from the owner's machine) and `marketing_reader` (the site's server routes) |
 | `pnl_demo` _(loaded 2026-11-09)_ | **site report data** — the management P&L custom JS report | synthetic two-company P&L (334,700 + 88,012 fact rows, ops, the manifest's lookups); schema SQL in `data/pnl/sql/`, loader `scripts/pnl-load.ts`, read by `/api/pnl/*` as JSON columns in chunks of one version × 12 months (`docs/pnl/README.md`, 11-09) | `pnl_loader` (load, from the owner's machine) and `pnl_reader` (the site's server routes) |
 | `trucks_demo` _(loaded 2026-11-09)_ | **site report data** — the ACME Trucks custom JS report | **real aggregated operating figures** under anonymised names (9,414 rows + manifest); schema SQL in `data/trucks/sql/`, loader `scripts/trucks-load.ts`, read by `/api/trucks/*` as columns (`docs/trucks/README.md`) | `trucks_loader` (load, from the owner's machine) and `trucks_reader` (the site's server routes) |
-| `ceo_digest_demo` _(schema + roles created 2026-11-16, tables pending the owner's review)_ | **n8n showcase data** — the CEO weekly KPI email | synthetic weekly sales, cash, working capital and pipeline of a fictional company; SQL in `data/ceo-digest/sql/` (`docs/ceo-digest/README.md`) | `ceo_digest_loader` (load, from the owner's machine) and `ceo_digest_reader` (held by n8n, not the site) |
+| `ceo_digest_demo` _(schema + roles created 2026-11-16, tables pending the owner's apply)_ | **site + n8n showcase data** — the Tidewell data chat with reports by email (11-16 evening; was the Monday KPI email) | synthetic SaaS SME (Tidewell): weekly MRR, marketing with clicks, cash, receivables, payables, plus customers and their invoices; SQL in `data/ceo-digest/sql/` 001–006, read through the `fn_*` functions of 006 (`docs/ceo-digest/chat-and-email.md`) | `ceo_digest_loader` (optional refill), `ceo_digest_reader` (the site's chat route, `CEO_DIGEST_DATABASE_URL`) and `ceo_digest_n8n` (the n8n email workflow's Postgres credential) |
 | `nordmark_demo` _(created 2026-11-15, load pending)_ | **site report data** — the Nordmark retail executive dashboard custom JS report | synthetic retail cubes (4,599 + 1,029 + 95 + 190 rows + manifest); schema SQL in `data/nordmark/sql/`, loader `scripts/nordmark-load.ts`, read by `/api/nordmark/*` as columns (`docs/nordmark/README.md`, 11-15) | `nordmark_loader` (load, from the owner's machine) and `nordmark_reader` (the site's server routes) |
 
 _Amended 2026-11-02: **the site is a shopfront for reports, and report data lives in this project.**_
@@ -120,6 +120,9 @@ and roles are plain Postgres, so a move is a connection-string change.
   component for the n8n workflow showcases: it draws a workflow's canvas through n8n's hosted preview service, from a
   sanitized copy of the JSON in `data/n8n/` (`scripts/n8n-export.ts`: no credentials, ids or private host). Loaded only
   when the popup opens (`components/n8n-workflow.tsx`). Our n8n server is never linked from the site.
+  _Amended 2026-11-16:_ the site's server may call **one** n8n webhook, server to server: the Tidewell chat's
+  `send_email_report` tool POSTs to `N8N_DIGEST_WEBHOOK_URL` with `N8N_DIGEST_WEBHOOK_SECRET` (both server-only, never
+  in client code or page copy). That is the only n8n URL the deployment holds.
 
 ## Structure — the site
 
@@ -213,7 +216,9 @@ git push
   Optional, server-only (11-06): `CHAT_LLM_API_KEY`, `CHAT_ENABLED` (`1` = the Ask AI button and route are on; read at
   build for the button), `CHAT_DAILY_CAP_USD` (default 0.5), `CHAT_IP_HASH_SALT`. Per-report readers, server-only:
   `MIRELO_DATABASE_URL`, `MARKETING_DATABASE_URL`, `PNL_DATABASE_URL`, `TRUCKS_DATABASE_URL` (11-09), `NORDMARK_DATABASE_URL` (11-15); a JS report whose reader URL is unset
-  shows no "Web report" button (`isJsReportLive`).
+  shows no "Web report" button (`isJsReportLive`). Tidewell data chat (11-16), server-only: `CEO_DIGEST_DATABASE_URL`,
+  `N8N_DIGEST_WEBHOOK_URL`, `N8N_DIGEST_WEBHOOK_SECRET` (`src/lib/ceo-digest/config.ts`); `/work/ceo-digest` stays hidden
+  until all three are set.
 
 ### Testing / verification
 - **Site**: run `pnpm typecheck && pnpm lint && pnpm build` before considering a change done. Manual /

@@ -1,0 +1,287 @@
+{
+  "about": "Tidewell (ceo_digest_demo): what each chat function returns for a few fixed calls, taken from a local load of data/ceo-digest/sql/002 to 006. The generator is deterministic, so a load in Supabase returns the same rows. Money and rates are numeric in Postgres: a driver hands them over as strings ('40822.99'); here they are JSON numbers with the same digits. Dates are YYYY-MM-DD.",
+  "data_as_of": "2026-11-15",
+  "kpi_signature": "c9d5a2d36a011ac84e733e36cd8ceb75",
+  "calls": [
+    {
+      "fn": "fn_meta",
+      "call": "select * from fn_meta()",
+      "rows": [
+        {"company":"Tidewell","currency":"EUR","data_from":"2024-01-01","data_as_of":"2026-11-15","weeks":150}
+      ]
+    },
+    {
+      "fn": "fn_marketing_by_channel",
+      "call": "select * from fn_marketing_by_channel(date '2026-10-01', date '2026-10-31')",
+      "rows": [
+        {"channel_code":"paid_search","channel_name":"Paid search","weeks":5,"spend_eur":40822.99,"impressions":277529,"clicks":12459,"ctr_pct":4.49,"cpc_eur":3.28,"mqls":581,"cost_per_mql_eur":70.26,"trials_started":322,"trials_converted":42,"trial_to_paid_pct":13.00,"new_customers":42,"cac_eur":971.98,"new_mrr_eur":4424.92},
+        {"channel_code":"paid_social","channel_name":"Paid social","weeks":5,"spend_eur":36071.07,"impressions":2492999,"clicks":26171,"ctr_pct":1.05,"cpc_eur":1.38,"mqls":627,"cost_per_mql_eur":57.53,"trials_started":237,"trials_converted":15,"trial_to_paid_pct":7.14,"new_customers":15,"cac_eur":2404.74,"new_mrr_eur":972.57},
+        {"channel_code":"content_seo","channel_name":"Content and SEO","weeks":5,"spend_eur":16907.34,"impressions":0,"clicks":0,"ctr_pct":null,"cpc_eur":null,"mqls":881,"cost_per_mql_eur":19.19,"trials_started":414,"trials_converted":48,"trial_to_paid_pct":11.74,"new_customers":48,"cac_eur":352.24,"new_mrr_eur":4931.29},
+        {"channel_code":"partners","channel_name":"Partners and referrals","weeks":5,"spend_eur":11438.66,"impressions":0,"clicks":0,"ctr_pct":null,"cpc_eur":null,"mqls":204,"cost_per_mql_eur":56.07,"trials_started":122,"trials_converted":23,"trial_to_paid_pct":17.83,"new_customers":23,"cac_eur":497.33,"new_mrr_eur":3152.15},
+        {"channel_code":"outbound","channel_name":"Outbound sales","weeks":5,"spend_eur":6594.51,"impressions":0,"clicks":0,"ctr_pct":null,"cpc_eur":null,"mqls":88,"cost_per_mql_eur":74.94,"trials_started":0,"trials_converted":0,"trial_to_paid_pct":null,"new_customers":14,"cac_eur":471.04,"new_mrr_eur":4446.89},
+        {"channel_code":"total","channel_name":"Total","weeks":5,"spend_eur":111834.57,"impressions":2770528,"clicks":38630,"ctr_pct":1.39,"cpc_eur":1.99,"mqls":2381,"cost_per_mql_eur":46.97,"trials_started":1095,"trials_converted":128,"trial_to_paid_pct":11.95,"new_customers":142,"cac_eur":787.57,"new_mrr_eur":17927.82}
+      ]
+    },
+    {
+      "fn": "fn_marketing_by_channel",
+      "call": "select * from fn_marketing_by_channel(date '2026-01-01', date '2026-11-15')",
+      "rows": [
+        {"channel_code":"paid_search","channel_name":"Paid search","weeks":46,"spend_eur":347604.34,"impressions":2570473,"clicks":107528,"ctr_pct":4.18,"cpc_eur":3.23,"mqls":4949,"cost_per_mql_eur":70.24,"trials_started":2708,"trials_converted":337,"trial_to_paid_pct":12.72,"new_customers":337,"cac_eur":1031.47,"new_mrr_eur":35242.19},
+        {"channel_code":"paid_social","channel_name":"Paid social","weeks":46,"spend_eur":225688.22,"impressions":17143500,"clicks":187022,"ctr_pct":1.09,"cpc_eur":1.21,"mqls":4359,"cost_per_mql_eur":51.78,"trials_started":1655,"trials_converted":113,"trial_to_paid_pct":7.10,"new_customers":113,"cac_eur":1997.24,"new_mrr_eur":7547.92},
+        {"channel_code":"content_seo","channel_name":"Content and SEO","weeks":46,"spend_eur":146432.52,"impressions":0,"clicks":0,"ctr_pct":null,"cpc_eur":null,"mqls":7158,"cost_per_mql_eur":20.46,"trials_started":3432,"trials_converted":372,"trial_to_paid_pct":11.10,"new_customers":372,"cac_eur":393.64,"new_mrr_eur":36952.35},
+        {"channel_code":"partners","channel_name":"Partners and referrals","weeks":46,"spend_eur":93443.65,"impressions":0,"clicks":0,"ctr_pct":null,"cpc_eur":null,"mqls":1738,"cost_per_mql_eur":53.77,"trials_started":1043,"trials_converted":200,"trial_to_paid_pct":19.61,"new_customers":200,"cac_eur":467.22,"new_mrr_eur":29536.26},
+        {"channel_code":"outbound","channel_name":"Outbound sales","weeks":46,"spend_eur":57328.83,"impressions":0,"clicks":0,"ctr_pct":null,"cpc_eur":null,"mqls":726,"cost_per_mql_eur":78.97,"trials_started":0,"trials_converted":0,"trial_to_paid_pct":null,"new_customers":93,"cac_eur":616.44,"new_mrr_eur":24943.91},
+        {"channel_code":"total","channel_name":"Total","weeks":46,"spend_eur":870497.56,"impressions":19713973,"clicks":294550,"ctr_pct":1.49,"cpc_eur":1.95,"mqls":18930,"cost_per_mql_eur":45.99,"trials_started":8838,"trials_converted":1022,"trial_to_paid_pct":11.87,"new_customers":1115,"cac_eur":780.72,"new_mrr_eur":134222.63}
+      ]
+    },
+    {
+      "fn": "fn_marketing_by_week",
+      "call": "select * from fn_marketing_by_week(date '2026-10-01', date '2026-10-31')",
+      "rows": [
+        {"week_start":"2026-09-28","week_label":"W40 2026","spend_eur":19269.04,"budget_eur":20067.95,"clicks":6692,"cpc_eur":1.90,"mqls":451,"mqls_target":481,"new_customers":28,"cac_eur":688.18},
+        {"week_start":"2026-10-05","week_label":"W41 2026","spend_eur":20105.41,"budget_eur":20130.77,"clicks":6380,"cpc_eur":2.06,"mqls":467,"mqls_target":447,"new_customers":31,"cac_eur":648.56},
+        {"week_start":"2026-10-12","week_label":"W42 2026","spend_eur":23928.02,"budget_eur":20193.80,"clicks":8047,"cpc_eur":2.07,"mqls":490,"mqls_target":449,"new_customers":28,"cac_eur":854.57},
+        {"week_start":"2026-10-19","week_label":"W43 2026","spend_eur":23734.06,"budget_eur":20257.03,"clicks":8536,"cpc_eur":2.01,"mqls":510,"mqls_target":450,"new_customers":29,"cac_eur":818.42},
+        {"week_start":"2026-10-26","week_label":"W44 2026","spend_eur":24798.04,"budget_eur":20320.47,"clicks":8975,"cpc_eur":1.93,"mqls":463,"mqls_target":452,"new_customers":26,"cac_eur":953.77}
+      ]
+    },
+    {
+      "fn": "fn_marketing_by_week",
+      "call": "select * from fn_marketing_by_week(date '2026-01-01', date '2026-11-15')",
+      "rows": [
+        {"week_start":"2025-12-29","week_label":"W01 2026","spend_eur":18426.07,"budget_eur":17771.73,"clicks":6670,"cpc_eur":1.84,"mqls":469,"mqls_target":467,"new_customers":16,"cac_eur":1151.63},
+        {"week_start":"2026-01-05","week_label":"W02 2026","spend_eur":17486.81,"budget_eur":17827.02,"clicks":5672,"cpc_eur":1.95,"mqls":419,"mqls_target":469,"new_customers":14,"cac_eur":1249.06},
+        {"week_start":"2026-01-12","week_label":"W03 2026","spend_eur":17919.90,"budget_eur":17882.50,"clicks":5952,"cpc_eur":1.96,"mqls":422,"mqls_target":470,"new_customers":28,"cac_eur":640.00},
+        {"week_start":"2026-01-19","week_label":"W04 2026","spend_eur":18080.73,"budget_eur":17938.16,"clicks":6293,"cpc_eur":1.80,"mqls":460,"mqls_target":472,"new_customers":25,"cac_eur":723.23},
+        {"week_start":"2026-01-26","week_label":"W05 2026","spend_eur":18052.26,"budget_eur":17994.00,"clicks":5587,"cpc_eur":2.03,"mqls":427,"mqls_target":474,"new_customers":28,"cac_eur":644.72},
+        {"week_start":"2026-02-02","week_label":"W06 2026","spend_eur":17921.51,"budget_eur":18050.02,"clicks":6045,"cpc_eur":1.86,"mqls":392,"mqls_target":428,"new_customers":29,"cac_eur":617.98},
+        {"week_start":"2026-02-09","week_label":"W07 2026","spend_eur":18119.70,"budget_eur":18106.22,"clicks":5558,"cpc_eur":2.08,"mqls":420,"mqls_target":429,"new_customers":26,"cac_eur":696.91},
+        {"week_start":"2026-02-16","week_label":"W08 2026","spend_eur":18900.37,"budget_eur":18162.61,"clicks":5633,"cpc_eur":2.17,"mqls":406,"mqls_target":431,"new_customers":22,"cac_eur":859.11},
+        {"week_start":"2026-02-23","week_label":"W09 2026","spend_eur":17645.03,"budget_eur":18219.18,"clicks":6066,"cpc_eur":1.88,"mqls":398,"mqls_target":432,"new_customers":28,"cac_eur":630.18},
+        {"week_start":"2026-03-02","week_label":"W10 2026","spend_eur":17845.99,"budget_eur":18275.94,"clicks":6667,"cpc_eur":1.76,"mqls":359,"mqls_target":402,"new_customers":23,"cac_eur":775.91},
+        {"week_start":"2026-03-09","week_label":"W11 2026","spend_eur":17872.23,"budget_eur":18332.88,"clicks":5762,"cpc_eur":2.03,"mqls":371,"mqls_target":403,"new_customers":24,"cac_eur":744.68},
+        {"week_start":"2026-03-16","week_label":"W12 2026","spend_eur":18368.81,"budget_eur":18390.01,"clicks":6135,"cpc_eur":1.91,"mqls":394,"mqls_target":404,"new_customers":21,"cac_eur":874.71},
+        {"week_start":"2026-03-23","week_label":"W13 2026","spend_eur":17113.04,"budget_eur":18447.33,"clicks":5570,"cpc_eur":1.92,"mqls":364,"mqls_target":406,"new_customers":22,"cac_eur":777.87},
+        {"week_start":"2026-03-30","week_label":"W14 2026","spend_eur":18515.41,"budget_eur":18504.84,"clicks":6131,"cpc_eur":1.98,"mqls":397,"mqls_target":407,"new_customers":21,"cac_eur":881.69},
+        {"week_start":"2026-04-06","week_label":"W15 2026","spend_eur":19167.17,"budget_eur":18562.53,"clicks":6169,"cpc_eur":2.11,"mqls":397,"mqls_target":409,"new_customers":22,"cac_eur":871.24},
+        {"week_start":"2026-04-13","week_label":"W16 2026","spend_eur":19086.67,"budget_eur":18620.41,"clicks":6614,"cpc_eur":1.91,"mqls":360,"mqls_target":410,"new_customers":25,"cac_eur":763.47},
+        {"week_start":"2026-04-20","week_label":"W17 2026","spend_eur":19481.80,"budget_eur":18678.48,"clicks":6374,"cpc_eur":2.03,"mqls":429,"mqls_target":411,"new_customers":25,"cac_eur":779.27},
+        {"week_start":"2026-04-27","week_label":"W18 2026","spend_eur":19429.35,"budget_eur":18736.74,"clicks":6952,"cpc_eur":1.81,"mqls":434,"mqls_target":413,"new_customers":23,"cac_eur":844.75},
+        {"week_start":"2026-05-04","week_label":"W19 2026","spend_eur":19296.16,"budget_eur":18795.20,"clicks":6830,"cpc_eur":1.81,"mqls":391,"mqls_target":414,"new_customers":23,"cac_eur":838.96},
+        {"week_start":"2026-05-11","week_label":"W20 2026","spend_eur":18948.60,"budget_eur":18853.84,"clicks":6382,"cpc_eur":1.89,"mqls":373,"mqls_target":416,"new_customers":27,"cac_eur":701.80},
+        {"week_start":"2026-05-18","week_label":"W21 2026","spend_eur":18614.93,"budget_eur":18912.68,"clicks":6560,"cpc_eur":1.90,"mqls":410,"mqls_target":417,"new_customers":22,"cac_eur":846.13},
+        {"week_start":"2026-05-25","week_label":"W22 2026","spend_eur":18615.79,"budget_eur":18971.70,"clicks":6240,"cpc_eur":1.94,"mqls":408,"mqls_target":419,"new_customers":23,"cac_eur":809.38},
+        {"week_start":"2026-06-01","week_label":"W23 2026","spend_eur":18054.33,"budget_eur":19030.93,"clicks":6145,"cpc_eur":1.81,"mqls":403,"mqls_target":420,"new_customers":22,"cac_eur":820.65},
+        {"week_start":"2026-06-08","week_label":"W24 2026","spend_eur":18563.99,"budget_eur":19090.34,"clicks":6477,"cpc_eur":1.84,"mqls":429,"mqls_target":422,"new_customers":27,"cac_eur":687.56},
+        {"week_start":"2026-06-15","week_label":"W25 2026","spend_eur":19187.90,"budget_eur":19149.96,"clicks":6087,"cpc_eur":2.09,"mqls":410,"mqls_target":423,"new_customers":22,"cac_eur":872.18},
+        {"week_start":"2026-06-22","week_label":"W26 2026","spend_eur":18292.44,"budget_eur":19209.76,"clicks":6081,"cpc_eur":1.98,"mqls":429,"mqls_target":424,"new_customers":28,"cac_eur":653.30},
+        {"week_start":"2026-06-29","week_label":"W27 2026","spend_eur":16379.87,"budget_eur":16379.30,"clicks":6348,"cpc_eur":1.69,"mqls":325,"mqls_target":341,"new_customers":25,"cac_eur":655.19},
+        {"week_start":"2026-07-06","week_label":"W28 2026","spend_eur":16267.33,"budget_eur":16430.47,"clicks":5273,"cpc_eur":2.04,"mqls":337,"mqls_target":342,"new_customers":24,"cac_eur":677.81},
+        {"week_start":"2026-07-13","week_label":"W29 2026","spend_eur":15708.87,"budget_eur":16481.81,"clicks":4990,"cpc_eur":2.00,"mqls":326,"mqls_target":343,"new_customers":22,"cac_eur":714.04},
+        {"week_start":"2026-07-20","week_label":"W30 2026","spend_eur":16677.04,"budget_eur":16533.31,"clicks":5736,"cpc_eur":1.93,"mqls":337,"mqls_target":344,"new_customers":21,"cac_eur":794.14},
+        {"week_start":"2026-07-27","week_label":"W31 2026","spend_eur":16980.24,"budget_eur":16584.99,"clicks":5335,"cpc_eur":2.11,"mqls":349,"mqls_target":346,"new_customers":17,"cac_eur":998.84},
+        {"week_start":"2026-08-03","week_label":"W32 2026","spend_eur":16659.02,"budget_eur":16636.83,"clicks":5690,"cpc_eur":1.92,"mqls":343,"mqls_target":347,"new_customers":21,"cac_eur":793.29},
+        {"week_start":"2026-08-10","week_label":"W33 2026","spend_eur":16814.66,"budget_eur":16688.85,"clicks":5434,"cpc_eur":2.01,"mqls":330,"mqls_target":348,"new_customers":20,"cac_eur":840.73},
+        {"week_start":"2026-08-17","week_label":"W34 2026","spend_eur":15798.39,"budget_eur":16741.03,"clicks":6109,"cpc_eur":1.70,"mqls":336,"mqls_target":349,"new_customers":25,"cac_eur":631.94},
+        {"week_start":"2026-08-24","week_label":"W35 2026","spend_eur":20856.98,"budget_eur":19756.93,"clicks":7394,"cpc_eur":1.85,"mqls":441,"mqls_target":473,"new_customers":21,"cac_eur":993.19},
+        {"week_start":"2026-08-31","week_label":"W36 2026","spend_eur":18861.21,"budget_eur":19818.73,"clicks":6669,"cpc_eur":1.87,"mqls":481,"mqls_target":475,"new_customers":19,"cac_eur":992.70},
+        {"week_start":"2026-09-07","week_label":"W37 2026","spend_eur":20140.40,"budget_eur":19880.73,"clicks":6890,"cpc_eur":1.96,"mqls":499,"mqls_target":476,"new_customers":27,"cac_eur":745.94},
+        {"week_start":"2026-09-14","week_label":"W38 2026","spend_eur":20905.98,"budget_eur":19942.93,"clicks":6800,"cpc_eur":2.01,"mqls":454,"mqls_target":478,"new_customers":32,"cac_eur":653.31},
+        {"week_start":"2026-09-21","week_label":"W39 2026","spend_eur":19954.14,"budget_eur":20005.34,"clicks":6731,"cpc_eur":1.97,"mqls":468,"mqls_target":480,"new_customers":32,"cac_eur":623.57},
+        {"week_start":"2026-09-28","week_label":"W40 2026","spend_eur":19269.04,"budget_eur":20067.95,"clicks":6692,"cpc_eur":1.90,"mqls":451,"mqls_target":481,"new_customers":28,"cac_eur":688.18},
+        {"week_start":"2026-10-05","week_label":"W41 2026","spend_eur":20105.41,"budget_eur":20130.77,"clicks":6380,"cpc_eur":2.06,"mqls":467,"mqls_target":447,"new_customers":31,"cac_eur":648.56},
+        {"week_start":"2026-10-12","week_label":"W42 2026","spend_eur":23928.02,"budget_eur":20193.80,"clicks":8047,"cpc_eur":2.07,"mqls":490,"mqls_target":449,"new_customers":28,"cac_eur":854.57},
+        {"week_start":"2026-10-19","week_label":"W43 2026","spend_eur":23734.06,"budget_eur":20257.03,"clicks":8536,"cpc_eur":2.01,"mqls":510,"mqls_target":450,"new_customers":29,"cac_eur":818.42},
+        {"week_start":"2026-10-26","week_label":"W44 2026","spend_eur":24798.04,"budget_eur":20320.47,"clicks":8975,"cpc_eur":1.93,"mqls":463,"mqls_target":452,"new_customers":26,"cac_eur":953.77},
+        {"week_start":"2026-11-02","week_label":"W45 2026","spend_eur":23006.88,"budget_eur":20384.12,"clicks":7894,"cpc_eur":2.09,"mqls":453,"mqls_target":454,"new_customers":28,"cac_eur":821.67},
+        {"week_start":"2026-11-09","week_label":"W46 2026","spend_eur":24644.99,"budget_eur":20447.98,"clicks":7975,"cpc_eur":2.15,"mqls":499,"mqls_target":455,"new_customers":23,"cac_eur":1071.52}
+      ]
+    },
+    {
+      "fn": "fn_cash_by_category",
+      "call": "select * from fn_cash_by_category(date '2026-10-01', date '2026-10-31')",
+      "rows": [
+        {"category_code":"card_collections","category_name":"Card collections (monthly plans)","flow":"operating","direction":"in","amount_eur":208483.46,"share_pct":40.78,"ly_amount_eur":169649.84},
+        {"category_code":"invoice_collections","category_name":"Invoice collections (annual plans)","flow":"operating","direction":"in","amount_eur":302696.36,"share_pct":59.22,"ly_amount_eur":232997.01},
+        {"category_code":"payroll","category_name":"Payroll and payroll taxes","flow":"operating","direction":"out","amount_eur":-455803.14,"share_pct":64.58,"ly_amount_eur":-374652.08},
+        {"category_code":"paid_ads","category_name":"Paid ads (search and social)","flow":"operating","direction":"out","amount_eur":-76894.06,"share_pct":10.90,"ly_amount_eur":-56653.65},
+        {"category_code":"marketing_suppliers","category_name":"Content, partner commissions, sales tools","flow":"operating","direction":"out","amount_eur":-33584.97,"share_pct":4.76,"ly_amount_eur":-29570.04},
+        {"category_code":"hosting_software","category_name":"Hosting and software","flow":"operating","direction":"out","amount_eur":-63081.57,"share_pct":8.94,"ly_amount_eur":-48631.72},
+        {"category_code":"rent_office","category_name":"Rent and office","flow":"operating","direction":"out","amount_eur":-45000.00,"share_pct":6.38,"ly_amount_eur":-45000.00},
+        {"category_code":"vat","category_name":"VAT (quarterly)","flow":"operating","direction":"out","amount_eur":0.00,"share_pct":0.00,"ly_amount_eur":0.00},
+        {"category_code":"other_opex","category_name":"Other operating costs","flow":"operating","direction":"out","amount_eur":-27609.72,"share_pct":3.91,"ly_amount_eur":-29501.87},
+        {"category_code":"capex","category_name":"Equipment and fit-out","flow":"investing","direction":"out","amount_eur":-3800.00,"share_pct":0.54,"ly_amount_eur":-6100.00},
+        {"category_code":"equity","category_name":"Equity raised","flow":"financing","direction":"in","amount_eur":0.00,"share_pct":0.00,"ly_amount_eur":0.00},
+        {"category_code":"total_in","category_name":"Total in","flow":null,"direction":"in","amount_eur":511179.82,"share_pct":100.00,"ly_amount_eur":402646.85},
+        {"category_code":"total_out","category_name":"Total out","flow":null,"direction":"out","amount_eur":-705773.46,"share_pct":100.00,"ly_amount_eur":-590109.36},
+        {"category_code":"net","category_name":"Net cash flow","flow":null,"direction":null,"amount_eur":-194593.64,"share_pct":null,"ly_amount_eur":-187462.51}
+      ]
+    },
+    {
+      "fn": "fn_cash_by_category",
+      "call": "select * from fn_cash_by_category(date '2026-01-01', date '2026-11-15')",
+      "rows": [
+        {"category_code":"card_collections","category_name":"Card collections (monthly plans)","flow":"operating","direction":"in","amount_eur":1786428.57,"share_pct":36.26,"ly_amount_eur":1433447.19},
+        {"category_code":"invoice_collections","category_name":"Invoice collections (annual plans)","flow":"operating","direction":"in","amount_eur":3140024.36,"share_pct":63.74,"ly_amount_eur":2353238.63},
+        {"category_code":"payroll","category_name":"Payroll and payroll taxes","flow":"operating","direction":"out","amount_eur":-4311571.52,"share_pct":68.56,"ly_amount_eur":-3213551.85},
+        {"category_code":"paid_ads","category_name":"Paid ads (search and social)","flow":"operating","direction":"out","amount_eur":-573292.56,"share_pct":9.12,"ly_amount_eur":-468350.72},
+        {"category_code":"marketing_suppliers","category_name":"Content, partner commissions, sales tools","flow":"operating","direction":"out","amount_eur":-289572.15,"share_pct":4.60,"ly_amount_eur":-249575.17},
+        {"category_code":"hosting_software","category_name":"Hosting and software","flow":"operating","direction":"out","amount_eur":-411777.52,"share_pct":6.55,"ly_amount_eur":-311536.70},
+        {"category_code":"rent_office","category_name":"Rent and office","flow":"operating","direction":"out","amount_eur":-180000.00,"share_pct":2.86,"ly_amount_eur":-126000.00},
+        {"category_code":"vat","category_name":"VAT (quarterly)","flow":"operating","direction":"out","amount_eur":-243278.04,"share_pct":3.87,"ly_amount_eur":-186755.90},
+        {"category_code":"other_opex","category_name":"Other operating costs","flow":"operating","direction":"out","amount_eur":-251161.30,"share_pct":3.99,"ly_amount_eur":-241383.23},
+        {"category_code":"capex","category_name":"Equipment and fit-out","flow":"investing","direction":"out","amount_eur":-28000.00,"share_pct":0.45,"ly_amount_eur":-46400.00},
+        {"category_code":"equity","category_name":"Equity raised","flow":"financing","direction":"in","amount_eur":0.00,"share_pct":0.00,"ly_amount_eur":5000000.00},
+        {"category_code":"total_in","category_name":"Total in","flow":null,"direction":"in","amount_eur":4926452.93,"share_pct":100.00,"ly_amount_eur":8786685.82},
+        {"category_code":"total_out","category_name":"Total out","flow":null,"direction":"out","amount_eur":-6288653.09,"share_pct":100.00,"ly_amount_eur":-4843553.57},
+        {"category_code":"net","category_name":"Net cash flow","flow":null,"direction":null,"amount_eur":-1362200.16,"share_pct":null,"ly_amount_eur":3943132.25}
+      ]
+    },
+    {
+      "fn": "fn_cash_by_week",
+      "call": "select * from fn_cash_by_week(date '2026-10-01', date '2026-10-31')",
+      "rows": [
+        {"week_start":"2026-09-28","week_label":"W40 2026","cash_in_eur":97797.70,"cash_out_eur":97572.05,"net_eur":225.65,"closing_cash_eur":3932541.84,"runway_months":19.4,"receivables_eur":375187.06,"overdue_receivables_eur":60564.72,"payables_due_14d_eur":31614.27},
+        {"week_start":"2026-10-05","week_label":"W41 2026","cash_in_eur":101665.51,"cash_out_eur":31057.02,"net_eur":70608.49,"closing_cash_eur":4003150.33,"runway_months":19.9,"receivables_eur":384866.72,"overdue_receivables_eur":59610.35,"payables_due_14d_eur":33114.83},
+        {"week_start":"2026-10-12","week_label":"W42 2026","cash_in_eur":102762.85,"cash_out_eur":33788.81,"net_eur":68974.04,"closing_cash_eur":4072124.37,"runway_months":20.2,"receivables_eur":397633.49,"overdue_receivables_eur":61594.26,"payables_due_14d_eur":56690.91},
+        {"week_start":"2026-10-19","week_label":"W43 2026","cash_in_eur":103228.54,"cash_out_eur":489394.09,"net_eur":-386165.55,"closing_cash_eur":3685958.82,"runway_months":17.7,"receivables_eur":397177.91,"overdue_receivables_eur":116714.19,"payables_due_14d_eur":58040.53},
+        {"week_start":"2026-10-26","week_label":"W44 2026","cash_in_eur":105725.22,"cash_out_eur":53961.49,"net_eur":51763.73,"closing_cash_eur":3737722.55,"runway_months":17.9,"receivables_eur":399373.68,"overdue_receivables_eur":117141.87,"payables_due_14d_eur":34780.05}
+      ]
+    },
+    {
+      "fn": "fn_cash_by_week",
+      "call": "select * from fn_cash_by_week(date '2026-01-01', date '2026-11-15')",
+      "rows": [
+        {"week_start":"2025-12-29","week_label":"W01 2026","cash_in_eur":85421.33,"cash_out_eur":90329.28,"net_eur":-4907.95,"closing_cash_eur":5181505.93,"runway_months":21.6,"receivables_eur":408261.41,"overdue_receivables_eur":51815.40,"payables_due_14d_eur":30983.87},
+        {"week_start":"2026-01-05","week_label":"W02 2026","cash_in_eur":84997.32,"cash_out_eur":29816.77,"net_eur":55180.55,"closing_cash_eur":5236686.48,"runway_months":21.9,"receivables_eur":552000.82,"overdue_receivables_eur":52335.65,"payables_due_14d_eur":26698.73},
+        {"week_start":"2026-01-12","week_label":"W03 2026","cash_in_eur":85897.32,"cash_out_eur":26882.94,"net_eur":59014.38,"closing_cash_eur":5295700.86,"runway_months":22.3,"receivables_eur":701390.43,"overdue_receivables_eur":53595.06,"payables_due_14d_eur":47324.19},
+        {"week_start":"2026-01-19","week_label":"W04 2026","cash_in_eur":122840.96,"cash_out_eur":430974.89,"net_eur":-308133.93,"closing_cash_eur":4987566.93,"runway_months":21.3,"receivables_eur":821728.54,"overdue_receivables_eur":52529.24,"payables_due_14d_eur":51112.42},
+        {"week_start":"2026-01-26","week_label":"W05 2026","cash_in_eur":169110.17,"cash_out_eur":42961.79,"net_eur":126148.38,"closing_cash_eur":5113715.31,"runway_months":24.9,"receivables_eur":740694.37,"overdue_receivables_eur":54593.08,"payables_due_14d_eur":31009.31},
+        {"week_start":"2026-02-02","week_label":"W06 2026","cash_in_eur":192310.07,"cash_out_eur":33369.29,"net_eur":158940.78,"closing_cash_eur":5272656.09,"runway_months":31.4,"receivables_eur":644208.49,"overdue_receivables_eur":92545.98,"payables_due_14d_eur":30562.03},
+        {"week_start":"2026-02-09","week_label":"W07 2026","cash_in_eur":207913.21,"cash_out_eur":86996.42,"net_eur":120916.79,"closing_cash_eur":5393572.88,"runway_months":41.3,"receivables_eur":532425.49,"overdue_receivables_eur":119824.68,"payables_due_14d_eur":32912.79},
+        {"week_start":"2026-02-16","week_label":"W08 2026","cash_in_eur":180146.88,"cash_out_eur":27855.40,"net_eur":152291.48,"closing_cash_eur":5545864.36,"runway_months":56.3,"receivables_eur":441083.73,"overdue_receivables_eur":141422.63,"payables_due_14d_eur":52319.69},
+        {"week_start":"2026-02-23","week_label":"W09 2026","cash_in_eur":139584.03,"cash_out_eur":443737.54,"net_eur":-304153.51,"closing_cash_eur":5241710.85,"runway_months":58.7,"receivables_eur":388077.96,"overdue_receivables_eur":157674.89,"payables_due_14d_eur":49392.59},
+        {"week_start":"2026-03-02","week_label":"W10 2026","cash_in_eur":122230.66,"cash_out_eur":45629.32,"net_eur":76601.34,"closing_cash_eur":5318312.19,"runway_months":69.6,"receivables_eur":351568.61,"overdue_receivables_eur":128877.84,"payables_due_14d_eur":27768.32},
+        {"week_start":"2026-03-09","week_label":"W11 2026","cash_in_eur":112125.25,"cash_out_eur":28537.61,"net_eur":83587.64,"closing_cash_eur":5401899.83,"runway_months":81.8,"receivables_eur":333615.99,"overdue_receivables_eur":111760.22,"payables_due_14d_eur":28503.93},
+        {"week_start":"2026-03-16","week_label":"W12 2026","cash_in_eur":104754.03,"cash_out_eur":25973.28,"net_eur":78780.75,"closing_cash_eur":5480680.58,"runway_months":93.8,"receivables_eur":323846.56,"overdue_receivables_eur":99077.38,"payables_due_14d_eur":51496.09},
+        {"week_start":"2026-03-23","week_label":"W13 2026","cash_in_eur":97557.58,"cash_out_eur":442243.62,"net_eur":-344686.04,"closing_cash_eur":5135994.54,"runway_months":305.6,"receivables_eur":316031.30,"overdue_receivables_eur":89460.78,"payables_due_14d_eur":51454.56},
+        {"week_start":"2026-03-30","week_label":"W14 2026","cash_in_eur":97245.98,"cash_out_eur":94185.74,"net_eur":3060.24,"closing_cash_eur":5139054.78,"runway_months":363.2,"receivables_eur":309527.98,"overdue_receivables_eur":80933.79,"payables_due_14d_eur":30505.58},
+        {"week_start":"2026-04-06","week_label":"W15 2026","cash_in_eur":98113.63,"cash_out_eur":30542.50,"net_eur":67571.13,"closing_cash_eur":5206625.91,"runway_months":519.6,"receivables_eur":307420.33,"overdue_receivables_eur":74130.46,"payables_due_14d_eur":32234.06},
+        {"week_start":"2026-04-13","week_label":"W16 2026","cash_in_eur":96226.58,"cash_out_eur":28713.86,"net_eur":67512.72,"closing_cash_eur":5274138.63,"runway_months":733.8,"receivables_eur":299624.79,"overdue_receivables_eur":71544.50,"payables_due_14d_eur":53047.63},
+        {"week_start":"2026-04-20","week_label":"W17 2026","cash_in_eur":93833.03,"cash_out_eur":454746.69,"net_eur":-360913.66,"closing_cash_eur":4913224.97,"runway_months":198.3,"receivables_eur":294674.34,"overdue_receivables_eur":70436.19,"payables_due_14d_eur":52837.61},
+        {"week_start":"2026-04-27","week_label":"W18 2026","cash_in_eur":95163.69,"cash_out_eur":45960.72,"net_eur":49202.97,"closing_cash_eur":4962427.94,"runway_months":98.4,"receivables_eur":297584.05,"overdue_receivables_eur":67457.54,"payables_due_14d_eur":33076.77},
+        {"week_start":"2026-05-04","week_label":"W19 2026","cash_in_eur":94577.74,"cash_out_eur":32756.37,"net_eur":61821.37,"closing_cash_eur":5024249.31,"runway_months":60.7,"receivables_eur":292097.77,"overdue_receivables_eur":65363.76,"payables_due_14d_eur":31082.56},
+        {"week_start":"2026-05-11","week_label":"W20 2026","cash_in_eur":92349.28,"cash_out_eur":98521.98,"net_eur":-6172.70,"closing_cash_eur":5018076.61,"runway_months":40.1,"receivables_eur":295334.61,"overdue_receivables_eur":65443.46,"payables_due_14d_eur":30363.72},
+        {"week_start":"2026-05-18","week_label":"W21 2026","cash_in_eur":93320.09,"cash_out_eur":27251.35,"net_eur":66068.74,"closing_cash_eur":5084145.35,"runway_months":33.0,"receivables_eur":300229.41,"overdue_receivables_eur":63890.72,"payables_due_14d_eur":52143.96},
+        {"week_start":"2026-05-25","week_label":"W22 2026","cash_in_eur":93287.60,"cash_out_eur":454569.63,"net_eur":-361282.03,"closing_cash_eur":4722863.32,"runway_months":27.3,"receivables_eur":305388.31,"overdue_receivables_eur":63177.50,"payables_due_14d_eur":53537.64},
+        {"week_start":"2026-06-01","week_label":"W23 2026","cash_in_eur":93211.44,"cash_out_eur":48066.66,"net_eur":45144.78,"closing_cash_eur":4768008.10,"runway_months":26.0,"receivables_eur":307391.07,"overdue_receivables_eur":64971.02,"payables_due_14d_eur":32740.35},
+        {"week_start":"2026-06-08","week_label":"W24 2026","cash_in_eur":95010.12,"cash_out_eur":31397.90,"net_eur":63612.22,"closing_cash_eur":4831620.32,"runway_months":25.4,"receivables_eur":307918.27,"overdue_receivables_eur":63913.92,"payables_due_14d_eur":31652.34},
+        {"week_start":"2026-06-15","week_label":"W25 2026","cash_in_eur":96657.03,"cash_out_eur":29051.99,"net_eur":67605.04,"closing_cash_eur":4899225.36,"runway_months":25.3,"receivables_eur":309972.56,"overdue_receivables_eur":64978.85,"payables_due_14d_eur":51384.46},
+        {"week_start":"2026-06-22","week_label":"W26 2026","cash_in_eur":96926.36,"cash_out_eur":463560.09,"net_eur":-366633.73,"closing_cash_eur":4532591.63,"runway_months":22.5,"receivables_eur":310104.46,"overdue_receivables_eur":66130.06,"payables_due_14d_eur":51374.97},
+        {"week_start":"2026-06-29","week_label":"W27 2026","cash_in_eur":96334.94,"cash_out_eur":89573.74,"net_eur":6761.20,"closing_cash_eur":4539352.83,"runway_months":22.7,"receivables_eur":307112.29,"overdue_receivables_eur":65813.63,"payables_due_14d_eur":34378.58},
+        {"week_start":"2026-07-06","week_label":"W28 2026","cash_in_eur":97198.60,"cash_out_eur":29209.92,"net_eur":67988.68,"closing_cash_eur":4607341.51,"runway_months":23.1,"receivables_eur":305281.27,"overdue_receivables_eur":64214.53,"payables_due_14d_eur":32799.99},
+        {"week_start":"2026-07-13","week_label":"W29 2026","cash_in_eur":97875.28,"cash_out_eur":28445.76,"net_eur":69429.52,"closing_cash_eur":4676771.03,"runway_months":23.5,"receivables_eur":306820.29,"overdue_receivables_eur":62671.47,"payables_due_14d_eur":50266.60},
+        {"week_start":"2026-07-20","week_label":"W30 2026","cash_in_eur":97129.43,"cash_out_eur":462940.80,"net_eur":-365811.37,"closing_cash_eur":4310959.66,"runway_months":21.5,"receivables_eur":302670.16,"overdue_receivables_eur":61862.42,"payables_due_14d_eur":49090.59},
+        {"week_start":"2026-07-27","week_label":"W31 2026","cash_in_eur":96692.01,"cash_out_eur":43899.77,"net_eur":52792.24,"closing_cash_eur":4363751.90,"runway_months":21.9,"receivables_eur":301363.85,"overdue_receivables_eur":62033.18,"payables_due_14d_eur":29585.08},
+        {"week_start":"2026-08-03","week_label":"W32 2026","cash_in_eur":97934.54,"cash_out_eur":30829.99,"net_eur":67104.55,"closing_cash_eur":4430856.45,"runway_months":22.4,"receivables_eur":289377.65,"overdue_receivables_eur":61333.75,"payables_due_14d_eur":29786.23},
+        {"week_start":"2026-08-10","week_label":"W33 2026","cash_in_eur":97896.46,"cash_out_eur":83315.33,"net_eur":14581.13,"closing_cash_eur":4445437.58,"runway_months":23.3,"receivables_eur":291129.31,"overdue_receivables_eur":61296.11,"payables_due_14d_eur":28842.62},
+        {"week_start":"2026-08-17","week_label":"W34 2026","cash_in_eur":96621.08,"cash_out_eur":24334.22,"net_eur":72286.86,"closing_cash_eur":4517724.44,"runway_months":23.9,"receivables_eur":292590.31,"overdue_receivables_eur":62425.74,"payables_due_14d_eur":52826.44},
+        {"week_start":"2026-08-24","week_label":"W35 2026","cash_in_eur":94026.01,"cash_out_eur":474262.44,"net_eur":-380236.43,"closing_cash_eur":4137488.01,"runway_months":21.2,"receivables_eur":294581.54,"overdue_receivables_eur":61558.40,"payables_due_14d_eur":55320.07},
+        {"week_start":"2026-08-31","week_label":"W36 2026","cash_in_eur":94328.87,"cash_out_eur":48146.51,"net_eur":46182.36,"closing_cash_eur":4183670.37,"runway_months":21.5,"receivables_eur":293986.71,"overdue_receivables_eur":61160.64,"payables_due_14d_eur":35367.37},
+        {"week_start":"2026-09-07","week_label":"W37 2026","cash_in_eur":96968.26,"cash_out_eur":33511.48,"net_eur":63456.78,"closing_cash_eur":4247127.15,"runway_months":21.8,"receivables_eur":299835.13,"overdue_receivables_eur":58203.88,"payables_due_14d_eur":33314.86},
+        {"week_start":"2026-09-14","week_label":"W38 2026","cash_in_eur":97049.36,"cash_out_eur":31953.85,"net_eur":65095.51,"closing_cash_eur":4312222.66,"runway_months":22.0,"receivables_eur":361774.49,"overdue_receivables_eur":59894.10,"payables_due_14d_eur":55283.70},
+        {"week_start":"2026-09-21","week_label":"W39 2026","cash_in_eur":96328.65,"cash_out_eur":476235.12,"net_eur":-379906.47,"closing_cash_eur":3932316.19,"runway_months":19.7,"receivables_eur":367470.82,"overdue_receivables_eur":60566.33,"payables_due_14d_eur":54585.87},
+        {"week_start":"2026-09-28","week_label":"W40 2026","cash_in_eur":97797.70,"cash_out_eur":97572.05,"net_eur":225.65,"closing_cash_eur":3932541.84,"runway_months":19.4,"receivables_eur":375187.06,"overdue_receivables_eur":60564.72,"payables_due_14d_eur":31614.27},
+        {"week_start":"2026-10-05","week_label":"W41 2026","cash_in_eur":101665.51,"cash_out_eur":31057.02,"net_eur":70608.49,"closing_cash_eur":4003150.33,"runway_months":19.9,"receivables_eur":384866.72,"overdue_receivables_eur":59610.35,"payables_due_14d_eur":33114.83},
+        {"week_start":"2026-10-12","week_label":"W42 2026","cash_in_eur":102762.85,"cash_out_eur":33788.81,"net_eur":68974.04,"closing_cash_eur":4072124.37,"runway_months":20.2,"receivables_eur":397633.49,"overdue_receivables_eur":61594.26,"payables_due_14d_eur":56690.91},
+        {"week_start":"2026-10-19","week_label":"W43 2026","cash_in_eur":103228.54,"cash_out_eur":489394.09,"net_eur":-386165.55,"closing_cash_eur":3685958.82,"runway_months":17.7,"receivables_eur":397177.91,"overdue_receivables_eur":116714.19,"payables_due_14d_eur":58040.53},
+        {"week_start":"2026-10-26","week_label":"W44 2026","cash_in_eur":105725.22,"cash_out_eur":53961.49,"net_eur":51763.73,"closing_cash_eur":3737722.55,"runway_months":17.9,"receivables_eur":399373.68,"overdue_receivables_eur":117141.87,"payables_due_14d_eur":34780.05},
+        {"week_start":"2026-11-02","week_label":"W45 2026","cash_in_eur":109373.09,"cash_out_eur":38432.41,"net_eur":70940.68,"closing_cash_eur":3808663.23,"runway_months":18.4,"receivables_eur":398190.64,"overdue_receivables_eur":118206.62,"payables_due_14d_eur":36107.12},
+        {"week_start":"2026-11-09","week_label":"W46 2026","cash_in_eur":108705.15,"cash_out_eur":93154.66,"net_eur":15550.49,"closing_cash_eur":3824213.72,"runway_months":18.5,"receivables_eur":397581.43,"overdue_receivables_eur":120506.93,"payables_due_14d_eur":134690.67}
+      ]
+    },
+    {
+      "fn": "fn_customers_by_plan",
+      "call": "select * from fn_customers_by_plan(date '2026-11-15')",
+      "rows": [
+        {"plan_code":"starter","plan_name":"Starter","active_customers":894,"new_last_4w":38,"churned_last_4w":55,"avg_tenure_months":23.9,"invoices_last_12m":10788,"billed_last_12m_eur":426217.50,"overdue_eur":0.00},
+        {"plan_code":"pro","plan_name":"Pro","active_customers":1418,"new_last_4w":48,"churned_last_4w":30,"avg_tenure_months":25.1,"invoices_last_12m":15769,"billed_last_12m_eur":1719440.60,"overdue_eur":0.00},
+        {"plan_code":"clinic","plan_name":"Clinic","active_customers":719,"new_last_4w":20,"churned_last_4w":7,"avg_tenure_months":30.2,"invoices_last_12m":759,"billed_last_12m_eur":3129290.00,"overdue_eur":117930.00},
+        {"plan_code":"total","plan_name":"Total","active_customers":3031,"new_last_4w":106,"churned_last_4w":92,"avg_tenure_months":26.0,"invoices_last_12m":27316,"billed_last_12m_eur":5274948.10,"overdue_eur":117930.00}
+      ]
+    },
+    {
+      "fn": "fn_customer_search",
+      "call": "select * from fn_customer_search('physio', 5)",
+      "rows": [
+        {"customer_id":1075,"name":"Zwaluw Physio Group","practice_type":"Physiotherapy","city":"Utrecht","country":"Netherlands","plan_name":"Clinic","channel_name":"Outbound sales","signup_date":"2022-09-14","churn_date":null,"status":"active","tenure_months":50.0,"invoices":5,"billed_to_date_eur":244400.00,"last_invoice_date":"2026-09-14","overdue_eur":52800.00},
+        {"customer_id":93,"name":"Kestrel Marsh Physio Clinic","practice_type":"Physiotherapy","city":"Berlin","country":"Germany","plan_name":"Clinic","channel_name":"Partners and referrals","signup_date":"2019-07-17","churn_date":null,"status":"active","tenure_months":88.0,"invoices":8,"billed_to_date_eur":42140.00,"last_invoice_date":"2026-07-17","overdue_eur":0.00},
+        {"customer_id":273,"name":"Myrtle Walk Physio Clinic","practice_type":"Physiotherapy","city":"Turin","country":"Italy","plan_name":"Clinic","channel_name":"Paid search","signup_date":"2020-06-06","churn_date":null,"status":"active","tenure_months":77.3,"invoices":7,"billed_to_date_eur":40990.00,"last_invoice_date":"2026-06-06","overdue_eur":0.00},
+        {"customer_id":26,"name":"Juniper Quay Rehab","practice_type":"Physiotherapy","city":"Toulouse","country":"France","plan_name":"Clinic","channel_name":"Outbound sales","signup_date":"2019-01-23","churn_date":null,"status":"active","tenure_months":93.7,"invoices":8,"billed_to_date_eur":40030.00,"last_invoice_date":"2026-01-23","overdue_eur":0.00},
+        {"customer_id":23,"name":"Briar Brook Rehab","practice_type":"Physiotherapy","city":"Valencia","country":"Spain","plan_name":"Clinic","channel_name":"Outbound sales","signup_date":"2019-01-21","churn_date":null,"status":"active","tenure_months":93.8,"invoices":8,"billed_to_date_eur":37720.00,"last_invoice_date":"2026-01-21","overdue_eur":0.00}
+      ]
+    },
+    {
+      "fn": "fn_customer_search",
+      "call": "select * from fn_customer_search('zwaluw', 5)",
+      "rows": [
+        {"customer_id":1075,"name":"Zwaluw Physio Group","practice_type":"Physiotherapy","city":"Utrecht","country":"Netherlands","plan_name":"Clinic","channel_name":"Outbound sales","signup_date":"2022-09-14","churn_date":null,"status":"active","tenure_months":50.0,"invoices":5,"billed_to_date_eur":244400.00,"last_invoice_date":"2026-09-14","overdue_eur":52800.00}
+      ]
+    },
+    {
+      "fn": "fn_top_customers",
+      "call": "select * from fn_top_customers('billed', 5)",
+      "rows": [
+        {"customer_id":1075,"name":"Zwaluw Physio Group","practice_type":"Physiotherapy","city":"Utrecht","country":"Netherlands","plan_name":"Clinic","channel_name":"Outbound sales","signup_date":"2022-09-14","churn_date":null,"status":"active","tenure_months":50.0,"invoices":5,"billed_to_date_eur":244400.00,"last_invoice_date":"2026-09-14","overdue_eur":52800.00},
+        {"customer_id":87,"name":"Tansy Bridge Salon","practice_type":"Beauty","city":"Porto","country":"Portugal","plan_name":"Clinic","channel_name":"Partners and referrals","signup_date":"2019-07-04","churn_date":null,"status":"active","tenure_months":88.4,"invoices":8,"billed_to_date_eur":49070.00,"last_invoice_date":"2026-07-04","overdue_eur":0.00},
+        {"customer_id":38,"name":"Lotus Green Pilates","practice_type":"Fitness","city":"Lille","country":"France","plan_name":"Clinic","channel_name":"Content and SEO","signup_date":"2019-02-17","churn_date":null,"status":"active","tenure_months":92.9,"invoices":8,"billed_to_date_eur":42480.00,"last_invoice_date":"2026-02-17","overdue_eur":0.00},
+        {"customer_id":93,"name":"Kestrel Marsh Physio Clinic","practice_type":"Physiotherapy","city":"Berlin","country":"Germany","plan_name":"Clinic","channel_name":"Partners and referrals","signup_date":"2019-07-17","churn_date":null,"status":"active","tenure_months":88.0,"invoices":8,"billed_to_date_eur":42140.00,"last_invoice_date":"2026-07-17","overdue_eur":0.00},
+        {"customer_id":136,"name":"Fern Acre Yoga Studio","practice_type":"Fitness","city":"Antwerp","country":"Belgium","plan_name":"Clinic","channel_name":"Content and SEO","signup_date":"2019-09-30","churn_date":null,"status":"active","tenure_months":85.5,"invoices":8,"billed_to_date_eur":41630.00,"last_invoice_date":"2026-09-30","overdue_eur":0.00}
+      ]
+    },
+    {
+      "fn": "fn_top_customers",
+      "call": "select * from fn_top_customers('overdue', 5)",
+      "rows": [
+        {"customer_id":1075,"name":"Zwaluw Physio Group","practice_type":"Physiotherapy","city":"Utrecht","country":"Netherlands","plan_name":"Clinic","channel_name":"Outbound sales","signup_date":"2022-09-14","churn_date":null,"status":"active","tenure_months":50.0,"invoices":5,"billed_to_date_eur":244400.00,"last_invoice_date":"2026-09-14","overdue_eur":52800.00},
+        {"customer_id":4961,"name":"Finch Market Physiotherapy","practice_type":"Physiotherapy","city":"Nuremberg","country":"Germany","plan_name":"Clinic","channel_name":"Outbound sales","signup_date":"2026-10-12","churn_date":null,"status":"active","tenure_months":1.1,"invoices":1,"billed_to_date_eur":6950.00,"last_invoice_date":"2026-10-12","overdue_eur":6950.00},
+        {"customer_id":2673,"name":"Verbena Court Physio Clinic","practice_type":"Physiotherapy","city":"Frankfurt","country":"Germany","plan_name":"Clinic","channel_name":"Paid search","signup_date":"2024-09-25","churn_date":null,"status":"active","tenure_months":25.7,"invoices":3,"billed_to_date_eur":17770.00,"last_invoice_date":"2026-09-25","overdue_eur":6160.00},
+        {"customer_id":3453,"name":"Verbena End Physio","practice_type":"Physiotherapy","city":"Utrecht","country":"Netherlands","plan_name":"Clinic","channel_name":"Partners and referrals","signup_date":"2025-07-06","churn_date":"2026-07-29","status":"churned","tenure_months":12.7,"invoices":2,"billed_to_date_eur":10920.00,"last_invoice_date":"2026-07-06","overdue_eur":5570.00},
+        {"customer_id":2712,"name":"Laurel Mead Rehab","practice_type":"Physiotherapy","city":"Tampere","country":"Finland","plan_name":"Clinic","channel_name":"Outbound sales","signup_date":"2024-10-10","churn_date":null,"status":"active","tenure_months":25.2,"invoices":3,"billed_to_date_eur":12730.00,"last_invoice_date":"2026-10-10","overdue_eur":4410.00}
+      ]
+    },
+    {
+      "fn": "fn_top_customers",
+      "call": "select * from fn_top_customers('tenure', 5)",
+      "rows": [
+        {"customer_id":1,"name":"Cedar Ford Physio","practice_type":"Physiotherapy","city":"Lisbon","country":"Portugal","plan_name":"Pro","channel_name":"Content and SEO","signup_date":"2019-01-03","churn_date":null,"status":"active","tenure_months":94.4,"invoices":95,"billed_to_date_eur":9575.00,"last_invoice_date":"2026-11-03","overdue_eur":0.00},
+        {"customer_id":2,"name":"Ember Garth Physio Clinic","practice_type":"Physiotherapy","city":"Ghent","country":"Belgium","plan_name":"Clinic","channel_name":"Outbound sales","signup_date":"2019-01-03","churn_date":null,"status":"active","tenure_months":94.4,"invoices":8,"billed_to_date_eur":18770.00,"last_invoice_date":"2026-01-03","overdue_eur":0.00},
+        {"customer_id":6,"name":"Olive Crest Physiotherapy","practice_type":"Physiotherapy","city":"Turin","country":"Italy","plan_name":"Clinic","channel_name":"Content and SEO","signup_date":"2019-01-08","churn_date":null,"status":"active","tenure_months":94.2,"invoices":8,"billed_to_date_eur":30660.00,"last_invoice_date":"2026-01-08","overdue_eur":0.00},
+        {"customer_id":7,"name":"Plover Landing Rehab","practice_type":"Physiotherapy","city":"Graz","country":"Austria","plan_name":"Clinic","channel_name":"Partners and referrals","signup_date":"2019-01-10","churn_date":null,"status":"active","tenure_months":94.2,"invoices":8,"billed_to_date_eur":20370.00,"last_invoice_date":"2026-01-10","overdue_eur":0.00},
+        {"customer_id":9,"name":"Tansy Meadow Beauty","practice_type":"Beauty","city":"Brussels","country":"Belgium","plan_name":"Clinic","channel_name":"Paid search","signup_date":"2019-01-12","churn_date":null,"status":"active","tenure_months":94.1,"invoices":8,"billed_to_date_eur":20890.00,"last_invoice_date":"2026-01-12","overdue_eur":0.00}
+      ]
+    },
+    {
+      "fn": "fn_top_customers",
+      "call": "select * from fn_top_customers('invoices', 5)",
+      "rows": [
+        {"customer_id":1,"name":"Cedar Ford Physio","practice_type":"Physiotherapy","city":"Lisbon","country":"Portugal","plan_name":"Pro","channel_name":"Content and SEO","signup_date":"2019-01-03","churn_date":null,"status":"active","tenure_months":94.4,"invoices":95,"billed_to_date_eur":9575.00,"last_invoice_date":"2026-11-03","overdue_eur":0.00},
+        {"customer_id":20,"name":"Starling Haven Beauty Rooms","practice_type":"Beauty","city":"Dublin","country":"Ireland","plan_name":"Starter","channel_name":"Paid search","signup_date":"2019-01-20","churn_date":null,"status":"active","tenure_months":93.8,"invoices":94,"billed_to_date_eur":3299.40,"last_invoice_date":"2026-10-20","overdue_eur":0.00},
+        {"customer_id":27,"name":"Lupin Harbour Pilates","practice_type":"Fitness","city":"Graz","country":"Austria","plan_name":"Starter","channel_name":"Paid search","signup_date":"2019-01-28","churn_date":null,"status":"active","tenure_months":93.6,"invoices":94,"billed_to_date_eur":3666.00,"last_invoice_date":"2026-10-28","overdue_eur":0.00},
+        {"customer_id":30,"name":"Reed Lock Training Club","practice_type":"Fitness","city":"Groningen","country":"Netherlands","plan_name":"Starter","channel_name":"Content and SEO","signup_date":"2019-01-30","churn_date":null,"status":"active","tenure_months":93.5,"invoices":94,"billed_to_date_eur":3666.00,"last_invoice_date":"2026-10-28","overdue_eur":0.00},
+        {"customer_id":32,"name":"Umber Marsh Rehab","practice_type":"Physiotherapy","city":"Eindhoven","country":"Netherlands","plan_name":"Pro","channel_name":"Paid search","signup_date":"2019-02-02","churn_date":null,"status":"active","tenure_months":93.4,"invoices":94,"billed_to_date_eur":8528.40,"last_invoice_date":"2026-11-02","overdue_eur":0.00}
+      ]
+    },
+    {
+      "fn": "fn_top_customers",
+      "call": "select * from fn_top_customers('newest', 5)",
+      "rows": [
+        {"customer_id":5084,"name":"Hazel Well Yoga Studio","practice_type":"Fitness","city":"Porto","country":"Portugal","plan_name":"Starter","channel_name":"Paid search","signup_date":"2026-11-15","churn_date":null,"status":"active","tenure_months":0.0,"invoices":1,"billed_to_date_eur":39.00,"last_invoice_date":"2026-11-15","overdue_eur":0.00},
+        {"customer_id":5085,"name":"Kestrel Meadow Beauty Rooms","practice_type":"Beauty","city":"Amsterdam","country":"Netherlands","plan_name":"Starter","channel_name":"Content and SEO","signup_date":"2026-11-15","churn_date":null,"status":"active","tenure_months":0.0,"invoices":1,"billed_to_date_eur":35.10,"last_invoice_date":"2026-11-15","overdue_eur":0.00},
+        {"customer_id":5086,"name":"Mallow Hall Fitness","practice_type":"Fitness","city":"Bremen","country":"Germany","plan_name":"Pro","channel_name":"Partners and referrals","signup_date":"2026-11-15","churn_date":null,"status":"active","tenure_months":0.0,"invoices":1,"billed_to_date_eur":98.10,"last_invoice_date":"2026-11-15","overdue_eur":0.00},
+        {"customer_id":5087,"name":"Oak Forge Skin Studio","practice_type":"Beauty","city":"Malaga","country":"Spain","plan_name":"Clinic","channel_name":"Content and SEO","signup_date":"2026-11-15","churn_date":null,"status":"active","tenure_months":0.0,"invoices":1,"billed_to_date_eur":2750.00,"last_invoice_date":"2026-11-15","overdue_eur":0.00},
+        {"customer_id":5082,"name":"Campion Crest Yoga Studio","practice_type":"Fitness","city":"Lyon","country":"France","plan_name":"Pro","channel_name":"Paid search","signup_date":"2026-11-14","churn_date":null,"status":"active","tenure_months":0.0,"invoices":1,"billed_to_date_eur":128.00,"last_invoice_date":"2026-11-14","overdue_eur":0.00}
+      ]
+    }
+  ]
+}

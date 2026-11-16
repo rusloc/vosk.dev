@@ -260,6 +260,8 @@ export const en = {
     openWebReport: "Web report",
     // The AI chat (ADR-0005, 11-06): a neon button that opens the web report with its chat up.
     askAi: "Ask AI",
+    // A data chat with no report beside it (the Tidewell showcase, 11-16): the same neon button, opening the chat alone.
+    askData: "Ask the data",
     writeUp: "Write-up",
     // Guest-token dashboards (Superset) mount client-side, so they need a wait state
     // and a visible failure — an embed that quietly renders nothing reads as a bug.

@@ -33,6 +33,7 @@ export function chatRoute<C>({
   name,
   maxState,
   load,
+  context,
 }: {
   /** The report, for the log line. */
   name: string;
@@ -40,6 +41,12 @@ export function chatRoute<C>({
   maxState: number;
   /** Builds the report's tools over its reader connection; called once per instance, again after a failure. */
   load: () => Promise<ChatToolset<C>>;
+  /**
+   * For a chat with no report beside it (the Tidewell data chat, 11-16): the context its tools run in, built from the
+   * request instead of a report state. `ip` keys a tool's own per-visitor limit; `questions` are the visitor's own
+   * messages in this conversation. Neither is logged.
+   */
+  context?: (req: { ip: string; questions: readonly string[] }) => C;
 }): (req: Request) => Promise<Response> {
   const body = z
     .object({
@@ -158,8 +165,14 @@ export function chatRoute<C>({
           const usage = await runChat({
             client,
             tools: ready,
-            ctx:
-              parsed.data.state === undefined
+            ctx: context
+              ? context({
+                  ip,
+                  questions: parsed.data.messages
+                    .filter((m) => m.role === "user")
+                    .map((m) => m.content),
+                })
+              : parsed.data.state === undefined
                 ? ready.defaults
                 : ready.selectionFrom(parsed.data.state),
             turns: parsed.data.messages,

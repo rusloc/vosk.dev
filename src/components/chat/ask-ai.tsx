@@ -31,11 +31,12 @@ export function askAiTrigger(label: string) {
 
 /**
  * The same button at 30px, for a report's own header (Mirelo, 11-06); `"marketing"`: ACME Marketing's 32px buttons and
- * themes; `"pnl"`: the P&L's 36px toolbar buttons in the Ledger palette, the glow in the company colour (11-09).
+ * themes; `"pnl"`: the P&L's 36px toolbar buttons in the Ledger palette, the glow in the company colour (11-09);
+ * `"nordmark"`: the Nordmark header, after its refresh stamp (11-15).
  */
 export function askAiTriggerCompact(
   label: string,
-  report?: "marketing" | "pnl" | "trucks",
+  report?: "marketing" | "pnl" | "trucks" | "nordmark",
 ) {
   return {
     className: `${styles.glow} ${styles.compact}${report ? ` ${styles[report]}` : ""}`,
@@ -64,9 +65,34 @@ export const TRUCKS_SUGGESTIONS = [
   "What is performance per truck against plan?",
 ] as const;
 
+/** Questions the Nordmark executive dashboard's chat offers before the first one is typed (11-15); each is in its answer
+ *  key (data/nordmark/checks/chat-golden.csv): the three lead KPIs at the opening view. */
+export const NORDMARK_SUGGESTIONS = [
+  "How are net sales doing against budget this week?",
+  "How has total margin moved against last year?",
+  "Are weeks of cover on target?",
+] as const;
+
 /** Questions the ACME Marketing chat offers before the first one is typed (11-06). */
 export const MARKETING_SUGGESTIONS = [
   "Which channel brings paying customers at the lowest CAC?",
   "Which campaigns are flagged, and why?",
   "How has CAC moved over the last eight weeks?",
 ] as const;
+
+/** Questions the Tidewell data chat offers before the first one is typed (11-16): one per scope, then the email. */
+export const CEO_DIGEST_SUGGESTIONS = [
+  "Which marketing channel had the lowest CAC in the last 4 weeks?",
+  "How much cash came in and went out last month?",
+  "Who are the top 5 clients by overdue amount?",
+  "Email me the marketing report for last month.",
+] as const;
+
+/** The Tidewell data chat's own lines: a chat over a company's data, with no report beside it (11-16). */
+export const CEO_DIGEST_CHAT_COPY = {
+  note: "AI assistant · answers come from the demo company's data (made up); the figures sit under each answer.",
+  intro:
+    "Ask about marketing, cash flow or clients, or have a report emailed to you. Start with one of these:",
+  placeholder: "Ask about the data…",
+  working: "Looking at the data…",
+} as const;

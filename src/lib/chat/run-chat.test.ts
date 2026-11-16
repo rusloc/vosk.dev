@@ -6,6 +6,7 @@ import type { ChatTools } from "@/lib/mirelo/chat-tools";
 import { createSalesEngine } from "@/lib/mirelo/index";
 import { runChat } from "./run-chat";
 import type { ChatEvent } from "./run-chat";
+import type { ChatToolset } from "./tools";
 
 // The chat loop's caps and events with a scripted model (no network): figures per lookup, at most 3 model calls
 // (the last with tools off), at most 4 tool calls, a refusal answered with a fixed line, bad calls returned as errors.
@@ -155,5 +156,51 @@ describe("runChat", () => {
       reply("end_turn", { type: "text", text: "Roll rate is…" }),
     ]);
     expect(events.map((e) => e.type)).toEqual(["text"]);
+  });
+
+  it("waits for a tool that answers later, one call at a time and in the model's order", async () => {
+    // A toolset over a database or a service (the Tidewell data chat, 11-16): `run` returns a promise.
+    const order: string[] = [];
+    const slow: ChatToolset<null> = {
+      definitions: [],
+      async run(name) {
+        order.push(`start ${name}`);
+        await new Promise((r) => setTimeout(r, name === "first" ? 15 : 0));
+        order.push(`end ${name}`);
+        return { ok: true, text: `rows of ${name}`, scope: name, link: null };
+      },
+      systemPrompt: () => "system",
+      selectionNote: () => "note",
+      selectionFrom: () => null,
+      defaults: null,
+    };
+    const { client, sent } = scripted([
+      reply(
+        "tool_use",
+        { type: "tool_use", id: "1", name: "first", input: {} },
+        { type: "tool_use", id: "2", name: "second", input: {} },
+      ),
+      reply("end_turn", { type: "text", text: "Done." }),
+    ]);
+    const events: ChatEvent[] = [];
+    await runChat({
+      client,
+      tools: slow,
+      ctx: null,
+      turns: [{ role: "user", content: "?" }],
+      emit: (e) => events.push(e),
+    });
+    expect(order).toEqual([
+      "start first",
+      "end first",
+      "start second",
+      "end second",
+    ]);
+    expect(events.map((e) => e.type)).toEqual(["figures", "figures", "text"]);
+    const results = sent[1]!.lastContent as Anthropic.ToolResultBlockParam[];
+    expect(results.map((r) => [r.tool_use_id, r.content])).toEqual([
+      ["1", "rows of first"],
+      ["2", "rows of second"],
+    ]);
   });
 });

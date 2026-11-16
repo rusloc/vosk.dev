@@ -1,14 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { loadN8nFlow } from "@/lib/n8n-flows";
 import type { N8nFlow } from "@/lib/n8n-flows";
-
-/** Each workflow's JSON is its own chunk, fetched only when its popup opens. */
-const FLOWS: Record<N8nFlow, () => Promise<{ default: unknown }>> = {
-  "inbox-to-sheet": () => import("../../data/n8n/inbox-to-sheet.json"),
-  "invoice-pdf-to-sheet": () =>
-    import("../../data/n8n/invoice-pdf-to-sheet.json"),
-};
 
 /**
  * An n8n workflow drawn as n8n draws it: the <n8n-demo> web component (`@n8n_io/n8n-demo-component`) posts the
@@ -44,7 +38,7 @@ export function N8nWorkflow({
       );
     const resize = new ResizeObserver(fit);
 
-    Promise.all([import("@n8n_io/n8n-demo-component"), FLOWS[flow]()])
+    Promise.all([import("@n8n_io/n8n-demo-component"), loadN8nFlow(flow)])
       .then(([, json]) => {
         if (cancelled) return;
         demo = document.createElement("n8n-demo");

@@ -125,31 +125,33 @@ export async function runChat<C>({
       (b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
     );
     messages.push({ role: "assistant", content: message.content });
-    messages.push({
-      role: "user",
-      content: uses.map((use): Anthropic.ToolResultBlockParam => {
-        if (toolCalls >= MAX_TOOL_CALLS)
-          return {
-            type: "tool_result",
-            tool_use_id: use.id,
-            is_error: true,
-            content:
-              "No more lookups for this question; answer with what you have.",
-          };
-        toolCalls++;
-        usage.tools.push(use.name);
-        const r = tools.run(use.name, use.input, ctx);
-        // a figures card for data only: a definition (explain_metric) has no scope
-        if (r.ok && r.scope)
-          emit({ type: "figures", scope: r.scope, text: r.text, link: r.link });
-        return {
+    // One at a time, in the model's order: a tool may read a database or call a service (the data chat, 11-16).
+    const results: Anthropic.ToolResultBlockParam[] = [];
+    for (const use of uses) {
+      if (toolCalls >= MAX_TOOL_CALLS) {
+        results.push({
           type: "tool_result",
           tool_use_id: use.id,
-          is_error: !r.ok,
-          content: r.text,
-        };
-      }),
-    });
+          is_error: true,
+          content:
+            "No more lookups for this question; answer with what you have.",
+        });
+        continue;
+      }
+      toolCalls++;
+      usage.tools.push(use.name);
+      const r = await tools.run(use.name, use.input, ctx);
+      // a figures card for data only: a definition (explain_metric) has no scope
+      if (r.ok && r.scope)
+        emit({ type: "figures", scope: r.scope, text: r.text, link: r.link });
+      results.push({
+        type: "tool_result",
+        tool_use_id: use.id,
+        is_error: !r.ok,
+        content: r.text,
+      });
+    }
+    messages.push({ role: "user", content: results });
   }
   return usage;
 }

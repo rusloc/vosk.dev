@@ -1,3 +1,4 @@
+import { isCeoDigestConfigured } from "./ceo-digest/config";
 import { isCubeConfigured } from "./cube";
 import { env } from "./env";
 import type { Locale } from "./i18n/config";
@@ -82,7 +83,13 @@ type ShowcaseOf<Text, Paragraphs> =
       platform: "automation";
       workflow: N8nFlow;
       test: AutomationTest<Text, Paragraphs>;
+      // A data chat on the page (11-16): "Ask the data" opens it in the popup, with no report beside it; the route is
+      // /api/chat/<chat>. An entry with a chat stays hidden until its server settings are in place (`showcases`).
+      chat?: DataChat;
     });
+
+/** The data chats a showcase can carry: each has a route /api/chat/<name> (docs/ceo-digest/chat-and-email.md). */
+export type DataChat = "ceo-digest";
 
 /**
  * "Try it yourself" for a live workflow. A step may say `{email}` (the demo address, as a mailto link). No sheet link on
@@ -154,6 +161,7 @@ export function localize(s: Showcase, locale: Locale): LocalizedShowcase {
         ...base,
         platform: s.platform,
         workflow: s.workflow,
+        chat: s.chat,
         test: {
           email: s.test.email,
           steps: s.test.steps[locale],
@@ -183,6 +191,58 @@ const UNSET_EMBED_ID = "REPLACE-WITH-EMBED-UUID";
  * actual story — goal → data → what the dashboard changed.
  */
 const allShowcases: Showcase[] = [
+  {
+    slug: "ceo-digest",
+    published: "2026-11-16",
+    platform: "automation",
+    // The Tidewell data chat + "email me this" (docs/ceo-digest/chat-and-email.md, 11-16): the chat answers on the site
+    // (src/lib/ceo-digest/, /api/chat/ceo-digest); n8n starts only when a report is emailed. The canvas is the public
+    // copy of that workflow, data/n8n/ceo-digest-email.json (scripts/n8n-export.ts); until it is exported the page
+    // has no canvas button. Hidden until CEO_DIGEST_DATABASE_URL, N8N_DIGEST_WEBHOOK_URL and
+    // N8N_DIGEST_WEBHOOK_SECRET are all set (`showcases` below).
+    workflow: "ceo-digest-email",
+    chat: "ceo-digest",
+    title: {
+      en: "Company data chat with reports by email",
+      ru: "Чат по данным компании с отчётами на почту",
+    },
+    summary: {
+      en: "Ask a SaaS company's marketing, cash flow and client figures in plain words, and have the report emailed by an n8n workflow.",
+      ru: "Вопросы по маркетингу, денежному потоку и клиентам SaaS-компании простыми словами, а отчёт на почту присылает воркфлоу n8n.",
+    },
+    client: {
+      en: "SaaS company, 50 to 200 staff (fictional)",
+      ru: "SaaS-компания, 50–200 сотрудников (вымышленная)",
+    },
+    details: {
+      en: [
+        "A manager asks about marketing, cash flow or clients in plain words and gets the figures in the chat, so a routine question no longer waits for an analyst.",
+        "An LLM picks from a closed set of SQL functions over PostgreSQL and writes only from the rows they return. There is no text-to-SQL, so it cannot invent a query or reach another table.",
+        '"Email me this" starts an n8n workflow: it runs the same functions for the period, adds three short takeaways and sends an HTML email with the tables. Sends are capped per address and per day.',
+      ],
+      ru: [
+        "Руководитель спрашивает о маркетинге, денежном потоке или клиентах простыми словами и получает цифры в чате, так что рядовой вопрос больше не ждёт аналитика.",
+        "LLM выбирает из закрытого набора SQL-функций над PostgreSQL и пишет только по строкам, которые они вернули. Text-to-SQL здесь нет, поэтому выдумать запрос или добраться до другой таблицы нельзя.",
+        "«Пришли это на почту» запускает воркфлоу n8n: он выполняет те же функции за период, добавляет три коротких вывода и отправляет HTML-письмо с таблицами. Отправки ограничены по адресу и по дням.",
+      ],
+    },
+    test: {
+      // the address the report arrives from
+      email: "n8n.opc@gmail.com",
+      steps: {
+        en: [
+          'Open "Ask the data" and ask about marketing, cash flow or clients ("Which channel had the lowest CAC last month?").',
+          "Ask for the report by email, type your address and confirm the period.",
+          'In a minute or two it arrives from {email}. The company and its figures are made up, and "today" in the data is 15 November 2026. Limits: 2 emails a day per visitor, 3 per address.',
+        ],
+        ru: [
+          "Откройте «Спросить данные» и спросите о маркетинге, денежном потоке или клиентах («У какого канала был самый низкий CAC в прошлом месяце?»).",
+          "Попросите отчёт на почту, напишите адрес и подтвердите период.",
+          "Через минуту-две он придёт с {email}. Компания и её цифры выдуманы, а «сегодня» в данных это 15 ноября 2026. Лимиты: 2 письма в день на посетителя, 3 на адрес.",
+        ],
+      },
+    },
+  },
   {
     slug: "inbox-to-sheet-ai",
     published: "2026-11-16",
@@ -298,8 +358,8 @@ const allShowcases: Showcase[] = [
     published: "2026-10-29",
     platform: "js",
     report: "nordmark",
-    // Reads Supabase schema nordmark_demo through /api/nordmark since 11-15; its button shows once
-    // NORDMARK_DATABASE_URL is set (isJsReportLive). No Power BI flavour yet, so until then the page has no button.
+    // Production still reads the static public/data/nordmark files; the switch to nordmark_demo (/api/nordmark,
+    // gated by NORDMARK_DATABASE_URL) waits for the load. No Power BI flavour yet.
     title: {
       en: "Retail executive dashboard",
       ru: "Дашборд руководителя розничной сети",
@@ -544,6 +604,8 @@ const allShowcases: Showcase[] = [
  * real embed UUID — an unconfigured embed would render a dead frame on a page whose whole
  * job is to demonstrate competence. Cube entries are hidden until CUBE_API_URL and
  * CUBE_API_SECRET are both set: without them the detail page cannot be built at all.
+ * An automation entry with a data chat is hidden until its reader URL and its n8n webhook URL and secret are all set
+ * (lib/ceo-digest/config.ts): without them the chat cannot answer or send, and the page has nothing to show.
  * Filtering here (rather than at the call site) keeps the list page, generateStaticParams,
  * the sitemap and the 404 path automatically in sync.
  */
@@ -556,6 +618,8 @@ export const showcases: Showcase[] = allShowcases
         );
       case "cube":
         return isCubeConfigured();
+      case "automation":
+        return s.chat === undefined || isCeoDigestConfigured();
       default:
         return true;
     }
@@ -572,7 +636,8 @@ const REPORT_DATA_ENV: Partial<Record<JsReport, string>> = {
   marketing: "MARKETING_DATABASE_URL",
   pnl: "PNL_DATABASE_URL", // 2026-11-09: the P&L rows moved to Supabase (pnl_demo)
   trucks: "TRUCKS_DATABASE_URL", // 2026-11-09
-  nordmark: "NORDMARK_DATABASE_URL", // 2026-11-15: the executive dashboard's rows moved to Supabase (nordmark_demo)
+  // nordmark: "NORDMARK_DATABASE_URL" returns with its Supabase go-live. Until then production reads the static
+  // public/data/nordmark files, so the button stays on (11-16 hotfix: b539448 shipped this gate before the load).
 };
 
 /** Whether the "Web report" of a JS showcase can open (read at build / regeneration, server-side only). */

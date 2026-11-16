@@ -145,6 +145,23 @@
   outline: 2px solid rgb(var(--red));
 }
 
+/* In the Nordmark header (11-15): after the refresh stamp, on its white surface and ink, with the report's 13px type. */
+.glow.compact.nordmark {
+  --r: 6px;
+  --face: linear-gradient(var(--bg), var(--bg)), var(--bg);
+  padding: 0 10px;
+  gap: 5px;
+  height: 28px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.glow.compact.nordmark:focus-visible {
+  outline: 2px solid rgb(var(--red));
+}
+
 .compact .icon {
   width: 14px;
   height: 14px;

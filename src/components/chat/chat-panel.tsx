@@ -39,6 +39,7 @@ export function ChatPanel({
   suggestions,
   state,
   onOpenReport,
+  standalone,
 }: {
   endpoint: string;
   suggestions: readonly string[];
@@ -46,6 +47,16 @@ export function ChatPanel({
   state?: string;
   /** Inside the report: apply a figures card's state in place. Without it, "Open in report" is a page link. */
   onOpenReport?: (link: string) => void;
+  /**
+   * A chat with no report beside it (the Tidewell data chat, 11-16): its own lines in place of the report's, and no
+   * "Open in report" under the figures.
+   */
+  standalone?: {
+    note: string;
+    intro: string;
+    placeholder: string;
+    working: string;
+  };
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -137,12 +148,15 @@ export function ChatPanel({
   return (
     <div className="flex h-full flex-col">
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
-        <p className="text-muted-foreground text-xs">{NOTE}</p>
+        <p className="text-muted-foreground text-xs">
+          {standalone?.note ?? NOTE}
+        </p>
 
         {messages.length === 0 && (
           <div className="space-y-2">
             <p className="text-sm">
-              Ask anything about this report, or start with one of these:
+              {standalone?.intro ??
+                "Ask anything about this report, or start with one of these:"}
             </p>
             <div className="flex flex-col items-start gap-2">
               {suggestions.map((s) => (
@@ -180,7 +194,7 @@ export function ChatPanel({
                   <p className="text-muted-foreground animate-pulse text-sm">
                     {m.figures.length
                       ? "Writing the answer…"
-                      : "Looking at the report…"}
+                      : (standalone?.working ?? "Looking at the report…")}
                   </p>
                 )
               )}
@@ -198,7 +212,7 @@ export function ChatPanel({
                       ? f.text.slice(f.scope.length).trimStart()
                       : f.text}
                   </pre>
-                  {onOpenReport ? (
+                  {standalone ? null : onOpenReport ? (
                     <button
                       type="button"
                       onClick={() => onOpenReport(f.link ?? "")}
@@ -240,7 +254,7 @@ export function ChatPanel({
           }}
           maxLength={MAX_QUESTION}
           rows={2}
-          placeholder="Ask about this report…"
+          placeholder={standalone?.placeholder ?? "Ask about this report…"}
           aria-label="Your question"
           className="border-border bg-background focus:border-primary min-h-0 flex-1 resize-none rounded-md border px-3 py-2 text-sm outline-none"
         />

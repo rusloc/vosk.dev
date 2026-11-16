@@ -2,78 +2,114 @@
 -- formats, and the LLM writes commentary from these rows, never computes. Drop-and-rebuild, applied via MCP
 -- execute_sql by postgres after 002. security_invoker: a view reads with its caller's grants, never postgres's.
 --
--- What n8n reads for the week that just closed (:w = last Monday − 7):
---   v_kpi_weekly        where _week_start = :w   → the KPI tiles, flags first
---   v_sales_breakdown   where _week_start = :w   → channel / region / category tables, top movers
---   v_cash_by_category  where _week_start = :w   → where cash went, actual vs forecast
---   v_cash_outlook      where _issued_week = :w + 7 → the 13-week cash line and its low point
+-- What n8n reads for the week that just closed (:w = the Monday a week before the email's Monday):
+--   v_kpi_weekly              where _week_start = :w   → the 10 KPI tiles, flags first
+--   v_mrr_by_plan             where _week_start = :w   → the MRR bridge by plan
+--   v_marketing_by_channel    where _week_start = :w   → the funnel by channel
+--   v_cash_by_category        where _week_start = :w   → where the cash went
+--   v_week_working_capital    where _week_start = :w   → receivables by age, payables by due date
 
 set search_path = ceo_digest_demo;
 
 drop view if exists
-     v_kpi_weekly, v_sales_breakdown, v_cash_by_category, v_cash_outlook
-    ,v_week_pipeline, v_week_working_capital, v_week_cash, v_week_sales
+     v_kpi_weekly, v_mrr_by_plan, v_marketing_by_channel, v_cash_by_category
+    ,v_week_working_capital, v_week_cash, v_week_marketing, v_week_growth
 cascade;
 
--- ---------------------------------------------------------------- sales, one row per week
+-- ---------------------------------------------------------------- growth, one row per week
 
-create view v_week_sales with (security_invoker = on) as
-with s as (
+create view v_week_growth with (security_invoker = on) as
+with m as (
     select
-         f.week_start                                              _week_start
-        ,sum(f.gross_sales)                                        _gross_sales
-        ,sum(f.discounts)                                          _discounts
-        ,sum(f.returns)                                            _returns
-        ,sum(f.net_sales)                                          _net_sales
-        ,sum(f.cogs)                                               _cogs
-        ,sum(f.units)                                              _units
-        ,sum(f.net_sales) filter (where c.code = 'online')         _net_sales_online
-    from fact_sales_weekly f
-    join dim_channel c on c.channel_id = f.channel_id
-    group by f.week_start
-)
-, o as (
-    select
-         f.week_start                                              _week_start
-        ,sum(f.orders)                                             _orders
-        ,sum(f.new_customers)                                      _new_customers
-        ,sum(f.orders) filter (where c.code = 'online')            _orders_online
-    from fact_orders_weekly f
-    join dim_channel c on c.channel_id = f.channel_id
-    group by f.week_start
-)
-, t as (
-    select
-         f.week_start                                              _week_start
-        ,sum(f.net_sales_target)                                   _net_sales_target
-        ,sum(f.gross_margin_target)                                _gross_margin_target
-    from fact_sales_target_weekly f
+         f.week_start                                    _week_start
+        ,sum(f.customers_open)                           _customers_open
+        ,sum(f.customers_new)                            _customers_new
+        ,sum(f.customers_churned)                        _customers_churned
+        ,sum(f.customers_close)                          _customers_close
+        ,sum(f.mrr_open)                                 _mrr_open
+        ,sum(f.mrr_new)                                  _mrr_new
+        ,sum(f.mrr_expansion)                            _mrr_expansion
+        ,sum(f.mrr_contraction)                          _mrr_contraction
+        ,sum(f.mrr_churn)                                _mrr_churn
+        ,sum(f.mrr_close)                                _mrr_close
+    from fact_mrr_weekly f
     group by f.week_start
 )
 select
-     s._week_start                                                                    _week_start
-    ,w.week_label                                                                     _week_label
-    ,s._net_sales                                                                     _net_sales
-    ,s._gross_sales                                                                   _gross_sales
-    ,s._discounts                                                                     _discounts
-    ,s._returns                                                                       _returns
-    ,s._cogs                                                                          _cogs
-    ,s._net_sales - s._cogs                                                           _gross_margin
-    ,(s._net_sales - s._cogs) / nullif(s._net_sales, 0)                               _gross_margin_pct
-    ,s._discounts / nullif(s._gross_sales, 0)                                         _discount_rate
-    ,s._returns / nullif(s._gross_sales, 0)                                           _return_rate
-    ,s._units                                                                         _units
-    ,o._orders                                                                        _orders
-    ,o._new_customers                                                                 _new_customers
-    ,s._net_sales_online / nullif(o._orders_online, 0)                                _aov_online
-    ,t._net_sales_target                                                              _net_sales_target
-    ,t._gross_margin_target / nullif(t._net_sales_target, 0)                          _gross_margin_pct_target
-    ,sum(s._net_sales) over (partition by w.iso_year order by s._week_start)          _net_sales_ytd
-    ,sum(t._net_sales_target) over (partition by w.iso_year order by s._week_start)   _net_sales_target_ytd
-from s
-join dim_week w on w.week_start = s._week_start
-left join o on o._week_start = s._week_start
-left join t on t._week_start = s._week_start;
+     m._week_start                                                                                    _week_start
+    ,w.week_label                                                                                     _week_label
+    ,m._customers_open                                                                                _customers_open
+    ,m._customers_new                                                                                 _customers_new
+    ,m._customers_churned                                                                             _customers_churned
+    ,m._customers_close                                                                               _customers_close
+    ,m._mrr_open                                                                                      _mrr_open
+    ,m._mrr_new                                                                                       _mrr_new
+    ,m._mrr_expansion                                                                                 _mrr_expansion
+    ,m._mrr_contraction                                                                               _mrr_contraction
+    ,m._mrr_churn                                                                                     _mrr_churn
+    ,m._mrr_close                                                                                     _mrr_close
+    ,m._mrr_new + m._mrr_expansion - m._mrr_contraction - m._mrr_churn                                _net_new_mrr
+    ,m._mrr_close * 12                                                                                _arr
+    ,m._mrr_close / nullif(m._customers_close, 0)                                                     _arpa
+    ,sum(m._mrr_new + m._mrr_expansion - m._mrr_contraction - m._mrr_churn)
+         over (order by m._week_start rows between 3 preceding and current row)                       _net_new_mrr_4w
+    ,sum(m._mrr_churn) over (order by m._week_start rows between 3 preceding and current row)
+         / nullif(lag(m._mrr_open, 3) over (order by m._week_start), 0)                               _mrr_churn_4w
+    ,t.arr_target                                                                                     _arr_target
+    ,t.net_new_mrr_target                                                                             _net_new_mrr_target
+    ,sum(t.net_new_mrr_target) over (order by m._week_start rows between 3 preceding and current row) _net_new_mrr_target_4w
+from m
+join dim_week w on w.week_start = m._week_start
+left join fact_target_weekly t on t.week_start = m._week_start;
+
+-- ---------------------------------------------------------------- marketing, one row per week
+
+create view v_week_marketing with (security_invoker = on) as
+with f as (
+    select
+         f.week_start                                                    _week_start
+        ,sum(f.spend_eur)                                                _spend
+        ,sum(f.mqls)                                                     _mqls
+        ,sum(f.trials_started)                                           _trials_started
+        ,sum(f.trials_ended)                                             _trials_ended
+        ,sum(f.trials_converted)                                         _trials_converted
+        ,sum(f.new_customers)                                            _new_customers
+        ,sum(f.new_mrr)                                                  _new_mrr
+    from fact_marketing_weekly f
+    group by f.week_start
+)
+, r as (
+    select
+         f.*
+        ,sum(f._spend) over w4                                           _spend_4w
+        ,sum(f._new_customers) over w4                                   _new_customers_4w
+        ,sum(f._new_mrr) over w4                                         _new_mrr_4w
+        ,sum(f._trials_converted) over w4                                _trials_converted_4w
+        ,sum(f._trials_ended) over w4                                    _trials_ended_4w
+    from f
+    window w4 as (order by f._week_start rows between 3 preceding and current row)
+)
+select
+     r._week_start                                                                        _week_start
+    ,r._spend                                                                             _spend
+    ,t.marketing_budget                                                                   _marketing_budget
+    ,r._mqls                                                                              _mqls
+    ,t.mqls_target                                                                        _mqls_target
+    ,r._trials_started                                                                    _trials_started
+    ,r._trials_ended                                                                      _trials_ended
+    ,r._trials_converted                                                                  _trials_converted
+    ,r._new_customers                                                                     _new_customers
+    ,r._new_mrr                                                                           _new_mrr
+    ,r._spend_4w                                                                          _spend_4w
+    ,r._new_customers_4w                                                                  _new_customers_4w
+    ,r._trials_converted_4w::numeric / nullif(r._trials_ended_4w, 0)                      _trial_conversion_4w
+    ,r._spend_4w / nullif(r._new_customers_4w, 0)                                         _cac_4w
+    ,t.cac_target                                                                         _cac_target
+    ,r._spend_4w / nullif(r._new_customers_4w, 0)
+         / nullif(r._new_mrr_4w / nullif(r._new_customers_4w, 0) * k.gross_margin_pct, 0) _cac_payback_months
+from r
+cross join company k
+left join fact_target_weekly t on t.week_start = r._week_start;
 
 -- ---------------------------------------------------------------- cash, one row per week
 
@@ -91,25 +127,13 @@ with a as (
     join dim_cash_category g on g.cash_category_id = f.cash_category_id
     group by f.week_start
 )
-, p as (
-    select
-         f.week_start                                              _week_start
-        ,sum(f.amount_eur)                                         _forecast_net
-    from fact_cash_forecast f
-    where 1=1
-        and f.issued_week = f.week_start
-    group by f.week_start
-)
 , b as (
     select
-         a._week_start                                                     _week_start
-        ,a._inflow                                                         _inflow
-        ,a._outflow                                                        _outflow
-        ,a._operating                                                      _operating
-        ,a._investing                                                      _investing
-        ,a._financing                                                      _financing
-        ,a._net                                                            _net
-        ,k.opening_cash_eur + sum(a._net) over (order by a._week_start)    _closing
+         a.*
+        ,k.opening_cash_eur + sum(a._net) over (order by a._week_start)                                   _closing
+        -- monthly net burn: what operations and investment consumed, a 13-week average scaled to a month
+        ,-avg(coalesce(a._operating, 0) + coalesce(a._investing, 0))
+              over (order by a._week_start rows between 12 preceding and current row) * 52 / 12           _burn_monthly
     from a
     cross join company k
     where 1=1
@@ -125,263 +149,188 @@ select
     ,coalesce(b._financing, 0)                       _financing
     ,b._net                                          _net
     ,b._closing                                      _closing
-    ,p._forecast_net                                 _forecast_net
-    ,b._closing - b._net + p._forecast_net           _closing_forecast
-    ,b._net - p._forecast_net                        _forecast_variance
-from b
-left join p on p._week_start = b._week_start;
+    ,b._burn_monthly                                 _burn_monthly
+    ,case
+         when b._burn_monthly > 0
+             then b._closing / b._burn_monthly
+     end                                             _runway_months
+from b;
 
--- The 13-week outlook as issued each Monday: last actual closing + the forecast, week by week.
-create view v_cash_outlook with (security_invoker = on) as
-select
-     f.issued_week                                                                               _issued_week
-    ,f.week_start                                                                                _week_start
-    ,sum(f.amount_eur)                                                                           _forecast_net
-    ,c._closing + sum(sum(f.amount_eur)) over (partition by f.issued_week order by f.week_start)  _projected_closing
-from fact_cash_forecast f
-join v_week_cash c on c._week_start = f.issued_week - 7
-group by f.issued_week, f.week_start, c._closing;
-
--- Actual vs forecast by cash category, for "where the cash went".
+-- Where the cash went: week × category, against the same week last year and the 13-week weekly average.
 create view v_cash_by_category with (security_invoker = on) as
-with a as (
+with f as (
     select
-         f.week_start                    _week_start
-        ,f.cash_category_id              _cash_category_id
-        ,f.amount_eur                    _actual
+         f.week_start                                                                          _week_start
+        ,g.code                                                                                _code
+        ,g.name                                                                                _name
+        ,g.flow                                                                                _flow
+        ,g.sort                                                                                _sort
+        ,f.amount_eur                                                                          _amount
+        ,avg(f.amount_eur) over (partition by g.code order by f.week_start
+                                 rows between 12 preceding and current row)                    _avg_13w
     from fact_cash_weekly f
-)
-, p as (
-    select
-         f.week_start                    _week_start
-        ,f.cash_category_id              _cash_category_id
-        ,f.amount_eur                    _forecast
-    from fact_cash_forecast f
-    where 1=1
-        and f.issued_week = f.week_start
+    join dim_cash_category g on g.cash_category_id = f.cash_category_id
 )
 select
-     coalesce(a._week_start, p._week_start)                        _week_start
-    ,g.code                                                        _code
-    ,g.name                                                        _name
-    ,g.flow                                                        _flow
-    ,g.sort                                                        _sort
-    ,coalesce(a._actual, 0)                                        _actual
-    ,p._forecast                                                   _forecast
-    ,coalesce(a._actual, 0) - p._forecast                          _variance
-from a
-full join p on p._week_start = a._week_start and p._cash_category_id = a._cash_category_id
-join dim_cash_category g on g.cash_category_id = coalesce(a._cash_category_id, p._cash_category_id);
+     f._week_start                                   _week_start
+    ,f._code                                         _code
+    ,f._name                                         _name
+    ,f._flow                                         _flow
+    ,f._sort                                         _sort
+    ,f._amount                                       _amount
+    ,l._amount                                       _amount_ly
+    ,f._avg_13w                                      _avg_13w
+from f
+join dim_week w on w.week_start = f._week_start
+left join f l on l._code = f._code and l._week_start = w.ly_week_start;
 
 -- ---------------------------------------------------------------- working capital, one row per week
 
 create view v_week_working_capital with (security_invoker = on) as
 with r as (
     select
-         f.week_start                                                       _week_start
-        ,sum(f.amount_eur)                                                  _ar_total
-        ,sum(f.amount_eur) filter (where f.bucket <> 'not_due')             _ar_overdue
-        ,sum(f.amount_eur) filter (where f.bucket in ('overdue_61_90', 'overdue_90_plus')) _ar_overdue_60_plus
+         f.week_start                                                              _week_start
+        ,sum(f.amount_eur)                                                         _ar_total
+        ,sum(f.amount_eur) filter (where f.bucket = 'not_due')                     _ar_not_due
+        ,sum(f.amount_eur) filter (where f.bucket = 'overdue_1_30')                _ar_overdue_1_30
+        ,sum(f.amount_eur) filter (where f.bucket = 'overdue_31_60')               _ar_overdue_31_60
+        ,sum(f.amount_eur) filter (where f.bucket = 'overdue_61_90')               _ar_overdue_61_90
+        ,sum(f.amount_eur) filter (where f.bucket = 'overdue_90_plus')             _ar_overdue_90_plus
+        ,sum(f.amount_eur) filter (where f.bucket <> 'not_due')                    _ar_overdue
     from fact_ar_weekly f
     group by f.week_start
 )
 , p as (
     select
-         f.week_start                                                       _week_start
-        ,sum(f.amount_eur)                                                  _ap_total
-        ,sum(f.amount_eur) filter (where f.bucket = 'due_next_week')        _ap_due_next_week
-        ,sum(f.amount_eur) filter (where f.bucket like 'overdue%')          _ap_overdue
+         f.week_start                                                              _week_start
+        ,sum(f.amount_eur)                                                         _ap_total
+        ,sum(f.amount_eur) filter (where f.bucket = 'overdue')                     _ap_overdue
+        ,sum(f.amount_eur) filter (where f.bucket = 'due_0_7')                     _ap_due_0_7
+        ,sum(f.amount_eur) filter (where f.bucket = 'due_8_14')                    _ap_due_8_14
+        ,sum(f.amount_eur) filter (where f.bucket = 'due_15_30')                   _ap_due_15_30
     from fact_ap_weekly f
     group by f.week_start
 )
-, s as (
-    -- net sales on credit (retail partners, B2B): DSO's denominator
-    select
-         f.week_start                    _week_start
-        ,sum(f.net_sales)                _credit_sales
-    from fact_sales_weekly f
-    join dim_channel c on c.channel_id = f.channel_id
-    where 1=1
-        and c.payment_terms_days > 0
-    group by f.week_start
-)
-, d as (
-    select
-         s._week_start                                                                          _week_start
-        ,sum(s._credit_sales) over (order by s._week_start rows between 12 preceding and current row) _credit_sales_13w
-    from s
-)
 select
-     r._week_start                                             _week_start
-    ,r._ar_total                                               _ar_total
-    ,coalesce(r._ar_overdue, 0)                                _ar_overdue
-    ,coalesce(r._ar_overdue_60_plus, 0)                        _ar_overdue_60_plus
-    ,coalesce(r._ar_overdue, 0) / nullif(r._ar_total, 0)       _ar_overdue_pct
-    ,r._ar_total / nullif(d._credit_sales_13w, 0) * 91         _dso
-    ,p._ap_total                                               _ap_total
-    ,coalesce(p._ap_due_next_week, 0)                          _ap_due_next_week
-    ,coalesce(p._ap_overdue, 0)                                _ap_overdue
+     r._week_start                                   _week_start
+    ,r._ar_total                                     _ar_total
+    ,r._ar_not_due                                   _ar_not_due
+    ,r._ar_overdue_1_30                              _ar_overdue_1_30
+    ,r._ar_overdue_31_60                             _ar_overdue_31_60
+    ,r._ar_overdue_61_90                             _ar_overdue_61_90
+    ,r._ar_overdue_90_plus                           _ar_overdue_90_plus
+    ,r._ar_overdue                                   _ar_overdue
+    ,r._ar_overdue / nullif(r._ar_total, 0)          _ar_overdue_pct
+    ,p._ap_total                                     _ap_total
+    ,p._ap_overdue                                   _ap_overdue
+    ,p._ap_due_0_7                                   _ap_due_0_7
+    ,p._ap_due_8_14                                  _ap_due_8_14
+    ,p._ap_due_15_30                                 _ap_due_15_30
+    ,p._ap_due_0_7 + p._ap_due_8_14                  _ap_due_14d
 from r
-left join p on p._week_start = r._week_start
-left join d on d._week_start = r._week_start;
+join p on p._week_start = r._week_start;
 
--- ---------------------------------------------------------------- pipeline, one row per week
+-- ---------------------------------------------------------------- breakdowns
 
-create view v_week_pipeline with (security_invoker = on) as
-with o as (
+-- The MRR bridge by plan, with 4-week churn per plan.
+create view v_mrr_by_plan with (security_invoker = on) as
+select
+     f.week_start                                                                              _week_start
+    ,p.code                                                                                    _plan_code
+    ,p.name                                                                                    _plan_name
+    ,p.sort                                                                                    _sort
+    ,f.customers_open                                                                          _customers_open
+    ,f.customers_new                                                                           _customers_new
+    ,f.customers_churned                                                                       _customers_churned
+    ,f.customers_close                                                                         _customers_close
+    ,f.mrr_open                                                                                _mrr_open
+    ,f.mrr_new                                                                                 _mrr_new
+    ,f.mrr_expansion                                                                           _mrr_expansion
+    ,f.mrr_contraction                                                                         _mrr_contraction
+    ,f.mrr_churn                                                                               _mrr_churn
+    ,f.mrr_close                                                                               _mrr_close
+    ,f.mrr_close / nullif(f.customers_close, 0)                                                _arpa
+    ,sum(f.mrr_churn) over w4 / nullif(lag(f.mrr_open, 3) over wp, 0)                         _mrr_churn_4w
+from fact_mrr_weekly f
+join dim_plan p on p.plan_id = f.plan_id
+window
+     wp as (partition by f.plan_id order by f.week_start)
+    ,w4 as (partition by f.plan_id order by f.week_start rows between 3 preceding and current row);
+
+-- The funnel by channel: the week, the last 4 weeks, and the 4 weeks before those.
+create view v_marketing_by_channel with (security_invoker = on) as
+with f as (
     select
-         f.week_start                                    _week_start
-        ,sum(f.open_deals)                               _open_deals
-        ,sum(f.open_value_eur)                           _open_value
-        ,sum(f.open_value_eur * g.probability)           _weighted_value
-    from fact_pipeline_weekly f
-    join dim_pipeline_stage g on g.stage_id = f.stage_id
-    group by f.week_start
+         f.week_start                                                    _week_start
+        ,c.code                                                          _channel_code
+        ,c.name                                                          _channel_name
+        ,c.sort                                                          _sort
+        ,c.has_trial                                                     _has_trial
+        ,f.spend_eur                                                     _spend
+        ,f.mqls                                                          _mqls
+        ,f.trials_started                                                _trials_started
+        ,f.new_customers                                                 _new_customers
+        ,f.new_mrr                                                       _new_mrr
+        ,sum(f.spend_eur) over w4                                        _spend_4w
+        ,sum(f.new_customers) over w4                                    _new_customers_4w
+        ,sum(f.trials_converted) over w4                                 _trials_converted_4w
+        ,sum(f.trials_ended) over w4                                     _trials_ended_4w
+    from fact_marketing_weekly f
+    join dim_channel c on c.channel_id = f.channel_id
+    window w4 as (partition by f.channel_id order by f.week_start rows between 3 preceding and current row)
 )
-, x as (
+, r as (
     select
-         f.week_start                                    _week_start
-        ,sum(f.created_value_eur)                        _created_value
-        ,sum(f.won_deals)                                _won_deals
-        ,sum(f.won_value_eur)                            _won_value
-        ,sum(f.lost_deals)                               _lost_deals
-        ,sum(f.lost_value_eur)                           _lost_value
-    from fact_pipeline_flow_weekly f
-    group by f.week_start
+         f.*
+        ,f._spend_4w / nullif(f._new_customers_4w, 0)                                          _cac_4w
+        ,f._trials_converted_4w::numeric / nullif(f._trials_ended_4w, 0)                       _trial_conversion_4w
+    from f
 )
 select
-     o._week_start                                                                 _week_start
-    ,o._open_deals                                                                 _open_deals
-    ,o._open_value                                                                 _open_value
-    ,o._weighted_value                                                             _weighted_value
-    ,x._created_value                                                              _created_value
-    ,x._won_deals                                                                  _won_deals
-    ,x._won_value                                                                  _won_value
-    ,x._lost_deals                                                                 _lost_deals
-    ,x._lost_value                                                                 _lost_value
-    ,sum(x._won_value) over l / nullif(sum(x._won_value + x._lost_value) over l, 0) _win_rate_4w
-from o
-left join x on x._week_start = o._week_start
-window l as (order by o._week_start rows between 3 preceding and current row);
-
--- ---------------------------------------------------------------- breakdowns for the email's tables
-
--- Net sales by channel, region and category, with last year and (channel, region) the target.
-create view v_sales_breakdown with (security_invoker = on) as
-with b as (
-    select
-         f.week_start                    _week_start
-        ,'channel'                       _dim
-        ,c.code                          _member_code
-        ,c.name                          _member_name
-        ,c.sort                          _sort
-        ,sum(f.net_sales)                _net_sales
-        ,sum(f.net_sales - f.cogs)       _gross_margin
-    from fact_sales_weekly f
-    join dim_channel c on c.channel_id = f.channel_id
-    group by f.week_start, c.code, c.name, c.sort
-    union all
-    select
-         f.week_start                    _week_start
-        ,'region'                        _dim
-        ,r.code                          _member_code
-        ,r.name                          _member_name
-        ,r.sort                          _sort
-        ,sum(f.net_sales)                _net_sales
-        ,sum(f.net_sales - f.cogs)       _gross_margin
-    from fact_sales_weekly f
-    join dim_region r on r.region_id = f.region_id
-    group by f.week_start, r.code, r.name, r.sort
-    union all
-    select
-         f.week_start                    _week_start
-        ,'category'                      _dim
-        ,g.code                          _member_code
-        ,g.name                          _member_name
-        ,g.sort                          _sort
-        ,sum(f.net_sales)                _net_sales
-        ,sum(f.net_sales - f.cogs)       _gross_margin
-    from fact_sales_weekly f
-    join dim_category g on g.category_id = f.category_id
-    group by f.week_start, g.code, g.name, g.sort
-)
-, t as (
-    select
-         f.week_start                    _week_start
-        ,'channel'                       _dim
-        ,c.code                          _member_code
-        ,sum(f.net_sales_target)         _net_sales_target
-    from fact_sales_target_weekly f
-    join dim_channel c on c.channel_id = f.channel_id
-    group by f.week_start, c.code
-    union all
-    select
-         f.week_start                    _week_start
-        ,'region'                        _dim
-        ,r.code                          _member_code
-        ,sum(f.net_sales_target)         _net_sales_target
-    from fact_sales_target_weekly f
-    join dim_region r on r.region_id = f.region_id
-    group by f.week_start, r.code
-)
-select
-     b._week_start                                          _week_start
-    ,b._dim                                                 _dim
-    ,b._member_code                                         _member_code
-    ,b._member_name                                         _member_name
-    ,b._sort                                                _sort
-    ,b._net_sales                                           _net_sales
-    ,l._net_sales                                           _net_sales_ly
-    ,t._net_sales_target                                    _net_sales_target
-    ,b._net_sales / nullif(l._net_sales, 0) - 1             _yoy_pct
-    ,b._net_sales / nullif(t._net_sales_target, 0) - 1      _vs_target_pct
-    ,b._gross_margin / nullif(b._net_sales, 0)              _gross_margin_pct
-from b
-join dim_week w on w.week_start = b._week_start
-left join b l on l._dim = b._dim and l._member_code = b._member_code and l._week_start = w.ly_week_start
-left join t on t._dim = b._dim and t._member_code = b._member_code and t._week_start = b._week_start;
+     r._week_start                                                       _week_start
+    ,r._channel_code                                                     _channel_code
+    ,r._channel_name                                                     _channel_name
+    ,r._sort                                                             _sort
+    ,r._spend                                                            _spend
+    ,r._mqls                                                             _mqls
+    ,r._trials_started                                                   _trials_started
+    ,r._new_customers                                                    _new_customers
+    ,r._new_mrr                                                          _new_mrr
+    ,r._spend_4w                                                         _spend_4w
+    ,r._new_customers_4w                                                 _new_customers_4w
+    ,r._cac_4w                                                           _cac_4w
+    ,lag(r._cac_4w, 4) over wp                                           _cac_4w_before
+    ,case when r._has_trial then r._trial_conversion_4w end              _trial_conversion_4w
+    ,case when r._has_trial then lag(r._trial_conversion_4w, 4) over wp end _trial_conversion_4w_before
+from r
+window wp as (partition by r._channel_code order by r._week_start);
 
 -- ---------------------------------------------------------------- the KPI tiles
 
--- One row per week × KPI in the catalogue: value, last week, last year, target, the three deltas, and the flag.
--- Deltas are relative for eur / count KPIs and absolute (points, days) for pct / days KPIs, as the catalogue says.
+-- One row per week × KPI in the catalogue: value, last week, last year, the 13-week average before, target, the deltas,
+-- and the flag. Deltas are relative for eur / count KPIs and absolute (points, months) for pct / months KPIs.
 create view v_kpi_weekly with (security_invoker = on) as
 with v as (
     select
-         s._week_start                   _week_start
+         g._week_start                   _week_start
         ,x.kpi_code                      _kpi_code
         ,x.value                         _value
         ,x.target                        _target
-    from v_week_sales s
-    left join v_week_cash c on c._week_start = s._week_start
-    left join v_week_working_capital k on k._week_start = s._week_start
-    left join v_week_pipeline p on p._week_start = s._week_start
-    left join lateral (
-        select
-             min(o._projected_closing)   _low
-        from v_cash_outlook o
-        where 1=1
-            and o._issued_week = s._week_start + 7
-    ) m on true
+    from v_week_growth g
+    left join v_week_marketing m on m._week_start = g._week_start
+    left join v_week_cash c on c._week_start = g._week_start
+    left join v_week_working_capital k on k._week_start = g._week_start
     cross join lateral (values
-         ('net_sales',           s._net_sales::numeric,      s._net_sales_target::numeric)
-        ,('net_sales_ytd',       s._net_sales_ytd,           s._net_sales_target_ytd)
-        ,('gross_margin_pct',    s._gross_margin_pct,        s._gross_margin_pct_target)
-        ,('discount_rate',       s._discount_rate,           null)
-        ,('return_rate',         s._return_rate,             null)
-        ,('orders',              s._orders,                  null)
-        ,('new_customers',       s._new_customers,           null)
-        ,('aov_online',          s._aov_online,              null)
-        ,('cash_closing',        c._closing,                 c._closing_forecast)
-        ,('net_cash_flow',       c._net,                     c._forecast_net)
-        ,('operating_cash_flow', c._operating,               null)
-        ,('cash_low_13w',        m._low,                     null)
+         ('arr',                 g._arr::numeric,            g._arr_target::numeric)
+        ,('net_new_mrr_4w',      g._net_new_mrr_4w,          g._net_new_mrr_target_4w)
+        ,('mrr_churn_4w',        g._mrr_churn_4w,            null)
+        ,('mqls',                m._mqls,                    m._mqls_target)
+        ,('trial_conversion_4w', m._trial_conversion_4w,     null)
+        ,('cac_4w',              m._cac_4w,                  m._cac_target)
+        ,('cash_close',          c._closing,                 null)
+        ,('runway_months',       c._runway_months,           null)
         ,('ar_overdue_pct',      k._ar_overdue_pct,          null)
-        ,('dso',                 k._dso,                     null)
-        ,('ap_due_next_week',    k._ap_due_next_week,        null)
-        ,('pipeline_weighted',   p._weighted_value,          null)
-        ,('won_value',           p._won_value,               null)
-        ,('win_rate_4w',         p._win_rate_4w,             null)
+        ,('ap_due_14d',          k._ap_due_14d,              null)
     ) x(kpi_code, value, target)
 )
 , h as (
@@ -391,6 +340,8 @@ with v as (
         ,v._value                                                              _value
         ,v._target                                                             _target
         ,lag(v._value) over (partition by v._kpi_code order by v._week_start)  _prev
+        ,avg(v._value) over (partition by v._kpi_code order by v._week_start
+                             rows between 13 preceding and 1 preceding)        _avg13
         ,l._value                                                              _ly
     from v
     join dim_week w on w.week_start = v._week_start
@@ -398,27 +349,11 @@ with v as (
 )
 , d as (
     select
-         h._week_start                   _week_start
-        ,h._kpi_code                     _kpi_code
-        ,h._value                        _value
-        ,h._prev                         _prev
-        ,h._ly                           _ly
-        ,h._target                       _target
-        ,case
-             when k.unit in ('pct', 'days')
-                 then h._value - h._prev
-             else h._value / nullif(abs(h._prev), 0) - 1
-         end                             _vs_prev
-        ,case
-             when k.unit in ('pct', 'days')
-                 then h._value - h._ly
-             else h._value / nullif(abs(h._ly), 0) - 1
-         end                             _vs_ly
-        ,case
-             when k.unit in ('pct', 'days')
-                 then h._value - h._target
-             else h._value / nullif(abs(h._target), 0) - 1
-         end                             _vs_target
+         h.*
+        ,case when k.unit in ('pct', 'months') then h._value - h._prev   else h._value / nullif(abs(h._prev), 0) - 1   end _vs_prev
+        ,case when k.unit in ('pct', 'months') then h._value - h._ly     else h._value / nullif(abs(h._ly), 0) - 1     end _vs_ly
+        ,case when k.unit in ('pct', 'months') then h._value - h._avg13  else h._value / nullif(abs(h._avg13), 0) - 1  end _vs_avg13
+        ,case when k.unit in ('pct', 'months') then h._value - h._target else h._value / nullif(abs(h._target), 0) - 1 end _vs_target
     from h
     join kpi k on k.kpi_code = h._kpi_code
 )
@@ -433,26 +368,29 @@ select
     ,d._value                                        _value
     ,d._prev                                         _prev
     ,d._ly                                           _ly
+    ,d._avg13                                        _avg13
     ,d._target                                       _target
     ,d._vs_prev                                      _vs_prev
     ,d._vs_ly                                        _vs_ly
+    ,d._vs_avg13                                     _vs_avg13
     ,d._vs_target                                    _vs_target
     ,case
          when k.flag_vs = 'none'
              then false
          when k.flag_vs = 'policy'
-             then coalesce(d._value < y.min_cash_eur, false)
+             then coalesce(d._value < y.min_runway_months, false)
          else coalesce(
                   case k.flag_vs
                       when 'target' then d._vs_target
                       when 'ly' then d._vs_ly
-                      when 'prev' then d._vs_prev
+                      when 'avg13' then d._vs_avg13
                   end
                   * case k.better when 'up' then -1 else 1 end
                   > k.flag_threshold
               , false)
      end                                             _flag
     ,k.flag_vs                                       _flag_vs
+    ,k.definition                                    _definition
 from d
 join kpi k on k.kpi_code = d._kpi_code
 cross join company y;

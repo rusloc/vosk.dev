@@ -22,8 +22,12 @@ export interface ToolDefinition {
 /** One report's chat tools over its engine, for a report state `C` (the selection a question is asked in). */
 export interface ChatToolset<C> {
   definitions: readonly ToolDefinition[];
-  /** Never throws for bad input: an unknown tool or invalid arguments come back as `ok: false`. */
-  run(name: string, input: unknown, ctx: C): ToolResult;
+  /**
+   * Never throws for bad input: an unknown tool or invalid arguments come back as `ok: false`. A report's tools answer
+   * at once (its engine is in memory); a toolset that reads a database or calls a service per question answers with a
+   * promise (the Tidewell data chat, 11-16).
+   */
+  run(name: string, input: unknown, ctx: C): ToolResult | Promise<ToolResult>;
   /** Fixed per instance (no per-request text), so it can be cached. */
   systemPrompt(): string;
   /** One line on what the visitor is looking at, sent with each question. */
@@ -61,15 +65,19 @@ export function toolDefinitions<S extends Schemas>(
 }
 
 /** Runs one call: an unknown name or arguments that fail the schema come back as a reason the model can read. */
-export function runTool<S extends Schemas, C>(
+export function runTool<
+  S extends Schemas,
+  C,
+  R extends ToolResult | Promise<ToolResult> = ToolResult,
+>(
   schemas: S,
   runners: {
-    [K in keyof S]: (a: z.infer<S[K]>, ctx: C) => ToolResult;
+    [K in keyof S]: (a: z.infer<S[K]>, ctx: C) => R;
   },
   name: string,
   input: unknown,
   ctx: C,
-): ToolResult {
+): ToolResult | R {
   if (!Object.hasOwn(schemas, name)) return fail(`Unknown tool "${name}".`);
   const parsed = schemas[name]!.safeParse(input);
   if (!parsed.success)
@@ -78,5 +86,5 @@ export function runTool<S extends Schemas, C>(
         .map((i) => `${i.path.join(".") || "input"} ${i.message}`)
         .join("; ")}.`,
     );
-  return (runners[name] as (a: unknown, c: C) => ToolResult)(parsed.data, ctx);
+  return (runners[name] as (a: unknown, c: C) => R)(parsed.data, ctx);
 }

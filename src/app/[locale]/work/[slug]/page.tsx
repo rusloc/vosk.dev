@@ -7,8 +7,14 @@ import { JsonLd } from "@/components/json-ld";
 import { JsReportLazy } from "@/components/js-report-lazy";
 import { N8nWorkflow } from "@/components/n8n-workflow";
 import { REPORT_HASHES, REPORT_QUERY_KEYS } from "@/lib/js-reports";
+import { hasN8nFlow } from "@/lib/n8n-flows";
 import { ReportDialog } from "@/components/report-dialog";
-import { askAiTrigger } from "@/components/chat/ask-ai";
+import {
+  CEO_DIGEST_CHAT_COPY,
+  CEO_DIGEST_SUGGESTIONS,
+  askAiTrigger,
+} from "@/components/chat/ask-ai";
+import { ChatPanel } from "@/components/chat/chat-panel";
 import { SalesDashboardLazy } from "@/components/sales-dashboard-lazy";
 import { SupersetEmbed } from "@/components/superset-embed";
 import { getPostBySlug } from "@/lib/content";
@@ -108,13 +114,23 @@ export default async function ShowcasePage({ params }: Props) {
     (showcase.report === "mirelo" ||
       showcase.report === "marketing" ||
       showcase.report === "pnl" ||
-      showcase.report === "trucks" ||
-      showcase.report === "nordmark") &&
+      showcase.report === "trucks") &&
+    // Nordmark rejoins this list with its Supabase go-live (its chat route ships then; 11-16 hotfix).
     webReport &&
     process.env.CHAT_ENABLED === "1"
       ? showcase.report
       : null;
   const chat = chatReport !== null;
+  // A data chat with no report beside it (the Tidewell showcase, 11-16), under the same build-time switch. Its
+  // canvas button waits for the workflow's public copy (data/n8n/): an entry can ship before its export.
+  const dataChat =
+    showcase.platform === "automation" &&
+    showcase.chat &&
+    process.env.CHAT_ENABLED === "1"
+      ? showcase.chat
+      : null;
+  const canvas =
+    showcase.platform === "automation" && (await hasN8nFlow(showcase.workflow));
 
   return (
     <Container className="py-6">
@@ -163,7 +179,23 @@ export default async function ShowcasePage({ params }: Props) {
       <div className="mt-5 flex flex-wrap gap-3">
         {/* An n8n workflow (11-16): one button that opens its canvas, drawn by n8n's hosted preview (our server
             stays private). Owner's order, 11-16: this button, then "Try it yourself", then "About this project". */}
-        {showcase.platform === "automation" && (
+        {/* "Ask the data" (11-16): the chat alone in the narrow popup; it answers from the route, nothing loads before. */}
+        {dataChat && (
+          <ReportDialog
+            label={t.askData}
+            title={title}
+            closeLabel={t.closeReport}
+            trigger={askAiTrigger(t.askData)}
+            size="panel"
+          >
+            <ChatPanel
+              endpoint={`/api/chat/${dataChat}`}
+              suggestions={CEO_DIGEST_SUGGESTIONS}
+              standalone={CEO_DIGEST_CHAT_COPY}
+            />
+          </ReportDialog>
+        )}
+        {showcase.platform === "automation" && canvas && (
           <ReportDialog
             label={t.openWorkflow}
             title={`${title} — ${PLATFORM_LABEL.automation}`}

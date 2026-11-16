@@ -2,6 +2,8 @@
 
 ## Hot findings (last 30 days)
 
+- 2026-11-16 · CAND-002: an optional build input (a JSON that may not exist yet) is a template-literal `import()`, not a literal one and not an `fs` check.
+- 2026-11-16 · CAND-003: chat tools may be async and take a request context (`chatRoute({ context })`); first user is `lib/ceo-digest/`.
 - 2026-10-20 · AP-001: the blurred title bar (0.6em overhang + 7.5px blur) gets clipped by any `overflow-hidden` within ~45px (carousel slide on /services) — give it room inside the clip, never drop the clip.
 - 2026-10-20 · CAND-001: Tailwind v4 utilities are layered, CSS modules are not — a utility can't override `title-bar.module.css`; inline `style` or a module modifier.
 - 2026-09-21 · PG-004: `cache: "no-store"` on a fetch flips an ISR page (`revalidate = N`) to fully dynamic `ƒ`. Omit the `cache` option instead. Reproduced on 16.2.10.
@@ -18,7 +20,7 @@
 - [Platform gotchas](platform-gotchas.md) — 4 entries · stalest 2026-08-01 · PG-NNN
 - [Perf hotspots](perf-hotspots.md) — 2 entries · stalest 2026-08-01 · PERF-NNN
 - [Security findings](security-findings.md) — 1 entry · stalest 2026-09-21 · SEC-NNN
-- [Candidates](candidates.md) — 1 awaiting second hit · CAND-NNN
+- [Candidates](candidates.md) — 3 awaiting second hit · CAND-NNN
 
 ## Open questions
 

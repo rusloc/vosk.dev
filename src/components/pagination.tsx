@@ -1,6 +1,30 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/cn";
+
+// The page each list was last on. The App Router keeps this module alive across
+// client navigations, so a list that remounts (browser Back, the detail page's
+// back link, the nav) opens on the page the visitor left. A full reload starts
+// at page 1 again, which also keeps server and client markup equal on hydration.
+const lastPage = new Map<string, number>();
+
+export const rememberPage = (list: string, page: number) => {
+  lastPage.set(list, page);
+};
+export const recallPage = (list: string) => lastPage.get(list) ?? 0;
+
+/** `useState` for a list's page that survives the list unmounting. */
+export function useListPage(list: string): [number, (page: number) => void] {
+  const [page, setPage] = useState(() => recallPage(list));
+  return [
+    page,
+    (next) => {
+      rememberPage(list, next);
+      setPage(next);
+    },
+  ];
+}
 
 /**
  * Numbered page menu. Presentational — the list owns the page state and passes

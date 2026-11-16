@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { Pagination } from "@/components/pagination";
+import type { ReactNode } from "react";
+import { Pagination, useListPage } from "@/components/pagination";
 
 // Showcases per page — keeps the list within one screen; the page menu appears
 // only when there are more.
@@ -19,8 +19,10 @@ export function ShowcaseList({
   cards: ReactNode[];
   label: string;
 }) {
-  const [page, setPage] = useState(0);
+  // Remembered across navigations: back from a showcase lands on the same page.
+  const [stored, setPage] = useListPage("work");
   const pageCount = Math.ceil(cards.length / PAGE_SIZE);
+  const page = Math.min(stored, Math.max(0, pageCount - 1));
   const first = page * PAGE_SIZE;
 
   return (

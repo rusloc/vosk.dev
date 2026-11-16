@@ -247,7 +247,6 @@ export const ru: Dictionary = {
       "Не удалось загрузить дашборд. Попробуйте обновить страницу.",
     openWorkflow: "Открыть флоу n8n",
     howToTestHeading: "Попробуйте сами",
-    sheetLink: "публичную Google-таблицу",
     samplesLabel: "Образцы счетов",
     sampleName: "Счёт №{n}",
     workflowLoading: "Загружаем воркфлоу…",

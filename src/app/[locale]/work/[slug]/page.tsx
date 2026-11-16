@@ -259,7 +259,7 @@ export default async function ShowcasePage({ params }: Props) {
           <ol className="text-foreground/85 marker:text-muted-foreground mt-3 list-decimal space-y-1.5 pl-5 leading-relaxed">
             {showcase.test.steps.map((step, i) => (
               <li key={i}>
-                {step.split(/(\{email\}|\{sheet\})/).map((part, j) =>
+                {step.split(/(\{email\})/).map((part, j) =>
                   part === "{email}" ? (
                     <a
                       key={j}
@@ -267,16 +267,6 @@ export default async function ShowcasePage({ params }: Props) {
                       className="text-primary font-medium break-all hover:underline"
                     >
                       {showcase.test.email}
-                    </a>
-                  ) : part === "{sheet}" ? (
-                    <a
-                      key={j}
-                      href={showcase.test.sheetUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary font-medium hover:underline"
-                    >
-                      {t.sheetLink}
                     </a>
                   ) : (
                     part

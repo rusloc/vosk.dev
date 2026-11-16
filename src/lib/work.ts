@@ -85,13 +85,12 @@ type ShowcaseOf<Text, Paragraphs> =
     });
 
 /**
- * "Try it yourself" for a live workflow. A step may say `{email}` (the demo address, as a mailto link) and `{sheet}` (a
- * link to the public sheet); `samples` are files in public/ the visitor sends as the attachment, listed in a dropdown as
- * "Invoice #n" plus a short `note`.
+ * "Try it yourself" for a live workflow. A step may say `{email}` (the demo address, as a mailto link). No sheet link on
+ * the site: the public sheets are reached only from the workflow's reply email (owner, 11-16). `samples` are files in
+ * public/ the visitor sends as the attachment, listed in a dropdown as "Invoice #n" plus a short `note`.
  */
 type AutomationTest<Text, Paragraphs> = {
   email: string;
-  sheetUrl: string;
   steps: Paragraphs;
   samples?: { href: string; note: Text }[];
 };
@@ -157,7 +156,6 @@ export function localize(s: Showcase, locale: Locale): LocalizedShowcase {
         workflow: s.workflow,
         test: {
           email: s.test.email,
-          sheetUrl: s.test.sheetUrl,
           steps: s.test.steps[locale],
           samples: s.test.samples?.map((x) => ({
             href: x.href,
@@ -175,12 +173,6 @@ export const PLATFORM_LABEL: Record<ShowcasePlatform, string> = {
   js: "Custom JS",
   automation: "n8n",
 };
-
-/** The public sheets the n8n workflows write to (view-only for anyone with the link): emails, and parsed invoices. */
-const DEMO_SHEET =
-  "https://docs.google.com/spreadsheets/d/1sKfTp-kvGpnRggH5G-mCFKRymL4Jg8pyEXgvhIjnGyM";
-const INVOICE_SHEET =
-  "https://docs.google.com/spreadsheets/d/1JLRIXDWSOEjCvY0FFsUgZDuReg5NtRw9gNc7QUnVTjY";
 
 /** Placeholder marker — an entry still carrying this is not publishable. */
 const UNSET_EMBED_ID = "REPLACE-WITH-EMBED-UUID";
@@ -212,12 +204,11 @@ const allShowcases: Showcase[] = [
     },
     test: {
       email: "n8n.opc@gmail.com",
-      sheetUrl: DEMO_SHEET,
       steps: {
         en: [
           'Email {email} in any language and ask for something by a date ("the report by Friday?").',
-          "A reply with your row comes back in a minute or two.",
-          "Your email is at the top of {sheet}. It's public, so send nothing private.",
+          "In a minute or two a reply brings your row and a link to the public sheet.",
+          "Your email is at the top of that sheet. It's public, so send nothing private. Limits: 10 emails a day per sender, 3 attachments each.",
         ],
       },
     },
@@ -243,12 +234,11 @@ const allShowcases: Showcase[] = [
     },
     test: {
       email: "n8n.opc@gmail.com",
-      sheetUrl: INVOICE_SHEET,
       steps: {
         en: [
           "Download a sample invoice below (the companies are made up). Only these three are parsed; other mail goes to the inbox demo.",
-          "Email it to {email} as an attachment: one PDF, up to 5 MB.",
-          "A reply with what was read comes back in a minute or two, and the invoice shows in {sheet}.",
+          "Email it to {email}: up to 3 attachments, 5 MB in all, 10 emails a day. Each attached sample is parsed.",
+          "In a minute or two a reply brings what was read and a link to the public sheet of the newest invoices.",
         ],
       },
       samples: [

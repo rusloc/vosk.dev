@@ -270,7 +270,6 @@ export const en = {
     // yourself" with the sample files in a dropdown, then "About this project".
     openWorkflow: "Open n8n flow",
     howToTestHeading: "Try it yourself",
-    sheetLink: "the public Google Sheet",
     samplesLabel: "Sample invoices",
     sampleName: "Invoice #{n}",
     workflowLoading: "Loading the workflow…",

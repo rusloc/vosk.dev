@@ -8,7 +8,8 @@
  * plus connections and sticky notes. Dropped: credentials, ids, webhookId, pinData, versionId, meta, settings,
  * tags and node groups (n8n's preview service draws a blank canvas when `nodeGroups` is present, tested 11-16; placeholder
  * credentials don't clear the canvas's credential triangles either). The public demo addresses and the public sheet id
- * stay: they are meant to be public.
+ * stay public; the Google Sheet ids do NOT (owner, 11-16: the sheets are reached only from the reply email): every
+ * `spreadsheets/d/<id>` URL and every node `documentId` value becomes `<sheet-id>`.
  * Refuses to write if the result still names the private n8n host or looks like it carries a secret.
  */
 import { readFileSync, writeFileSync } from "node:fs";
@@ -48,10 +49,24 @@ const nodes = (wf.nodes as RawNode[]).map((n) =>
   ),
 );
 const clean = { name: wf.name, nodes, connections: wf.connections };
-const text = JSON.stringify(clean, null, 2) + "\n";
+// The sheets are reached only from the reply email (owner, 11-16): no sheet id in the public copy.
+const SHEET_ID = "<sheet-id>";
+const text =
+  JSON.stringify(
+    clean,
+    (key, value) =>
+      key === "documentId" && value && typeof value === "object"
+        ? { ...value, value: SHEET_ID }
+        : value,
+    2,
+  ).replace(
+    /docs\.google\.com\/spreadsheets\/d\/[A-Za-z0-9_-]{20,}/g,
+    `docs.google.com/spreadsheets/d/${SHEET_ID}`,
+  ) + "\n";
 
 const FORBIDDEN = [
   /n8n\.vosk\.dev/i,
+  /spreadsheets\/d\/(?!<sheet-id>)/,
   /"credentials"/,
   /webhookId/,
   /sk-ant-/,

@@ -53,6 +53,15 @@ Sub-workflow call per email, waiting for it:
   `sample-invoice-eur-vat (1).pdf` counts (owner's rule, 11-16).
 - **Email parser** (`5kDrsYnKqUKpNX7c`, the inbox flow) for everything else, other PDFs included.
 
+**Limits (owner, 11-16 15:01; router `704b701f`):** up to **15** unread emails per poll (the rest next minute). Per
+sender, the first **10 emails in a rolling 24 h** are processed; the 11th gets one HTML reply "Limit reached for today,
+wait 24 hours", later ones are only marked read (one notice per sender per 24 h, so the demo can't be used to bounce mail
+at someone). Nothing over the limit reaches a sheet. **More than 3 attachments** (any file part with a name, inline
+images included): "Attachment limit exceeded: processing failed", no row. Bounces, no-reply senders and our own mail:
+marked read only. The counters live in the router's static data; the sub-flows' own per-sender reply caps are 10, so
+they never block what the router let through. The invoice parser reads every attached sample, up to 3 (other PDFs are
+skipped), each as its own row and block in one reply. A Switch (5 outputs) replaced the IF.
+
 Both sub-flows start with "Called by the inbox router" (Execute Workflow Trigger, accept all data: `id`, `sizeEstimate`,
 `route`, `sampleFile`, `attachments`) and mark their email as read. Switched over at 14:30: the sub-flows were published
 first, then the router, so no email had two pollers; mail in the seconds between had none (Gmail trigger starts from
@@ -88,7 +97,8 @@ a complementary `filename:pdf` query; both are gone.
 **Showcasing (D5, accepted by the owner 2026-11-16):** workflows are shown on vosk.dev `/work/<slug>` (an `automation`
 platform kind, ADR-0002 amendment): text, a canvas image, and a button opening the interactive canvas in the popup via
 n8n's `<n8n-demo>` component (rendered by n8n's hosted preview service). The JSON is exported through MCP and stripped
-of credentials and IDs. `n8n.vosk.dev` stays private: never linked, `X-Robots-Tag: noindex`, later reachable over
+of credentials and IDs, and since 11-16 of the Google Sheet ids too: **the public sheets are reached only from the
+workflows' reply emails**, never linked from the site (owner, 11-16; `<sheet-id>` in the public copy). `n8n.vosk.dev` stays private: never linked, `X-Robots-Tag: noindex`, later reachable over
 Tailscale only. `n8n.vosk.dev/{name}` was considered and rejected (subdomain splits SEO, exposes the login host).
 
 ## The two flows

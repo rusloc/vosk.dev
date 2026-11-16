@@ -35,12 +35,15 @@ export type ShowcasePlatform =
 type ShowcaseBase<Text, Paragraphs> = {
   slug: string;
   // The sort key of the /work list, newest first. Internal only: never rendered on any page. The dates set the
-  // owner's order (11-05: Cube, exec, P&L, mining, lender, marketing, oldest to newest), not history.
+  // owner's order (11-05: Cube, exec, P&L, mining, lender, marketing, oldest to newest), not history. 11-16: the n8n
+  // showcases are dated between the reports, so every list page mixes both (4 cards a page).
   published: `${number}-${number}-${number}`;
   title: Text;
   summary: Text; // concise — the list-card blurb
-  client: Text; // the client type, shown as "Client: …" under the title and on the card (owner, 11-15)
-  details: Paragraphs; // the detail page's bullet summary: at most 5 points, one of them on the tech (owner, 11-15), under the report buttons
+  client: Text; // the client type, shown as "Client: …" under the detail page's title (owner, 11-15; off the cards 11-16)
+  // the detail page's bullet summary: at most 5 points, one of them on the tech (owner, 11-15), under the report
+  // buttons. `**…**` marks a key phrase in bold (11-16).
+  details: Paragraphs;
   metric?: string; // headline figure for the list-card report illustration (e.g. "$4.2M")
   articleSlug?: string; // optional /blog/<slug> write-up linked from the detail page
   // Reachable, but kept out of the index: an entry whose copy still says it's a
@@ -211,19 +214,19 @@ const allShowcases: Showcase[] = [
       ru: "Вопросы по маркетингу, денежному потоку и клиентам SaaS-компании простыми словами, а отчёт на почту присылает воркфлоу n8n.",
     },
     client: {
-      en: "SaaS company, 50 to 200 staff (fictional)",
-      ru: "SaaS-компания, 50–200 сотрудников (вымышленная)",
+      en: "SaaS company, 50 to 200 staff",
+      ru: "SaaS-компания, 50–200 сотрудников",
     },
     details: {
       en: [
-        "A manager asks about marketing, cash flow or clients in plain words and gets the figures in the chat, so a routine question no longer waits for an analyst.",
-        "An LLM picks from a closed set of SQL functions over PostgreSQL and writes only from the rows they return. There is no text-to-SQL, so it cannot invent a query or reach another table.",
-        '"Email me this" starts an n8n workflow: it runs the same functions for the period, adds three short takeaways and sends an HTML email with the tables. Sends are capped per address and per day.',
+        "A manager opens **Ask AI** and asks about marketing, cash flow or clients in plain words. The figures come back in the chat. No waiting for an analyst.",
+        "**There is no text-to-SQL.** The LLM can only call a closed set of **PostgreSQL functions** and writes from the rows they return. **This nearly removes hallucinations**: the model never writes a query, so it can't invent one or reach another table, and every figure comes from the rows the functions return.",
+        "**Email me this** starts an **n8n workflow**. It runs the same functions for the period, adds three short takeaways and sends an HTML report with the tables. Sends are capped per address and per day.",
       ],
       ru: [
-        "Руководитель спрашивает о маркетинге, денежном потоке или клиентах простыми словами и получает цифры в чате, так что рядовой вопрос больше не ждёт аналитика.",
-        "LLM выбирает из закрытого набора SQL-функций над PostgreSQL и пишет только по строкам, которые они вернули. Text-to-SQL здесь нет, поэтому выдумать запрос или добраться до другой таблицы нельзя.",
-        "«Пришли это на почту» запускает воркфлоу n8n: он выполняет те же функции за период, добавляет три коротких вывода и отправляет HTML-письмо с таблицами. Отправки ограничены по адресу и по дням.",
+        "Руководитель открывает **Спросить ИИ** и простыми словами спрашивает о маркетинге, денежном потоке или клиентах. Цифры приходят в чат. Ждать аналитика не нужно.",
+        "**Text-to-SQL здесь нет.** LLM может только вызывать закрытый набор **функций PostgreSQL** и пишет по строкам, которые они вернули. **Это почти полностью убирает галлюцинации**: модель не пишет запросов, поэтому не может выдумать запрос или добраться до другой таблицы, а каждая цифра берётся из строк, которые вернули функции.",
+        "**«Пришли это на почту»** запускает **воркфлоу n8n**. Он выполняет те же функции за период, добавляет три коротких вывода и отправляет HTML-отчёт с таблицами. Отправки ограничены по адресу и по дням.",
       ],
     },
     test: {
@@ -231,21 +234,21 @@ const allShowcases: Showcase[] = [
       email: "n8n.opc@gmail.com",
       steps: {
         en: [
-          'Open "Ask the data" and ask about marketing, cash flow or clients ("Which channel had the lowest CAC last month?").',
-          "Ask for the report by email, type your address and confirm the period.",
-          'In a minute or two it arrives from {email}. The company and its figures are made up, and "today" in the data is 15 November 2026. Limits: 2 emails a day per visitor, 3 per address.',
+          'Open **Ask AI** and ask about marketing, cash flow or clients ("Which channel had the lowest CAC last month?").',
+          "Say **Email me this**, type your address and confirm the period.",
+          'In a minute or two the report arrives from {email}. **Synthetic data**, with "today" set to 15 November 2026. Limits: 2 emails a day per visitor, 3 per address.',
         ],
         ru: [
-          "Откройте «Спросить данные» и спросите о маркетинге, денежном потоке или клиентах («У какого канала был самый низкий CAC в прошлом месяце?»).",
-          "Попросите отчёт на почту, напишите адрес и подтвердите период.",
-          "Через минуту-две он придёт с {email}. Компания и её цифры выдуманы, а «сегодня» в данных это 15 ноября 2026. Лимиты: 2 письма в день на посетителя, 3 на адрес.",
+          "Откройте **Спросить ИИ** и спросите о маркетинге, денежном потоке или клиентах («У какого канала был самый низкий CAC в прошлом месяце?»).",
+          "Напишите **«Пришли это на почту»**, укажите адрес и подтвердите период.",
+          "Через минуту-две отчёт придёт с {email}. **Синтетические данные**, «сегодня» в них это 15 ноября 2026. Лимиты: 2 письма в день на посетителя, 3 на адрес.",
         ],
       },
     },
   },
   {
     slug: "inbox-to-sheet-ai",
-    published: "2026-11-16",
+    published: "2026-11-04",
     platform: "automation",
     // n8n workflow "Inbox to sheet (public demo)", live since 11-16 (docs/automation/README.md, Flow 0). Its public
     // copy is data/n8n/inbox-to-sheet.json: re-export it (scripts/n8n-export.ts) after every change in n8n.
@@ -275,7 +278,7 @@ const allShowcases: Showcase[] = [
   },
   {
     slug: "invoice-pdf-parser",
-    published: "2026-11-16",
+    published: "2026-11-02",
     platform: "automation",
     // n8n workflow "Invoice PDF to sheet (public demo)" (11-16), public copy in data/n8n/invoice-pdf-to-sheet.json.
     // The samples are synthetic, made for this page (public/samples/automation/).

@@ -4,6 +4,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import styles from "./cta-button.module.css";
 
+const SIZE_CLASS = {
+  full: "h-full max-w-[1600px]",
+  panel: "h-[min(760px,100%)] max-w-[560px]",
+  // 16:9, as large as fits: 1280px wide at most, or the height of the viewport less the backdrop's padding
+  wide: "h-[min(760px,100%)] max-w-[560px] lg:aspect-video lg:h-auto lg:w-[min(1280px,100%,calc((100dvh-2rem)*16/9))] lg:max-w-none",
+} as const;
+
 /**
  * A live report behind a button, in a near-full-screen popup. The showcase page is
  * text a crawler can read; the embed — an iframe it can't — mounts only on request.
@@ -34,8 +41,9 @@ export function ReportDialog({
   openOnHash?: readonly string[];
   /** A trigger of its own (the AI chat button, 11-06): its class and what it shows instead of the label. Default: the CTA. */
   trigger?: { className?: string; content?: ReactNode };
-  /** "full": near-full-screen, for a report. "panel": a narrow, tall window, for the chat. */
-  size?: "full" | "panel";
+  /** "full": near-full-screen, for a report. "panel": a narrow, tall window, for the chat. "wide": a 16:9 window from
+   *  `lg` up (a narrow, tall one below), for a chat beside a stand-in for the client's app (11-16). */
+  size?: "full" | "panel" | "wide";
   /** Open as soon as it mounts: the report's chat when the page's Ask AI opened the report (11-06). Client-mounted only. */
   defaultOpen?: boolean;
   /** The popup content; a function gets `close`, for content that closes its own popup (the chat's "Open in report"). */
@@ -117,7 +125,7 @@ export function ReportDialog({
               aria-label={title}
               tabIndex={-1}
               onClick={(e) => e.stopPropagation()}
-              className={`border-border bg-background flex w-full flex-col overflow-hidden rounded-lg border shadow-xl outline-none ${size === "panel" ? "h-[min(760px,100%)] max-w-[560px]" : "h-full max-w-[1600px]"}`}
+              className={`border-border bg-background flex w-full flex-col overflow-hidden rounded-lg border shadow-xl outline-none ${SIZE_CLASS[size]}`}
             >
               <div className="border-border flex items-center justify-between gap-4 border-b py-1.5 pr-1.5 pl-4">
                 <p className="truncate text-sm font-medium">{title}</p>
@@ -146,7 +154,7 @@ export function ReportDialog({
               </div>
               {/* Scrolls for a native dashboard taller than the box; an iframe fills it. */}
               <div
-                className={`min-h-0 flex-1 ${size === "panel" ? "overflow-hidden" : "bg-muted overflow-auto"}`}
+                className={`min-h-0 flex-1 ${size === "full" ? "bg-muted overflow-auto" : "overflow-hidden"}`}
               >
                 {typeof children === "function"
                   ? children(() => setOpen(false))

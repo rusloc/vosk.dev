@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 import { Pagination, useListPage } from "@/components/pagination";
 
 // Showcases per page — keeps the list within one screen; the page menu appears
-// only when there are more.
-const PAGE_SIZE = 3;
+// only when there are more. 4 since 11-16 (owner), with the cards cut to a title and two lines.
+const PAGE_SIZE = 4;
 
 /**
  * Paginated showcase list. Cards are rendered on the server (ShowcaseCard) and

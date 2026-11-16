@@ -15,17 +15,17 @@ describe("ShowcaseList page memory", () => {
   afterEach(() => rememberPage("work", 0));
 
   it("opens on page 1 when nothing is remembered", () => {
-    expect(visible(render())).toEqual([0, 1, 2]);
+    expect(visible(render())).toEqual([0, 1, 2, 3]);
   });
 
   it("opens on the page the visitor left", () => {
     rememberPage("work", 1);
-    expect(visible(render())).toEqual([3, 4, 5]);
+    expect(visible(render())).toEqual([4, 5, 6]);
     expect(render()).toMatch(/aria-current="page"[^>]*>2</);
   });
 
   it("clamps a remembered page that no longer exists", () => {
     rememberPage("work", 9);
-    expect(visible(render())).toEqual([6]);
+    expect(visible(render())).toEqual([4, 5, 6]);
   });
 });

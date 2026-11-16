@@ -35,6 +35,20 @@ import {
   type Locale,
 } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { ReportMock } from "../report-mock";
+
+/** A line of showcase copy with its `**key phrases**` in bold (lib/work.ts, 11-16). */
+function withBold(text: string) {
+  return text.split(/\*\*(.+?)\*\*/).map((part, i) =>
+    i % 2 === 1 ? (
+      <strong key={i} className="text-foreground font-semibold">
+        {part}
+      </strong>
+    ) : (
+      part
+    ),
+  );
+}
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
@@ -179,20 +193,34 @@ export default async function ShowcasePage({ params }: Props) {
       <div className="mt-5 flex flex-wrap gap-3">
         {/* An n8n workflow (11-16): one button that opens its canvas, drawn by n8n's hosted preview (our server
             stays private). Owner's order, 11-16: this button, then "Try it yourself", then "About this project". */}
-        {/* "Ask the data" (11-16): the chat alone in the narrow popup; it answers from the route, nothing loads before. */}
+        {/* "Ask AI" (owner, 11-16): a 16:9 popup, the chat on the right and on the left an empty slot, a dull report
+            picture over "Your APP or BI REPORT here", where a client's own app would sit. Below `lg` the chat alone. It
+            answers from the route; nothing loads before. */}
         {dataChat && (
           <ReportDialog
-            label={t.askData}
+            label={t.askAi}
             title={title}
             closeLabel={t.closeReport}
-            trigger={askAiTrigger(t.askData)}
-            size="panel"
+            trigger={askAiTrigger(t.askAi)}
+            size="wide"
           >
-            <ChatPanel
-              endpoint={`/api/chat/${dataChat}`}
-              suggestions={CEO_DIGEST_SUGGESTIONS}
-              standalone={CEO_DIGEST_CHAT_COPY}
-            />
+            <div className="flex h-full">
+              <div className="bg-muted hidden min-w-0 flex-1 flex-col items-center justify-center gap-5 p-10 lg:flex">
+                <div className="w-full max-w-[420px] opacity-40 grayscale">
+                  <ReportMock metric="" />
+                </div>
+                <p className="text-muted-foreground text-lg font-medium tracking-tight">
+                  {t.chatAppSlot}
+                </p>
+              </div>
+              <div className="border-border min-w-0 flex-1 lg:w-[420px] lg:flex-none lg:border-l">
+                <ChatPanel
+                  endpoint={`/api/chat/${dataChat}`}
+                  suggestions={CEO_DIGEST_SUGGESTIONS}
+                  standalone={CEO_DIGEST_CHAT_COPY}
+                />
+              </div>
+            </div>
           </ReportDialog>
         )}
         {showcase.platform === "automation" && canvas && (
@@ -301,7 +329,7 @@ export default async function ShowcasePage({ params }: Props) {
                       {showcase.test.email}
                     </a>
                   ) : (
-                    part
+                    withBold(part)
                   ),
                 )}
               </li>
@@ -340,7 +368,7 @@ export default async function ShowcasePage({ params }: Props) {
           {/* A dry bullet summary (owner, 11-05): what the report shows and which metrics reveal the detail. */}
           <ul className="marker:text-muted-foreground list-disc space-y-1.5 pl-5">
             {details.map((point, i) => (
-              <li key={i}>{point}</li>
+              <li key={i}>{withBold(point)}</li>
             ))}
           </ul>
           {/* The long-form story, linked by its own title as the anchor. */}

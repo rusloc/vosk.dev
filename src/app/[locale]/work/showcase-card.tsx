@@ -13,13 +13,11 @@ import titleStyles from "../blog/title-bar.module.css";
 export function ShowcaseCard({
   showcase,
   locale,
-  clientLabel,
 }: {
   showcase: LocalizedShowcase;
   locale: Locale;
-  clientLabel: string;
 }) {
-  const { slug, title, summary, client, metric } = showcase;
+  const { slug, title, summary, metric } = showcase;
   const href = localizedPath(locale, `/work/${slug}`);
 
   return (
@@ -38,15 +36,15 @@ export function ShowcaseCard({
           </span>
         </h2>
 
-        <p className="mt-2 text-sm">
-          <span className="text-muted-foreground">{clientLabel}:</span>{" "}
-          <span className="font-medium">{client}</span>
+        {/* No "Client: …" line here since 11-16 (owner): the detail page keeps it. Two lines at most, so four
+            cards fit a page. */}
+        <p className="text-muted-foreground mt-2 line-clamp-2 max-w-xl">
+          {summary}
         </p>
-        <p className="text-muted-foreground mt-1 max-w-md">{summary}</p>
       </div>
 
       {/* Middle — report illustration (hidden on small screens) */}
-      <div className="hidden shrink-0 self-center md:block md:w-[170px] lg:w-[190px]">
+      <div className="hidden shrink-0 self-center md:block md:w-[130px] lg:w-[150px]">
         {showcase.platform === "automation" ? (
           <FlowMock />
         ) : (

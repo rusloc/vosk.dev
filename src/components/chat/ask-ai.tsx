@@ -90,7 +90,7 @@ export const CEO_DIGEST_SUGGESTIONS = [
 
 /** The Tidewell data chat's own lines: a chat over a company's data, with no report beside it (11-16). */
 export const CEO_DIGEST_CHAT_COPY = {
-  note: "AI assistant · answers come from the demo company's data (made up); the figures sit under each answer.",
+  note: "AI assistant · answers come from the company's synthetic data; the figures sit under each answer.",
   intro:
     "Ask about marketing, cash flow or clients, or have a report emailed to you. Start with one of these:",
   placeholder: "Ask about the data…",

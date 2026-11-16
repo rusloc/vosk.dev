@@ -96,7 +96,7 @@ export default async function ShowcasePage({ params }: Props) {
 
   const reportTitle = `${title} — ${PLATFORM_LABEL[platform]}`;
   // A JS report whose data is not wired yet (its reader URL unset) shows its Power BI flavour only. An n8n workflow
-  // has no report: its one button sits under "How to test" instead (below).
+  // has no report: its one button opens the workflow's canvas instead (below).
   const webReport =
     showcase.platform === "js"
       ? isJsReportLive(showcase.report)
@@ -160,116 +160,97 @@ export default async function ShowcasePage({ params }: Props) {
           labels 11-03), each opening its report in the same popup. Every showcase uses
           the same two names (owner, 11-04): "Power BI" for a Power BI report, "Web report"
           for everything drawn on the site (JS, Cube, Superset). */}
-      {showcase.platform !== "automation" && (
-        <div className="mt-5 flex flex-wrap gap-3">
-          {showcase.platform === "js" && showcase.powerBi && (
-            <ReportDialog
-              label={t.openPowerBi}
+      <div className="mt-5 flex flex-wrap gap-3">
+        {/* An n8n workflow (11-16): one button that opens its canvas, drawn by n8n's hosted preview (our server
+            stays private). Owner's order, 11-16: this button, then "Try it yourself", then "About this project". */}
+        {showcase.platform === "automation" && (
+          <ReportDialog
+            label={t.openWorkflow}
+            title={`${title} — ${PLATFORM_LABEL.automation}`}
+            closeLabel={t.closeReport}
+          >
+            <N8nWorkflow
+              flow={showcase.workflow}
+              loadingLabel={t.workflowLoading}
+              errorLabel={t.workflowError}
+            />
+          </ReportDialog>
+        )}
+        {showcase.platform === "js" && showcase.powerBi && (
+          <ReportDialog
+            label={t.openPowerBi}
+            title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
+            closeLabel={t.closeReport}
+            href={showcase.powerBi.href}
+          >
+            <iframe
+              src={showcase.powerBi.embedUrl}
               title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
-              closeLabel={t.closeReport}
-              href={showcase.powerBi.href}
-            >
+              allowFullScreen
+              className="h-full w-full border-0"
+            />
+          </ReportDialog>
+        )}
+        {webReport && (
+          <ReportDialog
+            label={
+              showcase.platform === "power-bi" ? t.openPowerBi : t.openWebReport
+            }
+            title={reportTitle}
+            closeLabel={t.closeReport}
+            href={showcase.platform === "power-bi" ? showcase.href : undefined}
+            openOnQuery={
+              showcase.platform === "js"
+                ? REPORT_QUERY_KEYS[showcase.report]
+                : undefined
+            }
+            openOnHash={
+              showcase.platform === "js"
+                ? REPORT_HASHES[showcase.report]
+                : undefined
+            }
+          >
+            {showcase.platform === "cube" ? (
+              <div className="p-4 sm:p-6">
+                <SalesDashboardLazy
+                  data={await getSalesDashboardData()}
+                  labels={dict.salesDashboard}
+                />
+              </div>
+            ) : showcase.platform === "js" ? (
+              <JsReportLazy report={showcase.report} chat={chat} />
+            ) : showcase.platform === "superset" ? (
+              <SupersetEmbed
+                slug={showcase.slug}
+                embedId={showcase.embedId}
+                title={reportTitle}
+                loadingLabel={t.dashboardLoading}
+                errorLabel={t.dashboardError}
+              />
+            ) : showcase.platform === "power-bi" ? (
               <iframe
-                src={showcase.powerBi.embedUrl}
-                title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
+                src={showcase.embedUrl}
+                title={reportTitle}
                 allowFullScreen
                 className="h-full w-full border-0"
               />
-            </ReportDialog>
-          )}
-          {webReport && (
-            <ReportDialog
-              label={
-                showcase.platform === "power-bi"
-                  ? t.openPowerBi
-                  : t.openWebReport
-              }
-              title={reportTitle}
-              closeLabel={t.closeReport}
-              href={
-                showcase.platform === "power-bi" ? showcase.href : undefined
-              }
-              openOnQuery={
-                showcase.platform === "js"
-                  ? REPORT_QUERY_KEYS[showcase.report]
-                  : undefined
-              }
-              openOnHash={
-                showcase.platform === "js"
-                  ? REPORT_HASHES[showcase.report]
-                  : undefined
-              }
-            >
-              {showcase.platform === "cube" ? (
-                <div className="p-4 sm:p-6">
-                  <SalesDashboardLazy
-                    data={await getSalesDashboardData()}
-                    labels={dict.salesDashboard}
-                  />
-                </div>
-              ) : showcase.platform === "js" ? (
-                <JsReportLazy report={showcase.report} chat={chat} />
-              ) : showcase.platform === "superset" ? (
-                <SupersetEmbed
-                  slug={showcase.slug}
-                  embedId={showcase.embedId}
-                  title={reportTitle}
-                  loadingLabel={t.dashboardLoading}
-                  errorLabel={t.dashboardError}
-                />
-              ) : (
-                <iframe
-                  src={showcase.embedUrl}
-                  title={reportTitle}
-                  allowFullScreen
-                  className="h-full w-full border-0"
-                />
-              )}
-            </ReportDialog>
-          )}
-          {/* Ask AI opens the web report with its chat already up (owner, 11-06): the chat then asks about the
+            ) : null}
+          </ReportDialog>
+        )}
+        {/* Ask AI opens the web report with its chat already up (owner, 11-06): the chat then asks about the
             report's view, and a figures card's link applies in place, as from the report's own button. */}
-          {chatReport && (
-            <ReportDialog
-              label={t.askAi}
-              title={reportTitle}
-              closeLabel={t.closeReport}
-              trigger={askAiTrigger(t.askAi)}
-            >
-              <JsReportLazy report={chatReport} chat chatOpen />
-            </ReportDialog>
-          )}
-        </div>
-      )}
+        {chatReport && (
+          <ReportDialog
+            label={t.askAi}
+            title={reportTitle}
+            closeLabel={t.closeReport}
+            trigger={askAiTrigger(t.askAi)}
+          >
+            <JsReportLazy report={chatReport} chat chatOpen />
+          </ReportDialog>
+        )}
+      </div>
 
-      <section className="mt-8 max-w-prose">
-        <h2 className="text-lg font-semibold tracking-tight">
-          {t.aboutHeading}
-        </h2>
-        <div className="text-foreground/85 mt-3 space-y-4 leading-relaxed">
-          {/* A dry bullet summary (owner, 11-05): what the report shows and which metrics reveal the detail. */}
-          <ul className="marker:text-muted-foreground list-disc space-y-1.5 pl-5">
-            {details.map((point, i) => (
-              <li key={i}>{point}</li>
-            ))}
-          </ul>
-          {/* The long-form story, linked by its own title as the anchor. */}
-          {article && (
-            <p>
-              {t.writeUp}:{" "}
-              <Link
-                href={localizedPath(l, `/blog/${article.slug}`)}
-                className="text-primary font-medium hover:underline"
-              >
-                {article.title}
-              </Link>
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* An n8n workflow (11-16): what it does (above), how to try it on the live demo, then one button that opens
-          its canvas in the popup (owner's order). The canvas comes from n8n's hosted preview; our server is private. */}
       {showcase.platform === "automation" && (
         <section className="mt-8 max-w-prose">
           <h2 className="text-lg font-semibold tracking-tight">
@@ -304,39 +285,56 @@ export default async function ShowcasePage({ params }: Props) {
               </li>
             ))}
           </ol>
+          {/* The sample files in a compact dropdown (owner, 11-16): a native <details>, so no client JS. */}
           {showcase.test.samples && (
-            <div className="mt-4">
-              <p className="text-sm font-medium">{t.samplesLabel}</p>
-              <ul className="mt-1.5 space-y-1 text-sm">
-                {showcase.test.samples.map((sample) => (
+            <details className="border-border mt-4 w-fit rounded-md border px-3 py-2 text-sm">
+              <summary className="cursor-pointer font-medium select-none">
+                {t.samplesLabel}
+              </summary>
+              <ul className="mt-2 space-y-1">
+                {showcase.test.samples.map((sample, i) => (
                   <li key={sample.href}>
                     <a
                       href={sample.href}
                       download
-                      className="text-primary hover:underline"
+                      className="text-primary font-medium hover:underline"
                     >
-                      {sample.label}
-                    </a>
+                      {t.sampleName.replace("{n}", String(i + 1))}
+                    </a>{" "}
+                    <span className="text-muted-foreground">{sample.note}</span>
                   </li>
                 ))}
               </ul>
-            </div>
+            </details>
           )}
-          <div className="mt-6">
-            <ReportDialog
-              label={t.openWorkflow}
-              title={`${title} — ${PLATFORM_LABEL.automation}`}
-              closeLabel={t.closeReport}
-            >
-              <N8nWorkflow
-                flow={showcase.workflow}
-                loadingLabel={t.workflowLoading}
-                errorLabel={t.workflowError}
-              />
-            </ReportDialog>
-          </div>
         </section>
       )}
+
+      <section className="mt-8 max-w-prose">
+        <h2 className="text-lg font-semibold tracking-tight">
+          {t.aboutHeading}
+        </h2>
+        <div className="text-foreground/85 mt-3 space-y-4 leading-relaxed">
+          {/* A dry bullet summary (owner, 11-05): what the report shows and which metrics reveal the detail. */}
+          <ul className="marker:text-muted-foreground list-disc space-y-1.5 pl-5">
+            {details.map((point, i) => (
+              <li key={i}>{point}</li>
+            ))}
+          </ul>
+          {/* The long-form story, linked by its own title as the anchor. */}
+          {article && (
+            <p>
+              {t.writeUp}:{" "}
+              <Link
+                href={localizedPath(l, `/blog/${article.slug}`)}
+                className="text-primary font-medium hover:underline"
+              >
+                {article.title}
+              </Link>
+            </p>
+          )}
+        </div>
+      </section>
     </Container>
   );
 }

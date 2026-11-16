@@ -266,11 +266,13 @@ export const en = {
     dashboardLoading: "Loading the live dashboard…",
     dashboardError:
       "The dashboard couldn't be loaded. Try refreshing the page.",
-    // An n8n workflow showcase (11-16): its button opens the interactive canvas in the popup, under "How to test".
-    openWorkflow: "n8n workflow",
-    howToTestHeading: "How to test",
+    // An n8n workflow showcase (11-16; order 11-16 owner): the button opens the canvas in the popup, then "Try it
+    // yourself" with the sample files in a dropdown, then "About this project".
+    openWorkflow: "Open n8n flow",
+    howToTestHeading: "Try it yourself",
     sheetLink: "the public Google Sheet",
-    samplesLabel: "Sample invoices (PDF)",
+    samplesLabel: "Sample invoices",
+    sampleName: "Invoice #{n}",
     workflowLoading: "Loading the workflow…",
     workflowError:
       "The workflow preview couldn't be loaded. Try again in a minute.",

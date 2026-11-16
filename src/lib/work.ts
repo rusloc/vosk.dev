@@ -85,14 +85,15 @@ type ShowcaseOf<Text, Paragraphs> =
     });
 
 /**
- * "How to test" for a live workflow. A step may say `{email}` (the demo address, as a mailto link) and `{sheet}` (a
- * link to the public sheet); `samples` are files in public/ the visitor sends as the attachment.
+ * "Try it yourself" for a live workflow. A step may say `{email}` (the demo address, as a mailto link) and `{sheet}` (a
+ * link to the public sheet); `samples` are files in public/ the visitor sends as the attachment, listed in a dropdown as
+ * "Invoice #n" plus a short `note`.
  */
 type AutomationTest<Text, Paragraphs> = {
   email: string;
   sheetUrl: string;
   steps: Paragraphs;
-  samples?: { href: string; label: Text }[];
+  samples?: { href: string; note: Text }[];
 };
 
 /** A Power BI report published to web, as the `power-bi` platform carries it. */
@@ -160,7 +161,7 @@ export function localize(s: Showcase, locale: Locale): LocalizedShowcase {
           steps: s.test.steps[locale],
           samples: s.test.samples?.map((x) => ({
             href: x.href,
-            label: x.label[locale],
+            note: x.note[locale],
           })),
         },
       };
@@ -202,11 +203,9 @@ const allShowcases: Showcase[] = [
     client: { en: "Small team with a shared inbox" },
     details: {
       en: [
-        "A shared inbox collects requests all day, and someone has to read each one to see what it asks and by when. This n8n workflow does that first read and logs every email in a Google Sheet about a minute after it lands.",
-        'An LLM (Claude Haiku) reads the text and fills two cells: the topic in one sentence, and the deadline if the email has one. "By the end of this week" becomes the date of that Sunday.',
-        "Personal data stays out of the sheet. Addresses are masked to s***n@example.com, the model is told to leave names out, and its answer is stripped of links and long numbers before it is written.",
-        "Attachments are counted, never downloaded. The sheet keeps the 10 newest emails, newest first, written as plain text, so a formula in a subject line can't run.",
-        "Built for a public inbox. The prompt treats the email as untrusted input, and replies are capped at 3 per sender and 100 a day, with none to bounces or no-reply senders.",
+        "Every email to a shared inbox becomes a row in a Google Sheet about a minute after it lands, so nobody has to open each one to see what it asks.",
+        'An LLM (Claude Haiku) writes the topic in one sentence and pulls out the deadline. "By the end of this week" becomes the date of that Sunday.',
+        "Safe on a public inbox: addresses are masked, names and links are kept out of the sheet, attachments are only counted, and replies are capped per sender and per day.",
       ],
     },
     test: {
@@ -214,9 +213,9 @@ const allShowcases: Showcase[] = [
       sheetUrl: DEMO_SHEET,
       steps: {
         en: [
-          'Send an email to {email}, in any language. Ask for something with a deadline in it ("can you send the report by Friday?") and attach a file if you like.',
-          "Wait a minute or two. A reply comes back with your row as the sheet shows it, the topic and deadline included.",
-          "Open {sheet}. Your email sits at the top. It's public, so don't send anything private.",
+          'Email {email} in any language and ask for something by a date ("the report by Friday?").',
+          "A reply with your row comes back in a minute or two.",
+          "Your email is at the top of {sheet}. It's public, so send nothing private.",
         ],
       },
     },
@@ -235,39 +234,33 @@ const allShowcases: Showcase[] = [
     client: { en: "Finance team of a small company" },
     details: {
       en: [
-        "Accounts payable still retypes PDF invoices into spreadsheets. This n8n workflow takes the invoice from an email and turns it into a row, with nobody typing.",
-        'An LLM (Claude Haiku) reads the PDF text and pulls out vendor, invoice number, invoice and due dates, currency, subtotal, tax, total and every line item. Payment terms like "Net 30" become a due date.',
-        "The numbers get checked rather than trusted. The lines must add up to the subtotal, subtotal plus tax to the total, and the due date must fall after the invoice date. Anything off lands in the Check column.",
-        "A scanned PDF without a text layer is reported as one, never guessed. The PDF is untrusted input, the sender is masked, and replies and AI reads have daily caps.",
-        "The public sheet keeps the 10 newest invoices. The sender gets the full result by email, line items included.",
+        "A PDF invoice sent by email becomes a row in a Google Sheet, so accounts payable stops retyping invoices by hand.",
+        'An LLM (Claude Haiku) reads the vendor, number, dates, currency, totals and every line item. "Net 30" turns into a due date.',
+        "Then the arithmetic is checked: lines against the subtotal, subtotal plus tax against the total. A mismatch shows in the Check column, and a scanned PDF with no text is reported as one.",
       ],
     },
     test: {
-      email: "n8n.opc+invoices@gmail.com",
+      email: "n8n.opc@gmail.com",
       sheetUrl: DEMO_SHEET,
       steps: {
         en: [
-          "Download one of the sample invoices below. The companies on them are made up.",
-          "Email it to {email} as an attachment. One PDF per email (only the first is read), up to 5 MB.",
-          'Within a minute or two a reply arrives with everything the workflow read, and the invoice appears in the "invoices" tab of {sheet}.',
+          "Download a sample invoice below (the companies are made up).",
+          "Email it to {email} as an attachment: one PDF, up to 5 MB.",
+          'A reply with what was read comes back in a minute or two, and the invoice shows in the "invoices" tab of {sheet}.',
         ],
       },
       samples: [
         {
           href: "/samples/automation/sample-invoice-eur-vat.pdf",
-          label: { en: "EUR, with VAT and 4 lines" },
+          note: { en: "EUR, VAT, 4 lines" },
         },
         {
           href: "/samples/automation/sample-invoice-usd-net30.pdf",
-          label: {
-            en: '"Net 30" instead of a due date: the workflow works the date out (USD, 2 lines)',
-          },
+          note: { en: 'USD, "Net 30" instead of a due date' },
         },
         {
           href: "/samples/automation/sample-invoice-gbp-mismatch.pdf",
-          label: {
-            en: "The lines don't add up to the subtotal: watch the Check column (GBP)",
-          },
+          note: { en: "GBP, lines don't add up to the subtotal" },
         },
       ],
     },

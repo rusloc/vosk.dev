@@ -245,10 +245,11 @@ export const ru: Dictionary = {
     dashboardLoading: "Загружаем живой дашборд…",
     dashboardError:
       "Не удалось загрузить дашборд. Попробуйте обновить страницу.",
-    openWorkflow: "Воркфлоу n8n",
-    howToTestHeading: "Как проверить",
+    openWorkflow: "Открыть флоу n8n",
+    howToTestHeading: "Попробуйте сами",
     sheetLink: "публичную Google-таблицу",
-    samplesLabel: "Образцы счетов (PDF)",
+    samplesLabel: "Образцы счетов",
+    sampleName: "Счёт №{n}",
     workflowLoading: "Загружаем воркфлоу…",
     workflowError:
       "Не удалось загрузить схему воркфлоу. Попробуйте через минуту.",

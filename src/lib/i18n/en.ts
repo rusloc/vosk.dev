@@ -37,7 +37,7 @@ export const en = {
     // page's only body copy, so it carries the query terms on its own.
     // 11-17 (Upwork / site spec C1–C3, C11): the tools the showcase and the CV prove, automation named, one word per
     // destination ("Showcase", "Services") as in the nav.
-    lede: "Power BI and Microsoft Fabric reporting, n8n automations and AI chats over your data, and the SQL underneath. From raw data extraction to visualization.",
+    lede: "Power BI and Microsoft Fabric reporting, n8n automations and AI chats over your data, and the SQL underneath. From raw data to live data that you can see and chat with.",
     cta: "Showcase",
     ctaSecondary: "Services & pricing",
   },
@@ -88,7 +88,7 @@ export const en = {
         "dbt models & tests",
         "Data quality monitoring",
         "Warehouse & architecture design",
-        "Semantic layers (Cube)",
+        "Semantic layers design",
         "Refresh automation & scheduling",
         "Performance optimization",
         "Row-level security & access",
@@ -124,24 +124,17 @@ export const en = {
     },
     other: {
       eyebrow: "Other",
-      // The tutoring price is a placeholder — confirm before publish. Full-time
-      // is deliberately TBD ("to be disclosed").
+      // 11-17 (owner): Full-time removed; Education became Initial consulting, price kept.
       tiers: [
         {
           name: "Urgent",
-          desc: "Report broken, refresh stuck, board meeting on Friday? Send it over — I'll get it sorted this week.",
+          desc: "Report broken, refresh stuck, board meeting on Friday? Ping me for super speedy assistance.",
           price: "$300+",
           unit: "one-off",
         },
         {
-          name: "Full-time",
-          desc: "Want me in your stand-ups? I can join your team full-time, month to month, as your embedded BI person.",
-          price: "TBD",
-          unit: "per month",
-        },
-        {
-          name: "Education",
-          desc: "Learn Power BI, DAX, SQL or data modeling one-on-one — at your own pace, on real problems, no slide decks.",
+          name: "Initial consulting",
+          desc: "Want an expert review of your tech stack or code, or just need to understand & learn? General BI and AI consulting, in plain words.",
           price: "$50",
           unit: "per hour",
         },

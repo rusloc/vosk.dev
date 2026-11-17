@@ -1,0 +1,149 @@
+---
+title: "Don't let the agent write the SQL"
+description: "Wrap every metric in a SQL function, describe it in one sentence, and give the AI agent only those. 211 of 222 test questions right, and no invented numbers."
+date: "2026-11-17"
+tags: ["sql", "js"]
+draft: false
+---
+
+Ask a data chat for last quarter's cost per click, across all channels. If the agent
+writes its own SQL, it will most likely do `sum(spend) / sum(clicks)` over the
+marketing table and hand you a clean, plausible number. That number is wrong.
+In my demo data only paid search and paid social have clicks. Content and SEO,
+partners and outbound sales have spend and zero clicks. Divide all spend by those clicks and CPC
+comes out inflated, and nobody at the table will notice, because it looks like
+a CPC.
+
+That's the hallucination I worry about with data agents. The made-up fact is the
+easy case: a customer that doesn't exist gets caught. A made-up *definition*
+doesn't, because the query runs, the number is in the right range and the agent
+explains it with confidence.
+
+So I stopped letting the agent write SQL. Every metric lives in a function, the
+function has one sentence of description, and that set of functions is all the
+agent gets. It never sees the schema.
+
+## What that looks like
+
+This is one of the functions behind the
+[Tidewell data chat](/work/ceo-digest), a demo SaaS company with marketing, cash
+and customer data in Postgres. Trimmed to the part that matters:
+
+```sql
+-- One row per channel and a 'total' row. cpc_eur and ctr_pct
+-- cover the channels that have clicks (paid search and paid
+-- social): on the total row cpc_eur is their spend ÷ their
+-- clicks, not all spend. cac_eur = spend ÷ new customers.
+create function fn_marketing_by_channel(p_from date, p_to date)
+returns table (
+     channel_code       text
+    ,channel_name       text
+    ,spend_eur          numeric(14,2)
+    ,clicks             integer
+    ,cpc_eur            numeric(14,2)
+    ,new_customers      integer
+    ,cac_eur            numeric(14,2)
+    -- ...nine more columns
+)
+language sql stable security invoker
+set search_path = ceo_digest_demo
+as $$
+    ...
+$$;
+```
+
+The CPC rule is written once, by me, in the function. So is the rule that a week
+belongs to a month when its Thursday falls in it (the ISO way, and the second
+thing an agent would guess differently). So is the clamp that stops any period
+from running past the last date in the data.
+
+The agent sees a tool with a name, two typed arguments and this:
+
+> Marketing for a period, one row per channel plus a total: spend, impressions,
+> clicks, CTR, CPC, MQLs, cost per MQL, trials started and converted,
+> trial-to-paid rate, new customers, CAC, new MRR.
+
+Its job shrinks to three steps: pick the tool, fill in the dates, and write a
+sentence around the rows that come back. There's no "let me look at the schema
+first", and no retry loop on a query that failed on a column name. The chat on
+my site caps every question at 3 model calls and 4 tool calls, and that's
+enough, because there's nothing to reason out. A small, cheap model handles
+it fine.
+
+The database role the chat connects as can `EXECUTE` those functions and
+`SELECT` from its own schema, nothing else, with a statement timeout and
+read-only transactions. Even if the model wanted to write SQL, there's no tool
+to send it through.
+
+## Does it actually stop the hallucinations?
+
+Nearly. Here are the numbers.
+
+Four of the reports on this site have the same kind of chat: a lender's sales
+report, a SaaS marketing dashboard, a management P&L and a mining fleet report.
+Their functions are TypeScript over data the site reads from Postgres, and the
+Tidewell ones are Postgres functions. The contract is the same in both: a name,
+typed arguments, one sentence of description, rows back. Each report has a
+metric catalogue (61 metrics on [the P&L](/work/pnl-suite), 60 on the
+marketing dashboard) and an answer key: questions whose correct answers were
+worked out from the data's control totals before the chat existed.
+
+Tidewell's key isn't written yet, so it isn't in these numbers. The last eval
+run on each of the four went through the real chat loop: 222 questions, 211
+passed the automatic check. That's 95 %, for about 8 cents in model costs for the whole
+run.
+
+I read all 11 failures. Not one was an invented number. In every case the figure
+was right, or the chat correctly said the figure doesn't exist, and the grader
+tripped over the format:
+
+- "0.03 pp below plan" where the key said "−0.03 pp"
+- "$272.9m spent on A&P" where the key has the cost as −$272.9 m
+- the right figure reached through a synonym metric id
+- "ad frequency needs a window of at least 14 days, widen it to Oct 21 – Nov 3
+  and I can give you the figure" where the key expected a plain `n/a`
+
+That last one is my favourite. The rule lives in the function, so the agent
+can't fudge a 7-day number, and it says so.
+
+## This is an MCP server, more or less
+
+A set of named functions with typed arguments and a description each is exactly
+what an MCP server exposes as tools. Mine just happens to live inside a Next.js
+route. Put the same functions behind MCP and any agent that speaks it, Cursor or
+your own, gets the same closed menu.
+
+The Tidewell functions already have two callers. The site's chat runs them to
+answer in the browser. When a visitor asks for the data by email, an n8n
+workflow runs the same functions as its own database role and builds the email
+from the rows. Two front doors, one definition of CAC.
+
+Back in October I wrote about
+[a read-only MCP server that let an agent see the database](/blog/give-the-agent-eyes)
+behind a Power BI model. That one is for me, while I build: raw access, so the
+agent can read plans and table sizes. Functions are for the people who ask
+questions about the numbers. For them I want the agent in a much smaller room.
+
+## What it costs
+
+Every question the chat can answer needs a function behind it. Ask Tidewell
+something none of its eight functions covers and it will tell you it can't,
+politely. That's the point, but a stakeholder used to ChatGPT will notice the
+walls.
+
+Writing the catalogue is the actual work. The P&L alone has 61 metrics, each
+with its formula spelled out, and 63 questions in its answer key. Without the
+key I'd have no idea whether the agent picks the right metric.
+
+Descriptions need the same care as code. The tool that emails a report only runs
+when three things hold: the visitor asked for an email, typed the address
+themselves, and confirmed it after the agent read it back. The description says
+"ONLY when" in capitals and a unit test checks that the wording is still there.
+
+And function signatures become a contract. Rename a column and the n8n workflow
+breaks on the next run, not in the chat where you'd spot it.
+
+I'd still pick this every time for anything that ends up in a board pack.
+Text-to-SQL is great for exploring a database you know. For numbers someone
+will forward, the definition should be written once, by a person, and the agent
+should only be allowed to call it.

@@ -9,8 +9,8 @@ const PAGE_SIZE = 4;
 
 /**
  * Paginated showcase list. Cards are rendered on the server (ShowcaseCard) and
- * passed in as `cards`; this wrapper only slices the current page and renders the
- * page menu below.
+ * passed in as `cards`; this wrapper shows the current page and renders the page
+ * menu below.
  */
 export function ShowcaseList({
   cards,
@@ -23,21 +23,28 @@ export function ShowcaseList({
   const [stored, setPage] = useListPage("work");
   const pageCount = Math.ceil(cards.length / PAGE_SIZE);
   const page = Math.min(stored, Math.max(0, pageCount - 1));
-  const first = page * PAGE_SIZE;
 
   return (
     <>
       {/* Every card is rendered and the off-page ones are hidden with CSS rather
           than sliced away: a `useState` slice keeps overflow entries out of the
           served HTML entirely, so their titles and links exist nowhere a crawler
-          reads. Same content, same visible result. */}
-      <ul className="mt-6 space-y-4">
-        {cards.map((card, i) => (
-          <li key={i} className={i >= first && i < first + PAGE_SIZE ? "" : "hidden"}>
-            {card}
-          </li>
+          reads. The pages are stacked in one grid cell and the others are only
+          `invisible` (11-17, owner), as on the blog list: the cell is as tall as
+          the tallest page, so the page menu stays put on a short last page. */}
+      <div className="mt-6 grid">
+        {Array.from({ length: pageCount }, (_, p) => (
+          <ul
+            key={p}
+            aria-hidden={p === page ? undefined : true}
+            className={`col-start-1 row-start-1 space-y-4 ${p === page ? "" : "invisible"}`}
+          >
+            {cards.slice(p * PAGE_SIZE, (p + 1) * PAGE_SIZE).map((card, i) => (
+              <li key={i}>{card}</li>
+            ))}
+          </ul>
         ))}
-      </ul>
+      </div>
 
       <Pagination
         page={page}

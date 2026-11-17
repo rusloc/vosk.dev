@@ -362,7 +362,12 @@ const allShowcases: Showcase[] = [
     platform: "js",
     report: "nordmark",
     // Production still reads the static public/data/nordmark files; the switch to nordmark_demo (/api/nordmark,
-    // gated by NORDMARK_DATABASE_URL) waits for the load. No Power BI flavour yet.
+    // gated by NORDMARK_DATABASE_URL) waits for the load. Published-to-web Power BI flavour "Nordmark Exec" (owner, 11-17).
+    powerBi: {
+      embedUrl:
+        "https://app.powerbi.com/view?r=eyJrIjoiMzEzMWVhZDEtOTYwZC00MTUwLWJhNjctZjQzYmM3Yzc3OTUzIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9&embedImagePlaceholder=true",
+      href: "https://app.powerbi.com/view?r=eyJrIjoiMzEzMWVhZDEtOTYwZC00MTUwLWJhNjctZjQzYmM3Yzc3OTUzIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
+    },
     title: {
       en: "Retail executive dashboard",
       ru: "Дашборд руководителя розничной сети",

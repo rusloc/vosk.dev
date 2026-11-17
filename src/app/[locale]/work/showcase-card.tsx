@@ -13,9 +13,11 @@ import titleStyles from "../blog/title-bar.module.css";
 export function ShowcaseCard({
   showcase,
   locale,
+  dataLabel,
 }: {
   showcase: LocalizedShowcase;
   locale: Locale;
+  dataLabel: string; // "Demo on synthetic data" / "Real operating figures, names anonymised" (11-17, spec C4)
 }) {
   const { slug, title, summary, metric } = showcase;
   const href = localizedPath(locale, `/work/${slug}`);
@@ -24,6 +26,9 @@ export function ShowcaseCard({
     <article className="group bg-background border-border relative flex gap-6 rounded-lg border p-5 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(31,27,22,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
       {/* Left — title and summary */}
       <div className="min-w-0 flex-1">
+        <p className="text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase">
+          {dataLabel}
+        </p>
         <h2 className="text-xl font-semibold tracking-tight">
           <span className="relative inline-block">
             <span aria-hidden="true" className={titleStyles.titleBar} />

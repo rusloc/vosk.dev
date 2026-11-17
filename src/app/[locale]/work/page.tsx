@@ -63,6 +63,7 @@ export default async function WorkPage({ params }: Props) {
                 key={showcase.slug}
                 showcase={localize(showcase, l)}
                 locale={l}
+                dataLabel={t.dataLabel[showcase.data]}
               />
             ))}
           />

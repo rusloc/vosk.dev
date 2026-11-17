@@ -195,7 +195,12 @@ export function serviceGraph(
     description: string;
     groups: readonly {
       eyebrow: string;
-      tiers: readonly { name: string; desc: string; price: string; unit: string }[];
+      tiers: readonly {
+        name: string;
+        desc: string;
+        price: string;
+        unit: string;
+      }[];
     }[];
   },
 ): Record<string, unknown> {
@@ -276,9 +281,9 @@ export function showcaseGraph(
   showcase: {
     slug: string;
     title: string;
-    summary: string;
+    description: string;
     platform: string;
-    platformLabel: string;
+    formats: string[]; // "Custom JS", "Power BI", "n8n": every format the page opens
     articleSlug?: string; // only when the page links the write-up
   },
 ): Record<string, unknown> {
@@ -288,17 +293,29 @@ export function showcaseGraph(
     "@context": "https://schema.org",
     "@type": "CreativeWork",
     name: showcase.title,
-    description: showcase.summary,
+    description: showcase.description,
     url,
     image: `${url}/opengraph-image`,
     inLanguage: IN_LANGUAGE,
     creator: { "@id": PERSON_ID },
     publisher: { "@id": ORG_ID },
     isPartOf: { "@id": WEBSITE_ID },
-    genre: "Data visualization",
-    keywords: [showcase.platformLabel, "dashboard", "business intelligence"].join(
-      ", ",
-    ),
+    // An n8n showcase is a workflow, not a dashboard (11-17 SEO check)
+    ...(showcase.platform === "automation"
+      ? {
+          genre: "Workflow automation",
+          keywords: [...showcase.formats, "workflow automation", "AI"].join(
+            ", ",
+          ),
+        }
+      : {
+          genre: "Data visualization",
+          keywords: [
+            ...showcase.formats,
+            "dashboard",
+            "business intelligence",
+          ].join(", "),
+        }),
     ...(showcase.articleSlug
       ? {
           subjectOf: {

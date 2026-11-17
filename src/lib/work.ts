@@ -40,6 +40,12 @@ type ShowcaseBase<Text, Paragraphs> = {
   published: `${number}-${number}-${number}`;
   title: Text;
   summary: Text; // concise — the list-card blurb
+  // The search snippet (meta description, og:description, JSON-LD), 120–160 characters (11-17 SEO check: the card
+  // summaries ran 74–110). Falls back to `summary` when that is already long enough.
+  description?: Text;
+  // Where the figures come from, said on the card and the page (11-17, Upwork / site spec C4): "synthetic" = a demo on
+  // made-up data, "client" = real operating figures under anonymised names. Required, so a new entry has to say.
+  data: "synthetic" | "client";
   client: Text; // the client type, shown as "Client: …" under the detail page's title (owner, 11-15; off the cards 11-16)
   // the detail page's bullet summary: at most 5 points, one of them on the tech (owner, 11-15), under the report
   // buttons. `**…**` marks a key phrase in bold (11-16).
@@ -134,6 +140,8 @@ export function localize(s: Showcase, locale: Locale): LocalizedShowcase {
     published: s.published,
     title: s.title[locale],
     summary: s.summary[locale],
+    description: (s.description ?? s.summary)[locale],
+    data: s.data,
     client: s.client[locale],
     details: s.details[locale],
     metric: s.metric,
@@ -205,6 +213,7 @@ const allShowcases: Showcase[] = [
     // N8N_DIGEST_WEBHOOK_SECRET are all set (`showcases` below).
     workflow: "ceo-digest-email",
     chat: "ceo-digest",
+    data: "synthetic",
     title: {
       en: "Company data chat with reports by email",
       ru: "Чат по данным компании с отчётами на почту",
@@ -253,6 +262,10 @@ const allShowcases: Showcase[] = [
     // n8n workflow "Inbox to sheet (public demo)", live since 11-16 (docs/automation/README.md, Flow 0). Its public
     // copy is data/n8n/inbox-to-sheet.json: re-export it (scripts/n8n-export.ts) after every change in n8n.
     workflow: "inbox-to-sheet",
+    data: "synthetic",
+    description: {
+      en: "An n8n workflow turns every email to a demo inbox into a row in a Google Sheet, with the topic and deadline picked out by AI. Send one and watch it land.",
+    },
     title: { en: "Email inbox to a Google Sheet, read by AI" },
     summary: {
       en: "Every email to a demo inbox becomes a row in a public sheet, with the topic and deadline picked out by an LLM.",
@@ -283,6 +296,10 @@ const allShowcases: Showcase[] = [
     // n8n workflow "Invoice PDF to sheet (public demo)" (11-16), public copy in data/n8n/invoice-pdf-to-sheet.json.
     // The samples are synthetic, made for this page (public/samples/automation/).
     workflow: "invoice-pdf-to-sheet",
+    data: "synthetic",
+    description: {
+      en: "Email a PDF invoice and an n8n workflow reads it with AI, checks the sums and logs it as a row in a Google Sheet. Try it live with a sample invoice.",
+    },
     title: { en: "Invoice PDF parser" },
     summary: {
       en: "Email a PDF invoice and get it back as a sheet row, with the sums checked.",
@@ -325,9 +342,13 @@ const allShowcases: Showcase[] = [
     published: "2026-10-30",
     platform: "js",
     report: "pnl",
+    data: "synthetic",
+    description: {
+      en: "Budget vs actual management P&L for a two-company group: statement, KPIs, variances, revenue and profit bridges, profitability. Web report with an AI chat.",
+    },
     title: {
-      en: "Management PnL report",
-      ru: "Управленческий PnL-отчёт",
+      en: "Management P&L report",
+      ru: "Управленческий P&L-отчёт",
     },
     summary: {
       en: "Budget vs actual P&L for two companies: statement, KPIs, variances, bridges, profitability.",
@@ -368,6 +389,10 @@ const allShowcases: Showcase[] = [
         "https://app.powerbi.com/view?r=eyJrIjoiMzEzMWVhZDEtOTYwZC00MTUwLWJhNjctZjQzYmM3Yzc3OTUzIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9&embedImagePlaceholder=true",
       href: "https://app.powerbi.com/view?r=eyJrIjoiMzEzMWVhZDEtOTYwZC00MTUwLWJhNjctZjQzYmM3Yzc3OTUzIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
     },
+    data: "synthetic",
+    description: {
+      en: "Retail executive dashboard in Power BI and as a web report: twelve KPIs vs budget, last year or previous period, by region and category, on a 4-5-4 calendar.",
+    },
     title: {
       en: "Retail executive dashboard",
       ru: "Дашборд руководителя розничной сети",
@@ -388,14 +413,14 @@ const allShowcases: Showcase[] = [
         "Twelve KPI cards, each on track, watch or off track against budget, last year or the previous period.",
         "Net sales, total margin and weeks of cover lead. Behind them sit markdowns, availability, like-for-like growth, GMROI, sell-through and supplier OTIF.",
         "Weeks follow the 4-5-4 retail calendar, the same one the buyers plan in. Every card shows its formula and where to drill next.",
-        "Under the hood: complex ETL into compact Parquet files, and every number computed right in the browser, no server in the loop.",
+        "Under the hood: complex ETL into compact Parquet files, every number computed right in the browser, and the same report in Power BI.",
       ],
       ru: [
         "Ритейлер с магазинами в Нидерландах и Бельгии, интернет-магазином и оптом. Руководству нужен весь бизнес на одном экране.",
         "Двенадцать карточек KPI, у каждой статус: в норме, внимание или вне цели, против бюджета, прошлого года или прошлого периода.",
         "Ведут чистые продажи, общая маржа и недели запаса. За ними уценки, доступность товара, рост сопоставимых продаж, GMROI, sell-through и OTIF поставщиков.",
         "Недели идут по розничному календарю 4-5-4, тому же, по которому планируют закупщики. На каждой карточке её формула и куда копать дальше.",
-        "Под капотом: сложный ETL в компактные Parquet-файлы, и все цифры считаются прямо в браузере, без сервера.",
+        "Под капотом: сложный ETL в компактные Parquet-файлы, все цифры считаются прямо в браузере, и тот же отчёт в Power BI.",
       ],
     },
   },
@@ -410,6 +435,10 @@ const allShowcases: Showcase[] = [
       embedUrl:
         "https://app.powerbi.com/view?r=eyJrIjoiMmVmNWU0MWUtNmE1ZS00OWRkLTk2ZTQtZTdlZjY3NjA0MDA3IiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9&embedImagePlaceholder=true",
       href: "https://app.powerbi.com/view?r=eyJrIjoiMmVmNWU0MWUtNmE1ZS00OWRkLTk2ZTQtZTdlZjY3NjA0MDA3IiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
+    },
+    data: "synthetic",
+    description: {
+      en: "Sales and revenue report for an online lender in three markets, in Power BI and as a web report: loans, clients, portfolio quality, revenue vs budget, AI chat.",
     },
     title: {
       en: "Lender's Sales & Revenue report",
@@ -454,6 +483,10 @@ const allShowcases: Showcase[] = [
         "https://app.fabric.microsoft.com/view?r=eyJrIjoiNTY2MTc5YjYtY2JkMy00YzM0LWE4ZmQtNTAwNmU3MDhjNTM0IiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
       href: "https://app.fabric.microsoft.com/view?r=eyJrIjoiNTY2MTc5YjYtY2JkMy00YzM0LWE4ZmQtNTAwNmU3MDhjNTM0IiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
     },
+    data: "synthetic",
+    description: {
+      en: "SaaS marketing dashboard in Power BI and as a web report: spend, CAC, ROAS, trial-to-paid and cohort payback by channel and campaign, with an AI chat.",
+    },
     title: {
       en: "Marketing dashboard for a SaaS",
       ru: "Маркетинговый дашборд SaaS-продукта",
@@ -490,6 +523,10 @@ const allShowcases: Showcase[] = [
     published: "2026-10-31",
     platform: "js",
     report: "trucks",
+    data: "client",
+    description: {
+      en: "Power BI and web report on where a coal mine's trucks and excavators spend their 24/7 hours, from calendar time to effective work, against plan.",
+    },
     title: {
       en: "Coal mining machinery time utilization",
       ru: "Использование времени техники угольного разреза",
@@ -535,6 +572,10 @@ const allShowcases: Showcase[] = [
     slug: "finance-pl-overview",
     published: "2026-07-31",
     platform: "superset",
+    data: "synthetic",
+    description: {
+      en: "Apache Superset dashboard for a finance team: budget vs actual, a margin waterfall and cost-centre variances over three fiscal years, on synthetic data.",
+    },
     title: {
       en: "Finance P&L overview",
       ru: "Финансовый обзор P&L",
@@ -570,6 +611,10 @@ const allShowcases: Showcase[] = [
     slug: "online-sales-cube",
     published: "2026-09-21",
     platform: "cube",
+    data: "synthetic",
+    description: {
+      en: "Online shop sales on a Cube semantic layer over PostgreSQL: revenue, profit, orders and margin by month, category, country and channel, against last year.",
+    },
     title: {
       en: "Cube.dev for online sales reporting",
       ru: "Cube.dev для отчётности онлайн-продаж",
@@ -613,7 +658,8 @@ const allShowcases: Showcase[] = [
  * job is to demonstrate competence. Cube entries are hidden until CUBE_API_URL and
  * CUBE_API_SECRET are both set: without them the detail page cannot be built at all.
  * An automation entry with a data chat is hidden until its reader URL and its n8n webhook URL and secret are all set
- * (lib/ceo-digest/config.ts): without them the chat cannot answer or send, and the page has nothing to show.
+ * (lib/ceo-digest/config.ts) and CHAT_ENABLED is "1": without them the chat cannot answer or send, and the page has
+ * nothing to show.
  * Filtering here (rather than at the call site) keeps the list page, generateStaticParams,
  * the sitemap and the 404 path automatically in sync.
  */
@@ -627,7 +673,11 @@ export const showcases: Showcase[] = allShowcases
       case "cube":
         return isCubeConfigured();
       case "automation":
-        return s.chat === undefined || isCeoDigestConfigured();
+        // and the chat itself must be on: the page's main button is Ask AI (11-17 SEO check)
+        return (
+          s.chat === undefined ||
+          (isCeoDigestConfigured() && process.env.CHAT_ENABLED === "1")
+        );
       default:
         return true;
     }

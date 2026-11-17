@@ -18,8 +18,8 @@ export function SiteFooter({
           have kept the footer's old height for no content. */}
       <Container className="text-muted-foreground flex items-center justify-between py-8 font-mono text-xs tracking-wider uppercase">
         <p className="flex items-center">
-          © <span className="hidden sm:inline">&nbsp;VOSK</span>
-          &nbsp;{year}
+          {/* One space each side whether or not "VOSK" shows (11-17: it read "©  VOSK"). */}
+          ©<span className="hidden sm:inline">&nbsp;VOSK</span>&nbsp;{year}
         </p>
 
         <div className="flex items-center gap-4">

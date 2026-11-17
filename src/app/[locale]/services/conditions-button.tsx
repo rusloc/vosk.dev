@@ -40,6 +40,9 @@ export function ConditionsButton({
     };
   }, [open]);
 
+  // No terms written yet: no button (11-17, the placeholder text had been live on every card).
+  if (body.length === 0) return null;
+
   return (
     <>
       <button

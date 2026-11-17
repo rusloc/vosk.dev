@@ -28,8 +28,14 @@ export default async function ShowcaseOgImage({
   const source = getShowcase(slug);
   const showcase = source ? localize(source, "en") : null;
   const title = showcase?.title ?? siteConfig.title;
+  // A JS report with a published Power BI flavour is both (11-17 SEO check)
+  const formats = showcase
+    ? showcase.platform === "js" && showcase.powerBi
+      ? `${PLATFORM_LABEL["power-bi"]} · ${PLATFORM_LABEL.js}`
+      : PLATFORM_LABEL[showcase.platform]
+    : "";
   const eyebrow = showcase
-    ? `${siteConfig.author.name} · Showcase · ${PLATFORM_LABEL[showcase.platform]}`
+    ? `${siteConfig.author.name} · Showcase · ${formats}`
     : siteConfig.author.name;
 
   return new ImageResponse(

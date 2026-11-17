@@ -27,6 +27,7 @@ import {
   getShowcaseSlugs,
   isJsReportLive,
   localize,
+  showcases,
 } from "@/lib/work";
 import {
   locales,
@@ -73,7 +74,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return buildMetadata({
     title: showcase.title,
-    description: showcase.summary,
+    description: showcase.description ?? showcase.summary,
     path: `/work/${slug}`,
     locale: l,
     // The showcase's own card from ./opengraph-image.tsx, as posts do: showcase links
@@ -145,6 +146,13 @@ export default async function ShowcasePage({ params }: Props) {
       : null;
   const canvas =
     showcase.platform === "automation" && (await hasN8nFlow(showcase.workflow));
+  // The next two indexable showcases after this one in list order, wrapping round (the cards' order, newest first).
+  const listed = showcases.filter((s) => !s.noindex);
+  const at = listed.findIndex((s) => s.slug === slug);
+  const related = [1, 2]
+    .map((k) => listed[(at + k) % listed.length])
+    .filter((s): s is NonNullable<typeof s> => !!s && s.slug !== slug)
+    .map((s) => localize(s, l));
 
   return (
     <Container className="py-6">
@@ -154,9 +162,15 @@ export default async function ShowcasePage({ params }: Props) {
           data={showcaseGraph(l, {
             slug: showcase.slug,
             title,
-            summary: showcase.summary,
+            description: showcase.description ?? showcase.summary,
             platform,
-            platformLabel: PLATFORM_LABEL[platform],
+            // every format the page opens: a JS report with a published Power BI flavour is both (11-17 SEO check)
+            formats: [
+              PLATFORM_LABEL[platform],
+              ...(showcase.platform === "js" && showcase.powerBi
+                ? [PLATFORM_LABEL["power-bi"]]
+                : []),
+            ],
             articleSlug: article?.slug,
           })}
         />
@@ -175,6 +189,10 @@ export default async function ShowcasePage({ params }: Props) {
         <p className="text-muted-foreground mt-1.5">
           {t.clientLabel}:{" "}
           <span className="text-foreground font-medium">{showcase.client}</span>
+        </p>
+        {/* Where the figures come from (11-17, spec C4), as on the card. */}
+        <p className="text-muted-foreground mt-1 text-sm">
+          {t.dataLabel[showcase.data]}
         </p>
       </header>
 
@@ -384,6 +402,49 @@ export default async function ShowcasePage({ params }: Props) {
             </p>
           )}
         </div>
+      </section>
+
+      {/* A way on from a showcase (11-17 SEO check: the page linked only back): contact and services, then the
+          next showcases on the list, wrapping round. */}
+      <section className="border-border mt-10 max-w-prose border-t pt-6">
+        <h2 className="text-base font-semibold tracking-tight">
+          {t.nextTitle}
+        </h2>
+        <p className="text-muted-foreground mt-1.5">{t.nextBody}</p>
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
+          <Link
+            href={localizedPath(l, "/contact")}
+            className="text-primary hover:underline"
+          >
+            {t.nextContact}
+          </Link>
+          <Link
+            href={localizedPath(l, "/services")}
+            className="text-primary hover:underline"
+          >
+            {t.nextServices}
+          </Link>
+        </div>
+        {related.length > 0 && (
+          <>
+            <h2 className="mt-6 text-base font-semibold tracking-tight">
+              {t.relatedTitle}
+            </h2>
+            <ul className="mt-2 space-y-1.5">
+              {related.map((r) => (
+                <li key={r.slug}>
+                  <Link
+                    href={localizedPath(l, `/work/${r.slug}`)}
+                    className="text-primary font-medium hover:underline"
+                  >
+                    {r.title}
+                  </Link>
+                  <span className="text-muted-foreground"> · {r.summary}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </section>
     </Container>
   );

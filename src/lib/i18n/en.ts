@@ -16,7 +16,7 @@ export const en = {
     work: "Showcase",
     blog: "Blog",
     services: "Services",
-    contact: "Contacts",
+    contact: "Contact",
     message: "Message",
     openMenu: "Toggle menu",
   },
@@ -35,9 +35,11 @@ export const en = {
     },
     // The headline is brand voice and names nothing searchable; this line is the
     // page's only body copy, so it carries the query terms on its own.
-    lede: "Full-stack BI solutions based on modern open-source & SaaS stack: MS Fabric, Power BI, Apache Superset. From raw data extraction to visualization.",
-    cta: "Showcases",
-    ctaSecondary: "Pricing",
+    // 11-17 (Upwork / site spec C1–C3, C11): the tools the showcase and the CV prove, automation named, one word per
+    // destination ("Showcase", "Services") as in the nav.
+    lede: "Power BI and Microsoft Fabric reporting, n8n automations and AI chats over your data, and the SQL underneath. From raw data extraction to visualization.",
+    cta: "Showcase",
+    ctaSecondary: "Services & pricing",
   },
   footer: {
     available: "Available for new projects",
@@ -45,11 +47,11 @@ export const en = {
   },
   services: {
     title: "Services",
-    metaTitle: "Power BI Services & Pricing",
+    metaTitle: "Power BI & Fabric Services and Pricing",
     metaDescription:
-      "Power BI and Apache Superset consulting — dashboards, data models, pipelines. Subscription, project, and urgent-fix engagements, with prices.",
+      "Power BI and Microsoft Fabric consulting, n8n automations and AI data chats: dashboards, models, pipelines. Subscription, project and urgent work, priced.",
     intro:
-      "BI delivery and consulting on Power BI and Apache Superset — pick the engagement that fits. Monthly capacity for teams with an ongoing reporting load, fixed-scope projects for a specific build, and one-off urgent work when a report breaks before a deadline.",
+      "BI delivery and consulting on Power BI and Microsoft Fabric, plus n8n automations and AI chats over your data. Pick the engagement that fits. Monthly capacity for teams with an ongoing reporting load, fixed-scope projects for a specific build, and one-off urgent work when a report breaks before a deadline.",
     engagementsHeading: "Engagement models",
     subscription: {
       eyebrow: "Subscription",
@@ -74,9 +76,12 @@ export const en = {
           unit: "per month · ~80h",
         },
       ],
-      servicesTitle: "Every subscription includes",
+      // 11-17 (spec C7): what the hours can go to, not a bundle every tier delivers in full
+      servicesTitle: "Available in every plan",
       services: [
         "Power BI & Superset dashboards",
+        "Microsoft Fabric platforms",
+        "n8n automations & AI data chats",
         "Data modeling & DAX",
         "SQL & PostgreSQL development",
         "ETL / ELT pipelines",
@@ -142,25 +147,24 @@ export const en = {
         },
       ],
     },
-    // Placeholder terms shown by the card's conditions popup — real copy TBD.
+    // The card's conditions popup. Empty `body` = no button (11-17: the placeholder text was live); the owner writes
+    // the terms (minimum term, unused hours, reply time) and they go here.
     conditions: {
       aria: "View conditions",
       title: "Conditions",
       close: "Close",
-      body: [
-        "Placeholder conditions — the real terms for this engagement will go here. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-        "Scope, payment schedule, revisions, and cancellation terms will be listed as short, plain-language points.",
-        "Nothing here is binding yet; this text is a stand-in until the final conditions are provided.",
-      ],
+      body: [] as string[],
     },
     nextAria: "Next",
   },
   contact: {
-    title: "Contacts",
+    title: "Contact",
     metaTitle: "Contact a Freelance BI Analyst",
     metaDescription:
-      "Get in touch about a Power BI, Superset, or analytics project — by form or email. Freelance BI analyst working with clients worldwide.",
-    intro: "Send your business related message straight into my email box.",
+      "Get in touch about a Power BI, Fabric, automation or analytics project, by form or email. Freelance BI analyst in Turkey, on EU and UK hours.",
+    // 11-17 (spec C9): where and when, from the owner's Upwork overview (docs/job/p1-guide.html)
+    intro:
+      "Send your business related message straight into my email box. I'm in Turkey, working remotely on EU and UK hours.",
     labelName: "Name",
     labelEmail: "Email",
     labelLinkedin: "LinkedIn",
@@ -221,7 +225,7 @@ export const en = {
     related: "Related posts",
     ctaTitle: "Need this built for your team?",
     ctaBody:
-      "I do this work for a living — Power BI and Superset dashboards, the data models under them, and the pipelines that keep them fresh.",
+      "I do this work for a living: Power BI and Fabric reports, the data models under them, the pipelines that keep them fresh, and the automations around them.",
     ctaServices: "See services & pricing",
     ctaContact: "Get in touch",
     empty: "Articles coming soon.",
@@ -238,16 +242,16 @@ export const en = {
   },
   work: {
     title: "Showcase",
-    metaTitle: "BI Dashboard Case Studies",
+    metaTitle: "Dashboard & Automation Case Studies",
     breadcrumbHome: "Home",
     aboutHeading: "About this project",
     // The client type under a showcase title and on its card (owner, 11-15).
     clientLabel: "Client",
     metaDescription:
-      "BI dashboard case studies with live reports to explore: client work with the figures altered and demos on synthetic data, built in {platforms}.",
+      "BI dashboard and automation case studies to open live: demos on synthetic data and client work under anonymised names, built in {platforms}.",
     // The platform list after `lead` is built from the showcases on the site (lib/work.ts).
     intro: {
-      lead: "Dashboards written up as short case studies: client work with the figures altered, and demos built on synthetic data. Open any one for the story and the live report — filter and drill down as its users do. Built in ",
+      lead: "Dashboards and automations written up as short case studies: demos on synthetic data and client work under anonymised names, each card says which. Open any one for the story and the live report — filter and drill down as its users do. Built in ",
       tail: ".",
     },
     empty: "Case studies coming soon.",
@@ -279,6 +283,18 @@ export const en = {
     workflowError:
       "The workflow preview couldn't be loaded. Try again in a minute.",
     paginationAria: "Showcase pages",
+    // Where the figures come from (lib/work.ts `data`, 11-17, spec C4): on every card and under the page title.
+    dataLabel: {
+      synthetic: "Demo on synthetic data",
+      client: "Real operating figures, names anonymised",
+    },
+    // The foot of a showcase page (11-17 SEO check: no way on from a showcase but back).
+    nextTitle: "Want this for your data?",
+    nextBody:
+      "Tell me what the report or the workflow should answer and where the data lives, and I'll tell you what it would take.",
+    nextContact: "Get in touch",
+    nextServices: "See services & pricing",
+    relatedTitle: "More case studies",
   },
   // The Cube-backed online-sales dashboard (components/sales-dashboard.tsx). `{period}` is
   // filled in by the component: "2025", or "Jan–Aug 2025" while the selected year is partial.

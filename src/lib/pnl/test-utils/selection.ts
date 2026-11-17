@@ -7,6 +7,8 @@ export function selection(overrides: Partial<Selection> = {}): Selection {
     fy: 2026,
     month: 9,
     timeView: "YTD",
+    startFy: 2026,
+    startMonth: 1,
     base: "A",
     compareA: "B",
     compareB: "PY",

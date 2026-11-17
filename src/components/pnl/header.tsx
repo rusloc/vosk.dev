@@ -55,7 +55,6 @@ export function Header({
   onCloseFilters,
   shareUrl,
   onChange,
-  pager,
   howToRead,
   chat,
 }: {
@@ -68,8 +67,6 @@ export function Header({
   onCloseFilters: () => void;
   shareUrl: string;
   onChange: (patch: Partial<Selection>) => void;
-  /** Profitability sub-pages (‹ › and "n / 2", ADR-0004 in-view pager); null on the one-page views. */
-  pager: { page: 1 | 2; onPage: (page: 1 | 2) => void } | null;
   howToRead: HowToReadVM | null; // one per view (ADR-0012)
   /** The site's Ask AI button and its chat (ADR-0005, 11-09); null when the chat is off. */
   chat?: ReactNode;
@@ -139,27 +136,6 @@ export function Header({
               {label}
             </button>
           ))}
-          {pager ? (
-            <div className={styles.pager} role="group" aria-label="Sub-page">
-              <button
-                type="button"
-                aria-label="Previous page"
-                disabled={pager.page === 1}
-                onClick={() => pager.onPage(1)}
-              >
-                ‹
-              </button>
-              <span aria-live="polite">{pager.page} / 2</span>
-              <button
-                type="button"
-                aria-label="Next page"
-                disabled={pager.page === 2}
-                onClick={() => pager.onPage(2)}
-              >
-                ›
-              </button>
-            </div>
-          ) : null}
         </div>
         <div className={styles.toolbar} style={{ position: "relative" }}>
           {howToRead ? (

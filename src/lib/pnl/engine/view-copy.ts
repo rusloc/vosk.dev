@@ -60,21 +60,20 @@ const BODY: Readonly<
     "Profitability",
     [
       {
-        label: "Page 1",
+        label: "Top",
         value:
-          "Table by region at constant currency (status dot on CM Δ only) and concentration bars (share of revenue, contribution and Adj. EBITDA).",
+          "Table by region at constant currency (status dot on CM Δ only) and concentration bars (share of revenue, contribution and Adj. EBITDA; hover a segment for its region).",
       },
       {
-        label: "Page 2",
+        label: "Below",
         value:
-          "Growth × margin by region with prior-year trails, and the mix of region × {line}.",
+          "Revenue and margin by month: net revenue as bars (left axis), contribution margin % as the line (right axis), quarters past 12 months. Next to it the mix of region × {line}. Scroll for them.",
       },
       {
         label: "Basis",
         value:
           "Constant currency by default when comparing; by region nothing is allocated (opex is booked by region, C-31).",
       },
-      { label: "Paging", value: "‹ › in the tabs row, or the ← → keys." },
     ],
   ],
 };

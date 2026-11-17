@@ -58,6 +58,15 @@ export interface ViewContext {
     by?: readonly SliceDim[],
   ): ReadonlyMap<MemberKey, Values> | null;
   total(plan: ColumnPlan | null, tr: Translation): Values | null;
+  /**
+   * Spine values per member and source month, "member@monthIdx" ("@monthIdx" for the total), from one scan; a region
+   * cut or none. Months without rows are absent.
+   */
+  monthly(
+    plan: ColumnPlan,
+    tr: Translation,
+    by?: readonly "region"[],
+  ): ReadonlyMap<string, Values>;
   leaves(
     plan: ColumnPlan,
     tr: Translation,
@@ -149,6 +158,13 @@ export function createViewContext(
     symbol,
     values,
     total: (p, t) => (p === null ? null : (values(p, t)?.get("") ?? null)),
+    monthly(p, t, by = []) {
+      const out = new Map<string, Values>();
+      if (hasNoData(p)) return out;
+      for (const [k, acc] of cache.accounts(entity, p, t, by, true))
+        out.set(k, evaluateSpine(m, spine, acc));
+      return out;
+    },
     leaves: (p, t, by = []) => cache.accounts(entity, p, t, by),
     ops: cache.ops,
     lastMonth(p) {

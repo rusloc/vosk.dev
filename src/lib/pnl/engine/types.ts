@@ -5,7 +5,8 @@ export type EntityView = EntityCode | "GROUP";
 export type ReportingCurrency = "USD" | "EUR" | "GBP";
 export type Currency = ReportingCurrency | "AUD";
 export type MonthNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
-export type TimeView = "MTD" | "QTD" | "YTD" | "LTM" | "FY";
+/** RANGE (2026-11-15) = a custom month range: from `startFy` / `startMonth` to `fy` / `month`, across years. */
+export type TimeView = "MTD" | "QTD" | "YTD" | "LTM" | "FY" | "RANGE";
 export type BaseChoice = "A" | "LE" | "B";
 export type CompareChoice = "B" | "LE" | "PY" | "NONE";
 
@@ -42,8 +43,11 @@ export interface OpsColumns {
 export interface Selection {
   entity: EntityView;
   fy: number;
-  month: MonthNumber;
+  month: MonthNumber; // the anchor; in a custom range its last month
   timeView: TimeView;
+  /** First month of a custom range (timeView RANGE); otherwise the default, never in the URL. */
+  startFy: number;
+  startMonth: MonthNumber;
   base: BaseChoice;
   compareA: CompareChoice;
   compareB: CompareChoice;

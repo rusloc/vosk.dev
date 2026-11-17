@@ -21,12 +21,22 @@ export function anchorIndex(
   return row.month_index;
 }
 
-/** Spec §7 time windows, anchored on the selected month m of fiscal year y. */
+/** First month of a custom range (timeView RANGE, 2026-11-15). */
+export interface RangeStart {
+  fy: number;
+  month: MonthNumber;
+}
+
+/**
+ * Spec §7 time windows, anchored on the selected month m of fiscal year y. RANGE (2026-11-15): every month from
+ * `start` to the anchor, across fiscal years; a start after the anchor is read the other way round.
+ */
 export function resolveWindow(
   dimMonth: DimMonth,
   timeView: TimeView,
   fy: number,
   month: MonthNumber,
+  start?: RangeStart,
 ): Window {
   const anchor = anchorIndex(dimMonth, fy, month);
   const quarter = dimMonth[anchor]?.quarter;
@@ -51,6 +61,18 @@ export function resolveWindow(
       };
     case "FY":
       return { months: indexes(sameYear), monthsBeforeHistory: 0 };
+    case "RANGE": {
+      const from = start
+        ? anchorIndex(dimMonth, start.fy, start.month)
+        : anchor;
+      const [a, b] = from <= anchor ? [from, anchor] : [anchor, from];
+      return {
+        months: indexes(
+          dimMonth.filter((m) => m.month_index >= a && m.month_index <= b),
+        ),
+        monthsBeforeHistory: 0,
+      };
+    }
     case "LTM": {
       const first = anchor - 11; // m − 11 … m, can cross fiscal years
       return {

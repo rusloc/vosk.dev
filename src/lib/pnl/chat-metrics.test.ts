@@ -294,6 +294,38 @@ describe("get_metric and friends", () => {
     expect(s.text).toContain("FY outlook:");
   });
 
+  it("answers over a custom range (2026-11-15): named, or the visitor's own", () => {
+    const named = tools.run(
+      "get_metric",
+      { metrics: ["NR"], time_view: "RANGE", from_fy: 2025, from_month: 10 },
+      ctx(),
+    );
+    const ltm = tools.run(
+      "get_metric",
+      { metrics: ["NR"], time_view: "LTM" },
+      ctx(),
+    );
+    expect(named.ok).toBe(true);
+    expect(named.text).toContain("Oct 2025 – Sep 2026");
+    expect(named.link).toContain("tv=RANGE&sfy=2025&sm=10");
+    // the same twelve months as LTM Sep 2026: the same figure
+    const figure = (t: string) => /Net revenue: (\$[\d,.]+ m)/.exec(t)?.[1];
+    expect(figure(ltm.text)).toMatch(/^\$[\d,.]+ m$/);
+    expect(figure(named.text)).toBe(figure(ltm.text));
+    const theirs = tools.selectionFrom("tv=RANGE&sfy=2025&sm=1&m=12&b=LE");
+    expect(tools.selectionNote(theirs)).toContain("Jan 2025 – Dec 2026");
+    expect(tools.run("get_metric", { metrics: ["NR"] }, theirs).text).toContain(
+      "Jan 2025 – Dec 2026",
+    );
+    expect(
+      tools.run(
+        "get_metric",
+        { metrics: ["NR"], time_view: "RANGE", from_fy: 2026, fy: 2025 },
+        ctx(),
+      ).text,
+    ).toContain("starts after it ends");
+  });
+
   it("reads a report state back and lists every catalogue id in the system prompt", () => {
     const sel = tools.selectionFrom("e=S&tv=QTD&cur=EUR&r=EU");
     expect(sel.entity).toBe("S");

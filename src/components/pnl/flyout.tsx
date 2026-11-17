@@ -2,7 +2,8 @@
 
 import { useRef, type ReactNode } from "react";
 import type { Manifest } from "@/lib/pnl/data/manifest";
-import type { PeriodView } from "@/lib/pnl/engine/period";
+import { rangePatch } from "@/lib/pnl/engine/period";
+import type { PeriodView, RangeEnd } from "@/lib/pnl/engine/period";
 import type {
   BaseChoice,
   CompareChoice,
@@ -26,7 +27,7 @@ import { useDismiss } from "./use-dismiss";
 export type Patch = Partial<Selection>;
 
 const GROUP_FIELDS: Record<PanelKey, readonly (keyof Selection)[]> = {
-  period: ["fy", "month", "timeView"],
+  period: ["fy", "month", "timeView", "startFy", "startMonth"],
   versions: ["base", "compareA", "compareB"],
   slice: ["region", "channel", "line", "segment"],
   display: [
@@ -67,6 +68,7 @@ export function Flyout({
   defaults,
   manifest,
   period,
+  onRangeEdit,
   onChange,
   onClose,
 }: PanelProps & {
@@ -74,6 +76,8 @@ export function Flyout({
   wide: boolean;
   defaults: Selection;
   period: PeriodView;
+  /** Which end of a custom range the month grid edits (From / To). */
+  onRangeEdit: (edit: RangeEnd) => void;
   onClose: () => void;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -131,7 +135,9 @@ export function Flyout({
           </p>
         )}
         <div className={styles.flyoutBody}>
-          {panel === "period" && <PeriodPanel {...props} period={period} />}
+          {panel === "period" && (
+            <PeriodPanel {...props} period={period} onRangeEdit={onRangeEdit} />
+          )}
           {panel === "versions" && <VersionsPanel {...props} />}
           {panel === "slice" && <SlicePanel {...props} />}
           {panel === "display" && <DisplayPanel {...props} />}
@@ -165,11 +171,18 @@ function Group({ label, children }: { label: string; children: ReactNode }) {
 // F-02 … F-04, period picker v2 (docs/design/period-picker-v2.md Part 1): Show (time view) first, then Year, then the
 // month grid labelled by what the month means; Full year replaces the grid with one line. Covered months are shaded,
 // the anchor is solid; open months follow the base version (C-01, C-02). Selection applies at once; Done only closes.
+// Custom range (2026-11-15): whole-year spans, then a From / To switch that points the same Year row and month grid
+// at the range's first or last month; moving one end past the other takes the other along (rangePatch).
 function PeriodPanel({
   sel,
   onChange,
   period,
-}: PanelProps & { period: PeriodView }) {
+  onRangeEdit,
+}: PanelProps & { period: PeriodView; onRangeEdit: (edit: RangeEnd) => void }) {
+  const range = period.range;
+  const pick = (fy: number, month: Selection["month"]) =>
+    onChange(range ? rangePatch(sel, range.edit, fy, month) : { fy, month });
+  const editedMonth = range?.edit === "from" ? sel.startMonth : sel.month;
   return (
     <>
       <div className={styles.group}>
@@ -185,23 +198,71 @@ function PeriodPanel({
             content: t.label,
             className: styles.choice,
           }))}
-          onChange={(timeView) => onChange({ timeView })}
+          onChange={(timeView) => onChange(period.timeViewPatch(timeView))}
         />
       </div>
+      {range && (
+        <>
+          <div className={styles.group}>
+            <span id="period-span" className={styles.groupLabel}>
+              Whole years
+            </span>
+            <ChoiceGroup
+              labelledBy="period-span"
+              value={range.span ?? ""}
+              className={styles.choiceGrid3}
+              options={range.spans.map((sp) => ({
+                value: sp.key,
+                content: sp.label,
+                className: styles.choice,
+              }))}
+              onChange={(key) => {
+                const sp = range.spans.find((x) => x.key === key);
+                if (sp) onChange(sp.patch);
+              }}
+            />
+          </div>
+          <div className={styles.group}>
+            <span id="period-end" className={styles.groupLabel}>
+              Range
+            </span>
+            <ChoiceGroup
+              labelledBy="period-end"
+              value={range.edit}
+              className={styles.choiceGrid2}
+              options={(["from", "to"] as const).map((end) => ({
+                value: end,
+                className: `${styles.choice} ${styles.rangeEnd}`,
+                content: (
+                  <>
+                    <span className={styles.monthNote}>
+                      {end === "from" ? "From" : "To"}
+                    </span>
+                    <span>{range[end].label}</span>
+                  </>
+                ),
+              }))}
+              onChange={onRangeEdit}
+            />
+          </div>
+        </>
+      )}
       <div className={styles.group}>
         <span id="period-year" className={styles.groupLabel}>
           Year
         </span>
         <ChoiceGroup
           labelledBy="period-year"
-          value={String(sel.fy)}
+          value={String(period.year)}
           className={styles.choiceGrid3}
           options={period.years.map((y) => ({
             value: String(y),
             content: String(y),
             className: styles.choice,
           }))}
-          onChange={(v) => onChange({ fy: Number(v) })}
+          onChange={(v) =>
+            range ? pick(Number(v), editedMonth) : onChange({ fy: Number(v) })
+          }
         />
       </div>
       {period.gridLabel === null ? (
@@ -213,7 +274,7 @@ function PeriodPanel({
           </span>
           <ChoiceGroup
             labelledBy="period-month"
-            value={String(sel.month)}
+            value={String(editedMonth)}
             className={styles.monthGrid}
             options={period.months.map((c) => ({
               value: String(c.month),
@@ -230,7 +291,7 @@ function PeriodPanel({
               const month = period.months.find(
                 (c) => String(c.month) === v,
               )?.month;
-              if (month) onChange({ month });
+              if (month) pick(period.year, month);
             }}
           />
         </div>

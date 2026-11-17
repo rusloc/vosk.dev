@@ -142,7 +142,13 @@ export function appliedFilters(m: Manifest, sel: Selection): FilterRow[] {
           ? `${companyName(m, "GROUP")} (consolidated)`
           : companyName(m, sel.entity),
     },
-    { label: "Fiscal year", value: String(sel.fy) },
+    {
+      label: "Fiscal year",
+      value:
+        sel.timeView === "RANGE" && sel.startFy !== sel.fy
+          ? `${sel.startFy} – ${sel.fy}`
+          : String(sel.fy),
+    },
     { label: "Period", value: periodSummary(m, sel) },
     { label: "Time view", value: TIME_VIEW_LABEL[sel.timeView] },
     { label: "Versions", value: versions(sel) },

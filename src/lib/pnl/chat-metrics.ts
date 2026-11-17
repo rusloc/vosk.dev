@@ -55,6 +55,9 @@ export interface MetricQuery {
   fy: number;
   month: MonthNumber;
   timeView: TimeView;
+  /** First month of a custom range (timeView RANGE, 2026-11-15); `fy` / `month` are its last. */
+  startFy?: number;
+  startMonth?: MonthNumber;
   base: BaseChoice;
   currency: ReportingCurrency;
   fxBasis: "ACT" | "CC";
@@ -216,11 +219,14 @@ export function createMetricCatalogue(ds: Dataset) {
     q: MetricQuery,
     view: Selection["view"] = "kpi",
   ): Selection {
+    const d = codec.defaults(q.entity);
     return {
-      ...codec.defaults(q.entity),
+      ...d,
       fy: q.fy,
       month: q.month,
       timeView: q.timeView,
+      startFy: q.startFy ?? d.startFy,
+      startMonth: q.startMonth ?? d.startMonth,
       base: q.base,
       compareA: "NONE",
       compareB: "NONE",
@@ -897,6 +903,8 @@ export function createMetricCatalogue(ds: Dataset) {
           fy: q.fy,
           month: q.month,
           timeView: q.timeView,
+          startFy: q.startFy,
+          startMonth: q.startMonth,
           base: q.base,
           currency: q.currency,
           fxBasis: q.fxBasis,

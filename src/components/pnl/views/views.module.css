@@ -52,7 +52,16 @@
   grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
 }
 .tableAndBars {
+  display: grid;
   grid-template-columns: 1fr 470px;
+  gap: 10px;
+  min-height: 0;
+}
+/* Profitability, one page since 2026-11-15: the table and bars on top, revenue and margin + mix underneath; the rows
+   share the height when the window has room for both and the page scrolls when it has not. */
+.profPage {
+  grid-template-rows: minmax(250px, 0.8fr) minmax(400px, 1fr);
+  overflow-y: auto;
 }
 
 /* ---------- cards ---------- */

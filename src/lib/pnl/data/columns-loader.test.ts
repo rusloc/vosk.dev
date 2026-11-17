@@ -37,6 +37,18 @@ describe("P&L JSON columns", () => {
       expect(parsePlChunkName(bad), bad).toBeNull();
   });
 
+  it("every version × month is in exactly one chunk, so a range across fiscal years has all its months (2026-11-15)", async () => {
+    const m = (await loadPublicDataset([])).manifest;
+    const seen = new Map<string, number>();
+    for (const name of plChunkNames(m, "S")) {
+      const c = parsePlChunkName(name)!;
+      for (let t = c.from; t <= c.to; t++)
+        seen.set(`${c.version}|${t}`, (seen.get(`${c.version}|${t}`) ?? 0) + 1);
+    }
+    expect(seen.size).toBe(m.dict.version.length * m.tables.dim_month.length);
+    expect([...seen.values()].every((n) => n === 1)).toBe(true);
+  });
+
   it("rebuilds the typed arrays from chunks served as JSON columns", async () => {
     const want = await loadPublicDataset(["S"]);
     const m = want.manifest;

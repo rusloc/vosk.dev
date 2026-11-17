@@ -1,13 +1,14 @@
 import type { CSSProperties } from "react";
 import type { ProfitabilityVM, Tone } from "@/lib/pnl/engine/view-types";
 import { InfoButton } from "../glass";
-import { Bubble, MEMBER, ShareBars } from "./charts";
+import { MarginCombo, ShareBars } from "./charts";
 import { useSize } from "./use-size";
 import styles from "./views.module.css";
 
-// Profitability (P&L views redesign v4, build-brief §3). Page 1: 8-column region table (status dot on CM Δ only) +
-// concentration bars; page 2: growth × margin by region (left) + region × service-line mix heatmap (right, cells
-// coloured by their value since 2026-10-31).
+// Profitability (P&L views redesign v4, build-brief §3). One scrolling page since 2026-11-15 (owner): on top the
+// 8-column region table (status dot on CM Δ only) + concentration bars (the bars only, no legend text); underneath
+// revenue and margin by month as a combo chart (2026-11-17; it replaced the growth × margin bubbles) + region × service-line mix
+// heatmap (cells coloured by their value since 2026-10-31).
 
 const TONE: Record<Tone, string | undefined> = {
   ahead: styles.ahead,
@@ -50,10 +51,19 @@ function Title({
   );
 }
 
-export function ProfitabilityTable({ vm }: { vm: ProfitabilityVM }) {
+export function ProfitabilityView({ vm }: { vm: ProfitabilityVM }) {
+  return (
+    <div className={`${styles.page} ${styles.profPage}`}>
+      <ProfitabilityTop vm={vm} />
+      <ProfitabilityMargin vm={vm} />
+    </div>
+  );
+}
+
+function ProfitabilityTop({ vm }: { vm: ProfitabilityVM }) {
   const [ref, size] = useSize<HTMLDivElement>();
   return (
-    <div className={`${styles.page} ${styles.tableAndBars}`}>
+    <div className={styles.tableAndBars}>
       <section className={styles.panel} aria-labelledby="h-prof-table">
         <Title
           id="prof-table"
@@ -111,33 +121,15 @@ export function ProfitabilityTable({ vm }: { vm: ProfitabilityVM }) {
           <ShareBars
             vm={vm.concentration}
             width={size.width}
-            height={Math.max(0, size.height - 70)}
+            height={size.height}
           />
-        </div>
-        <div
-          className={styles.legend}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "4px 12px",
-          }}
-        >
-          {vm.concentration.legend.map((l, i) => (
-            <span key={l.key}>
-              <i style={{ background: MEMBER[i % MEMBER.length] }} />
-              {l.label}{" "}
-              <b style={{ fontWeight: 500, color: "var(--ink-900)" }}>
-                {l.drift}
-              </b>
-            </span>
-          ))}
         </div>
       </section>
     </div>
   );
 }
 
-export function ProfitabilityCharts({ vm }: { vm: ProfitabilityVM }) {
+function ProfitabilityMargin({ vm }: { vm: ProfitabilityVM }) {
   const [ref, size] = useSize<HTMLDivElement>();
   // colour = the cell's NR against the largest cell (company accent ramp); text switches to white on the dark half
   const max = Math.max(
@@ -149,15 +141,15 @@ export function ProfitabilityCharts({ vm }: { vm: ProfitabilityVM }) {
   const bg = (t: number) =>
     `color-mix(in srgb, var(--acc) ${Math.round(15 + t * 70)}%, var(--acc-t))`;
   return (
-    <div className={`${styles.page} ${styles.halves}`}>
-      <section className={styles.panel} aria-labelledby="h-prof-bubble">
+    <div className={styles.halves}>
+      <section className={styles.panel} aria-labelledby="h-prof-margin">
         <Title
-          id="prof-bubble"
-          title="Growth × margin by region"
-          info={vm.bubble.info}
+          id="prof-margin"
+          title={vm.margin.info.title}
+          info={vm.margin.info}
         />
         <div ref={ref} className={styles.ch}>
-          <Bubble vm={vm.bubble} width={size.width} height={size.height} />
+          <MarginCombo vm={vm.margin} width={size.width} height={size.height} />
         </div>
       </section>
       <section className={styles.panel} aria-labelledby="h-prof-heat">

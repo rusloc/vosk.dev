@@ -2,20 +2,20 @@ import { kpiStatus } from "./thresholds";
 import type { ColumnPlan } from "./types";
 import { money, pct, pctSigned, pp, ratio, rel, v } from "./view-context";
 import type { Values, ViewContext } from "./view-context";
-import { versionPlan } from "./versions";
 import type {
-  BubbleVM,
   ConcentrationVM,
   HeatVM,
   ProfRow,
   ProfitabilityVM,
   Tone,
+  MarginVM,
 } from "./view-types";
 
 // Profitability view (P&L views redesign v4, build-brief §3). Constant currency by default when comparing (README
 // decision 7): every amount here is at the selected year's budget rates (C-12). Region only (F-21 default): opex is
-// booked at entity × region (C-31), so Adj. EBITDA by region is measured, never allocated. Page 1: 8-column table +
-// concentration bars; page 2: growth × margin bubbles + region × service line mix heatmap.
+// booked at entity × region (C-31), so Adj. EBITDA by region is measured, never allocated. One scrolling page since
+// 2026-11-15: 8-column table + concentration bars on top; revenue and margin by month (combo chart since 2026-11-17, it
+// replaced the growth × margin bubbles) + region × service line mix heatmap underneath.
 
 export function profitability(ctx: ViewContext): ProfitabilityVM {
   const { plan, trCC, bridgeCmp: cmp, sel } = ctx;
@@ -96,94 +96,24 @@ export function profitability(ctx: ViewContext): ProfitabilityVM {
       return { key: r, label: regionName.get(r) ?? r, share: s, text: pct(s) };
     }),
   }));
+  // 2026-11-15 (owner): the panel shows the bars only; the drift that the legend carried is in the ⓘ values
   const concentration: ConcentrationVM = {
     levels,
-    legend: regions.map((r) => ({
-      key: r,
-      label: regionName.get(r) ?? r,
-      drift: `${pct(share(r, "NR"))} → ${pct(share(r, "EBITDA"))} (${pp((share(r, "EBITDA") ?? 0) - (share(r, "NR") ?? 0))})`,
-    })),
     info: {
       title: "Concentration - share by profit level",
-      what: "Three 100 % bars: each region’s share of net revenue, of contribution and of Adj. EBITDA (booked by region). A region whose share shrinks from revenue to contribution dilutes the margin; one whose share grows is accretive.",
+      what: "Three 100 % bars: each region’s share of net revenue, of contribution and of Adj. EBITDA (booked by region), regions in the table’s order; hover a segment for its region. A region whose share shrinks from revenue to contribution dilutes the margin; one whose share grows is accretive.",
       formula:
         "share = region value ÷ company value, per level; drift = EBITDA share − NR share (pp)",
       values: regions.map((r) => ({
         label: regionName.get(r) ?? r,
-        value: `${pct(share(r, "NR"))} / ${pct(share(r, "CM"))} / ${pct(share(r, "EBITDA"))}`,
+        value: `${pct(share(r, "NR"))} / ${pct(share(r, "CM"))} / ${pct(share(r, "EBITDA"))} (drift ${pp((share(r, "EBITDA") ?? 0) - (share(r, "NR") ?? 0))})`,
       })),
       source:
         "Prof NR Share - contribution and EBITDA shares (same pattern on Contribution Margin / Adjusted EBITDA)",
     },
   };
 
-  // Growth × margin: x = NR growth vs PY at constant currency (KPI Organic Growth per slice, K-22), y = CM %.
-  const pyPlan = ctx.py;
-  const py = byRegion(pyPlan);
-  const pyTotal = ctx.total(pyPlan, trCC);
-  const prev = versionPlan(ctx.ds.manifest, {
-    ...sel,
-    fy: sel.fy - 1,
-    compareA: "PY",
-  });
-  const py2Plan = prev.compareA;
-  const py2 =
-    py2Plan && py2Plan.missingMonths.length === 0 ? byRegion(py2Plan) : null; // C-04: needs two prior years
-  const growth = (a: Values | null, b: Values | null) =>
-    rel(v(a, "NR"), v(b, "NR"));
-  const cmOf = (a: Values | null) => ratio(v(a, "CM"), v(a, "NR"));
-  const companyGrowth = growth(total, pyTotal);
-  const companyCm = cmOf(total);
-  const bubble: BubbleVM = {
-    points: regions
-      .map((r) => {
-        const a = now.get(r) ?? null;
-        const g = growth(a, py.get(r) ?? null);
-        const cm = cmOf(a);
-        if (g === null || cm === null) return null;
-        const gPy = py2 ? growth(py.get(r) ?? null, py2.get(r) ?? null) : null;
-        const cmPy = cmOf(py.get(r) ?? null);
-        return {
-          key: r,
-          label: regionName.get(r) ?? r,
-          x: g,
-          y: cm,
-          size: v(a, "NR") ?? 0,
-          text: `CM ${pct(cm)} - ${pctSigned(g)}`,
-          detail: `${regionName.get(r) ?? r}: NR ${amt(v(a, "NR"))}, growth ${pctSigned(g)}, CM ${pct(cm)}${gPy !== null && cmPy !== null ? `; prior year ${pctSigned(gPy)}, CM ${pct(cmPy)}` : ""}`,
-          trail: gPy !== null && cmPy !== null ? { x: gPy, y: cmPy } : null,
-        };
-      })
-      .filter((p): p is NonNullable<typeof p> => p !== null),
-    ref: {
-      x: companyGrowth ?? 0,
-      y: companyCm ?? 0,
-      xText: `company ${pctSigned(companyGrowth)}`,
-      yText: `company ${pct(companyCm)}`,
-    },
-    quadrants: [
-      "profitable, slower",
-      "profitable growth",
-      "problem",
-      "dilutive growth",
-    ],
-    info: {
-      title: "Growth × margin by region",
-      what: "x = net revenue growth year on year at constant currency, y = contribution margin %, bubble = net revenue; dashed lines = company values, giving four quadrants. The thin line runs from the prior-year position (hollow dot) to the current one; it needs two earlier years, so it is blank where the prior year has no prior year (C-04).",
-      formula:
-        "growth = NRcc ÷ PY NRcc − 1; CM % = contribution ÷ NR, per region",
-      values: [
-        { label: "Company growth", value: pctSigned(companyGrowth) },
-        { label: "Company CM %", value: pct(companyCm) },
-        {
-          label: "Prior-year trails",
-          value: py2 ? "drawn" : "n/a for this window (no earlier year)",
-        },
-      ],
-      source:
-        "KPI Organic Growth per slice (K-22) - KPI CM % per slice - Prof Net Revenue - PY: Compare B Amount",
-    },
-  };
+  const margin = marginOf(ctx, regions);
 
   // Mix heatmap: region × service line (category for Consumer Products), NR at CC; colour = the cell's NR (2026-10-31,
   // owner's change: a heatmap of the cells, no longer the column's GM %).
@@ -264,7 +194,108 @@ export function profitability(ctx: ViewContext): ProfitabilityVM {
       },
     },
     concentration,
-    bubble,
+    margin,
     heat,
+  };
+}
+
+/**
+ * Revenue and margin by month (2026-11-17, owner: a combo chart; it replaced the 11-15 growth/margin small multiples,
+ * which read as ten tiny charts with two metrics). Per period of the selection: net revenue (bars, left axis) and
+ * contribution margin % = contribution ÷ NR (line, right axis), constant currency, the company total under the
+ * report's filters. Months; whole quarters of the fiscal calendar once the period runs past 12 months (custom ranges).
+ * One scan by region and month; the company is the sum of its regions (NR and contribution add up).
+ */
+function marginOf(ctx: ViewContext, regions: readonly string[]): MarginVM {
+  const { plan, trCC } = ctx;
+  const dim = ctx.ds.manifest.tables.dim_month;
+  const byQuarter = plan.months.length > 12;
+  const now = ctx.monthly(plan.base, trCC, ["region"]);
+  const periods: {
+    key: string;
+    short: string;
+    long: string;
+    months: number[];
+  }[] = [];
+  for (const t of plan.months) {
+    const d = dim[t];
+    const key = d
+      ? byQuarter
+        ? `${d.fiscal_year} ${d.quarter}`
+        : d.month_key
+      : `m${t}`;
+    const last = periods.at(-1);
+    if (last?.key === key) last.months.push(t);
+    else
+      periods.push({
+        key,
+        short: d ? (byQuarter ? d.quarter : d.month_name.slice(0, 3)) : `${t}`,
+        long: d
+          ? byQuarter
+            ? `${d.quarter} ${d.fiscal_year}`
+            : `${d.month_name} ${d.fiscal_year}`
+          : `month ${t}`,
+        months: [t],
+      });
+  }
+  const sum = (months: readonly number[], code: string) => {
+    let any = false;
+    let total = 0;
+    for (const t of months)
+      for (const r of regions) {
+        const x = v(now.get(`${r}@${t}`) ?? null, code);
+        if (x !== null) {
+          any = true;
+          total += x;
+        }
+      }
+    return any ? total : null;
+  };
+  const divisor = ctx.units.divisor;
+  const rows = periods.map((p, i) => {
+    const nr = sum(p.months, "NR");
+    const cm = sum(p.months, "CM");
+    const cmPct = ratio(cm, nr);
+    const prev = dim[p.months[0]!];
+    const before = i > 0 ? dim[periods[i - 1]!.months[0]!] : undefined;
+    return {
+      key: p.key,
+      short: p.short,
+      // the year under the first period and wherever it changes
+      year:
+        prev && prev.fiscal_year !== before?.fiscal_year
+          ? `${prev.fiscal_year}`
+          : "",
+      nr: nr === null ? null : nr / divisor,
+      cmPct,
+      cmText: pct(cmPct),
+      detail: `${p.long}${byQuarter && p.months.length < 3 ? ` (${p.months.length} of 3 months)` : ""}: net revenue ${money(ctx, nr)}, contribution ${money(ctx, cm)}, CM ${pct(cmPct)}`,
+    };
+  });
+  const totalNr = sum(plan.months, "NR");
+  const totalCm = sum(plan.months, "CM");
+  return {
+    grain: byQuarter ? "quarter" : "month",
+    unit: `${ctx.symbol} ${ctx.unitLabel}`,
+    periods: rows,
+    info: {
+      title: byQuarter
+        ? "Revenue and margin by quarter"
+        : "Revenue and margin by month",
+      what: "Bars: net revenue of each period, left axis. Line: contribution margin %, the share of revenue left after the cost of sales and the variable costs, right axis. A line that climbs while the bars stay level means each sale earns more. Company total under the report's filters, constant currency; hover a period for its figures. A period longer than 12 months shows quarters.",
+      formula: "CM % = contribution ÷ net revenue of the period",
+      values: [
+        {
+          label: "Period",
+          value: `net revenue ${money(ctx, totalNr)}, CM ${pct(ratio(totalCm, totalNr))}`,
+        },
+        ...rows.map((r) => ({
+          label: r.detail.split(":")[0] ?? r.key,
+          value: r.detail.split(": ")[1] ?? "",
+        })),
+      ],
+      source:
+        "KPI CM % per slice by month (contribution ÷ NR), NR at constant currency (C-12)",
+    },
   };
 }

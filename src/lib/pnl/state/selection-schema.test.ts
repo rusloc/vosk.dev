@@ -56,6 +56,48 @@ describe("selection codec", () => {
     expect(codec.parse(q(text))).toEqual(sel);
   });
 
+  it("custom range (2026-11-15): tv=RANGE with sfy / sm, round-trips; older links read as before", () => {
+    const sel = codec.parse(q("tv=RANGE&sfy=2025&sm=10"));
+    expect(sel).toMatchObject({
+      timeView: "RANGE",
+      startFy: 2025,
+      startMonth: 10,
+      fy: 2026,
+      month: 9,
+    });
+    expect(codec.serialize(sel)).toBe("tv=RANGE&sfy=2025&sm=10");
+    const years = codec.parse(q("fy=2026&m=12&tv=RANGE&sfy=2025&sm=1&b=LE"));
+    expect(codec.serialize(years)).toBe("m=12&tv=RANGE&sfy=2025&sm=1&b=LE");
+    expect(codec.parse(q(codec.serialize(years)))).toEqual(years);
+    // the first month is always written with RANGE, never without it
+    expect(codec.serialize({ ...sel, startFy: 2026, startMonth: 1 })).toBe(
+      "tv=RANGE&sfy=2026&sm=1",
+    );
+    expect(codec.serialize({ ...sel, timeView: "LTM" })).toBe("tv=LTM");
+    // sfy / sm without RANGE are ignored and dropped by the rewrite: an older link keeps its meaning
+    const ltm = codec.parse(q("tv=LTM&sfy=2024&sm=3"));
+    expect(ltm).toEqual({ ...codec.defaults("P"), timeView: "LTM" });
+    expect(codec.serialize(ltm)).toBe("tv=LTM");
+  });
+
+  it("custom range: a missing or invalid start reads as January of the end's year; ends given backwards swap", () => {
+    expect(codec.parse(q("tv=RANGE&fy=2025&m=6"))).toMatchObject({
+      startFy: 2025,
+      startMonth: 1,
+      fy: 2025,
+      month: 6,
+    });
+    expect(codec.parse(q("tv=RANGE&sfy=2031&sm=13"))).toMatchObject({
+      startFy: 2026,
+      startMonth: 1,
+      fy: 2026,
+      month: 9,
+    });
+    expect(codec.parse(q("tv=RANGE&sfy=2026&sm=11&fy=2025&m=2"))).toMatchObject(
+      { startFy: 2025, startMonth: 2, fy: 2026, month: 11 },
+    );
+  });
+
   it("replaces invalid values with the default and drops unknown keys", () => {
     const sel = codec.parse(
       q("e=X&fy=1999&m=13&tv=WEEK&cur=JPY&pn=yes&utm_source=mail"),

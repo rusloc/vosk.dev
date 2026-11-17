@@ -7,6 +7,9 @@ import type { EntityView, MonthNumber, Selection } from "../engine/types";
 // dropped, so nothing unvalidated reaches the engine. Defaults are omitted, so the bare URL is the spec default.
 // Retired keys `lay`, `lens` and `d` (layout, cost lens, detail; ADR-0007 items 1–3) are unknown keys now: old links
 // still open, and the rewrite drops them.
+// Custom range (2026-11-15): `tv=RANGE` with `sfy` / `sm` = its first month and `fy` / `m` = its last, e.g.
+// `tv=RANGE&sfy=2025&sm=10` (+ the default fy=2026&m=9) = Oct 2025 – Sep 2026. `sfy` / `sm` are written only with
+// RANGE and ignored without it, so every older link reads as before.
 
 const entity = z.enum(["P", "S", "GROUP"]);
 const flag = z.enum(["0", "1"]).transform((v) => v === "1");
@@ -15,7 +18,7 @@ const isMonth = (n: number): n is MonthNumber =>
   (MONTH_NUMBERS as readonly number[]).includes(n);
 
 const ENUMS = {
-  tv: z.enum(["MTD", "QTD", "YTD", "LTM", "FY"]),
+  tv: z.enum(["MTD", "QTD", "YTD", "LTM", "FY", "RANGE"]),
   b: z.enum(["A", "LE", "B"]),
   ca: z.enum(["B", "LE", "PY", "NONE"]),
   cb: z.enum(["B", "LE", "PY", "NONE"]),
@@ -34,6 +37,8 @@ const KEYS = {
   fy: "fy",
   month: "m",
   timeView: "tv",
+  startFy: "sfy",
+  startMonth: "sm",
   base: "b",
   compareA: "ca",
   compareB: "cb",
@@ -109,6 +114,8 @@ export function createSelectionCodec(m: Manifest): SelectionCodec {
       fy: last.fiscal_year, // F-02: current FY = the year of the last close
       month: lastMonth, // F-03: last closed month (N-03)
       timeView: "YTD", // F-04
+      startFy: last.fiscal_year, // custom range only (RANGE); a fixed value otherwise, never written
+      startMonth: 1,
       base: "A", // F-05
       compareA: "B", // F-06
       compareB: "PY", // F-07
@@ -150,11 +157,33 @@ export function createSelectionCodec(m: Manifest): SelectionCodec {
     const fy = pick(z.coerce.number().int(), q.get(KEYS.fy), d.fy);
     const month = pick(z.coerce.number().int(), q.get(KEYS.month), d.month);
     const breakdown = pick(ENUMS.bd, q.get(KEYS.breakdown), d.breakdown);
-    return {
-      entity: e,
+    const anchor = {
       fy: years.includes(fy) ? fy : d.fy,
       month: isMonth(month) ? month : d.month,
-      timeView: pick(ENUMS.tv, q.get(KEYS.timeView), d.timeView),
+    };
+    const timeView = pick(ENUMS.tv, q.get(KEYS.timeView), d.timeView);
+    // Custom range: the first month defaults to January of the last month's year; a start after the end is swapped.
+    let end = anchor;
+    let range = { startFy: d.startFy, startMonth: d.startMonth };
+    if (timeView === "RANGE") {
+      const sfy = pick(z.coerce.number().int(), q.get(KEYS.startFy), anchor.fy);
+      const sm = pick(z.coerce.number().int(), q.get(KEYS.startMonth), 1);
+      const start = {
+        fy: years.includes(sfy) ? sfy : anchor.fy,
+        month: isMonth(sm) ? sm : (1 as const),
+      };
+      const inOrder =
+        start.fy * 12 + start.month <= anchor.fy * 12 + anchor.month;
+      const first = inOrder ? start : anchor;
+      end = inOrder ? anchor : start;
+      range = { startFy: first.fy, startMonth: first.month };
+    }
+    return {
+      entity: e,
+      fy: end.fy,
+      month: end.month,
+      timeView,
+      ...range,
       base: pick(ENUMS.b, q.get(KEYS.base), d.base),
       compareA: pick(ENUMS.ca, q.get(KEYS.compareA), d.compareA),
       compareB: pick(ENUMS.cb, q.get(KEYS.compareB), d.compareB),
@@ -195,7 +224,10 @@ export function createSelectionCodec(m: Manifest): SelectionCodec {
     ][]) {
       const v = sel[field];
       const dv = d[field];
-      if (Array.isArray(v) ? v.length === 0 : v === dv) continue;
+      // A custom range always writes its first month (readable links); without RANGE it is never written.
+      const isStart = field === "startFy" || field === "startMonth";
+      if (isStart && sel.timeView !== "RANGE") continue;
+      if (!isStart && (Array.isArray(v) ? v.length === 0 : v === dv)) continue;
       out.set(
         key,
         Array.isArray(v)

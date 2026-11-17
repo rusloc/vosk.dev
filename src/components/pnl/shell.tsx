@@ -11,6 +11,7 @@ import { createEngine } from "@/lib/pnl/engine";
 import { companyName } from "@/lib/pnl/engine/header";
 import { hideEmptyLines } from "@/lib/pnl/engine/hide-empty";
 import { windowLabel } from "@/lib/pnl/engine/notices";
+import type { RangeEnd } from "@/lib/pnl/engine/period";
 import type { EntityCode, EntityView, Selection } from "@/lib/pnl/engine/types";
 import {
   createSelectionCodec,
@@ -39,10 +40,7 @@ import styles from "./ledger.module.css";
 import { StatementTable } from "./statement-table";
 import { themeVars } from "./theme";
 import { AnalysisView } from "./views/analysis-view";
-import {
-  ProfitabilityCharts,
-  ProfitabilityTable,
-} from "./views/profitability-view";
+import { ProfitabilityView } from "./views/profitability-view";
 import { VitalsView } from "./views/vitals-view";
 
 // Client root (ADR-0002 §2.5): loads the data from /api/pnl (Supabase schema pnl_demo, 2026-11-09; public/data/pnl
@@ -158,18 +156,14 @@ function Ledger({
     () => restrictToBuilt(codec.parse(new URLSearchParams(search))),
     [codec, search],
   );
-  // Sub-page and the variances filter (p, lvr, lvch, lvln, lvsg): validated like the Selection keys, appended after
-  // them; a member the company shown does not have is dropped, so the URL is rewritten to what is on screen.
+  // The variances filter (lvr, lvch, lvln, lvsg): validated like the Selection keys, appended after them; a member the
+  // company shown does not have is dropped, so the URL is rewritten to what is on screen. Every view is one page since
+  // 2026-11-15 (Profitability's pager and its `p` key went), so an old link's `p` is dropped the same way.
   const vs = useMemo(() => {
     const raw = parseViewState(new URLSearchParams(search));
     return { ...raw, filter: engine.validVarFilter(sel, raw.filter) };
   }, [engine, sel, search]);
-  // Only Profitability keeps sub-pages: Analysis is one page since 2026-10-31 (variances over the bridges).
-  const paged = sel.view === "profitability";
-  const canonical = joinQuery(
-    codec.serialize(sel),
-    serializeViewState(paged ? vs : { ...vs, page: 1 }),
-  );
+  const canonical = joinQuery(codec.serialize(sel), serializeViewState(vs));
 
   // Invalid or unbuilt input never stays in the state: rewrite it to the state actually shown (ADR-0002 §2.4).
   useEffect(() => {
@@ -181,42 +175,14 @@ function Ledger({
       onSearch(joinQuery(codec.serialize(next), serializeViewState(view))),
     [codec, onSearch],
   );
-  // A view switch opens its first sub-page (ADR-0004 pager).
   const update = useCallback(
-    (patch: Partial<Selection>) =>
-      go(
-        { ...sel, ...patch },
-        patch.view && patch.view !== sel.view ? { ...vs, page: 1 } : vs,
-      ),
+    (patch: Partial<Selection>) => go({ ...sel, ...patch }, vs),
     [go, sel, vs],
   );
   const updateView = useCallback(
     (patch: Partial<ViewState>) => go(sel, { ...vs, ...patch }),
     [go, sel, vs],
   );
-
-  // ← → page Profitability (build-brief §0), unless the key belongs to a field, a pop-up or a control.
-  useEffect(() => {
-    if (!paged) return;
-    const ctrl = new AbortController();
-    window.addEventListener(
-      "keydown",
-      (e) => {
-        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-        const t = e.target;
-        if (
-          t instanceof Element &&
-          t.closest(
-            'input, select, textarea, [role="dialog"], [role="radiogroup"], [role="tablist"]',
-          )
-        )
-          return;
-        updateView({ page: e.key === "ArrowLeft" ? 1 : 2 });
-      },
-      { signal: ctrl.signal },
-    );
-    return () => ctrl.abort();
-  }, [paged, updateView]);
 
   const [wide, setWide] = useState(false);
   // One pop-over at a time: a filter flyout, the company picker or the applied-filters pop-up
@@ -249,7 +215,12 @@ function Ledger({
   };
 
   const notices = useMemo(() => engine.notices(sel), [engine, sel]);
-  const period = useMemo(() => engine.period(sel), [engine, sel]);
+  // The custom range end the period picker's month grid edits (From / To, 2026-11-15): picker state, not report state.
+  const [rangeEdit, setRangeEdit] = useState<RangeEnd>("from");
+  const period = useMemo(
+    () => engine.period(sel, rangeEdit),
+    [engine, sel, rangeEdit],
+  );
   const header = useMemo(() => engine.header(sel), [engine, sel]); // viewer's time zone: client-only render
   const units = m.tables.param_units.find(
     (u) => u.units_code === sel.units,
@@ -302,13 +273,14 @@ function Ledger({
           defaults={defaults}
           manifest={m}
           period={period}
+          onRangeEdit={setRangeEdit}
           onChange={update}
           onClose={closeOverlay}
         />
       )}
       <main className={styles.main}>
-        {/* one glass pop-up at a time across header and content; a view or page change closes it */}
-        <PopupProvider scope={`${sel.view}-${vs.page}`}>
+        {/* one glass pop-up at a time across header and content; a view change closes it */}
+        <PopupProvider scope={sel.view}>
           <Header
             sel={sel}
             status={header.status}
@@ -319,11 +291,6 @@ function Ledger({
             onCloseFilters={closeOverlay}
             shareUrl={shareUrl}
             onChange={update}
-            pager={
-              paged
-                ? { page: vs.page, onPage: (page) => updateView({ page }) }
-                : null
-            }
             howToRead={howToRead}
             chat={
               chat ? (
@@ -404,10 +371,7 @@ function RedesignedView({
         vm: engine.variances(sel, vs.filter),
       } as const;
     if (sel.view === "profitability")
-      return {
-        kind: vs.page === 1 ? "profTable" : "profCharts",
-        vm: engine.profitability(sel),
-      } as const;
+      return { kind: "profitability", vm: engine.profitability(sel) } as const;
     return null;
   }, [engine, sel, vs]);
   if (!vm) return null;
@@ -415,7 +379,13 @@ function RedesignedView({
     <section
       id={`view-${sel.view}`}
       role="tabpanel"
-      aria-label={`${sel.view === "kpi" ? "Vitals" : sel.view === "analysis" ? "Analysis" : `Profitability, page ${vs.page} of 2`}`}
+      aria-label={
+        sel.view === "kpi"
+          ? "Vitals"
+          : sel.view === "analysis"
+            ? "Analysis"
+            : "Profitability"
+      }
       style={{
         display: "flex",
         flex: "1 1 auto",
@@ -432,8 +402,7 @@ function RedesignedView({
           onFilter={(filter) => onViewState({ filter })}
         />
       ) : null}
-      {vm.kind === "profTable" ? <ProfitabilityTable vm={vm.vm} /> : null}
-      {vm.kind === "profCharts" ? <ProfitabilityCharts vm={vm.vm} /> : null}
+      {vm.kind === "profitability" ? <ProfitabilityView vm={vm.vm} /> : null}
     </section>
   );
 }

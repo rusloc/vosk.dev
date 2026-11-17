@@ -57,6 +57,12 @@ export function notices(
   const company = (e: "P" | "S") =>
     m.tables.dim_entity.find((r) => r.entity_code === e)?.short_name ?? e;
   const group = m.tables.dim_entity[0]?.consolidation_group ?? "Group";
+  // Custom range (2026-11-15): the prior-year row also says how much of the range the prior year covers
+  const pyMonths = plan.months.filter((t) => t - 12 >= 0).length;
+  const pyCover =
+    sel.timeView === "RANGE"
+      ? `: it covers ${pyMonths} of the range's ${plan.months.length} months`
+      : "";
 
   const text: Record<NoticeCode, string | null> = {
     N_CLOSE:
@@ -70,7 +76,7 @@ export function notices(
         : null,
     N_PY:
       (sel.compareA === "PY" || sel.compareB === "PY") && start - 12 < 0
-        ? `Prior year n/a before ${month(0)}`
+        ? `Prior year n/a before ${month(0)}${pyCover}`
         : null,
     N_LTM:
       sel.timeView === "LTM" && start < 0
@@ -93,12 +99,17 @@ export function notices(
 }
 
 /** Window part of the statement's first column-group title (Track B `PL Hdr Base`): "YTD Sep 2026", "Sep 2026",
- * "LTM Sep 2026", "Full year 2026". */
+ * "LTM Sep 2026", "Full year 2026"; a custom range "Oct 2025 – Sep 2026" or "Mar – Sep 2026". */
 export function windowLabel(m: Manifest, sel: Selection): string {
-  const month = m.tables.dim_month.find(
-    (d) => d.fiscal_year === sel.fy && d.month_number === sel.month,
-  );
-  const at = `${month?.month_name ?? sel.month} ${sel.fy}`;
+  const name = (fy: number, n: number) =>
+    m.tables.dim_month.find((d) => d.fiscal_year === fy && d.month_number === n)
+      ?.month_name ?? String(n);
+  const at = `${name(sel.fy, sel.month)} ${sel.fy}`;
+  if (sel.timeView === "RANGE") {
+    if (sel.startFy === sel.fy && sel.startMonth === sel.month) return at;
+    const from = name(sel.startFy, sel.startMonth);
+    return `${sel.startFy === sel.fy ? from : `${from} ${sel.startFy}`} – ${at}`;
+  }
   return sel.timeView === "FY"
     ? `Full year ${sel.fy}`
     : sel.timeView === "MTD"

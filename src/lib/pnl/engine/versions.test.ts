@@ -126,3 +126,61 @@ describe("C-02 latest estimate and C-05 budget", () => {
     ]);
   });
 });
+
+describe("custom range (2026-11-15): every version over the range's months", () => {
+  const custom = (o: Parameters<typeof selection>[0]) =>
+    selection({ timeView: "RANGE", ...o });
+
+  it("Oct 2025 – Sep 2026: Budget the same months, prior year 12 months earlier, FY columns of the last year", () => {
+    const plan = versionPlan(
+      ds.manifest,
+      custom({ startFy: 2025, startMonth: 10 }),
+    );
+    expect(plan.months).toEqual(range(21, 32));
+    expect(plan.compareA?.parts).toEqual([
+      { version: "BUD", months: range(21, 32) },
+    ]);
+    expect(plan.compareB?.parts).toEqual([
+      { version: "ACT", months: range(9, 20) },
+    ]);
+    expect(plan.fyBudget.parts).toEqual([
+      { version: "BUD", months: range(24, 35) },
+    ]);
+  });
+
+  it("2025 and 2026 on Latest estimate: actuals to Sep 2026, then the latest forecast", () => {
+    const plan = versionPlan(
+      ds.manifest,
+      custom({ base: "LE", startFy: 2025, startMonth: 1, month: 12 }),
+    );
+    expect(plan.months).toEqual(range(12, 35));
+    expect(plan.base.parts).toEqual([
+      { version: "ACT", months: range(12, 32) },
+      { version: "FC2609", months: [33, 34, 35] },
+    ]);
+    expect(plan.compareB?.missingMonths).toEqual([]); // 2024 and 2025 are the prior years
+  });
+
+  it("a prior year missing for part of the range is listed (C-04, the notice reads it)", () => {
+    const plan = versionPlan(
+      ds.manifest,
+      custom({ startFy: 2024, startMonth: 7, fy: 2025, month: 6 }),
+    );
+    expect(plan.compareB?.missingMonths).toEqual(range(6, 11));
+    expect(plan.compareB?.parts).toEqual([
+      { version: "ACT", months: range(0, 5) },
+    ]);
+  });
+
+  it("the statement adds up: Oct 2025 – Sep 2026 = LTM Sep 2026; 2025 – Sep 2026 = FY2025 + YTD Sep 2026", () => {
+    const at = (o: Parameters<typeof selection>[0]) =>
+      nr(engine.statement(selection(o)).rows) ?? NaN;
+    expect(at({ timeView: "RANGE", startFy: 2025, startMonth: 10 })).toBe(
+      at({ timeView: "LTM" }),
+    );
+    expect(at({ timeView: "RANGE", startFy: 2025, startMonth: 1 })).toBeCloseTo(
+      at({ timeView: "FY", fy: 2025, month: 12 }) + at({}),
+      2,
+    );
+  });
+});

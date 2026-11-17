@@ -114,7 +114,10 @@ const compare = (
 
 export function versionPlan(m: Manifest, sel: Selection): VersionPlan {
   const k = versionKeys(m);
-  const w = resolveWindow(m.tables.dim_month, sel.timeView, sel.fy, sel.month);
+  const w = resolveWindow(m.tables.dim_month, sel.timeView, sel.fy, sel.month, {
+    fy: sel.startFy,
+    month: sel.startMonth,
+  });
   // C-01: an Actual base never includes months after the last close
   const months =
     sel.base === "A" ? w.months.filter((t) => k.closed.has(t)) : w.months;
@@ -132,7 +135,7 @@ export function versionPlan(m: Manifest, sel: Selection): VersionPlan {
     base: column(k, sel.base, months),
     compareA: compare(k, sel.compareA, months), // C-03: exactly the months the base covers
     compareB: compare(k, sel.compareB, months),
-    fyBudget: column(k, "B", fullYear), // M-14: whole fiscal year whatever the time view
+    fyBudget: column(k, "B", fullYear), // M-14: whole fiscal year whatever the time view (a range: its last year)
     fyLE: column(k, "LE", fullYear),
   };
 }

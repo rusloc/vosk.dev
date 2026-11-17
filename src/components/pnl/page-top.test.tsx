@@ -21,7 +21,7 @@ beforeAll(async () => {
 });
 
 const noop = () => undefined;
-const flyout = (sel: Selection) =>
+const flyout = (sel: Selection, edit: "from" | "to" = "from") =>
   renderToStaticMarkup(
     <Flyout
       panel="period"
@@ -29,7 +29,8 @@ const flyout = (sel: Selection) =>
       sel={sel}
       defaults={selection()}
       manifest={ds.manifest}
-      period={engine.period(sel)}
+      period={engine.period(sel, edit)}
+      onRangeEdit={noop}
       onChange={noop}
       onClose={noop}
     />,
@@ -106,6 +107,41 @@ describe("period picker v2", () => {
     expect(buttons.filter((b) => /monthCovered/.test(b))).toHaveLength(8); // Jan – Aug; Sep is the solid anchor
   });
 
+  it("custom range (2026-11-15): whole-year spans, a From / To switch, Year and grid on the edited end", () => {
+    const sel = selection({
+      timeView: "RANGE",
+      startFy: 2025,
+      startMonth: 10,
+    });
+    const from = flyout(sel, "from");
+    const t = text(from);
+    expect(t).toContain("Showing Oct 2025 – Sep 2026");
+    const order = [
+      "Custom range",
+      "Whole years",
+      "2025 – 2026",
+      "Range",
+      "From Oct 2025",
+      "To Sep 2026",
+      "Year",
+      "From",
+    ];
+    const at = order.map((x) => t.indexOf(x));
+    expect(at.every((i) => i >= 0)).toBe(true);
+    expect(from.match(/role="radiogroup"/g)).toHaveLength(5);
+    // From: the grid shows 2025 with Oct as the anchor and Nov – Dec covered
+    expect(from).toMatch(/aria-checked="true"[^>]*>2025</);
+    expect(
+      monthButtons(from).filter((b) => /monthCovered/.test(b)),
+    ).toHaveLength(2);
+    const to = flyout(sel, "to");
+    expect(to).toMatch(/aria-checked="true"[^>]*>2026</);
+    expect(text(to)).toContain(" To Jan ");
+    expect(monthButtons(to).filter((b) => /monthCovered/.test(b))).toHaveLength(
+      8,
+    );
+  });
+
   it("Latest estimate / Budget: open months selectable with a small label", () => {
     const le = flyout(selection({ base: "LE" }));
     expect(le).not.toContain("aria-disabled");
@@ -122,6 +158,7 @@ describe("period picker v2", () => {
         defaults={selection()}
         manifest={ds.manifest}
         period={engine.period(selection())}
+        onRangeEdit={noop}
         onChange={noop}
         onClose={noop}
       />,
@@ -140,6 +177,7 @@ describe("period picker v2", () => {
           defaults={selection()}
           manifest={ds.manifest}
           period={engine.period(sel)}
+          onRangeEdit={noop}
           onChange={noop}
           onClose={noop}
         />,
@@ -203,7 +241,6 @@ describe("page top", () => {
         onCloseFilters={noop}
         shareUrl="https://example.test/"
         onChange={noop}
-        pager={null}
         howToRead={null}
       />,
     );

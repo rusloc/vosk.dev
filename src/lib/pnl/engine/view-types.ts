@@ -146,23 +146,25 @@ export interface ConcentrationVM {
     label: string;
     segments: { key: string; label: string; share: number; text: string }[];
   }[];
-  legend: { key: string; label: string; drift: string }[];
   info: InfoVM;
 }
 
-export interface BubbleVM {
-  points: {
+/**
+ * Revenue and margin by month (2026-11-17, owner: a combo chart, replaces the 11-15 growth/margin small multiples):
+ * one period per month of the selection, or per fiscal quarter past 12 months; net revenue as bars, CM % as a line.
+ */
+export interface MarginVM {
+  grain: "month" | "quarter";
+  unit: string; // "$ m", the bars' axis
+  periods: {
     key: string;
-    label: string;
-    x: number; // NR growth vs PY at constant currency
-    y: number; // CM %
-    size: number; // NR
-    text: string; // "CM 50.9% · +27.8%"
-    detail: string; // hover
-    trail: { x: number; y: number } | null; // prior-year position
+    short: string; // "Mar" / "Q1", under the bar
+    year: string; // "2026" under the first period and where the year changes, else ""
+    nr: number | null; // net revenue in the selected units (bar)
+    cmPct: number | null; // contribution ÷ NR (line)
+    cmText: string; // "33.4%"
+    detail: string; // hover and screen readers
   }[];
-  ref: { x: number; y: number; xText: string; yText: string };
-  quadrants: [string, string, string, string]; // top-left, top-right, bottom-left, bottom-right
   info: InfoVM;
 }
 
@@ -194,7 +196,7 @@ export interface ProfitabilityVM {
   subtitle: string; // basis and comparison, built from the selection (parity rule 13)
   table: { rows: ProfRow[]; info: InfoVM; cmpName: string };
   concentration: ConcentrationVM;
-  bubble: BubbleVM;
+  margin: MarginVM;
   heat: HeatVM;
 }
 

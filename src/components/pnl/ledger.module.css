@@ -353,6 +353,15 @@
   color: var(--acc);
   font-weight: 600;
 }
+/* custom range (2026-11-15): the From / To switch, end name small over its month */
+.rangeEnd {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  line-height: 1.2;
+}
 .monthGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -640,35 +649,8 @@
   cursor: pointer;
 }
 
-/* P&L views redesign v4: in-view pager next to the tabs (ADR-0004) and the per-view "How to read" (ADR-0012). */
-.pager {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin: 0 0 8px 10px;
-  color: var(--slate-600);
-  font-size: 13px;
-}
-.pager button {
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--line-300);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--ink-900);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-}
-.pager button:disabled {
-  color: var(--line-300);
-  cursor: default;
-}
-.pager span {
-  min-width: 44px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
+/* P&L views redesign v4: the per-view "How to read" (ADR-0012). The in-view pager (ADR-0004) went 2026-11-15:
+   Profitability is one scrolling page. */
 .howTo {
   display: inline-flex;
   align-items: center;

@@ -335,7 +335,8 @@ describe("Profitability", () => {
       );
       expect(cellValues.every((x) => typeof x === "number")).toBe(true);
       expect(Math.max(...cellValues.map((x) => x ?? 0))).toBeGreaterThan(0);
-      expect(vm.bubble.points.length).toBeGreaterThan(0);
+      // margin: one bar and one point per month of the period
+      expect(vm.margin.periods.length).toBeGreaterThan(0);
       expect(JSON.stringify(vm)).not.toMatch(/NaN|undefined|Infinity/);
     },
   );
@@ -358,17 +359,79 @@ describe("Profitability", () => {
     }
   });
 
-  it("prior-year trails need two earlier years (C-04): none for FY2025, drawn for FY2026", () => {
-    expect(
-      engine
-        .profitability(fy2025())
-        .bubble.points.every((p) => p.trail === null),
-    ).toBe(true);
-    expect(
-      engine
-        .profitability(selection({ entity: "S" }))
-        .bubble.points.every((p) => p.trail !== null),
-    ).toBe(true);
+  it("margin: one month = the table's total NR and CM % (one engine, one number)", () => {
+    const sel = selection({
+      entity: "S",
+      timeView: "MTD",
+      compareA: "PY",
+      compareB: "NONE",
+    });
+    const vm = engine.profitability(sel);
+    const total = vm.table.rows.at(-1);
+    expect(vm.margin.grain).toBe("month");
+    expect(vm.margin.periods.map((p) => p.short)).toEqual(["Sep"]);
+    expect(vm.margin.periods[0]?.year).toBe("2026");
+    expect(vm.margin.periods[0]?.cmText).toBe(total?.cm);
+    expect(vm.margin.periods[0]?.detail).toContain(`net revenue ${total?.nr}`);
+  });
+
+  it("margin: the months add up to the period, CM % of the sums = the table's", () => {
+    const vm = engine.profitability(selection());
+    const total = vm.table.rows.at(-1);
+    expect(vm.margin.periods.map((p) => p.short)).toEqual([
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+    ]);
+    expect(vm.margin.periods.map((p) => p.year).filter(Boolean)).toEqual([
+      "2026",
+    ]);
+    expect(vm.margin.info.values[0]?.value).toBe(
+      `net revenue ${total?.nr}, CM ${total?.cm}`,
+    );
+    for (const p of vm.margin.periods) {
+      expect(p.nr, p.key).toBeGreaterThan(0);
+      expect(p.cmPct, p.key).not.toBeNull();
+    }
+  });
+
+  it("margin: a range up to 12 months stays monthly, a longer one goes to fiscal quarters", () => {
+    const year = engine.profitability(
+      selection({
+        timeView: "RANGE",
+        startFy: 2025,
+        startMonth: 10,
+        fy: 2026,
+        month: 12,
+      }),
+    ).margin;
+    expect(year.grain).toBe("month");
+    expect(year.periods).toHaveLength(12); // Oct 2025 … Sep 2026, Actual stops at the last close (C-01)
+    expect(year.periods.map((p) => p.year).filter(Boolean)).toEqual([
+      "2025",
+      "2026",
+    ]);
+    const span = engine.profitability(
+      fy2025({ timeView: "RANGE", startFy: 2024, startMonth: 1 }),
+    ).margin;
+    expect(span.grain).toBe("quarter");
+    expect(span.periods.map((p) => p.short)).toEqual([
+      "Q1",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Q1",
+      "Q2",
+      "Q3",
+      "Q4",
+    ]);
+    expect(span.info.title).toBe("Revenue and margin by quarter");
   });
 });
 

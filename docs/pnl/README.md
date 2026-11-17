@@ -91,6 +91,79 @@ chat ("move data into Supabase"); the rule is CLAUDE.md § Supabase.
 **Ask AI** on `/work/pnl-suite` and in the report's toolbar (Ledger palette), with a 61-metric catalogue and an
 answer key: `ai-chat.md` in this folder; the executive metric list in `.log/report/2026-11-09-pnl-exec-metrics.md`.
 
+## 2026-11-15: Profitability on one page, growth and margin month by month, and custom ranges (owner's requests)
+
+**Profitability is one scrolling page.** Page 1 (region table + concentration bars) stays on top as it was, page 2
+(growth and margin + the mix heatmap) sits directly underneath (`views.module.css` `.profPage`: two rows that share the
+height when the window has room, the page scrolls when it has not; at 1440 × 900 both fit, at 1280 × 720 it scrolls).
+The pager went with its last user: the ‹ › buttons in the tabs row (`header.tsx`, `.pager` CSS), the ← → keys and the
+`p` URL key (`view-state.ts`; `VIEW_STATE_KEYS` is the four variances-filter keys now). An old link with `p=2` still
+opens, its `p` is an unknown key and the rewrite drops it. "How to read - Profitability" says Top / Below.
+
+**Concentration shows the bars only.** The legend block under the bars (region name + "NR share → EBITDA share
+(drift pp)") is gone; the title and the (i) stay. The region of a segment is on hover (`<title>`), its colour is the
+same as in the growth and margin rows below, and the (i) values carry each region's three shares and the drift.
+
+**"Growth × margin by region" is replaced by "Growth and margin by region", month by month.** The bubbles were
+unreadable and static (the mix heatmap already shows a static figure). Now a grid of small line charts: one row per
+region in the table's order, then the company; two columns, net revenue growth vs the same month a year earlier
+(constant currency, so organic; prior year = Actual, C-04) and contribution margin %. One point per month of the
+period (the base's months after C-01), one scale per column for every row (its range is printed under the column
+title), the company dashed behind each region's line for reference, and only the last month's value written, at the
+line's end, so no label can collide. One month (MTD) is a dot with its value. Months without a prior year (2024) are
+gaps, and the panel title says so ("Growth n/a for 6 of 12 months: no prior year before Jan 2024"). Engine:
+`profitability.ts` `trendsOf` → `TrendsVM` (`view-types.ts`), two scans by region × month through a new `byMonth`
+option of `aggregateBy` (`slices.ts`, region cut only, nothing allocated) and `ViewContext.monthly`; the company is
+the sum of its regions. Chart: `charts.tsx` `Trends` (geometry only). Tests: one month equals the table's total and
+regional CM % and Δ vs prior year %, months follow the period and its C-01 cut, 2024 growth is n/a. The bubble chart
+(`Bubble`, `BubbleVM`, the two-years-back trail plan) and the concentration `legend` field were removed with it.
+
+**2026-11-17 (owner): the small multiples gave way to one combo chart, "Revenue and margin by month".** The grid
+(ten small charts, two metrics) still did not read at a glance. Now one chart for the company under the report's
+filters: net revenue as bars on the left axis (selected units), contribution margin % (contribution ÷ NR) as a line on
+the right axis, both axes on the same gridlines; each point carries its CM % while a period is at least 46 px wide,
+else the last one only; hover a period for NR, contribution and CM %. A period of more than 12 months (custom ranges)
+shows fiscal quarters ("Revenue and margin by quarter"; a part quarter says how many months it holds). Engine:
+`profitability.ts` `marginOf` → `MarginVM`, one scan by region × month (no prior-year scan any more, so no growth note);
+chart: `charts.tsx` `MarginCombo`. Tests: one month = the table's total NR and CM %, the period's info total = the
+table's, a 12-month range stays monthly, 24 months = 8 quarters. `TrendsVM`, `trendsOf` and `Trends` were removed;
+the concentration segments keep their region colours, which no chart below repeats now.
+
+**Custom ranges in the period picker.** A sixth time view, **Custom range** (`RANGE`): any month range, across
+fiscal years, e.g. Oct 2025 – Sep 2026 or 2025 and 2026 (Jan 2025 – Dec 2026).
+
+- **Picking it:** Period → Show → Custom range. The range starts as the months on screen (from LTM Sep 2026 it is
+  Oct 2025 – Sep 2026 straight away). "Whole years" offers every year alone and every run of years (2024, 2024 – 2025,
+  2024 – 2026, 2025, 2025 – 2026, 2026). "Range" is a From / To switch; the Year row and the month grid below edit the
+  chosen end (labelled From or To; the covered months are shaded). For Oct 2025 → Sep 2026: Custom range, From,
+  Year 2025, Oct; To, Year 2026, Sep. Moving one end past the other takes the other along (`period.ts` `rangePatch`).
+  The From / To switch is picker state in the shell, not report state.
+- **Bounds:** the range lives inside the data (Jan 2024 – Dec 2026). Under an Actual base the grid offers closed
+  months only (C-01) and a range that reaches past the last close (a "2025 – 2026" span, or a link) is cut at Sep 2026
+  with the existing Cut-off notice, exactly like Full year 2026; Latest estimate and Budget read the open months.
+- **URL:** `tv=RANGE` with **`sfy` / `sm`** = the first month (fiscal year, month 1–12); `fy` / `m` are the last
+  month, as before. `tv=RANGE&sfy=2025&sm=10` (+ the default `fy=2026&m=9`) = Oct 2025 – Sep 2026;
+  `m=12&tv=RANGE&sfy=2025&sm=1&b=LE` = 2025 and 2026 on Latest estimate. `sfy` / `sm` are always written with RANGE
+  and never without it; without RANGE they are ignored and dropped, so every older link reads as before. A missing or
+  invalid start reads as January of the last month's year; a start after the end is swapped.
+- **Every view follows it:** `resolveWindow` has a RANGE case and `versionPlan` passes the start, so the statement,
+  Vitals, Analysis and Profitability read the same months. Budget and Latest estimate cover the same months; prior
+  year is the same months 12 months earlier (C-04), and where part of the range has none the Prior year notice says
+  how much ("Prior year n/a before Jan 2024: it covers 6 of the range's 12 months"; the extra clause only for a
+  range, Track B's text unchanged otherwise). The FY Budget / FY latest estimate columns and the constant-currency
+  rates are the fiscal year of the range's last month. The statement's column title and the chat scope read
+  "Oct 2025 – Sep 2026"; the applied-filters pop-up shows Fiscal year "2025 – 2026" and Time view "Custom range".
+- **Data:** the browser already loads every chunk of the company (each version × each 12 months, i.e. every fiscal
+  year), so a range across years has all its months; a test checks every version × month is in exactly one chunk.
+- **Chat:** `time_view` accepts `RANGE` with `from_fy` / `from_month`, and a visitor looking at a range is answered
+  over it (`chat-tools.ts` `queryOf`, `MetricQuery.startFy` / `startMonth`); the answer key and its tests are unchanged.
+
+Tests: the report's 17 test files, 317 passed + 1 skipped (the Track B cross-check); typecheck and lint green. Checked in
+headless Edge against the dev server with live `pnl_demo` data, 1440 × 900 and 1280 × 720: Profitability for both
+companies (YTD, MTD, Oct 2025 – Sep 2026, Jul 2024 – Jun 2025 with its notice), the period picker on both range ends
+and on "2025 – 2026", the statement, Vitals and Analysis on a range. The report has no dark theme of its own (the
+Ledger tokens are light); in the site's dark scheme it renders the same.
+
 ## Where things are (10-22, kept)
 
 | What | Path |

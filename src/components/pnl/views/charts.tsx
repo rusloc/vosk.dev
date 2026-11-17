@@ -1,10 +1,10 @@
 import { useId } from "react";
 import type {
   BridgeStep,
-  BubbleVM,
   ConcentrationVM,
+  MarginVM,
 } from "@/lib/pnl/engine/view-types";
-import { linear, niceTicks } from "../chart-scale";
+import { extent, linear, niceTicks } from "../chart-scale";
 
 // Inline SVG charts of the Vitals / Analysis / Profitability views (no chart library). Geometry only: values,
 // labels and step kinds come from lib/engine.
@@ -287,6 +287,7 @@ export function ShareBars({
               const w = s.share * bw;
               const el = (
                 <g key={s.key}>
+                  <title>{`${lvl.label}: ${s.label} ${s.text}`}</title>
                   <rect
                     x={x}
                     y={y}
@@ -318,237 +319,232 @@ export function ShareBars({
   );
 }
 
-/** Greedy label stacking: a label whose box would overlap an earlier one moves up by one label height (34 px). */
-function labelLift(anchors: readonly { x: number; y: number }[]): number[] {
-  const placed: { x: number; y: number }[] = [];
-  return anchors.map((a) => {
-    let lift = 0;
-    while (
-      placed.some(
-        (p) => Math.abs(p.x - a.x) < 130 && Math.abs(p.y - (a.y - lift)) < 32,
-      )
-    )
-      lift += 34;
-    placed.push({ x: a.x, y: a.y - lift });
-    return lift;
+/** SVG path of a series over evenly spaced months; a null breaks the line. */
+function linePath(
+  values: readonly (number | null)[],
+  x: (i: number) => number,
+  y: (v: number) => number,
+): string {
+  let d = "";
+  let pen = false;
+  values.forEach((v, i) => {
+    if (v === null) {
+      pen = false;
+      return;
+    }
+    d += `${pen ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`;
+    pen = true;
   });
+  return d;
 }
 
-export function Bubble({
+/** `n` + 1 ticks of one nice step covering [lo, hi]: the right axis shares the left axis's gridlines. */
+function alignedTicks(lo: number, hi: number, n: number): number[] {
+  const pad = (hi - lo) * 0.15 || Math.abs(hi) * 0.1 || 0.01;
+  const min = lo - pad;
+  const max = hi + pad;
+  const mag = 10 ** Math.floor(Math.log10((max - min) / n));
+  for (const m of [mag / 10, mag, mag * 10])
+    for (const k of [1, 2, 2.5, 5]) {
+      const step = k * m;
+      const start = Math.floor(min / step) * step;
+      if (start + n * step >= max)
+        return Array.from({ length: n + 1 }, (_, i) => start + i * step);
+    }
+  return Array.from({ length: n + 1 }, (_, i) => min + ((max - min) * i) / n);
+}
+
+/**
+ * Revenue and margin by month (2026-11-17, owner): a combo chart, net revenue as bars on the left axis and contribution
+ * margin % as a line on the right axis, the two axes on the same gridlines. Each point carries its CM % while there is
+ * room, else the last one only; hover a period for its figures.
+ */
+export function MarginCombo({
   vm,
   width,
   height,
 }: {
-  vm: BubbleVM;
+  vm: MarginVM;
   width: number;
   height: number;
 }) {
-  const arrow = useId().replace(/:/g, "");
-  if (width < 60 || height < 60 || vm.points.length === 0) return null;
-  const padL = 52;
-  const padR = 24;
-  const padT = 24;
-  const padB = 34;
-  const xs = [...vm.points.flatMap((p) => [p.x, p.trail?.x ?? p.x]), vm.ref.x];
-  const ys = [...vm.points.flatMap((p) => [p.y, p.trail?.y ?? p.y]), vm.ref.y];
-  const span = (a: number[]) => Math.max(...a) - Math.min(...a) || 0.02;
-  const xt = niceTicks(
-    Math.min(...xs) - span(xs) * 0.35,
-    Math.max(...xs) + span(xs) * 0.35,
-    4,
-  );
-  const yt = niceTicks(
-    Math.min(...ys) - span(ys) * 0.4,
-    Math.max(...ys) + span(ys) * 0.4,
-    4,
-  );
-  const X = linear(xt[0] ?? 0, xt.at(-1) ?? 1, padL, width - padR);
-  const Y = linear(yt[0] ?? 0, yt.at(-1) ?? 1, height - padB, padT);
-  const sMax = Math.max(...vm.points.map((p) => p.size), 1);
-  const pct = (v: number) =>
-    `${(v * 100).toFixed(Math.abs(span(xs)) < 0.05 ? 1 : 0)}%`;
-  const [tl, tr, bl, br] = vm.quadrants;
-  const lift = labelLift(
-    vm.points.map((p) => ({
-      x: X(p.x),
-      y: Y(p.y) - (8 + 18 * Math.sqrt(p.size / sMax)),
-    })),
-  );
+  const k = vm.periods.length;
+  if (width < 200 || height < 120 || k === 0) return null;
+  const padL = 44;
+  const padR = 44;
+  const padT = 30; // legend
+  const padB = 34; // period and year
+  const iw = width - padL - padR;
+  const band = iw / k;
+  const bw = Math.min(56, band * 0.62);
+  const nrs = vm.periods.map((p) => p.nr);
+  const [nrLo, nrHi] = extent(nrs);
+  const left = niceTicks(Math.min(0, nrLo), nrHi * 1.06, 4);
+  const n = left.length - 1;
+  const [cmLo, cmHi] = extent(vm.periods.map((p) => p.cmPct));
+  const right = alignedTicks(cmLo, cmHi, n);
+  const bottom = height - padB;
+  const YL = linear(left[0] ?? 0, left.at(-1) ?? 1, bottom, padT);
+  const YR = linear(right[0] ?? 0, right.at(-1) ?? 1, bottom, padT);
+  const X = (i: number) => padL + band * i + band / 2;
+  const leftStep = (left[1] ?? 1) - (left[0] ?? 0);
+  const rightStep = (right[1] ?? 0.01) - (right[0] ?? 0);
+  const amount = (t: number) =>
+    t.toLocaleString("en-US", { maximumFractionDigits: leftStep < 1 ? 1 : 0 });
+  const percent = (t: number) =>
+    `${(t * 100).toFixed(rightStep < 0.01 ? 1 : 0).replace("-", "−")}%`;
+  const lastIdx = vm.periods.findLastIndex((p) => p.cmPct !== null);
+  const everyLabel = band >= 46;
+  const barFill = "color-mix(in srgb, var(--acc) 32%, #FFFFFF)";
   return (
     <svg
       width={width}
       height={height}
       role="img"
-      aria-label={vm.points.map((p) => p.detail).join("; ")}
+      aria-label={`${vm.info.title}: ${vm.periods.map((p) => p.detail).join("; ")}`}
     >
-      <defs>
-        <marker
-          id={arrow}
-          viewBox="0 0 8 8"
-          refX="7"
-          refY="4"
-          markerWidth="7"
-          markerHeight="7"
-          orient="auto"
-        >
-          <path d="M0 0 L8 4 L0 8 z" fill={SLATE4} />
-        </marker>
-      </defs>
-      {xt.map((t) => (
-        <text
-          key={`x${t}`}
-          x={X(t)}
-          y={height - padB + 16}
-          fontSize={10.5}
-          textAnchor="middle"
-          fill={SLATE4}
-        >
-          {pct(t)}
+      <g fontSize={11} fill={SLATE}>
+        <rect
+          x={padL}
+          y={6}
+          width={12}
+          height={10}
+          rx={2}
+          style={{ fill: barFill }}
+        />
+        <text x={padL + 18} y={15}>
+          {`Net revenue, ${vm.unit} (left)`}
         </text>
-      ))}
-      {yt.map((t) => (
-        <g key={`y${t}`}>
+        <line
+          x1={padL + 170}
+          x2={padL + 190}
+          y1={11}
+          y2={11}
+          stroke={INK}
+          strokeWidth={2}
+        />
+        <circle
+          cx={padL + 180}
+          cy={11}
+          r={3}
+          fill="#FFFFFF"
+          stroke={INK}
+          strokeWidth={1.6}
+        />
+        <text x={padL + 196} y={15}>
+          Contribution margin % (right)
+        </text>
+      </g>
+      {left.map((t, i) => (
+        <g key={t}>
           <line
             x1={padL}
             x2={width - padR}
-            y1={Y(t)}
-            y2={Y(t)}
-            stroke={LINE1}
+            y1={YL(t)}
+            y2={YL(t)}
+            stroke={i === 0 ? LINE : LINE1}
           />
           <text
             x={padL - 6}
-            y={Y(t) + 3}
-            fontSize={10.5}
+            y={YL(t) + 3}
+            fontSize={10}
             textAnchor="end"
             fill={SLATE4}
           >
-            {(t * 100).toFixed(1)}%
+            {amount(t)}
+          </text>
+          <text x={width - padR + 6} y={YL(t) + 3} fontSize={10} fill={SLATE4}>
+            {percent(right[i] ?? 0)}
           </text>
         </g>
       ))}
-      <text
-        x={(padL + width - padR) / 2}
-        y={height - 4}
-        fontSize={11}
-        textAnchor="middle"
-        fill={SLATE}
-      >
-        Net revenue growth vs PY (constant currency)
-      </text>
-      <text
-        x={12}
-        y={(padT + height - padB) / 2}
-        fontSize={11}
-        textAnchor="middle"
-        fill={SLATE}
-        transform={`rotate(-90 12 ${(padT + height - padB) / 2})`}
-      >
-        Contribution margin %
-      </text>
-      <line
-        x1={X(vm.ref.x)}
-        x2={X(vm.ref.x)}
-        y1={padT}
-        y2={height - padB}
-        stroke={SLATE4}
-        strokeDasharray="4 3"
-      />
-      <line
-        x1={padL}
-        x2={width - padR}
-        y1={Y(vm.ref.y)}
-        y2={Y(vm.ref.y)}
-        stroke={SLATE4}
-        strokeDasharray="4 3"
-      />
-      <text x={X(vm.ref.x) + 4} y={padT + 10} fontSize={10.5} fill={SLATE}>
-        {vm.ref.xText}
-      </text>
-      <text
-        x={width - padR - 4}
-        y={Y(vm.ref.y) - 5}
-        fontSize={10.5}
-        textAnchor="end"
-        fill={SLATE}
-      >
-        {vm.ref.yText}
-      </text>
-      {[
-        [tl, padL + 8, padT + 26, "start"],
-        [tr, width - padR - 6, padT + 26, "end"],
-        [bl, padL + 8, height - padB - 8, "start"],
-        [br, width - padR - 6, height - padB - 8, "end"],
-      ].map(([t, x, y, a]) => (
-        <text
-          key={String(t)}
-          x={Number(x)}
-          y={Number(y)}
-          fontSize={12}
-          fontStyle="italic"
-          textAnchor={a as "start" | "end"}
-          fill={SLATE4}
-        >
-          {t}
-        </text>
-      ))}
-      {vm.points.map((p, i) => {
-        const r = 8 + 18 * Math.sqrt(p.size / sMax);
-        const c = MEMBER[i % MEMBER.length] ?? SLATE4;
+      {vm.periods.map((p, i) => {
+        const y0 = YL(Math.max(0, left[0] ?? 0));
+        const y1 = p.nr === null ? y0 : YL(p.nr);
         return (
           <g key={p.key}>
             <title>{p.detail}</title>
-            {p.trail ? (
-              <>
-                <line
-                  x1={X(p.trail.x)}
-                  y1={Y(p.trail.y)}
-                  x2={X(p.x)}
-                  y2={Y(p.y)}
-                  stroke={SLATE4}
-                  strokeWidth={1.2}
-                  markerEnd={`url(#${arrow})`}
-                />
-                <circle
-                  cx={X(p.trail.x)}
-                  cy={Y(p.trail.y)}
-                  r={4}
-                  fill="#FFFFFF"
-                  stroke={SLATE4}
-                  strokeWidth={1.5}
-                />
-              </>
-            ) : null}
-            <circle
-              cx={X(p.x)}
-              cy={Y(p.y)}
-              r={r}
-              fill={c}
-              fillOpacity={0.82}
-              stroke="#FFFFFF"
-              strokeWidth={1.5}
+            <rect
+              x={X(i) - band / 2}
+              y={padT}
+              width={band}
+              height={bottom - padT}
+              fill="transparent"
             />
+            {p.nr === null ? null : (
+              <rect
+                x={X(i) - bw / 2}
+                y={Math.min(y0, y1)}
+                width={bw}
+                height={Math.abs(y0 - y1)}
+                rx={2}
+                style={{ fill: barFill }}
+              />
+            )}
             <text
-              x={X(p.x)}
-              y={Y(p.y) - r - 18 - (lift[i] ?? 0)}
-              fontSize={12}
-              fontWeight={600}
-              textAnchor="middle"
-              fill={INK}
-            >
-              {p.label}
-            </text>
-            <text
-              x={X(p.x)}
-              y={Y(p.y) - r - 5 - (lift[i] ?? 0)}
-              fontSize={11}
+              x={X(i)}
+              y={bottom + 15}
+              fontSize={10.5}
               textAnchor="middle"
               fill={SLATE}
             >
-              {p.text}
+              {p.short}
             </text>
+            {p.year ? (
+              <text
+                x={X(i)}
+                y={bottom + 28}
+                fontSize={10}
+                textAnchor="middle"
+                fill={SLATE4}
+              >
+                {p.year}
+              </text>
+            ) : null}
           </g>
         );
       })}
+      <path
+        d={linePath(
+          vm.periods.map((p) => p.cmPct),
+          X,
+          YR,
+        )}
+        fill="none"
+        stroke={INK}
+        strokeWidth={2}
+        strokeLinejoin="round"
+        pointerEvents="none"
+      />
+      {vm.periods.map((p, i) =>
+        p.cmPct === null ? null : (
+          <g key={p.key} pointerEvents="none">
+            <circle
+              cx={X(i)}
+              cy={YR(p.cmPct)}
+              r={3.5}
+              fill="#FFFFFF"
+              stroke={INK}
+              strokeWidth={1.8}
+            />
+            {everyLabel || i === lastIdx ? (
+              <text
+                x={X(i)}
+                y={YR(p.cmPct) - 9}
+                fontSize={10.5}
+                fontWeight={600}
+                textAnchor="middle"
+                fill={INK}
+                stroke="#FFFFFF"
+                strokeWidth={3}
+                paintOrder="stroke"
+              >
+                {p.cmText}
+              </text>
+            ) : null}
+          </g>
+        ),
+      )}
     </svg>
   );
 }

@@ -65,6 +65,40 @@ describe("notice rows (C-50, Track B copy)", () => {
     ).toEqual([]);
   });
 
+  it("Prior year in a custom range: says how much of the range has one (2026-11-15)", () => {
+    expect(
+      rows({
+        timeView: "RANGE",
+        startFy: 2024,
+        startMonth: 7,
+        fy: 2025,
+        month: 6,
+      }),
+    ).toEqual([
+      [
+        "Prior year",
+        "Prior year n/a before Jan 2024: it covers 6 of the range's 12 months",
+      ],
+    ]);
+    expect(
+      codes({ timeView: "RANGE", startFy: 2025, startMonth: 1, fy: 2026 }),
+    ).toEqual([]); // 2025 has 2024 as its prior year
+    expect(
+      rows({
+        timeView: "RANGE",
+        startFy: 2025,
+        startMonth: 1,
+        fy: 2026,
+        month: 12,
+      }),
+    ).toEqual([
+      [
+        "Cut-off",
+        "Actuals closed through Sep 2026: later months excluded; use Latest estimate for the full window",
+      ],
+    ]);
+  });
+
   it("History: LTM before the data history, in Track B order after Prior year", () => {
     expect(rows({ fy: 2024, month: 3, timeView: "LTM" })).toEqual([
       ["Prior year", "Prior year n/a before Jan 2024"],
@@ -103,5 +137,16 @@ describe("statement column-group title window (parity rule 12)", () => {
     ["FY", "Full year 2026"],
   ] as const)("%s → %s", (timeView, label) => {
     expect(windowLabel(m, selection({ timeView }))).toBe(label);
+  });
+
+  it("a custom range names its months", () => {
+    const range = (startFy: number, startMonth: 3 | 9 | 10) =>
+      windowLabel(
+        m,
+        selection({ timeView: "RANGE", startFy, startMonth, fy: 2026 }),
+      );
+    expect(range(2025, 10)).toBe("Oct 2025 – Sep 2026");
+    expect(range(2026, 3)).toBe("Mar – Sep 2026");
+    expect(range(2026, 9)).toBe("Sep 2026");
   });
 });

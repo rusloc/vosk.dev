@@ -15,7 +15,7 @@ import type { Notice } from "./notices";
 import { periodView } from "./period";
 import { profitability } from "./profitability";
 import { createSliceCache } from "./slices";
-import type { PeriodView } from "./period";
+import type { PeriodView, RangeEnd } from "./period";
 import { buildSpine, evaluateSpine } from "./spine";
 import type {
   ColumnPlan,
@@ -46,7 +46,8 @@ export interface Engine {
   statement(sel: Selection): StatementResult;
   notices(sel: Selection): Notice[]; // C-50, L-05: labelled rows of the applied-filters pop-up
   dataStatus(): { lastClosedMonth: string; builtAt: string }; // N-02 / N-03
-  period(sel: Selection): PeriodView; // F-02 … F-04, C-01: period picker v2 summary sentence and month grid
+  /** F-02 … F-04, C-01: period picker v2 summary sentence and month grid; `edit` = the custom range end edited. */
+  period(sel: Selection, edit?: RangeEnd): PeriodView;
   /** Page top: status line (L-01, N-02), applied-filters rows (replace the L-04 context line), rail summaries. */
   header(
     sel: Selection,
@@ -166,8 +167,8 @@ export function createEngine(ds: Dataset): Engine {
       return { lastClosedMonth: last.month_key, builtAt: m.builtAt };
     },
 
-    period(sel) {
-      return periodView(m, sel);
+    period(sel, edit) {
+      return periodView(m, sel, edit);
     },
 
     header(sel, timeZone) {

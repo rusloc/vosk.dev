@@ -39,6 +39,8 @@ function accountFlags(ds: Dataset) {
 /**
  * Σ per account and member of the cut, translated per row (D-30). Members with no rows are absent. `by` = [] gives
  * one member "" equal to aggregateAccounts. Single entity only (the Group view is not built in Track C).
+ * `byMonth` (2026-11-15, Profitability's month-by-month chart): one member per cut member and source month,
+ * "member@monthIdx", in the same one scan; a region cut or none only (nothing allocated).
  */
 export function aggregateBy(
   ds: Dataset,
@@ -46,6 +48,7 @@ export function aggregateBy(
   plan: ColumnPlan,
   tr: Translation,
   by: readonly SliceDim[],
+  byMonth = false,
 ): Map<MemberKey, Float64Array> {
   const { dict, tables } = ds.manifest;
   const pl = ds.pl.get(entity);
@@ -72,6 +75,8 @@ export function aggregateBy(
   };
   const { n, monthIdx, version, account, cents } = pl;
   const allocate = by.some((d) => d !== "region");
+  if (allocate && byMonth)
+    throw new Error("slices: month by month needs a region cut or none");
 
   if (!allocate) {
     for (let i = 0; i < n; i++) {
@@ -87,7 +92,7 @@ export function aggregateBy(
         cols.line[i] ?? 0,
         cols.segment[i] ?? 0,
       );
-      const a = slot(key);
+      const a = slot(byMonth ? `${key}@${monthIdx[i] ?? 0}` : key);
       const acc = account[i] ?? 0;
       a[acc] = (a[acc] ?? 0) + (cents[i] ?? 0) * f;
     }
@@ -199,7 +204,17 @@ export function createSliceCache(ds: Dataset) {
     plan: ColumnPlan,
     tr: Translation,
     by: readonly SliceDim[],
-  ) => JSON.stringify([entity, plan.parts, tr.currency, tr.basis, tr.fy, by]);
+    byMonth = false,
+  ) =>
+    JSON.stringify([
+      entity,
+      plan.parts,
+      tr.currency,
+      tr.basis,
+      tr.fy,
+      by,
+      byMonth,
+    ]);
   const remember = <T>(
     cache: Map<string, T>,
     key: string,
@@ -218,9 +233,10 @@ export function createSliceCache(ds: Dataset) {
       plan: ColumnPlan,
       tr: Translation,
       by: readonly SliceDim[] = [],
+      byMonth = false,
     ) =>
-      remember(accounts, keyOf(entity, plan, tr, by), () =>
-        aggregateBy(ds, entity, plan, tr, by),
+      remember(accounts, keyOf(entity, plan, tr, by, byMonth), () =>
+        aggregateBy(ds, entity, plan, tr, by, byMonth),
       ),
     ops: (
       entity: EntityCode,

@@ -1,14 +1,16 @@
 import { env } from "./env";
 import { localizedPath, type Locale } from "./i18n/config";
+import { en } from "./i18n/en";
+import { AUTHOR_NAME } from "./person";
 
 /**
  * Central site config — brand, nav, contact. Single source for metadata and UI.
  */
 export const siteConfig = {
   name: "VOSK",
-  title: "VOSK — Freelance BI Analyst & Developer",
-  description:
-    "Freelance Business Intelligence analyst and developer. Dashboards, data pipelines, and analytics that turn raw data into decisions.",
+  // The site-wide title and description live in the dictionary (the layout reads them there); one copy (SEO spec T-02).
+  title: en.meta.title,
+  description: en.meta.description,
   url: env.NEXT_PUBLIC_SITE_URL,
   locale: "en_US",
   // Public/professional name; "Vosk" ties the person to the vosk.dev brand.
@@ -16,9 +18,9 @@ export const siteConfig = {
   // is the informal form used where a full name reads stiff — the Contacts card
   // and the auto-reply signature.
   author: {
-    name: "Kirill Vosk",
+    name: AUTHOR_NAME,
     firstName: "Kirill",
-    jobTitle: "Freelance BI Analyst & Developer",
+    jobTitle: "Freelance Power BI & Microsoft Fabric Consultant",
   },
   nav: [
     { href: "/", label: "Home" },
@@ -28,6 +30,10 @@ export const siteConfig = {
     { href: "/contact", label: "Contacts" },
   ],
   contactEmail: "vosk.dev@gmail.com",
+  // SEO spec T-06 (11-18): both stay empty until the owner gives them; empty = nothing on /contact. A call-booking
+  // link (Calendly / Cal.com) and the reply time to promise ("I reply within one working day").
+  bookingUrl: "",
+  replyTime: "",
   // Real profile URLs only. The non-empty ones are also the Person's JSON-LD
   // `sameAs` in src/lib/structured-data.ts. An empty string renders the Contacts
   // row as a dull placeholder instead of a live link; a root URL like

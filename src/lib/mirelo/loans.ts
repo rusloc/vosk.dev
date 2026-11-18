@@ -1,4 +1,4 @@
-import { heatLevels } from "./clients";
+import { heatLevels } from "./heat";
 import { MARKET_NAMES, info } from "./copy";
 import type { InfoValue } from "./copy";
 import type { Cube } from "./cube";

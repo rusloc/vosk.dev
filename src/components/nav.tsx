@@ -3,17 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/cn";
 import { localizedPath, logicalPath, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { CloseIcon } from "@/components/close-icon";
 import { SendMessageButton } from "@/components/send-message-button";
 import styles from "./nav.module.css";
 
+// `brand` comes from the server layout: importing `siteConfig` here pulled the env schema (Zod) and the dictionary
+// into every page's client JS (codebase review S1, 11-18). Keep config out of this client component.
 export function SiteNav({
+  brand,
   locale,
   dict,
 }: {
+  brand: string;
   locale: Locale;
   dict: Dictionary;
 }) {
@@ -26,6 +30,7 @@ export function SiteNav({
     { path: "/work", label: dict.nav.work },
     { path: "/blog", label: dict.nav.blog },
     { path: "/services", label: dict.nav.services },
+    { path: "/about", label: dict.nav.about },
     { path: "/contact", label: dict.nav.contact },
   ];
 
@@ -41,7 +46,7 @@ export function SiteNav({
     <header className="border-border bg-background/80 sticky top-0 z-40 border-b backdrop-blur">
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4 sm:px-6">
         <Link href={homeHref} className="text-lg font-semibold tracking-tight">
-          {siteConfig.name}
+          {brand}
         </Link>
 
         <div className="flex items-center gap-1">
@@ -80,29 +85,25 @@ export function SiteNav({
             onClick={() => setOpen((v) => !v)}
             className="border-border bg-background text-foreground hover:bg-muted fixed right-2 bottom-2 z-50 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-md border shadow-lg transition-colors md:hidden"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              className="h-4 w-4"
-              aria-hidden="true"
-            >
-              {open ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18 18 6M6 6l12 12"
-                />
-              ) : (
+            {open ? (
+              <CloseIcon className="h-4 w-4" />
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"
                 />
-              )}
-            </svg>
+              </svg>
+            )}
           </button>
         </div>
       </nav>

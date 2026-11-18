@@ -8,15 +8,11 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import {
-  TRUCKS_SUGGESTIONS,
-  askAiTriggerCompact,
-} from "@/components/chat/ask-ai";
-import { ChatPanel } from "@/components/chat/chat-panel";
+import { ReportChat } from "@/components/chat/report-chat";
 import { interFontVariable } from "@/components/inter-font";
 import { manropeFontVariable } from "@/components/marketing/manrope-font";
 import { ReportBoard } from "@/components/report-board";
-import { ReportDialog } from "@/components/report-dialog";
+import { useReportLoad } from "@/components/report-load";
 import { columnsSource, createLoader } from "@/lib/trucks/data/loader";
 import { A11Y, FILTERS, FOOTNOTE, HEADER, KPI } from "@/lib/trucks/engine/copy";
 import { addPlanWeek, createDataset } from "@/lib/trucks/engine/data";
@@ -47,11 +43,6 @@ const loader = createLoader(
   }),
 );
 
-type Load =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; ds: Dataset };
-
 /** `chat`: show the Ask AI button in the header (the page passes CHAT_ENABLED, ADR-0005). `chatOpen`: open it at once. */
 export function TrucksApp({
   chat = false,
@@ -60,41 +51,19 @@ export function TrucksApp({
   chat?: boolean;
   chatOpen?: boolean;
 }) {
-  const [load, setLoad] = useState<Load>({ status: "loading" });
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    let live = true;
-    loader.core().then(
-      (core) => live && setLoad({ status: "ready", ds: createDataset(core) }),
-      (e: unknown) =>
-        live &&
-        setLoad({
-          status: "error",
-          message: e instanceof Error ? e.message : String(e),
-        }),
-    );
-    return () => {
-      live = false;
-    };
-  }, [attempt]);
+  const { load, retry } = useReportLoad(loader.core, createDataset);
   return (
     <ReportBoard fill className="bg-[#f3f5f8]">
       <div className={ROOT_CLASS}>
         {load.status === "ready" ? (
-          <Board ds={load.ds} chat={chat} chatOpen={chatOpen} />
+          <Board ds={load.data} chat={chat} chatOpen={chatOpen} />
         ) : (
           <p className="loading" role="status">
             {load.status === "loading"
               ? `Loading ${HEADER.title}…`
               : `Could not load the data (${load.message}).`}
             {load.status === "error" ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setLoad({ status: "loading" });
-                  setAttempt((a) => a + 1);
-                }}
-              >
+              <button type="button" onClick={retry}>
                 Retry
               </button>
             ) : null}
@@ -219,27 +188,14 @@ function Board({
             {copied ? HEADER.copied : HEADER.copyLink}
           </button>
           {chat ? (
-            // The chat asks about what the visitor is looking at; a figures card's link applies its state here.
-            <ReportDialog
-              label="Ask AI"
-              title="AI assistant"
-              closeLabel="Close the assistant"
-              trigger={askAiTriggerCompact("Ask AI", "trucks")}
-              size="panel"
+            <ReportChat
+              report="trucks"
+              state={serializeSelection(sel, ds.m)}
               defaultOpen={chatOpen}
-            >
-              {(closeChat) => (
-                <ChatPanel
-                  endpoint="/api/chat/trucks"
-                  suggestions={TRUCKS_SUGGESTIONS}
-                  state={serializeSelection(sel, ds.m)}
-                  onOpenReport={(link) => {
-                    go(parseSelection(new URLSearchParams(link), ds.m));
-                    closeChat();
-                  }}
-                />
-              )}
-            </ReportDialog>
+              onOpenReport={(link) =>
+                go(parseSelection(new URLSearchParams(link), ds.m))
+              }
+            />
           ) : null}
           <span>{view.context}</span>
         </div>

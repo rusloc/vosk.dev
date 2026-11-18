@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { csvTable } from "@/lib/trucks/test-utils/csv";
+import { csvTable } from "@/lib/csv";
 import {
   createLoader,
   createUnfilteredLoader,

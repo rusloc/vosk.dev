@@ -6,7 +6,7 @@ import type { Column, MetricCatalogue } from "./chat-metrics";
 import type { Dataset } from "./engine/data";
 import type { Selection } from "./engine/selection";
 import { parseSelection } from "./engine/url-state";
-import { csvTable } from "./test-utils/csv";
+import { csvTable } from "@/lib/csv";
 import { loadDataset } from "./test-utils/trucks-data";
 
 // The ACME Trucks chat's answer key, level 1 (the numbers): the catalogue against values captured from the Power BI model,

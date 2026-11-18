@@ -1,3 +1,5 @@
+import { AUTHOR_NAME } from "../person";
+
 /**
  * English message catalog — the source of truth for the `Dictionary` shape.
  * `ru.ts` must satisfy the same type. Keys are grouped by surface (nav, home,
@@ -6,16 +8,19 @@
  */
 export const en = {
   meta: {
-    // Site-wide defaults used by the root layout / OpenGraph.
-    title: "VOSK — Freelance BI Analyst & Developer",
+    // Site-wide defaults used by the root layout / OpenGraph, and `siteConfig.title` / `.description` (src/lib/site.ts).
+    // 11-18 (SEO spec T-02): the name, not "VOSK", ends every title: "Vosk" alone is a speech-recognition toolkit.
+    // DRAFT, owner review: the description.
+    title: `Freelance Power BI & Fabric Consultant | ${AUTHOR_NAME}`,
     description:
-      "Freelance Business Intelligence analyst and developer. Dashboards, data pipelines, and analytics that turn raw data into decisions.",
+      "Freelance Power BI and Microsoft Fabric consultant: reports, data models, n8n automations and AI chats over your data. Working remotely on EU and UK hours.",
   },
   nav: {
     home: "Home",
     work: "Showcase",
     blog: "Blog",
     services: "Services",
+    about: "About",
     contact: "Contact",
     message: "Message",
     openMenu: "Toggle menu",
@@ -24,6 +29,24 @@ export const en = {
     label: "Language",
   },
   home: {
+    // 11-18 (SEO spec T-03). DRAFT, owner review (I-03): the H1, which takes the topic words; the headline above
+    // stays as the line under it, styled as before. The sections below the hero are new copy too.
+    h1: "Freelance Power BI and Microsoft Fabric consultant",
+    proofDp600: "Microsoft DP-600 certified",
+    proofHours: "EU and UK hours",
+    servicesTitle: "Services",
+    casesTitle: "Case studies",
+    casesAll: "All case studies",
+    pricingTitle: "Monthly support plans",
+    pricingBody:
+      "Or a fixed-scope project, or one urgent fix before a deadline.",
+    pricingLink: "All services & prices",
+    postsTitle: "From the blog",
+    postsAll: "All posts",
+    contactTitle: "Got data that should be a report?",
+    contactBody:
+      "Tell me what you need to see and where the data lives, and I'll tell you what it would take.",
+    contactLink: "Get in touch",
     // Headline is split so the two emphasized words can be styled; word order
     // differs per language, hence the five parts.
     headline: {
@@ -47,12 +70,15 @@ export const en = {
   },
   services: {
     title: "Services",
+    // The page H1 (SEO spec T-07); `title` is also the nav label and the breadcrumb name.
+    heading: "Power BI & Fabric services and pricing",
+    // The hub's links to the service pages (SEO spec T-04); the list shows only pages out of draft.
+    pagesTitle: "Services in detail",
     metaTitle: "Power BI & Fabric Services and Pricing",
     metaDescription:
       "Power BI and Microsoft Fabric consulting, n8n automations and AI data chats: dashboards, models, pipelines. Subscription, project and urgent work, priced.",
     intro:
       "BI delivery and consulting on Power BI and Microsoft Fabric, plus n8n automations and AI chats over your data. Pick the engagement that fits. Monthly capacity for teams with an ongoing reporting load, fixed-scope projects for a specific build, and one-off urgent work when a report breaks before a deadline.",
-    engagementsHeading: "Engagement models",
     subscription: {
       eyebrow: "Subscription",
       badge: "Billed monthly",
@@ -148,7 +174,51 @@ export const en = {
       close: "Close",
       body: [] as string[],
     },
-    nextAria: "Next",
+  },
+  // /about (SEO spec T-05, 11-18). DRAFT, owner review: every line. Facts from the spec's section 2.3 only; years of
+  // experience, industries and a photo wait for the owner.
+  about: {
+    title: "About",
+    metaTitle: `About ${AUTHOR_NAME}: Power BI & Fabric Consultant (DP-600)`,
+    metaDescription: `${AUTHOR_NAME}, freelance Power BI and Microsoft Fabric consultant with the DP-600 certificate. Based in Turkey, working remotely on EU and UK hours.`,
+    lede: "Freelance Power BI and Microsoft Fabric consultant.",
+    body: [
+      "I build Power BI and Fabric reports, the data models and SQL under them, and the pipelines that keep them fresh. Around them: n8n automations for reports, inboxes and invoices, and AI chats that answer questions straight from your data.",
+      "I'm based in Turkey and work remotely on EU and UK hours.",
+    ],
+    stackTitle: "What I work with",
+    stack: [
+      "Power BI",
+      "Microsoft Fabric",
+      "SQL & PostgreSQL",
+      "dbt",
+      "ETL / ELT pipelines",
+      "n8n automations",
+      "AI chats over data",
+    ],
+    credentialTitle: "Certificate",
+    credential:
+      "Microsoft Certified: Fabric Analytics Engineer Associate (DP-600)",
+    linkCertificate: "see certificate",
+    profilesTitle: "Profiles",
+    nextBody:
+      "Wanna see the work? Open the showcase, or check services and prices.",
+    nextWork: "Showcase",
+    nextServices: "Services & pricing",
+  },
+  // One service page, /services/<slug> (SEO spec T-04). The entries themselves are in src/lib/services.ts.
+  serviceDetail: {
+    audienceTitle: "Who it's for",
+    deliverablesTitle: "What you get",
+    pricingTitle: "Price",
+    casesTitle: "Case studies",
+    stepsTitle: "How it runs",
+    faqTitle: "Questions",
+    postsTitle: "Further reading",
+    ctaTitle: "Got a project like this?",
+    ctaBody:
+      "Tell me what the report should answer and where the data lives, and I'll tell you what it would take.",
+    ctaContact: "Get in touch",
   },
   contact: {
     title: "Contact",
@@ -170,6 +240,8 @@ export const en = {
     linkCertificate: "see certificate",
     // Shown in place of a profile link until siteConfig.social holds a real URL.
     linkPending: "Coming soon",
+    // Shown only when `siteConfig.bookingUrl` is set (SEO spec T-06).
+    bookCall: "Book a 20-minute call",
   },
   form: {
     emailLabel: "Email",
@@ -231,6 +303,8 @@ export const en = {
     backToBlog: "Back to blog",
     older: "Older",
     newer: "Newer",
+    // Post header (SEO spec T-05): shown when the frontmatter has `updated`.
+    updated: "Updated",
     paginationAria: "Blog pages",
   },
   work: {
@@ -281,12 +355,14 @@ export const en = {
       synthetic: "Demo on synthetic data",
       client: "Real operating figures, names anonymised",
     },
-    // The foot of a showcase page (11-17 SEO check: no way on from a showcase but back).
-    nextTitle: "Want this for your data?",
-    nextBody:
-      "Tell me what the report or the workflow should answer and where the data lives, and I'll tell you what it would take.",
-    nextContact: "Get in touch",
-    nextServices: "See services & pricing",
+    // The foot of a showcase page (11-17 SEO check: no way on from a showcase but back). One sentence and the buttons
+    // (owner, 11-18). `nextCtaBooking` replaces `nextCta` once `siteConfig.bookingUrl` is set, with a "Book a free call"
+    // button in front.
+    nextCta: "Want this for your data? Message me.",
+    nextCtaBooking: "Book a free call or message me.",
+    nextBook: "Book a free call",
+    nextContact: "Contact me",
+    nextServices: "See pricing",
     relatedTitle: "More case studies",
   },
   // The Cube-backed online-sales dashboard (components/sales-dashboard.tsx). `{period}` is

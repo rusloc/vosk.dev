@@ -1,9 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PNL_SUGGESTIONS, askAiTriggerCompact } from "@/components/chat/ask-ai";
-import { ChatPanel } from "@/components/chat/chat-panel";
-import { ReportDialog } from "@/components/report-dialog";
+import { ReportChat } from "@/components/chat/report-chat";
 import { useReportSearch } from "@/components/report-search";
 import { columnsSource } from "@/lib/pnl/data/columns-loader";
 import { createDatasetLoader, type Dataset } from "@/lib/pnl/data/dataset";
@@ -294,27 +292,12 @@ function Ledger({
             howToRead={howToRead}
             chat={
               chat ? (
-                // The chat asks about what the visitor is looking at; a figures card's link applies its state here.
-                <ReportDialog
-                  label="Ask AI"
-                  title="AI assistant"
-                  closeLabel="Close the assistant"
-                  trigger={askAiTriggerCompact("Ask AI", "pnl")}
-                  size="panel"
+                <ReportChat
+                  report="pnl"
+                  state={canonical}
                   defaultOpen={chatOpen}
-                >
-                  {(closeChat) => (
-                    <ChatPanel
-                      endpoint="/api/chat/pnl"
-                      suggestions={PNL_SUGGESTIONS}
-                      state={canonical}
-                      onOpenReport={(link) => {
-                        onSearch(link);
-                        closeChat();
-                      }}
-                    />
-                  )}
-                </ReportDialog>
+                  onOpenReport={onSearch}
+                />
               ) : null
             }
           />

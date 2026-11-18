@@ -2,20 +2,15 @@ import { cn } from "@/lib/cn";
 import styles from "../blog/title-bar.module.css";
 
 /**
- * One service tier — the part of a card that slides. The card frame, the group
- * eyebrow, the badge and the controls stay put in ServiceCarousel; only this
- * moves. Fills the slide's height so the price pins to the bottom.
+ * One service tier: title, description, price. Fills its cell's height so the price pins to the bottom.
  *
  * The title is right-aligned on every card, over a blurred orange bar that
  * starts at the card's left edge and stops 1rem short of its right edge (owner,
- * 11-06: it must not touch the edge): `titleBleed` is the slide's own negative
+ * 11-06: it must not touch the edge): `titleBleed` is the cell's own negative
  * margin + padding, so the heading box is the card's full width and the text
  * still lines up with the content column.
  *
- * `feature` is the subscription card: cream on maroon. On desktop the title
- * runs across both columns at display size, with the description on the left
- * and the price on the right under it. Everywhere else the price sits under
- * the description.
+ * `feature` is a subscription plan: cream on maroon.
  */
 export type ServiceCardProps = {
   title: string;
@@ -48,22 +43,12 @@ export function ServiceCard({
   titleBleed,
 }: ServiceCardProps) {
   return (
-    <div
-      className={cn(
-        "flex h-full flex-col",
-        // Desktop feature: a grid, the title across both columns, then the
-        // description on the left and the price on the right. The wrapper
-        // below dissolves (`contents`) so all three are grid items.
-        feature &&
-          "lg:grid lg:grid-cols-[minmax(0,28rem)_auto] lg:grid-rows-[1fr_auto] lg:justify-between lg:gap-x-10",
-      )}
-    >
-      <div className={cn(feature && "lg:contents")}>
+    <div className="flex h-full flex-col">
+      <div>
         <h3
           className={cn(
             "text-foreground relative text-right text-2xl font-semibold tracking-tight",
             titleBleed,
-            feature && "lg:col-span-2 lg:row-start-1 lg:self-end lg:text-5xl",
           )}
         >
           {/* Inline, because the module's unlayered rule beats any utility. */}
@@ -77,26 +62,18 @@ export function ServiceCard({
         <p
           className={cn(
             "mt-3 text-sm leading-relaxed",
-            feature
-              ? "text-cream/75 lg:col-start-1 lg:row-start-2 lg:mt-0 lg:self-end lg:text-base"
-              : "text-muted-foreground",
+            feature ? "text-cream/75" : "text-muted-foreground",
           )}
         >
           {desc}
         </p>
       </div>
 
-      <div
-        className={cn(
-          "mt-auto flex items-baseline gap-2 pt-4",
-          feature &&
-            "lg:col-start-2 lg:row-start-2 lg:flex-col lg:items-end lg:gap-1 lg:pt-3",
-        )}
-      >
+      <div className="mt-auto flex items-baseline gap-2 pt-4">
         <span
           className={cn(
             "text-3xl font-bold tracking-tight",
-            feature ? "text-cream lg:text-6xl" : "text-foreground",
+            feature ? "text-cream" : "text-foreground",
           )}
         >
           {price}
@@ -104,7 +81,7 @@ export function ServiceCard({
         <span
           className={cn(
             "text-xs",
-            feature ? "text-cream/60 lg:text-sm" : "text-muted-foreground",
+            feature ? "text-cream/60" : "text-muted-foreground",
           )}
         >
           {unit}

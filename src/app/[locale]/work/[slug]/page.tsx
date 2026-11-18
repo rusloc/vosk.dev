@@ -6,7 +6,11 @@ import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
 import { JsReportLazy } from "@/components/js-report-lazy";
 import { N8nWorkflow } from "@/components/n8n-workflow";
-import { REPORT_HASHES, REPORT_QUERY_KEYS } from "@/lib/js-reports";
+import {
+  CHAT_REPORTS,
+  REPORT_HASHES,
+  REPORT_QUERY_KEYS,
+} from "@/lib/js-reports";
 import { hasN8nFlow } from "@/lib/n8n-flows";
 import { ReportDialog } from "@/components/report-dialog";
 import {
@@ -20,6 +24,7 @@ import { SupersetEmbed } from "@/components/superset-embed";
 import { getPostBySlug } from "@/lib/content";
 import { ga } from "@/lib/analytics";
 import { buildMetadata } from "@/lib/metadata";
+import { siteConfig } from "@/lib/site";
 import { getSalesDashboardData } from "@/lib/sales-dashboard";
 import { breadcrumbGraph, showcaseGraph } from "@/lib/structured-data";
 import {
@@ -30,12 +35,7 @@ import {
   localize,
   showcases,
 } from "@/lib/work";
-import {
-  locales,
-  isLocale,
-  localizedPath,
-  type Locale,
-} from "@/lib/i18n/config";
+import { locales, localizedPath, resolveLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { ReportMock } from "../report-mock";
 
@@ -68,7 +68,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
-  const l = (isLocale(locale) ? locale : "en") as Locale;
+  const l = resolveLocale(locale);
   const source = getShowcase(slug);
   if (!source) return { title: "Not found", robots: { index: false } };
   const showcase = localize(source, l);
@@ -98,7 +98,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ShowcasePage({ params }: Props) {
   const { locale, slug } = await params;
-  const l = (isLocale(locale) ? locale : "en") as Locale;
+  const l = resolveLocale(locale);
   const dict = getDictionary(l);
   const t = dict.work;
   const source = getShowcase(slug);
@@ -123,15 +123,11 @@ export default async function ShowcasePage({ params }: Props) {
     showcase.platform === "js"
       ? isJsReportLive(showcase.report)
       : showcase.platform !== "automation";
-  // The AI chat (ADR-0005, 11-06; the P&L and ACME Trucks 11-09, Nordmark 11-15): beside each live web report,
-  // and only while CHAT_ENABLED is "1" at build.
+  // The AI chat (ADR-0005): beside each live web report listed in CHAT_REPORTS, and only while CHAT_ENABLED is "1"
+  // at build.
   const chatReport =
     showcase.platform === "js" &&
-    (showcase.report === "mirelo" ||
-      showcase.report === "marketing" ||
-      showcase.report === "pnl" ||
-      showcase.report === "trucks") &&
-    // Nordmark rejoins this list with its Supabase go-live (its chat route ships then; 11-16 hotfix).
+    CHAT_REPORTS.has(showcase.report) &&
     webReport &&
     process.env.CHAT_ENABLED === "1"
       ? showcase.report
@@ -416,28 +412,45 @@ export default async function ShowcasePage({ params }: Props) {
 
       {/* A way on from a showcase (11-17 SEO check: the page linked only back): contact and services, then the
           next showcases on the list, wrapping round. */}
-      <section className="border-border mt-10 max-w-prose border-t pt-6">
-        <h2 className="text-base font-semibold tracking-tight">
-          {t.nextTitle}
+      {/* The call to action in a box (owner, 11-18): one sentence, then the buttons. "Book a free call" and its
+          sentence appear only once `siteConfig.bookingUrl` is set: no promise of a call before a scheduler exists. */}
+      <section className="border-accent/50 bg-accent/10 mt-10 max-w-prose rounded-xl border p-5 sm:p-6">
+        <h2 className="text-lg font-semibold tracking-tight">
+          {siteConfig.bookingUrl ? t.nextCtaBooking : t.nextCta}
         </h2>
-        <p className="text-muted-foreground mt-1.5">{t.nextBody}</p>
-        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
+        <div className="mt-4 flex flex-wrap gap-3 text-sm font-medium">
+          {siteConfig.bookingUrl && (
+            <a
+              href={siteConfig.bookingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={CTA_PRIMARY}
+              {...ga("booking_click", slug, "showcase")}
+            >
+              {t.nextBook}
+            </a>
+          )}
           <Link
             href={localizedPath(l, "/contact")}
-            className="text-primary hover:underline"
+            className={siteConfig.bookingUrl ? CTA_SECONDARY : CTA_PRIMARY}
+            {...ga("cta_click", slug, "showcase_contact")}
           >
             {t.nextContact}
           </Link>
           <Link
             href={localizedPath(l, "/services")}
-            className="text-primary hover:underline"
+            className={CTA_SECONDARY}
+            {...ga("cta_click", slug, "showcase_pricing")}
           >
             {t.nextServices}
           </Link>
         </div>
+      </section>
+
+      <section className="mt-8 max-w-prose">
         {related.length > 0 && (
           <>
-            <h2 className="mt-6 text-base font-semibold tracking-tight">
+            <h2 className="text-base font-semibold tracking-tight">
               {t.relatedTitle}
             </h2>
             <ul className="mt-2 space-y-1.5">
@@ -460,3 +473,8 @@ export default async function ShowcasePage({ params }: Props) {
     </Container>
   );
 }
+
+const CTA_PRIMARY =
+  "bg-primary text-primary-foreground inline-flex rounded-md px-4 py-2 transition-opacity hover:opacity-90";
+const CTA_SECONDARY =
+  "border-border hover:border-foreground inline-flex rounded-md border bg-white px-4 py-2 transition-colors";

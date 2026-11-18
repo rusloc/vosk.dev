@@ -1,11 +1,10 @@
 /**
- * Inline icons for the service cards (arrow, conditions, checklist) — kept as SVG so we add no
+ * Inline icons for the service cards (conditions, checklist) — kept as SVG so we add no
  * icon dependency.
  */
-export type IconName = "chevron-right" | "document" | "check";
+export type IconName = "document" | "check";
 
 const paths: Record<IconName, React.ReactNode> = {
-  "chevron-right": <path d="m9 18 6-6-6-6" />,
   check: <path d="M20 6 9 17l-5-5" />,
   document: (
     <>

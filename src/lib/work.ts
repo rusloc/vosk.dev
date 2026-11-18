@@ -2,7 +2,7 @@ import { isCeoDigestConfigured } from "./ceo-digest/config";
 import { isCubeConfigured } from "./cube";
 import { env } from "./env";
 import type { Locale } from "./i18n/config";
-import type { JsReport } from "./js-reports";
+import { REPORT_DATA_ENV, type JsReport } from "./js-reports";
 import type { N8nFlow } from "./n8n-flows";
 
 /**
@@ -684,19 +684,6 @@ export const showcases: Showcase[] = allShowcases
   })
   // newest first; Array.prototype.sort is stable, so a day's entries keep their order above
   .sort((a, b) => b.published.localeCompare(a.published));
-
-/**
- * The env var a JS report's data needs on the server, for the reports that read Supabase through a server route
- * (CLAUDE.md § Supabase). Without it the route answers 503, so the page leaves the "Web report" button out rather
- * than open a report that cannot load. Mirelo is not listed: it has been live since 11-03.
- */
-const REPORT_DATA_ENV: Partial<Record<JsReport, string>> = {
-  marketing: "MARKETING_DATABASE_URL",
-  pnl: "PNL_DATABASE_URL", // 2026-11-09: the P&L rows moved to Supabase (pnl_demo)
-  trucks: "TRUCKS_DATABASE_URL", // 2026-11-09
-  // nordmark: "NORDMARK_DATABASE_URL" returns with its Supabase go-live. Until then production reads the static
-  // public/data/nordmark files, so the button stays on (11-16 hotfix: b539448 shipped this gate before the load).
-};
 
 /** Whether the "Web report" of a JS showcase can open (read at build / regeneration, server-side only). */
 export function isJsReportLive(report: JsReport): boolean {

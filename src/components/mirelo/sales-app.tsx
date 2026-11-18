@@ -2,14 +2,10 @@
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import {
-  MIRELO_SUGGESTIONS,
-  askAiTriggerCompact,
-} from "@/components/chat/ask-ai";
-import { ChatPanel } from "@/components/chat/chat-panel";
+import { ReportChat } from "@/components/chat/report-chat";
 import { interFontVariable } from "@/components/inter-font";
-import { ReportDialog } from "@/components/report-dialog";
 import { ReportBoard, useBoardHeight } from "@/components/report-board";
+import { useReportLoad } from "@/components/report-load";
 import { useReportSearch } from "@/components/report-search";
 import { createSalesLoader, jsonSource } from "@/lib/mirelo/data";
 import { createSalesEngine } from "@/lib/mirelo";
@@ -48,11 +44,6 @@ const loader = createSalesLoader(
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-type Load =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; base: SalesBase };
-
 /**
  * `chat`: show the Ask AI button in the header (the page passes CHAT_ENABLED, ADR-0005). `chatOpen`: open its chat as
  * soon as the report is up (the showcase page's Ask AI button, 11-06).
@@ -64,21 +55,10 @@ export function SalesApp({
   chat?: boolean;
   chatOpen?: boolean;
 }) {
-  const [load, setLoad] = useState<Load>({ status: "loading" });
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    let live = true;
-    loader.base().then(
-      (base) => live && setLoad({ status: "ready", base }),
-      (e: unknown) => live && setLoad({ status: "error", message: message(e) }),
-    );
-    return () => {
-      live = false;
-    };
-  }, [attempt]);
+  const { load, retry } = useReportLoad(loader.base);
 
   if (load.status === "ready")
-    return <Dashboard base={load.base} chat={chat} chatOpen={chatOpen} />;
+    return <Dashboard base={load.data} chat={chat} chatOpen={chatOpen} />;
   return (
     <ReportBoard fill className={`${styles.page} ${interFontVariable}`}>
       <div className={styles.board}>
@@ -87,13 +67,7 @@ export function SalesApp({
             ? "Loading Mirelo sales data…"
             : `Could not load the sales data (${load.message}).`}
           {load.status === "error" ? (
-            <button
-              type="button"
-              onClick={() => {
-                setLoad({ status: "loading" });
-                setAttempt((a) => a + 1);
-              }}
-            >
+            <button type="button" onClick={retry}>
               Retry
             </button>
           ) : null}
@@ -244,27 +218,12 @@ function Dashboard({
             onChange={update}
             askAi={
               chat ? (
-                // The chat asks about what the visitor is looking at; a figures card's link applies its state here.
-                <ReportDialog
-                  label="Ask AI"
-                  title="AI assistant"
-                  closeLabel="Close the assistant"
-                  trigger={askAiTriggerCompact("Ask AI")}
-                  size="panel"
+                <ReportChat
+                  report="mirelo"
+                  state={canonical}
                   defaultOpen={chatOpen}
-                >
-                  {(close) => (
-                    <ChatPanel
-                      endpoint="/api/chat/mirelo"
-                      suggestions={MIRELO_SUGGESTIONS}
-                      state={canonical}
-                      onOpenReport={(link) => {
-                        setSearch(link);
-                        close();
-                      }}
-                    />
-                  )}
-                </ReportDialog>
+                  onOpenReport={setSearch}
+                />
               ) : null
             }
           />

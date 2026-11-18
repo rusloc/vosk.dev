@@ -8,7 +8,7 @@ import { buildMetadata } from "@/lib/metadata";
 import { breadcrumbGraph, collectionGraph } from "@/lib/structured-data";
 import { getAllTags, getPostsByTag } from "@/lib/content";
 import { tagLabel } from "@/lib/tags";
-import { locales, isLocale, type Locale } from "@/lib/i18n/config";
+import { locales, resolveLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { BlogList } from "../../blog-list";
 
@@ -24,7 +24,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, tag } = await params;
-  const l = (isLocale(locale) ? locale : "en") as Locale;
+  const l = resolveLocale(locale);
   const t = getDictionary(l).blog;
   const summary = getAllTags().find((x) => x.slug === tag);
   if (!summary) return { title: "Not found", robots: { index: false } };
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function TagPage({ params }: Props) {
   const { locale, tag } = await params;
-  const l = (isLocale(locale) ? locale : "en") as Locale;
+  const l = resolveLocale(locale);
   const t = getDictionary(l).blog;
   const summary = getAllTags().find((x) => x.slug === tag);
   if (!summary) notFound();

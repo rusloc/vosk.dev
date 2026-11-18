@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { ContactForm } from "@/components/contact-form";
 import { ga } from "@/lib/analytics";
+import { CloseIcon } from "./close-icon";
 import styles from "./cta-button.module.css";
+import { useModal } from "./use-modal";
 
 /**
  * Nav CTA — opens a small popup with the same contact form as the Contacts
@@ -32,19 +34,7 @@ export function SendMessageButton({
   label?: string;
 }) {
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [open]);
+  useModal(open, () => setOpen(false));
 
   return (
     <>
@@ -82,21 +72,7 @@ export function SendMessageButton({
                 onClick={() => setOpen(false)}
                 className="text-muted-foreground hover:text-foreground absolute top-3 right-3 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  className="h-4 w-4"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18 18 6M6 6l12 12"
-                  />
-                </svg>
+                <CloseIcon className="h-4 w-4" />
               </button>
 
               <h2 className="text-lg font-semibold tracking-tight">

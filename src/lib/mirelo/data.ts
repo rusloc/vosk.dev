@@ -1,3 +1,4 @@
+import { artifactSources } from "@/lib/report-data/columns";
 import { checkRows, readRows } from "./parquet-columns";
 import { DETAIL, FILES, detailIndexSchema, parseManifest } from "./manifest";
 import type { DetailIndexFile, FileKey, SalesManifest } from "./manifest";
@@ -17,8 +18,7 @@ import type {
 // tests and the load script read the Parquet in data/mirelo/parquet; the ArtifactSource below is that seam.
 // Per-session in-memory cache; a failed read is evicted so the next call retries (same contract as the P&L loader).
 
-/** Reads one Parquet / JSON artifact by file name as bytes (`fs` in Node tests and the load script). */
-export type ReadArtifact = (name: string) => Promise<ArrayBuffer>;
+export type { ReadArtifact } from "@/lib/report-data/columns";
 
 /** Where the artifacts come from: Parquet bytes, or the server route's JSON. */
 export interface ArtifactSource {
@@ -30,13 +30,11 @@ export interface ArtifactSource {
   ): Promise<RowOf<S>[]>;
 }
 
-export function parquetSource(read: ReadArtifact): ArtifactSource {
-  return {
-    json: async (name) =>
-      JSON.parse(new TextDecoder().decode(await read(name))) as unknown,
-    rows: async (name, spec, label) => readRows(await read(name), spec, label),
-  };
-}
+/** Parquet bytes, for the tests and the load script (the columnar reports' seam, src/lib/report-data/columns.ts). */
+export const { parquetSource } = artifactSources<ArtifactSource>({
+  readRows,
+  checkRows,
+});
 
 /** The browser's source: `/api/mirelo/<name>` answers with the file's rows (or document) as JSON. */
 export function jsonSource(

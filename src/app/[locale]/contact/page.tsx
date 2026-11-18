@@ -5,8 +5,9 @@ import { JsonLd } from "@/components/json-ld";
 import { PageHeader } from "@/components/page-header";
 import { buildMetadata } from "@/lib/metadata";
 import { contactGraph } from "@/lib/structured-data";
+import { ga } from "@/lib/analytics";
 import { siteConfig } from "@/lib/site";
-import { isLocale, type Locale } from "@/lib/i18n/config";
+import { resolveLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -51,7 +52,7 @@ function Profile({
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const l = (isLocale(locale) ? locale : "en") as Locale;
+  const l = resolveLocale(locale);
   const t = getDictionary(l).contact;
   return buildMetadata({
     title: t.metaTitle,
@@ -63,7 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ContactPage({ params }: Props) {
   const { locale } = await params;
-  const l = (isLocale(locale) ? locale : "en") as Locale;
+  const l = resolveLocale(locale);
   const dict = getDictionary(l);
   const t = dict.contact;
 
@@ -76,7 +77,23 @@ export default async function ContactPage({ params }: Props) {
         })}
       />
 
-      <PageHeader title={t.title}>{t.intro}</PageHeader>
+      <PageHeader title={t.title}>
+        {t.intro}
+        {siteConfig.replyTime && ` ${siteConfig.replyTime}`}
+      </PageHeader>
+
+      {/* Empty until the owner gives a booking link (SEO spec T-06): no link, no promise. */}
+      {siteConfig.bookingUrl && (
+        <a
+          href={siteConfig.bookingUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-primary text-primary-foreground mt-5 inline-flex rounded-md px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
+          {...ga("booking_click", undefined, "contact")}
+        >
+          {t.bookCall}
+        </a>
+      )}
 
       <div className="mt-6 grid gap-8 md:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="max-w-xl">
@@ -104,6 +121,7 @@ export default async function ContactPage({ params }: Props) {
             <a
               href={`mailto:${siteConfig.contactEmail}`}
               className="text-primary hover:underline"
+              {...ga("email_click", undefined, "contact")}
             >
               {siteConfig.contactEmail}
             </a>

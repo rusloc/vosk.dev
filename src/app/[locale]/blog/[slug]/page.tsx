@@ -14,17 +14,8 @@ import { PostMetaRow } from "@/components/post-meta-row";
 import { buildMetadata } from "@/lib/metadata";
 import { siteConfig } from "@/lib/site";
 import { blogPostingGraph, breadcrumbGraph } from "@/lib/structured-data";
-import {
-  getAllPosts,
-  getPostBySlug,
-  getRelatedPosts,
-} from "@/lib/content";
-import {
-  locales,
-  isLocale,
-  localizedPath,
-  type Locale,
-} from "@/lib/i18n/config";
+import { getAllPosts, getPostBySlug, getRelatedPosts } from "@/lib/content";
+import { locales, localizedPath, resolveLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import styles from "../title-bar.module.css";
 
@@ -38,7 +29,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
-  const l = (isLocale(locale) ? locale : "en") as Locale;
+  const l = resolveLocale(locale);
   const post = getPostBySlug(slug);
   if (!post) return { title: "Not found", robots: { index: false } };
 
@@ -73,7 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PostPage({ params }: Props) {
   const { locale, slug } = await params;
-  const l = (isLocale(locale) ? locale : "en") as Locale;
+  const l = resolveLocale(locale);
   const t = getDictionary(l).blog;
   const post = getPostBySlug(slug);
   if (!post) notFound();
@@ -125,13 +116,22 @@ export default async function PostPage({ params }: Props) {
             <span className="relative">{post.title}</span>
           </span>
         </h1>
-        {/* Date only. The list cards keep their tag chips; on the post itself the
-            chips read as navigation the reader has already finished using. */}
+        {/* Date and byline (SEO spec T-05: the name the BlogPosting markup names, linked to /about). The list cards
+            keep their tag chips; on the post itself the chips read as navigation the reader has already finished using. */}
         <PostMetaRow
           date={post.date}
           tags={post.tags}
           locale={l}
           showTags={false}
+          author={{
+            name: siteConfig.author.name,
+            href: localizedPath(l, "/about"),
+          }}
+          updated={
+            post.updated && post.updated !== post.date
+              ? { label: t.updated, date: post.updated }
+              : undefined
+          }
         />
       </header>
 

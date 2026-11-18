@@ -1,4 +1,4 @@
-import { heatLevels } from "./clients";
+import { heatLevels } from "./heat";
 import { MARKET_NAMES, info } from "./copy";
 import { fmtCount, fmtEur, fmtPct } from "./format";
 import { kpi } from "./loans";

@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { GaAttrs } from "@/lib/analytics";
+import { CloseIcon } from "./close-icon";
 import styles from "./cta-button.module.css";
+import { useModal } from "./use-modal";
 
 const SIZE_CLASS = {
   full: "h-full max-w-[1600px]",
@@ -65,29 +67,9 @@ export function ReportDialog({
     return () => clearTimeout(t);
   }, [openOnQuery, openOnHash]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape" || e.defaultPrevented) return;
-      // A pop-up inside the report (a filter flyout, an info pop-up, a slide-over) closes itself first; Escape
-      // there must not close the whole report as well. Read the event's target, not `activeElement`: a report's
-      // own handler runs first (document before window) and may already have moved focus back to the opener.
-      const inner =
-        e.target instanceof Element && e.target.closest('[role="dialog"]');
-      if (inner && inner !== dialog.current) return;
-      setOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    // Focus moves into the popup, so Escape closes the top one only (the chat over the report, 11-06).
-    dialog.current?.focus();
-    // Restore what was there: a popup opened over another (the chat over the web report) must leave it locked.
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = overflow;
-    };
-  }, [open]);
+  // A pop-up inside the report (a filter flyout, an info pop-up, a slide-over) closes itself first; Escape there must
+  // not close the whole report as well.
+  useModal(open, () => setOpen(false), dialog);
 
   return (
     <>
@@ -141,21 +123,7 @@ export function ReportDialog({
                   onClick={() => setOpen(false)}
                   className="text-muted-foreground hover:text-foreground inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    className="h-4 w-4"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18 18 6M6 6l12 12"
-                    />
-                  </svg>
+                  <CloseIcon className="h-4 w-4" />
                 </button>
               </div>
               {/* Scrolls for a native dashboard taller than the box; an iframe fills it. */}

@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { buildMetadata } from "@/lib/metadata";
 import { collectionGraph } from "@/lib/structured-data";
 import { getAllPosts, getAllTags } from "@/lib/content";
-import { isLocale, type Locale } from "@/lib/i18n/config";
+import { resolveLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { BlogList } from "./blog-list";
 
@@ -13,7 +13,7 @@ type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const l = (isLocale(locale) ? locale : "en") as Locale;
+  const l = resolveLocale(locale);
   const t = getDictionary(l).blog;
   return buildMetadata({
     title: t.metaTitle,
@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPage({ params }: Props) {
   const { locale } = await params;
-  const l = (isLocale(locale) ? locale : "en") as Locale;
+  const l = resolveLocale(locale);
   const t = getDictionary(l).blog;
   const posts = getAllPosts();
   const tags = getAllTags();

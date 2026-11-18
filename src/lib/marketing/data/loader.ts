@@ -1,3 +1,4 @@
+import { artifactSources } from "@/lib/report-data/columns";
 import { checkRows, readRows } from "./parquet-columns";
 import type { ColumnSpec, RowOf } from "./parquet-columns";
 import {
@@ -16,13 +17,11 @@ import type { FileKey, Manifest } from "./manifest";
 // next call retries. Every file holds INT32 / DOUBLE only (the build converts INT64 / DATE), so readRows never meets a
 // bigint or a Date (CAND-022).
 
-/** Reads one Parquet / JSON artifact by file name as bytes (`fs` in the Node tests and the load script). */
-export type ReadArtifact = (name: string) => Promise<ArrayBuffer>;
+export type { ReadArtifact } from "@/lib/report-data/columns";
 
 // Since 2026-11-05 (vosk.dev) the browser reads the same artifacts from /api/marketing (Supabase, schema
-// marketing_demo) while the tests and the load script read the Parquet in data/marketing/parquet; the ArtifactSource
-// below is that seam (the Mirelo pattern, src/lib/mirelo/data.ts). The route sends a table as columns, not rows:
-// term-day as rows of JSON is 7.2 MB, over a Vercel Function's 4.5 MB response limit; as columns it is 1.8 MB.
+// marketing_demo) while the tests and the load script read the Parquet in data/marketing/parquet; ArtifactSource is
+// that seam, shared by the columnar reports in src/lib/report-data/columns.ts (why columns, not rows, is there).
 
 /** Where the artifacts come from: Parquet bytes, or the server route's JSON. */
 export interface ArtifactSource {
@@ -34,57 +33,10 @@ export interface ArtifactSource {
   ): Promise<RowOf<S>[]>;
 }
 
-export function parquetSource(read: ReadArtifact): ArtifactSource {
-  return {
-    json: async (name) =>
-      JSON.parse(new TextDecoder().decode(await read(name))) as unknown,
-    rows: async (name, spec, label) => readRows(await read(name), spec, label),
-  };
-}
-
-/** A table as the route sends it: one array per column, all of one length. */
-export type Columns = Record<string, unknown[]>;
-
-export function toColumns(
-  rows: readonly Record<string, unknown>[],
-  names: readonly string[],
-): Columns {
-  return Object.fromEntries(names.map((c) => [c, rows.map((r) => r[c])]));
-}
-
-/** Rows back from columns; every value is then checked against its kind (checkRows). */
-export function fromColumns(
-  json: unknown,
-  spec: ColumnSpec,
-  label: string,
-): unknown[] {
-  if (json === null || typeof json !== "object" || Array.isArray(json))
-    throw new Error(`${label}: expected an object of columns`);
-  const cols = json as Record<string, unknown>;
-  const names = Object.keys(spec);
-  const arrays = names.map((c) => {
-    const a = cols[c];
-    if (!Array.isArray(a)) throw new Error(`${label}: column ${c} missing`);
-    return a as unknown[];
-  });
-  const n = arrays[0]?.length ?? 0;
-  if (arrays.some((a) => a.length !== n))
-    throw new Error(`${label}: columns of different lengths`);
-  return Array.from({ length: n }, (_, i) =>
-    Object.fromEntries(names.map((c, k) => [c, arrays[k]?.[i]])),
-  );
-}
-
-/** The browser's source: `/api/marketing/<name>` answers with the document, or the table as columns. */
-export function columnsSource(
-  fetchJson: (name: string) => Promise<unknown>,
-): ArtifactSource {
-  return {
-    json: fetchJson,
-    rows: async (name, spec, label) =>
-      checkRows(fromColumns(await fetchJson(name), spec, label), spec, label),
-  };
-}
+/** `parquetSource(read)` for the tests and the load script; `columnsSource(fetchJson)` for `/api/marketing/<name>`. */
+export const { parquetSource, columnsSource } = artifactSources<ArtifactSource>(
+  { readRows, checkRows },
+);
 
 export type FileRows<K extends FileKey> = RowOf<(typeof FILES)[K]["columns"]>[];
 

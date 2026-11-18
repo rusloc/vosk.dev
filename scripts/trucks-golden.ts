@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { csvTable } from "@/lib/trucks/test-utils/csv";
+import { csvTable } from "@/lib/csv";
 
 // The ACME Trucks chat's answer key: natural questions pinned to values captured from the Power BI model (the parity
 // file's `expected` column, never the JS engine), so the catalogue is checked against the report it copies. Frozen in

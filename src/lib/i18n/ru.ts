@@ -1,4 +1,5 @@
 import type { Dictionary } from "./en";
+import { AUTHOR_NAME } from "../person";
 
 /**
  * Russian message catalog. Draft translations — pending a native/technical
@@ -15,6 +16,7 @@ export const ru: Dictionary = {
     work: "Портфолио",
     blog: "Блог",
     services: "Услуги",
+    about: "Обо мне",
     contact: "Контакты",
     message: "Написать",
     openMenu: "Открыть меню",
@@ -23,6 +25,23 @@ export const ru: Dictionary = {
     label: "Язык",
   },
   home: {
+    // English placeholder: Russian is not published.
+    h1: "Freelance Power BI and Microsoft Fabric consultant",
+    proofDp600: "Microsoft DP-600 certified",
+    proofHours: "EU and UK hours",
+    servicesTitle: "Services",
+    casesTitle: "Case studies",
+    casesAll: "All case studies",
+    pricingTitle: "Monthly support plans",
+    pricingBody:
+      "Or a fixed-scope project, or one urgent fix before a deadline.",
+    pricingLink: "All services & prices",
+    postsTitle: "From the blog",
+    postsAll: "All posts",
+    contactTitle: "Got data that should be a report?",
+    contactBody:
+      "Tell me what you need to see and where the data lives, and I'll tell you what it would take.",
+    contactLink: "Get in touch",
     headline: {
       lead: "Экономьте ",
       em1: "деньги",
@@ -40,12 +59,14 @@ export const ru: Dictionary = {
   },
   services: {
     title: "Услуги",
+    heading: "Power BI & Fabric services and pricing",
+    // The hub's links to the service pages (SEO spec T-04); the list shows only pages out of draft.
+    pagesTitle: "Services in detail",
     metaTitle: "Услуги по Power BI и цены",
     metaDescription:
       "Консалтинг по Power BI и Apache Superset — дашборды, модели данных, пайплайны. Подписка, проекты и срочные работы, с ценами.",
     intro:
       "Внедрение и консалтинг по BI на Power BI и Apache Superset — выберите подходящий формат. Месячный объём для команд с постоянной отчётной нагрузкой, проекты с фиксированным объёмом под конкретную задачу и разовые срочные работы, когда отчёт сломался перед дедлайном.",
-    engagementsHeading: "Форматы работы",
     subscription: {
       eyebrow: "Подписка",
       badge: "Помесячная оплата",
@@ -140,7 +161,50 @@ export const ru: Dictionary = {
         "Пока это лишь черновой текст-заполнитель — до предоставления финальных условий.",
       ],
     },
-    nextAria: "Вперёд",
+  },
+  // English placeholder: Russian is not published (SEO spec, section 1).
+  about: {
+    title: "About",
+    metaTitle: `About ${AUTHOR_NAME}: Power BI & Fabric Consultant (DP-600)`,
+    metaDescription: `${AUTHOR_NAME}, freelance Power BI and Microsoft Fabric consultant with the DP-600 certificate. Based in Turkey, working remotely on EU and UK hours.`,
+    lede: "Freelance Power BI and Microsoft Fabric consultant.",
+    body: [
+      "I build Power BI and Fabric reports, the data models and SQL under them, and the pipelines that keep them fresh. Around them: n8n automations for reports, inboxes and invoices, and AI chats that answer questions straight from your data.",
+      "I'm based in Turkey and work remotely on EU and UK hours.",
+    ],
+    stackTitle: "What I work with",
+    stack: [
+      "Power BI",
+      "Microsoft Fabric",
+      "SQL & PostgreSQL",
+      "dbt",
+      "ETL / ELT pipelines",
+      "n8n automations",
+      "AI chats over data",
+    ],
+    credentialTitle: "Certificate",
+    credential:
+      "Microsoft Certified: Fabric Analytics Engineer Associate (DP-600)",
+    linkCertificate: "see certificate",
+    profilesTitle: "Profiles",
+    nextBody:
+      "Wanna see the work? Open the showcase, or check services and prices.",
+    nextWork: "Showcase",
+    nextServices: "Services & pricing",
+  },
+  // English placeholder: Russian is not published.
+  serviceDetail: {
+    audienceTitle: "Who it's for",
+    deliverablesTitle: "What you get",
+    pricingTitle: "Price",
+    casesTitle: "Case studies",
+    stepsTitle: "How it runs",
+    faqTitle: "Questions",
+    postsTitle: "Further reading",
+    ctaTitle: "Got a project like this?",
+    ctaBody:
+      "Tell me what the report should answer and where the data lives, and I'll tell you what it would take.",
+    ctaContact: "Get in touch",
   },
   contact: {
     title: "Контакты",
@@ -157,6 +221,7 @@ export const ru: Dictionary = {
     linkProfile: "смотреть профиль",
     linkCertificate: "смотреть сертификат",
     linkPending: "Скоро",
+    bookCall: "Book a 20-minute call",
   },
   form: {
     emailLabel: "Почта",
@@ -215,6 +280,7 @@ export const ru: Dictionary = {
     backToBlog: "Назад в блог",
     older: "Раньше",
     newer: "Позже",
+    updated: "Обновлено",
     paginationAria: "Страницы блога",
   },
   work: {
@@ -252,11 +318,11 @@ export const ru: Dictionary = {
       synthetic: "Демо на синтетических данных",
       client: "Реальные операционные цифры, названия изменены",
     },
-    nextTitle: "Нужно такое для ваших данных?",
-    nextBody:
-      "Напишите, на какие вопросы должен отвечать отчёт или процесс и где лежат данные, а я скажу, что для этого нужно.",
+    nextCta: "Нужно такое для ваших данных? Напишите мне.",
+    nextCtaBooking: "Запишитесь на бесплатный звонок или напишите мне.",
+    nextBook: "Бесплатный звонок",
     nextContact: "Написать",
-    nextServices: "Услуги и цены",
+    nextServices: "Цены",
     relatedTitle: "Другие кейсы",
   },
   salesDashboard: {

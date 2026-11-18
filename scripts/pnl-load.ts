@@ -1,10 +1,6 @@
-import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
-import postgres from "postgres";
 import type { Sql } from "postgres";
 import { resolveArtifact, runArtifact } from "@/lib/pnl/artifacts";
-import type { Db } from "@/lib/pnl/artifacts";
 import {
   OPS_COLUMNS,
   OPS_NAME,
@@ -18,6 +14,7 @@ import { OPS_FILE, PL_FILES, parseManifest } from "@/lib/pnl/data/manifest";
 import type { Manifest } from "@/lib/pnl/data/manifest";
 import { readOpsColumns, readPlColumns } from "@/lib/pnl/data/parquet-loader";
 import type { EntityCode, OpsColumns, PlColumns } from "@/lib/pnl/engine/types";
+import { batchInsert, parquetDir, runLoader } from "./lib/load-report";
 
 // Loads data/pnl/parquet (the files the report used to fetch from public/data/pnl) into Supabase schema `pnl_demo`,
 // then verifies every chunk the server route serves against the Parquet it replaces: the same typed arrays the
@@ -28,30 +25,13 @@ import type { EntityCode, OpsColumns, PlColumns } from "@/lib/pnl/engine/types";
 //     node --env-file=.env.local --import tsx scripts/pnl-load.ts --verify   # verify only
 //
 // Node reads .env.local; this script never prints a value from it. Nothing here runs in the site. Mirelo's and ACME
-// Marketing's loaders (scripts/mirelo-load.ts, scripts/marketing-load.ts) are the pattern.
+// Marketing's loaders (scripts/mirelo-load.ts, scripts/marketing-load.ts) are the pattern; the connection, the exit
+// codes and the batched insert are shared with them (scripts/lib/load-report.ts).
 
-const DIR = new URL("../data/pnl/parquet/", import.meta.url);
-const BATCH = 2000;
-const VERIFY_ONLY = process.argv.includes("--verify");
-
-const bytes = async (name: string): Promise<ArrayBuffer> => {
-  const b = await readFile(fileURLToPath(new URL(name, DIR)));
-  return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
-};
-const json = async (name: string): Promise<unknown> =>
-  JSON.parse(await readFile(fileURLToPath(new URL(name, DIR)), "utf8"));
-
-async function insert(
-  sql: Db,
-  table: string,
-  columns: string[],
-  data: readonly Record<string, unknown>[],
-): Promise<void> {
-  for (let i = 0; i < data.length; i += BATCH) {
-    const slice = data.slice(i, i + BATCH);
-    await sql`insert into ${sql(table)} ${sql(slice, ...columns)}`;
-  }
-}
+const { bytes, json } = parquetDir(
+  new URL("../data/pnl/parquet/", import.meta.url),
+);
+const insert = batchInsert(2000);
 
 /** Typed arrays → one row object per index, in file order (the `seq`). */
 function rowsOf(
@@ -246,36 +226,19 @@ async function verify(sql: Sql, m: Manifest, raw: unknown): Promise<string[]> {
   return failures;
 }
 
-async function main(): Promise<number> {
-  const url = process.env.PNL_LOAD_DATABASE_URL;
-  if (!url) {
-    console.error(
-      "PNL_LOAD_DATABASE_URL is not set: run with node --env-file=.env.local",
-    );
-    return 2;
-  }
-  const raw = await json("manifest.json");
-  const m = parseManifest(raw);
-  const sql = postgres(url, { max: 1, ssl: "require" });
-  try {
-    if (!VERIFY_ONLY) await load(sql, m);
-    const failures = await verify(sql, m, raw);
-    for (const f of failures) console.error(`  ${f}`);
-    const [size] = await sql<
-      { size: string }[]
-    >`select pg_size_pretty(pg_database_size(current_database())) as size`;
-    console.log(`database size: ${size?.size ?? "?"}`);
-    return failures.length === 0 ? 0 : 1;
-  } finally {
-    await sql.end();
-  }
-}
+/** The manifest as stored (`raw`, what the route must serve back) and parsed (`m`); read once. */
+let manifest: Promise<{ raw: unknown; m: Manifest }> | undefined;
+const readManifest = () =>
+  (manifest ??= json("manifest.json").then((raw) => ({
+    raw,
+    m: parseManifest(raw),
+  })));
 
-main().then(
-  (code) => process.exit(code),
-  (error: unknown) => {
-    // A driver error can carry the host; never the password. Print the message only.
-    console.error(error instanceof Error ? error.message : String(error));
-    process.exit(1);
+runLoader({
+  envVar: "PNL_LOAD_DATABASE_URL",
+  load: async (sql) => load(sql, (await readManifest()).m),
+  verify: async (sql) => {
+    const { raw, m } = await readManifest();
+    return verify(sql, m, raw);
   },
-);
+});

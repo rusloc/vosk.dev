@@ -1,14 +1,10 @@
-import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
-import postgres from "postgres";
 import type { Sql } from "postgres";
 import {
   allArtifactNames,
   resolveArtifact,
   runArtifact,
 } from "@/lib/mirelo/artifacts";
-import type { Db } from "@/lib/mirelo/artifacts";
 import {
   DETAIL,
   FILES,
@@ -17,6 +13,7 @@ import {
 } from "@/lib/mirelo/manifest";
 import { readRows } from "@/lib/mirelo/parquet-columns";
 import type { ColumnSpec, RowOf } from "@/lib/mirelo/parquet-columns";
+import { batchInsert, parquetDir, runLoader } from "./lib/load-report";
 
 // Loads data/mirelo/parquet (the files the report used to fetch from public/data/mirelo) into Supabase schema
 // `mirelo_demo`, then verifies every artifact the server route serves against the Parquet it replaces: same rows,
@@ -25,18 +22,13 @@ import type { ColumnSpec, RowOf } from "@/lib/mirelo/parquet-columns";
 //     node --env-file=.env.local --import tsx scripts/mirelo-load.ts            # truncate, load, verify
 //     node --env-file=.env.local --import tsx scripts/mirelo-load.ts --verify   # verify only
 //
-// Node reads .env.local; this script never prints a value from it. Nothing here runs in the site.
+// Node reads .env.local; this script never prints a value from it. Nothing here runs in the site. The connection, the
+// exit codes and the batched insert are shared with the other reports' loaders (scripts/lib/load-report.ts).
 
-const DIR = new URL("../data/mirelo/parquet/", import.meta.url);
-const BATCH = 1000;
-const VERIFY_ONLY = process.argv.includes("--verify");
-
-const bytes = async (name: string): Promise<ArrayBuffer> => {
-  const b = await readFile(fileURLToPath(new URL(name, DIR)));
-  return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
-};
-const json = async (name: string): Promise<unknown> =>
-  JSON.parse(await readFile(fileURLToPath(new URL(name, DIR)), "utf8"));
+const { bytes, json } = parquetDir(
+  new URL("../data/mirelo/parquet/", import.meta.url),
+);
+const insert = batchInsert();
 const rows = async <S extends ColumnSpec>(
   name: string,
   spec: S,
@@ -50,18 +42,6 @@ const specOf = (file: string): ColumnSpec =>
     : file.startsWith("client-dim-")
       ? DETAIL.clients
       : DETAIL.loans;
-
-async function insert(
-  sql: Db,
-  table: string,
-  columns: string[],
-  data: readonly Record<string, unknown>[],
-): Promise<void> {
-  for (let i = 0; i < data.length; i += BATCH) {
-    const slice = data.slice(i, i + BATCH);
-    await sql`insert into ${sql(table)} ${sql(slice, ...columns)}`;
-  }
-}
 
 async function load(sql: Sql): Promise<void> {
   const manifest = parseManifest(await json("manifest.json"));
@@ -162,34 +142,4 @@ async function verify(sql: Sql): Promise<string[]> {
   return failures;
 }
 
-async function main(): Promise<number> {
-  const url = process.env.MIRELO_LOAD_DATABASE_URL;
-  if (!url) {
-    console.error(
-      "MIRELO_LOAD_DATABASE_URL is not set: run with node --env-file=.env.local",
-    );
-    return 2;
-  }
-  const sql = postgres(url, { max: 1, ssl: "require" });
-  try {
-    if (!VERIFY_ONLY) await load(sql);
-    const failures = await verify(sql);
-    for (const f of failures) console.error(`  ${f}`);
-    const [size] = await sql<
-      { size: string }[]
-    >`select pg_size_pretty(pg_database_size(current_database())) as size`;
-    console.log(`database size: ${size?.size ?? "?"}`);
-    return failures.length === 0 ? 0 : 1;
-  } finally {
-    await sql.end();
-  }
-}
-
-main().then(
-  (code) => process.exit(code),
-  (error: unknown) => {
-    // A driver error can carry the host; never the password. Print the message only.
-    console.error(error instanceof Error ? error.message : String(error));
-    process.exit(1);
-  },
-);
+runLoader({ envVar: "MIRELO_LOAD_DATABASE_URL", load, verify });

@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
+import { CloseIcon } from "@/components/close-icon";
+import { useModal } from "@/components/use-modal";
 import { cn } from "@/lib/cn";
 import { Icon } from "./service-icons";
 
@@ -16,7 +18,7 @@ export type Conditions = {
  * Terms/conditions button in a service card's top row, beside the arrow. Opens
  * a portal modal listing the plan's conditions. `className` sets its colour,
  * which differs between the maroon card and the light ones. Same modal mechanics as
- * SendMessageButton — Escape to close, body scroll lock, backdrop click.
+ * SendMessageButton (useModal) — Escape to close, body scroll lock, backdrop click.
  */
 export function ConditionsButton({
   aria,
@@ -26,19 +28,7 @@ export function ConditionsButton({
   className,
 }: Conditions & { className?: string }) {
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [open]);
+  useModal(open, () => setOpen(false));
 
   // No terms written yet: no button (11-17, the placeholder text had been live on every card).
   if (body.length === 0) return null;
@@ -76,21 +66,7 @@ export function ConditionsButton({
                 onClick={() => setOpen(false)}
                 className="text-muted-foreground hover:text-foreground absolute top-3 right-3 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  className="h-4 w-4"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18 18 6M6 6l12 12"
-                  />
-                </svg>
+                <CloseIcon className="h-4 w-4" />
               </button>
 
               <h2 className="pr-8 text-lg font-semibold tracking-tight">

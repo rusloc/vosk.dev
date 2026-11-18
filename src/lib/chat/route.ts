@@ -2,6 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
+import { clientIp, rateLimiter } from "@/lib/report-data/rate-limit";
 import { runChat } from "./run-chat";
 import type { ChatEvent } from "./run-chat";
 import type { ChatToolset } from "./tools";
@@ -78,17 +79,13 @@ export function chatRoute<C>({
       "the last message must be the visitor's",
     );
 
-  // Best-effort, per instance, reset on a cold start (same shape as the data routes); the provider cap is the real wall.
-  const hits = new Map<string, number[]>();
+  // Best-effort, per instance, reset on a cold start (the data routes' helper); the provider cap is the real wall.
+  const isRateLimited = rateLimiter({
+    max: MAX_PER_WINDOW,
+    windowMs: WINDOW_MS,
+  });
   let inFlight = 0;
   let spend = { day: "", usd: 0 };
-
-  function isRateLimited(key: string, now: number): boolean {
-    const recent = (hits.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
-    recent.push(now);
-    hits.set(key, recent);
-    return recent.length > MAX_PER_WINDOW;
-  }
 
   function spentToday(): number {
     const day = new Date().toISOString().slice(0, 10);
@@ -110,9 +107,8 @@ export function chatRoute<C>({
     const key = process.env.CHAT_LLM_API_KEY;
     if (process.env.CHAT_ENABLED !== "1" || !key) return fail(503, "off");
 
-    const ip =
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-    if (isRateLimited(ip, Date.now())) return fail(429, "rate");
+    const ip = clientIp(req);
+    if (isRateLimited(ip)) return fail(429, "rate");
     if (spentToday() >= Number(process.env.CHAT_DAILY_CAP_USD ?? "0.5"))
       return fail(503, "paused");
     if (inFlight >= MAX_IN_FLIGHT) return fail(429, "busy");

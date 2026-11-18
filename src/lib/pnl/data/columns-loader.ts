@@ -36,8 +36,6 @@ export const OPS_COLUMNS = [
 export const OPS_NAME = "ops.json";
 const MONTHS_PER_CHUNK = 12;
 
-export type Columns = Record<string, unknown[]>;
-
 /** The chunk names one entity's rows come in, in version then month order. */
 export function plChunkNames(m: Manifest, entity: EntityCode): string[] {
   const months = m.tables.dim_month.length;
@@ -63,13 +61,8 @@ export function parsePlChunkName(
   return { entity: m[1] as EntityCode, version, from, to };
 }
 
-/** Rows (as the database returns them) → columns, the wire shape. */
-export function toColumns(
-  rows: readonly Record<string, unknown>[],
-  names: readonly string[],
-): Columns {
-  return Object.fromEntries(names.map((c) => [c, rows.map((r) => r[c])]));
-}
+/** Rows (as the database returns them) → columns, the wire shape (shared with the other columnar reports). */
+export { toColumns } from "@/lib/report-data/columns";
 
 function columnsOf(
   json: unknown,

@@ -4,6 +4,7 @@ import "../globals.css";
 import { env } from "@/lib/env";
 import { fontVariables } from "@/lib/fonts";
 import { siteConfig } from "@/lib/site";
+import { withTitleSuffix } from "@/lib/metadata";
 import { locales, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { SiteNav } from "@/components/nav";
@@ -35,7 +36,7 @@ export async function generateMetadata({
     // files resolve before this one and need it already set.
     title: {
       default: t.title,
-      template: `%s · ${siteConfig.name}`,
+      template: withTitleSuffix("%s"),
     },
     description: t.description,
     // Authorship is an E-E-A-T signal on a one-person consultancy: the brand and
@@ -48,7 +49,7 @@ export async function generateMetadata({
       siteName: siteConfig.name,
       title: t.title,
       description: t.description,
-      locale: "en_US",
+      locale: siteConfig.locale,
       url: "/",
     },
     twitter: {
@@ -80,7 +81,11 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <html lang={locale} className={`${fontVariables} h-full`}>
       <body className="bg-background text-foreground flex min-h-full flex-col font-sans antialiased">
-        <SiteNav locale={locale as Locale} dict={dict} />
+        <SiteNav
+          brand={siteConfig.name}
+          locale={locale as Locale}
+          dict={dict}
+        />
         <main className="flex-1">{children}</main>
         <SiteFooter locale={locale as Locale} dict={dict} />
         <Analytics gtmId={env.NEXT_PUBLIC_GTM_ID} />

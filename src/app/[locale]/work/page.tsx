@@ -3,7 +3,7 @@ import { Container } from "@/components/container";
 import { PageHeader } from "@/components/page-header";
 import { buildMetadata } from "@/lib/metadata";
 import { getShowcasePlatformLabels, localize, showcases } from "@/lib/work";
-import { isLocale, type Locale } from "@/lib/i18n/config";
+import { resolveLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { ShowcaseCard } from "./showcase-card";
 import { ShowcaseList } from "./showcase-list";
@@ -12,7 +12,7 @@ type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const l = (isLocale(locale) ? locale : "en") as Locale;
+  const l = resolveLocale(locale);
   const t = getDictionary(l).work;
   const platforms = new Intl.ListFormat(l, { type: "conjunction" }).format(
     getShowcasePlatformLabels(),
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function WorkPage({ params }: Props) {
   const { locale } = await params;
-  const l = (isLocale(locale) ? locale : "en") as Locale;
+  const l = resolveLocale(locale);
   const t = getDictionary(l).work;
   // The intro names the platforms of the showcases actually listed, so it can't drift
   // from the cards (a hidden Superset entry once left it promising Superset).

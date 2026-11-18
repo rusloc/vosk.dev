@@ -1,5 +1,9 @@
 import { absoluteUrl, siteConfig } from "./site";
 import { type Locale } from "./i18n/config";
+import type { Dictionary } from "./i18n/en";
+
+/** One price tier as the services dictionary holds it, display strings included. */
+type Tier = Dictionary["services"]["subscription"]["tiers"][number];
 
 /**
  * JSON-LD builders. Every graph is emitted server-side via `<JsonLd>` and must
@@ -18,6 +22,9 @@ const WEBSITE_ID = `${siteConfig.url}/#website`;
 // argument. A second locale turns it back into a lookup at these four call sites.
 const IN_LANGUAGE = "en-US";
 
+// Where the practice works, in every graph that says so (SEO spec T-11 may narrow it to the UK and the EU).
+const AREA_SERVED = "Worldwide";
+
 /**
  * Home-page structured data: the freelancer (Person), the practice
  * (ProfessionalService) and the site (WebSite), linked by @id.
@@ -29,7 +36,7 @@ const IN_LANGUAGE = "en-US";
  * Contacts card links with `rel="me"`. Person markup mirrors the byline the site shows
  * publicly — blog authors and the per-post OG cards (required for policy
  * compliance). The Contacts card deliberately shows the first name only; the
- * full name is what this markup has to match, and it is visible on every post.
+ * full name is what this markup has to match: it is the H1 of `/about` and the byline of every post.
  */
 export function homeGraph(): Record<string, unknown> {
   const { name, title, description, author, contactEmail } = siteConfig;
@@ -44,7 +51,7 @@ export function homeGraph(): Record<string, unknown> {
         alternateName: title,
         url: siteConfig.url,
         description,
-        areaServed: "Worldwide",
+        areaServed: AREA_SERVED,
         founder: { "@id": PERSON_ID },
         email: contactEmail,
         knowsAbout: [
@@ -63,7 +70,8 @@ export function homeGraph(): Record<string, unknown> {
         "@id": PERSON_ID,
         name: author.name,
         jobTitle: author.jobTitle,
-        url: siteConfig.url,
+        // The page about the person (SEO spec T-05), not the site root.
+        url: absoluteUrl("en", "/about"),
         sameAs: Object.values(siteConfig.social).filter(Boolean),
         worksFor: { "@id": ORG_ID },
       },
@@ -107,8 +115,13 @@ export function blogPostingGraph(
     description: post.description,
     datePublished: post.date,
     dateModified: post.updated ?? post.date,
-    inLanguage: "en-US",
-    author: { "@type": "Person", "@id": PERSON_ID, name: author.name },
+    inLanguage: IN_LANGUAGE,
+    author: {
+      "@type": "Person",
+      "@id": PERSON_ID,
+      name: author.name,
+      url: absoluteUrl("en", "/about"),
+    },
     publisher: { "@id": ORG_ID },
     isPartOf: { "@id": WEBSITE_ID },
     mainEntityOfPage: postUrl,
@@ -176,6 +189,27 @@ export function collectionGraph(
 }
 
 /**
+ * One tier as an Offer. The price stays the display string ("$1,500", "$2k–5k"): several tiers are ranges, and a
+ * range is `priceSpecification`, not `price`.
+ */
+function tierOffer(tier: Tier, name: string, url: string) {
+  return {
+    "@type": "Offer",
+    name,
+    description: tier.desc,
+    priceCurrency: "USD",
+    priceSpecification: {
+      "@type": "PriceSpecification",
+      price: tier.price,
+      priceCurrency: "USD",
+      unitText: tier.unit,
+    },
+    availability: "https://schema.org/InStock",
+    url,
+  };
+}
+
+/**
  * Service + OfferCatalog for /services, built from the same dictionary the page
  * renders — so the markup can't drift from the visible prices.
  *
@@ -193,15 +227,7 @@ export function serviceGraph(
   }: {
     name: string;
     description: string;
-    groups: readonly {
-      eyebrow: string;
-      tiers: readonly {
-        name: string;
-        desc: string;
-        price: string;
-        unit: string;
-      }[];
-    }[];
+    groups: readonly { eyebrow: string; tiers: readonly Tier[] }[];
   },
 ): Record<string, unknown> {
   return {
@@ -211,7 +237,7 @@ export function serviceGraph(
     description,
     serviceType: "Business Intelligence consulting",
     url: absoluteUrl(locale, "/services"),
-    areaServed: "Worldwide",
+    areaServed: AREA_SERVED,
     provider: { "@id": ORG_ID },
     hasOfferCatalog: {
       "@type": "OfferCatalog",
@@ -219,22 +245,46 @@ export function serviceGraph(
       itemListElement: groups.map((group) => ({
         "@type": "OfferCatalog",
         name: group.eyebrow,
-        itemListElement: group.tiers.map((tier) => ({
-          "@type": "Offer",
-          name: `${group.eyebrow} — ${tier.name}`,
-          description: tier.desc,
-          priceCurrency: "USD",
-          priceSpecification: {
-            "@type": "PriceSpecification",
-            price: tier.price,
-            priceCurrency: "USD",
-            unitText: tier.unit,
-          },
-          availability: "https://schema.org/InStock",
-          url: absoluteUrl(locale, "/services"),
-        })),
+        itemListElement: group.tiers.map((tier) =>
+          tierOffer(
+            tier,
+            `${group.eyebrow} — ${tier.name}`,
+            absoluteUrl(locale, "/services"),
+          ),
+        ),
       })),
     },
+  };
+}
+
+/**
+ * Service for one /services/<slug> page (SEO spec T-04), the `serviceGraph` pattern for one service: the offers are
+ * the tiers the page shows, with their display prices.
+ */
+export function serviceDetailGraph(
+  locale: Locale,
+  {
+    slug,
+    name,
+    description,
+    tiers,
+  }: {
+    slug: string;
+    name: string;
+    description: string;
+    tiers: readonly Tier[];
+  },
+): Record<string, unknown> {
+  const url = absoluteUrl(locale, `/services/${slug}`);
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name,
+    description,
+    url,
+    areaServed: AREA_SERVED,
+    provider: { "@id": ORG_ID },
+    offers: tiers.map((tier) => tierOffer(tier, tier.name, url)),
   };
 }
 
@@ -264,7 +314,7 @@ export function contactGraph(
         "@type": "ContactPoint",
         contactType: "sales",
         email: contactEmail,
-        areaServed: "Worldwide",
+        areaServed: AREA_SERVED,
         availableLanguage: ["en"],
       },
     },

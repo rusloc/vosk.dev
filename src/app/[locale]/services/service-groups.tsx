@@ -1,16 +1,7 @@
-"use client";
-
-import { useState } from "react";
 import { cn } from "@/lib/cn";
-import { type Conditions } from "./conditions-button";
-import { GROUP_WIDTH } from "./group-width";
-import { ServiceCarousel } from "./service-carousel";
-
-const PILL =
-  "cursor-pointer rounded-full border px-1.5 py-1.5 text-center text-[10px] font-semibold tracking-[0.04em] whitespace-nowrap uppercase transition-colors sm:px-3 sm:text-xs sm:tracking-[0.12em]";
-const PILL_ON = "bg-foreground text-background border-foreground";
-const PILL_OFF =
-  "border-border text-muted-foreground hover:text-foreground bg-white";
+import { ConditionsButton, type Conditions } from "./conditions-button";
+import { ServiceCard } from "./service-card";
+import { Icon } from "./service-icons";
 
 export type ServiceGroup = {
   eyebrow: string;
@@ -21,83 +12,136 @@ export type ServiceGroup = {
 };
 
 /**
- * The three engagement models. On desktop the first (subscription) is the
- * featured card — big, maroon, spanning two rows with its "every plan includes"
- * list — and the other two stack beside it. Mobile shows a pill row instead and
- * reveals a single card at a time — three stacked cards don't fit a phone
- * screen, and the pills double as the labels the eyebrows carry on desktop.
- *
- * The carousels are rendered once and hidden with `hidden lg:flex` rather than
- * duplicated into a mobile-only tree, so there's one copy of the nine tier
- * headings in the DOM and each group keeps its slide position across pills.
+ * The three engagement models, every plan visible at once (SEO spec T-07, 11-18): the old one-slide carousels showed
+ * one plan per group until the visitor clicked "Next", and cloned the first plan in the DOM. Server-rendered, one
+ * copy of each plan heading. The subscription is the featured block, cream on maroon, its plans in a row and the
+ * "available in every plan" list under them; project and other sit side by side below it.
  */
 export function ServiceGroups({
   groups,
   conditions,
-  nextAria,
 }: {
   groups: ServiceGroup[];
   conditions: Conditions;
-  nextAria: string;
 }) {
-  const [active, setActive] = useState(0);
+  const [featured, ...rest] = groups;
+  if (!featured) return null;
 
   return (
-    <>
-      {/* Mobile-only group switcher. Plain toggle buttons, not tabs: on desktop
-          every group is visible at once, so tab semantics would be a lie.
-
-          A 3-column grid, so the row spans the carousel's full width and each
-          pill is one equal third regardless of label length. The type steps down
-          below `sm` because "SUBSCRIPTION" at the eyebrow's 12px/0.12em needs
-          ~107px and a third of a 360px phone is 104px — it would wrap. */}
-      <div className={cn(GROUP_WIDTH, "mt-5 grid grid-cols-3 gap-2 lg:hidden")}>
-        {groups.map((g, i) => (
-          <button
-            key={i}
-            type="button"
-            aria-pressed={i === active}
-            onClick={() => setActive(i)}
-            className={cn(PILL, i === active ? PILL_ON : PILL_OFF)}
-          >
-            {g.eyebrow}
-          </button>
-        ))}
-      </div>
-
-      {/* GROUP_WIDTH keeps the square cards sane between `sm` and `lg`, where
-          one card still spans the whole column: a tablet would otherwise render
-          an ~850px box. Phones are narrower than the cap, so it never touches
-          them, and `lg` drops it for the grid. Two equal rows, so the stacked
-          cards split the featured card's height between them. */}
-      <div
-        className={cn(
-          GROUP_WIDTH,
-          "mt-4 flex flex-col lg:mt-8 lg:grid lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] lg:grid-rows-2 lg:gap-6",
+    <div className="mt-6 flex flex-col gap-6 lg:mt-8">
+      <section className="bg-maroon overflow-hidden rounded-2xl p-6 lg:p-9">
+        <GroupHead
+          number={1}
+          group={featured}
+          conditions={conditions}
+          feature
+        />
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {featured.tiers.map((tier) => (
+            <div
+              key={tier.name}
+              className="border-cream/15 overflow-hidden rounded-xl border p-6"
+            >
+              <ServiceCard
+                {...tier}
+                title={tier.name}
+                feature
+                titleBleed="-mx-6 px-6"
+              />
+            </div>
+          ))}
+        </div>
+        {featured.servicesTitle && featured.services && (
+          <div className="border-cream/15 mt-7 border-t pt-7">
+            <h3 className="text-cream/80 text-xs font-semibold tracking-[0.14em] uppercase">
+              {featured.servicesTitle}
+            </h3>
+            <ul className="mt-4 grid gap-x-6 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
+              {featured.services.map((s) => (
+                <li
+                  key={s}
+                  className="text-cream/85 flex items-start gap-2.5 text-sm"
+                >
+                  <Icon
+                    name="check"
+                    className="text-accent mt-0.5 h-4 w-4 shrink-0"
+                  />
+                  {s}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
-      >
-        {groups.map((g, i) => (
-          <ServiceCarousel
-            key={i}
-            number={i + 1}
-            label={g.eyebrow}
-            badge={g.badge}
-            tiers={g.tiers}
-            includes={
-              g.servicesTitle && g.services
-                ? { title: g.servicesTitle, items: g.services }
-                : undefined
-            }
-            feature={i === 0}
-            conditions={conditions}
-            nextAria={nextAria}
-            className={cn(
-              i === active ? undefined : "hidden lg:flex",
-              i === 0 && "lg:row-span-2",
-            )}
-          />
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {rest.map((g, i) => (
+          <section
+            key={g.eyebrow}
+            className="border-border overflow-hidden rounded-2xl border bg-white p-6 lg:p-7"
+          >
+            <GroupHead number={i + 2} group={g} conditions={conditions} />
+            <div className="divide-border mt-2 divide-y">
+              {g.tiers.map((tier) => (
+                <div key={tier.name} className="py-5 last:pb-0">
+                  <ServiceCard
+                    {...tier}
+                    title={tier.name}
+                    titleBleed="-mx-6 px-6 lg:-mx-7 lg:px-7"
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
         ))}
       </div>
-    </>
+    </div>
+  );
+}
+
+function GroupHead({
+  number,
+  group,
+  conditions,
+  feature = false,
+}: {
+  number: number;
+  group: ServiceGroup;
+  conditions: Conditions;
+  feature?: boolean;
+}) {
+  return (
+    <div className="flex min-h-8 items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <h2
+          className={cn(
+            "text-xs font-semibold tracking-[0.14em] whitespace-nowrap uppercase",
+            feature ? "text-accent" : "text-maroon-soft",
+          )}
+        >
+          {number} · {group.eyebrow}
+        </h2>
+        {group.badge && (
+          <span
+            className={cn(
+              "truncate rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
+              feature
+                ? "border-cream/30 text-cream/90"
+                : "border-accent/50 bg-accent/10 text-maroon-soft",
+            )}
+          >
+            {group.badge}
+          </span>
+        )}
+      </div>
+      <ConditionsButton
+        {...conditions}
+        className={
+          feature
+            ? "text-cream/55 hover:text-cream"
+            : "text-muted-foreground hover:text-foreground"
+        }
+      />
+    </div>
   );
 }

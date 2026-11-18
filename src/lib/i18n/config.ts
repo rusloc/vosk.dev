@@ -26,6 +26,11 @@ export function isLocale(value: string): value is Locale {
   return (locales as readonly string[]).includes(value);
 }
 
+/** The `[locale]` route param as a `Locale`, falling back to the default (was written out in every page). */
+export function resolveLocale(value: string): Locale {
+  return isLocale(value) ? value : defaultLocale;
+}
+
 /**
  * Map a logical, locale-agnostic path ("/", "/blog/x") to the URL for `locale`.
  * Default locale → unchanged; others → prefixed ("/ru", "/ru/blog/x").

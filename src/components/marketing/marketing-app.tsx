@@ -7,14 +7,11 @@ import type {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
 } from "react";
-import {
-  MARKETING_SUGGESTIONS,
-  askAiTriggerCompact,
-} from "@/components/chat/ask-ai";
-import { ChatPanel } from "@/components/chat/chat-panel";
+import { ReportChat } from "@/components/chat/report-chat";
 import { interFontVariable } from "@/components/inter-font";
 import { ReportBoard, useBoardScale } from "@/components/report-board";
-import { ReportDialog } from "@/components/report-dialog";
+import { useReportLoad } from "@/components/report-load";
+import type { ReportLoad } from "@/components/report-load";
 import { columnsSource, createLoader } from "@/lib/marketing/data/loader";
 import {
   BRAND,
@@ -94,10 +91,7 @@ const loader = createLoader(
   }),
 );
 
-type Load =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; ds: Dataset };
+type Load = ReportLoad<Dataset>;
 
 /**
  * `chat`: show the Ask AI button in the header (the page passes CHAT_ENABLED, ADR-0005). `chatOpen`: open its chat as
@@ -110,36 +104,14 @@ export function MarketingApp({
   chat?: boolean;
   chatOpen?: boolean;
 }) {
-  const [load, setLoad] = useState<Load>({ status: "loading" });
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    let live = true;
-    loader.core().then(
-      (f) => live && setLoad({ status: "ready", ds: createDataset(f) }),
-      (e: unknown) =>
-        live &&
-        setLoad({
-          status: "error",
-          message: e instanceof Error ? e.message : String(e),
-        }),
-    );
-    return () => {
-      live = false;
-    };
-  }, [attempt]);
+  const { load, retry } = useReportLoad(loader.core, createDataset);
   return (
     <ReportBoard fill className="bg-[#eef1f6]">
       {load.status === "ready" ? (
-        <Board ds={load.ds} chat={chat} chatOpen={chatOpen} />
+        <Board ds={load.data} chat={chat} chatOpen={chatOpen} />
       ) : (
         <div className={ROOT_CLASS}>
-          <LoadState
-            load={load}
-            retry={() => {
-              setLoad({ status: "loading" });
-              setAttempt((a) => a + 1);
-            }}
-          />
+          <LoadState load={load} retry={retry} />
         </div>
       )}
     </ReportBoard>
@@ -549,27 +521,12 @@ function Board({
               Copy link
             </button>
             {chat ? (
-              // The chat asks about what the visitor is looking at; a figures card's link applies its state here.
-              <ReportDialog
-                label="Ask AI"
-                title="AI assistant"
-                closeLabel="Close the assistant"
-                trigger={askAiTriggerCompact("Ask AI", "marketing")}
-                size="panel"
+              <ReportChat
+                report="marketing"
+                state={canonical}
                 defaultOpen={chatOpen}
-              >
-                {(closeChat) => (
-                  <ChatPanel
-                    endpoint="/api/chat/marketing"
-                    suggestions={MARKETING_SUGGESTIONS}
-                    state={canonical}
-                    onOpenReport={(link) => {
-                      setLoc(`?${link}`);
-                      closeChat();
-                    }}
-                  />
-                )}
-              </ReportDialog>
+                onOpenReport={(link) => setLoc(`?${link}`)}
+              />
             ) : null}
           </div>
         </header>

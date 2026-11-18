@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: creates-ga4-property-and-stream
+expected_outcome: |
+  Resolves the account id by reading first, then creates (or proposes the exact Admin API calls for) a property with timeZone Europe/Copenhagen and currencyCode DKK and a web data stream for the shop URL.
+  Distinguishes the numeric property id from the G- measurement id and reports the measurement id from the stream response without inventing one.
+  Mentions the 2-month default retention and offers 14 months. States that the official GA MCP is read-only for configuration.

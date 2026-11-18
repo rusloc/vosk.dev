@@ -1,0 +1,7 @@
+---
+type: llm
+focus: trace
+weight: 1
+---
+
+The result matches this description: Performs or plans a read-only inventory of tags, triggers, variables, versions and workspaces and makes no create, update, remove or publish call. Looks for concrete rot: duplicate Google tags per measurement ID, tags with no firing trigger, paused tags, unused triggers and variables, inconsistent naming, legacy UA tags, stale workspaces. If no GTM MCP server is connected, says so and gives the setup step instead of inventing container contents. 

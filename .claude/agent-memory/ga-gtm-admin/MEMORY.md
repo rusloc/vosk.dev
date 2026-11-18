@@ -1,0 +1,5 @@
+- [ids](ids.md) — GA 416892705 / property 565065076 / G-2FXCM9DL8S; GTM 6406063037 / 287484976 = GTM-W5TDFQQJ (live), ws 4; Ads 221-990-3697
+- [conventions](conventions.md) — consent-gated GTM, data-ga click contract (new click = code only), gtag-arguments pushes, ga-setup.mjs
+- [events](events.md) — event catalogue: generate_lead (key), report_open, chat_open, select_content, cta_click, contact_open, chat_question
+- [changelog](changelog.md) — v2 Google tag, v3 click tracking (live), 11-18 read-only audit, 11-18 Ads link 403 (not linked)
+- [quirks](quirks.md) — dest_ga auto tag, GTM 429 quota, GA MCP read-only (Admin API probe), realtime incompatibilities, Ads link needs Ads access

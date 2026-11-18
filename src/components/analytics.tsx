@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { GoogleTagManager, sendGTMEvent } from "@next/third-parties/google";
+import { GoogleTagManager } from "@next/third-parties/google";
 
 const STORAGE_KEY = "vosk.consent";
 type Consent = "granted" | "denied";
@@ -28,12 +28,19 @@ function writeConsent(choice: Consent) {
 }
 
 /**
- * Fire a `generate_lead` GTM event (e.g. on contact-form success). Safe no-op
- * when GTM never loaded (unset id or declined consent) — the push just sits in
- * `dataLayer` and is never transmitted.
+ * Send `generate_lead` to GA4 (contact-form success). The container is a Google
+ * tag: it reads gtag-style commands (an `arguments` object) from `dataLayer` and
+ * ignores plain `{ event }` objects (probed 2026-11-18). Safe no-op when GTM never
+ * loaded (unset id or declined consent): the push sits in `dataLayer`, unsent.
  */
 export function trackLead() {
-  sendGTMEvent({ event: "generate_lead" });
+  gtag("event", "generate_lead");
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function gtag(..._args: unknown[]) {
+  const w = window as unknown as { dataLayer?: unknown[] };
+  // eslint-disable-next-line prefer-rest-params
+  (w.dataLayer ??= []).push(arguments);
 }
 
 /**

@@ -22,6 +22,20 @@
       "env": {
         "FALLOW_TIMEOUT_SECS": "300"
       }
+    },
+    "ga": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["--from", "analytics-mcp==1.1.0", "google-analytics-mcp"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${GA_SA_KEY_FILE}",
+        "GOOGLE_CLOUD_PROJECT": "${GA_GCP_PROJECT}"
+      }
+    },
+    "gtm": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["scripts/mcp-gtm.mjs"]
     }
   }
 }

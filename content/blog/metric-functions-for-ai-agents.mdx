@@ -1,31 +1,30 @@
 ---
 title: "Don't let the agent write the SQL"
-description: "Wrap every metric in a SQL function, describe it in one sentence, and give the AI agent only those. 211 of 222 test questions right, and no invented numbers."
+description: "AI data agents make up numbers when they write their own SQL. Wrap every metric in a SQL function, give the agent those as tools, and the guessing stops."
 date: "2026-11-17"
 tags: ["sql", "js"]
 draft: false
 ---
 
-Ask a data chat for last quarter's cost per click, across all channels. If the agent
-writes its own SQL, it will most likely do `sum(spend) / sum(clicks)` over the
-marketing table and hand you a clean, plausible number. That number is wrong.
-In my demo data only paid search and paid social have clicks. Content and SEO,
-partners and outbound sales have spend and zero clicks. Divide all spend by those clicks and CPC
-comes out inflated, and nobody at the table will notice, because it looks like
-a CPC.
+Data agents make stuff up. Not always. Just often enough that you can't put the
+answer in front of management without checking it yourself, which kinda kills
+the point.
 
-That's the hallucination I worry about with data agents. The made-up fact is the
-easy case: a customer that doesn't exist gets caught. A made-up *definition*
-doesn't, because the query runs, the number is in the right range and the agent
-explains it with confidence.
+Most of it comes from one habit: the agent writes its own SQL. It reads the
+schema, guesses what the metric means and runs whatever it came up with. Ask for
+last quarter's cost per click across all channels and you'll most likely get
+`sum(spend) / sum(clicks)`. In my demo data only 2 channels out of 5 even have
+clicks, so that number is inflated. It still looks like a CPC. The query ran,
+the agent explains it with confidence, nobody asks.
 
-So I stopped letting the agent write SQL. Every metric lives in a function, the
-function has one sentence of description, and that set of functions is all the
-agent gets. It never sees the schema.
+A customer that doesn't exist gets caught quick. A made-up *definition*
+doesn't.
 
-## What that looks like
+## Take the SQL away
 
-This is one of the functions behind the
+So my agents don't write SQL. At all.
+
+Every metric is a function in the database. This is one of them, from the
 [Tidewell data chat](/work/ceo-digest), a demo SaaS company with marketing, cash
 and customer data in Postgres. Trimmed to the part that matters:
 
@@ -52,98 +51,89 @@ as $$
 $$;
 ```
 
-The CPC rule is written once, by me, in the function. So is the rule that a week
-belongs to a month when its Thursday falls in it (the ISO way, and the second
-thing an agent would guess differently). So is the clamp that stops any period
-from running past the last date in the data.
+The CPC rule lives there, written once, by me. So does the week rule (a week
+belongs to the month its Thursday falls in, the ISO way) and the clamp that
+stops any period from running past the last date in the data. Exactly the stuff
+an agent would guess differently every other time.
 
-The agent sees a tool with a name, two typed arguments and this:
+The agent gets the function as a tool: a name, two typed dates and one line of
+description.
 
 > Marketing for a period, one row per channel plus a total: spend, impressions,
 > clicks, CTR, CPC, MQLs, cost per MQL, trials started and converted,
 > trial-to-paid rate, new customers, CAC, new MRR.
 
-Its job shrinks to three steps: pick the tool, fill in the dates, and write a
-sentence around the rows that come back. There's no "let me look at the schema
-first", and no retry loop on a query that failed on a column name. The chat on
-my site caps every question at 3 model calls and 4 tool calls, and that's
-enough, because there's nothing to reason out. A small, cheap model handles
-it fine.
+That list of tools is everything it gets. It never sees the schema, and there's
+no tool to send raw SQL through. The database login behind it is read-only,
+stuck in its own schema, with a statement timeout. Pick a tool, fill in the
+dates, write a sentence around the rows. Done.
 
-The database role the chat connects as can `EXECUTE` those functions and
-`SELECT` from its own schema, nothing else, with a statement timeout and
-read-only transactions. Even if the model wanted to write SQL, there's no tool
-to send it through.
+## Basically an MCP over your DB
 
-## Does it actually stop the hallucinations?
+Named functions, typed arguments, a description each. That's what an MCP server
+exposes as tools. Mine happen to sit inside the site's chat route, but put the
+same functions behind MCP and any agent can use them.
 
-Nearly. Here are the numbers.
+They already have two callers. The site's chat runs them to answer in the
+browser. When a visitor asks for the data by email, an n8n workflow runs the
+same functions as its own database role and builds the email from the rows. One
+definition of CAC, two front doors.
 
-Four of the reports on this site have the same kind of chat: a lender's sales
-report, a SaaS marketing dashboard, a management P&L and a mining fleet report.
-Their functions are TypeScript over data the site reads from Postgres, and the
-Tidewell ones are Postgres functions. The contract is the same in both: a name,
-typed arguments, one sentence of description, rows back. Each report has a
-metric catalogue (61 metrics on [the P&L](/work/pnl-suite), 60 on the
-marketing dashboard) and an answer key: questions whose correct answers were
-worked out from the data's control totals before the chat existed.
-
-Tidewell's key isn't written yet, so it isn't in these numbers. The last eval
-run on each of the four went through the real chat loop: 222 questions, 211
-passed the automatic check. That's 95 %, for about 8 cents in model costs for the whole
-run.
-
-I read all 11 failures. Not one was an invented number. In every case the figure
-was right, or the chat correctly said the figure doesn't exist, and the grader
-tripped over the format:
-
-- "0.03 pp below plan" where the key said "−0.03 pp"
-- "$272.9m spent on A&P" where the key has the cost as −$272.9 m
-- the right figure reached through a synonym metric id
-- "ad frequency needs a window of at least 14 days, widen it to Oct 21 – Nov 3
-  and I can give you the figure" where the key expected a plain `n/a`
-
-That last one is my favourite. The rule lives in the function, so the agent
-can't fudge a 7-day number, and it says so.
-
-## This is an MCP server, more or less
-
-A set of named functions with typed arguments and a description each is exactly
-what an MCP server exposes as tools. Mine just happens to live inside a Next.js
-route. Put the same functions behind MCP and any agent that speaks it, Cursor or
-your own, gets the same closed menu.
-
-The Tidewell functions already have two callers. The site's chat runs them to
-answer in the browser. When a visitor asks for the data by email, an n8n
-workflow runs the same functions as its own database role and builds the email
-from the rows. Two front doors, one definition of CAC.
-
-Back in October I wrote about
+(Back in October I wrote about
 [a read-only MCP server that let an agent see the database](/blog/give-the-agent-eyes)
-behind a Power BI model. That one is for me, while I build: raw access, so the
-agent can read plans and table sizes. Functions are for the people who ask
-questions about the numbers. For them I want the agent in a much smaller room.
+behind a Power BI model. That one is raw access, for me, while I build.
+Functions are for the people asking questions about the numbers.)
 
-## What it costs
+## Does it work?
 
-Every question the chat can answer needs a function behind it. Ask Tidewell
-something none of its eight functions covers and it will tell you it can't,
-politely. That's the point, but a stakeholder used to ChatGPT will notice the
-walls.
+I built a few "chat with data" demos this way: a lender's sales report, a SaaS
+marketing dashboard, a [management P&L](/work/pnl-suite) and a mining fleet
+report. Each has an answer key, questions whose answers were worked out from the
+data before the chat existed, run through the real chat loop like a visitor
+would.
 
-Writing the catalogue is the actual work. The P&L alone has 61 metrics, each
-with its formula spelled out, and 63 questions in its answer key. Without the
-key I'd have no idea whether the agent picks the right metric.
+211 out of 222 right. The other 11 were format mismatches ("0.03 pp below plan"
+vs a key that said "−0.03 pp"), or the metric didn't exist for that cut and the
+chat said so and offered to adjust the ask. My favourite: asked for ad frequency
+over one week, it answered that the measure needs at least 14 days and offered a
+longer window. The rule lives in the function, so the agent can't fudge it.
 
-Descriptions need the same care as code. The tool that emails a report only runs
-when three things hold: the visitor asked for an email, typed the address
-themselves, and confirmed it after the agent read it back. The description says
-"ONLY when" in capitals and a unit test checks that the wording is still there.
+No made-up numbers.
 
-And function signatures become a contract. Rename a column and the n8n workflow
-breaks on the next run, not in the chat where you'd spot it.
+## The perks
 
-I'd still pick this every time for anything that ends up in a board pack.
-Text-to-SQL is great for exploring a database you know. For numbers someone
-will forward, the definition should be written once, by a person, and the agent
-should only be allowed to call it.
+Speed. Nothing to reason out, no query to write, run, fix and run again.
+Each question gets 3 model calls and 4 tool calls max, and a small, cheap model
+handles it fine. The whole 222-question test run cost about 8 cents. That's
+around 2,800 questions per dollar.
+
+Predictable. Same question, same function, same number. Tomorrow too, and
+for the next person who asks.
+
+You own the code. The logic sits in your database and your git repo, next to
+the rest of your SQL. Not in a prompt, not in a vendor's black box. Change a
+definition once and every agent, report and workflow that calls the function
+gets the change.
+
+You see the internals. Every answer traces back to the function it called
+and the arguments it passed. On my site each tool call even shows up in the chat
+as a card with its figures. Don't trust a number? Open the function and read it.
+
+## The catch
+
+Every question needs a function behind it. Ask Tidewell something none of its
+functions cover and it'll tell you it can't. That's the point, but people used
+to ChatGPT will notice the walls.
+
+Writing the catalogue is the real work. Every metric needs its formula spelled
+out and a test question or you'll never know if the agent picks the right one.
+Descriptions need the same care as code: the tool that emails a report only
+fires when the visitor asked, typed the address and confirmed it, and the
+description says "ONLY when" in capitals, with a unit test checking the wording
+is still there. And function signatures become a contract: rename a column and
+the n8n workflow breaks on its next run.
+
+Worth it. If you're gonna put the numbers in front of management for real
+decisions, you gotta be sure what comes out. Define the logic once, force the
+agent to use it, and you're 99% sure every metric is calculated the way it
+should be.

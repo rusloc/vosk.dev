@@ -28,6 +28,8 @@ If the text is Russian, also read `references/russian.md`. Russian has its own m
 
 If the user gave samples of their own writing, treat them as the voice spec: match sentence length distribution, contraction habits, how they open, whether they swear, how they sign off. A voice sample beats every rule in this file.
 
+**Writing for the vosk.dev owner** (their LinkedIn posts and articles, blog posts, outreach): read `references/owner-voice.md` first. It holds their own rewrites of drafts and their format feedback, and it is the voice spec: it beats every rule in this file where they disagree (choppy rhythm, slang, run-on lists, one proof number, one-paragraph LinkedIn posts).
+
 ### 2. Get the substance before you write a word
 
 Generic text is the root cause; every stylistic tell grows out of having nothing specific to say. Before drafting, make sure you have at least two of these in hand, and ask the user one short question if you have none:
@@ -118,6 +120,7 @@ Edit, don't rewrite. Mark paragraphs mentally as red (3+ markers: rewrite), yell
 
 ## References
 
+- `references/owner-voice.md`: the vosk.dev owner's rewrite samples and format feedback, verbatim, with what they teach. Read first for anything published under the owner's name; it grows as new samples come in.
 - `references/anti-patterns.md`: the full catalogue (vocabulary tiers, stock phrases, contrast forms, structure, punctuation, formatting, meta leaks) with examples and before/after pairs. Read when editing a draft or when unsure whether something is a tell.
 - `references/formats.md`: what good looks like for each of the three formats, with examples. Read the relevant section every time.
 - `references/russian.md`: Russian-specific markers and the rules that invert. Read for any Russian text.

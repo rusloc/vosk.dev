@@ -9,6 +9,20 @@
 
 # Backlog
 
+## New on 11-18
+
+- **Google Analytics added to the site** (owner, 11-18) = Goal B go-live: code since 07-09, needs the GA4 + GTM ids and
+  `NEXT_PUBLIC_GTM_ID` in Vercel; steps in `plan-2026-11-18.md` Today 1. Privacy page first or with it.
+
+## New on 11-15
+
+- **AI automation showcase on n8n** (owner, 11-15): two flows on the demo inbox n8n.opc@gmail.com (invoices to a sheet;
+  finance requests to a tracker), public "Try it". Spec `docs/automation/README.md` (D1 answered, D4 = hosted n8n on
+  Hostinger; D2, D3, D5 and the 11-15 review decisions open). Bluehost dropped: it cancelled the account.
+- **Privacy page on vosk.dev** (`/privacy` 404): before the public inbox demo goes live.
+- **ACME report labels** to the accounting and invoicing client (the showcase's client line since 11-15).
+- **Nordmark:** `nordmark_demo` + Ask AI + 97-row key built, waiting on the owner's load and Vercel env; Power BI link pending.
+
 ## New on 11-03
 
 - ⏸ **CLAUDE.md → md doorway + Neo4j rule/decision graph** (owner's brief 11-03 19:37; parked 19:57, "not a
@@ -535,7 +549,7 @@ _Left 10-18 → 10-20:_ ~~the new post's links (T.10)~~ ✅ · ~~the `qbo` tenan
 ## Goals
 
 - **Goal A: stand up Superset.** Unchanged since 07-31. `bi.vosk.dev` must resolve before first boot.
-- **Goal B: GA + Tag Manager go-live.** Code done since 07-09; ~15 min once the IDs exist. ⚠️ It's
+- ◐ _(11-18: on the day list, `plan-2026-11-18.md` Today 1)_ **Goal B: GA + Tag Manager go-live.** Code done since 07-09; ~15 min once the IDs exist. ⚠️ It's
   the cheapest route to T.4's unmeasured posts.
 - **Goal C: the lead funnel.** ~~Phases 0–3 live since 08-28; paused 09-23.~~ **Terminated 10-20** by
   the owner. Leads are tracked by hand.

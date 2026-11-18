@@ -9,7 +9,15 @@ Facts used, all from the repo:
 - `src/lib/ceo-digest/chat-tools.ts`: the tool descriptions.
 - `src/lib/chat/run-chat.ts`: 3 model calls and 4 tool calls per question.
 - The eval reports in `.log/report/`, one run per report: marketing 56/58, Mirelo 49/50, P&L 58/63, trucks 48/51.
-  That is 211/222 for $0.0776. All 11 failures were read: none is an invented figure.
+  That is 211/222 for $0.0776 (about 0.035 cents a question, about 2,800 questions per dollar). All 11 failures were
+  read: format mismatches, or the asked metric doesn't exist and the chat offered to adjust the request.
+
+Owner's rules for these texts (11-17):
+- Voice: the owner's informal, choppy register. Their own sentences stay as they wrote them, spelling fixed.
+- Test results: only "211 out of 222" and "the other 11" appear. No per-report scores, no percentages, no answer-key
+  sizes, no count of reports with keys.
+- Price: about 8 cents for the whole test run, about 2,800 questions per dollar, a small cheap model. The model and the
+  vendor are not named.
 
 Owner to-dos (the article's `###` lines are its section headings: set them as headings in LinkedIn's editor):
 - Put the LinkedIn article's URL into the post (the `[LINK]` line).
@@ -19,19 +27,13 @@ Owner to-dos (the article's `###` lines are its section headings: set them as he
 
 ## 1. LinkedIn post (plain text, paste as is)
 
-Ask a data chat for last quarter's cost per click across all channels and watch what it does.
+I found out an interesting way to make AI data agent be more precise and cut hallucinations to nearly zero. 
 
-If the agent writes its own SQL, it divides total spend by total clicks. In my demo data only two of five channels have clicks at all, so the number comes out inflated. It still looks like a CPC, the query runs, and the agent explains it with confidence.
+Don't let it write SQL. 
 
-That's the hallucination that worries me with data agents, because a made-up customer gets caught quickly and a made-up definition can sit in a monthly report for a year.
+Wrap every metric in a SQL function, describe it in one line, give the agent those functions as tools. Basically an MCP over your DB. My "chat with data" demos got 211 of 222 test questions right this way. And the perks pile up: fast (no reasoning, no query writing, just call and answer), predictable (same question, same function, same number), the code is yours (it lives in your DB, not in a prompt), and every answer traces back to the exact function and logic behind it.
 
-So my chats don't write SQL. Every metric is a function, every function has one sentence of description, and that list is all the agent sees. It picks a function, fills in the dates, and writes a sentence around the rows that come back.
-
-I tested it on four report chats: 222 questions with answers worked out in advance. 211 passed the automatic check, for about 8 cents of model time in total. I read the 11 that failed. None had an invented number. They were things like "0.03 pp below plan" against a key that said "−0.03 pp".
-
-The catch: every question needs a function behind it, and the chat says no to anything outside the list. I'm fine with that for numbers that end up in a board pack.
-
-The full write-up has the SQL function, its tool description and the list of failures: [LINK]
+Full write-up with the SQL function and the tool description: [LINK]
 
 #AI #SQL #DataAnalytics
 
@@ -41,37 +43,37 @@ The full write-up has the SQL function, its tool description and the list of fai
 
 Title: Don't let the agent write the SQL
 
-Subtitle (optional): Metrics as functions: an AI data chat that doesn't guess definitions
+Subtitle (optional): SQL functions as tools: no made-up numbers, and a few perks on top
 
-Ask a data chat for last quarter's cost per click across all channels. If the agent writes its own SQL, it will most likely run sum(spend) / sum(clicks) over the marketing table. In my demo company only paid search and paid social have clicks; the other three channels have spend and no clicks. So the agent's CPC is inflated, and it looks perfectly normal.
+Data agents make stuff up. Not always. Just often enough that you can't put the answer in front of management without checking it yourself, which kinda kills the point.
 
-That's the kind of hallucination I worry about with data agents. A customer that doesn't exist gets caught quickly. A wrong definition doesn't, because the query runs and the number lands in a believable range.
+Most of it comes from one habit: the agent writes its own SQL. It looks at the schema, guesses what CPC means, divides all spend by all clicks. In my demo data only 2 channels out of 5 even have clicks. Wrong number. Looks totally fine. The query ran, so nobody asks.
 
-### What I do instead
+### Take the SQL away
 
-Every metric lives in a database function. The function holds the definition, written once, by me: CPC on the total row is paid spend divided by paid clicks; a week belongs to the month its Thursday falls in; no period runs past the last date in the data. Each function gets one sentence of description, for example:
+So my agents don't write SQL. At all.
 
-"Marketing for a period, one row per channel plus a total: spend, impressions, clicks, CTR, CPC, MQLs, cost per MQL, trials started and converted, trial-to-paid rate, new customers, CAC, new MRR."
+Every metric is a function in the database. The definition lives there, written once, by me: which channels count for CPC, which month a week belongs to, where the data ends. Each function gets one line of description, like "Marketing for a period, one row per channel plus a total: spend, clicks, CPC, CAC, new customers…". That list is everything the agent gets. Pick a function, fill in the dates, write a sentence around the rows. Done.
 
-The agent gets these functions as tools and nothing else. It never sees the schema. Its database login can execute the functions and read its own schema, read-only, with a statement timeout.
+Basically an MCP over your DB. Named functions, typed arguments, a description each. Any agent can call them, and in my demo an n8n workflow calls the same ones to email the report. One definition of CAC, two front doors.
 
-That changes what the model has to do. It doesn't explore tables or write a query and fix it when it fails. It picks a tool, fills in two dates and writes a sentence around the rows. My chats cap each question at 3 model calls and 4 tool calls, and a small, cheap model is enough.
+And it works. I built a few "chat with data" demos this way. 211 out of 222 test questions right. The other 11 were format mismatches, or the metric didn't exist and the chat said so and offered to adjust the ask. No made-up numbers.
 
-### The numbers
+### The perks
 
-Four reports on my site have chats built this way: a lender's sales report, a SaaS marketing dashboard, a management P&L and a mining fleet report. Each has an answer key, questions with answers worked out from the data before the chat existed. The last run of each, through the real chat loop: 222 questions, 211 passed the automatic check, about 8 cents of model costs in total.
+Speed. Nothing to reason out, no query to write and fix. Each question gets 3 model calls and 4 tool calls max, and the whole test run cost about 8 cents on a small model. That's around 2,800 questions per dollar.
 
-I read all 11 failures. None was an invented number. Either the figure was right and the grader disagreed with the format (a minus sign, a synonym for the metric's name), or the chat correctly said the figure doesn't exist. One example: asked for a 7-day ad frequency, it answered that the measure needs at least 14 days and offered the nearest valid window.
+Predictable. Same question, same function, same number. Tomorrow too.
 
-### It's an MCP server, more or less
+You own the code. The logic sits in your database and your git repo. Not in a prompt, not in a vendor's black box. Change a definition once and every agent, report and workflow that calls it gets the change.
 
-Named functions with typed arguments and a description each are what an MCP server exposes as tools. In my demo the same functions have two callers: the chat on the site and an n8n workflow that emails the same data on request. Two front doors, one definition of CAC.
+You see the internals. Every answer traces back to the function it called and the arguments it used. Don't trust a number? Open the function and read it.
 
-### What it costs
+### The catch
 
-Every answerable question needs a function behind it, and the chat refuses anything outside the list. Writing the metric catalogue is most of the work: the P&L alone has 61 metrics and a 63-question answer key. Descriptions need the same care as code, because they decide when a tool gets called. And function signatures become a contract that other workflows depend on.
+Every question needs a function behind it. Ask something outside the list and the chat says no. Writing the catalogue is the real work, and descriptions need the same care as code.
 
-Text-to-SQL is fine for exploring a database you know. For numbers someone will forward to the board, I want the definition written once and the agent only allowed to call it.
+Worth it though. If you're gonna put the numbers in front of management for real decisions, you gotta be sure what comes out. Define the logic once, force the agent to use it, and you're 99% sure every metric is calculated the way it should be.
 
-The full version, with the SQL function, the tool description, the failure list and a live demo chat you can try, is on my site:
+The long version, with the SQL function and a live demo chat to try:
 https://vosk.dev/blog/metric-functions-for-ai-agents

@@ -238,6 +238,14 @@ repo's own trail; it appears here only when it touches the shared Supabase proje
 - **Derive counters, never increment them.** Ages and tallies ("Nth day untracked", "Nth board survived") must be computed from a stated origin date/commit each time they're written. A restated number is never re-derived and always drifts — it has three times in this trail.
 - **A session that crosses midnight logs each commit to its own date, and does not close the new day.** Closing a day that is 20 minutes old leaves the calendar day with a closed daily and no plan, and pushes every board counter a day ahead.
 
+## Writing voice (owner, 2026-11-17)
+
+- **Keep analyzing the owner's writing style** from `.log/coms/` and their chat prompts, and keep picking samples into
+  the `text-writer` skill: `.claude/skills/text-writer/references/owner-voice.md`. Add a dated sample whenever the owner
+  rewrites a draft, rejects a phrasing, or gives format feedback ("too long", "unhuman", "punchy"): the original line,
+  their version verbatim, and one line on what it teaches. Update "What the samples teach" when a pattern repeats.
+- Anything published under the owner's name (LinkedIn, blog, outreach) goes through the `text-writer` skill and that file.
+
 ## Core coding rules
 
 1. **Think before coding** — state assumptions, surface tradeoffs, ask when genuinely unclear. Don't pick silently between real alternatives.

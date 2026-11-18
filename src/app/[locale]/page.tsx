@@ -5,6 +5,7 @@ import { CodeTyper } from "@/components/code-typer";
 import { HeroButton } from "@/components/hero-button";
 import { JsonLd } from "@/components/json-ld";
 import { homeGraph } from "@/lib/structured-data";
+import { ga } from "@/lib/analytics";
 import { buildMetadata } from "@/lib/metadata";
 import { isLocale, localizedPath, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -45,10 +46,15 @@ export default async function Home({ params }: Props) {
           </p>
 
           <div className="mt-10 flex flex-wrap items-center gap-4">
-            <HeroButton href={localizedPath(l, "/work")} label={t.cta} />
+            <HeroButton
+              href={localizedPath(l, "/work")}
+              label={t.cta}
+              ga={ga("cta_click", undefined, "work")}
+            />
             <HeroButton
               href={localizedPath(l, "/services")}
               label={t.ctaSecondary}
+              ga={ga("cta_click", undefined, "services")}
             />
           </div>
         </div>

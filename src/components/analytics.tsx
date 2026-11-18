@@ -34,7 +34,12 @@ function writeConsent(choice: Consent) {
  * loaded (unset id or declined consent): the push sits in `dataLayer`, unsent.
  */
 export function trackLead() {
-  gtag("event", "generate_lead");
+  trackEvent("generate_lead");
+}
+
+/** A GA4 event that is not a click (clicks go through `data-ga`, `src/lib/analytics.ts`). */
+export function trackEvent(name: string, params?: Record<string, string>) {
+  gtag("event", name, params);
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function gtag(..._args: unknown[]) {

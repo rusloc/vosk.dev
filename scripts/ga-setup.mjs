@@ -68,7 +68,7 @@ const step = async (label, fn) =>
     ? (await fn(), console.log(`done  ${label}`))
     : console.log(`plan  ${label}`);
 
-// ---- Tag Manager: one Google tag for the GA4 stream, then a published version ----
+// ---- Tag Manager: the Google tag, click tracking for `data-ga` (src/lib/analytics.ts), a published version ----
 const GTM = "https://tagmanager.googleapis.com/tagmanager/v2";
 const { account = [] } = await call("GET", `${GTM}/accounts`);
 let container;
@@ -88,41 +88,123 @@ const { workspace = [] } = await call(
   `${GTM}/${container.path}/workspaces`,
 );
 const ws = workspace[0];
-const { tag: tags = [] } = await call("GET", `${GTM}/${ws.path}/tags`);
-const hasGoogleTag = tags.some(
-  (t) =>
-    t.type === "googtag" &&
-    t.parameter?.some(
-      (p) => p.key === "tagId" && p.value === GA_MEASUREMENT_ID,
-    ),
-);
 console.log(
-  `gtm   ${GTM_PUBLIC_ID} (${container.path}), workspace "${ws.name}", ${tags.length} tag(s)`,
+  `gtm   ${GTM_PUBLIC_ID} (${container.path}), workspace "${ws.name}"`,
 );
-if (hasGoogleTag) console.log(`ok    Google tag ${GA_MEASUREMENT_ID} present`);
+// Create-if-missing by name. A changed body under an existing name is not updated: edit it in GTM or rename.
+let changed = false;
+async function ensure(kind, key, body) {
+  const { [key]: items = [] } = await call("GET", `${GTM}/${ws.path}/${kind}`);
+  const found = items.find((x) => x.name === body.name);
+  if (found) return (console.log(`ok    ${kind} "${body.name}"`), found);
+  changed = true;
+  if (!apply) return (console.log(`plan  create ${kind} "${body.name}"`), {});
+  const made = await call("POST", `${GTM}/${ws.path}/${kind}`, body);
+  console.log(`done  create ${kind} "${body.name}"`);
+  return made;
+}
+const T = (key, value) => ({ type: "TEMPLATE", key, value });
+
+await ensure("tags", "tag", {
+  name: `Google tag - ${GA_MEASUREMENT_ID}`,
+  type: "googtag",
+  parameter: [T("tagId", GA_MEASUREMENT_ID)],
+  firingTriggerId: [INIT_ALL_PAGES],
+  tagFiringOption: "ONCE_PER_EVENT",
+});
+
+// Click tracking: the nearest [data-ga] ancestor of the clicked element names the event.
+const { builtInVariable = [] } = await call(
+  "GET",
+  `${GTM}/${ws.path}/built_in_variables`,
+);
+if (
+  builtInVariable.some(
+    (b) => b.type.replace(/_/g, "").toLowerCase() === "clickelement",
+  )
+)
+  console.log("ok    built-in variable Click Element");
 else {
-  await step(
-    `create Google tag ${GA_MEASUREMENT_ID} on Initialization - All Pages`,
-    () =>
-      call("POST", `${GTM}/${ws.path}/tags`, {
-        name: `Google tag - ${GA_MEASUREMENT_ID}`,
-        type: "googtag",
-        parameter: [
-          { type: "TEMPLATE", key: "tagId", value: GA_MEASUREMENT_ID },
-        ],
-        firingTriggerId: [INIT_ALL_PAGES],
-        tagFiringOption: "ONCE_PER_EVENT",
-      }),
+  changed = true;
+  await step("enable built-in variable Click Element", () =>
+    call("POST", `${GTM}/${ws.path}/built_in_variables?type=clickElement`),
   );
 }
+const attrVar = (name, attr) => ({
+  name,
+  type: "jsm",
+  parameter: [
+    T(
+      "javascript",
+      `function () {\n  var el = {{Click Element}};\n  el = el && el.closest ? el.closest('[data-ga]') : null;\n  return el ? el.getAttribute('${attr}') || undefined : undefined;\n}`,
+    ),
+  ],
+});
+await ensure("variables", "variable", attrVar("CJS - ga event", "data-ga"));
+await ensure("variables", "variable", attrVar("CJS - ga id", "data-ga-id"));
+await ensure("variables", "variable", attrVar("CJS - ga type", "data-ga-type"));
+const trigger = await ensure("triggers", "trigger", {
+  name: "Click - data-ga",
+  type: "click",
+  filter: [
+    {
+      type: "cssSelector",
+      parameter: [
+        T("arg0", "{{Click Element}}"),
+        T("arg1", "[data-ga], [data-ga] *"),
+      ],
+    },
+  ],
+});
+const param = (name, value) => ({
+  type: "MAP",
+  map: [T("parameter", name), T("parameterValue", value)],
+});
+await ensure("tags", "tag", {
+  name: "GA4 event - data-ga click",
+  type: "gaawe",
+  parameter: [
+    T("measurementIdOverride", GA_MEASUREMENT_ID),
+    T("eventName", "{{CJS - ga event}}"),
+    {
+      type: "LIST",
+      key: "eventSettingsTable",
+      list: [
+        param("content_id", "{{CJS - ga id}}"),
+        param("content_type", "{{CJS - ga type}}"),
+      ],
+    },
+  ],
+  firingTriggerId: [trigger.triggerId ?? "<new trigger>"],
+  tagFiringOption: "ONCE_PER_EVENT",
+});
+
+// After a GA4 event tag appears, GTM adds a hidden `dest_ga` tag and copies of the Google tag's settings
+// (gtag configs) on its own. The `dest_ga` tag makes create_version fail with a bare compilerError (11-18),
+// and the settings live on the GA side anyway (gtag/js?id=G-… carries them): drop both from the workspace.
+if (apply && changed) await new Promise((r) => setTimeout(r, 5000)); // let them land first
+const { tag: allTags = [] } = await call("GET", `${GTM}/${ws.path}/tags`);
+const { gtagConfig = [] } = await call("GET", `${GTM}/${ws.path}/gtag_config`);
+for (const x of [
+  ...allTags.filter((t) => t.type === "dest_ga"),
+  ...gtagConfig,
+]) {
+  changed = true;
+  await step(`remove auto-added ${x.type} "${x.name ?? x.gtagConfigId}"`, () =>
+    call("DELETE", `${GTM}/${x.path}`),
+  );
+}
+
 const status = await call("GET", `${GTM}/${ws.path}/status`);
-if (!hasGoogleTag || status.workspaceChange?.length) {
+if (changed || status.workspaceChange?.length) {
   await step("create and publish a container version", async () => {
     const v = await call("POST", `${GTM}/${ws.path}:create_version`, {
-      name: `ga-setup ${new Date().toISOString().slice(0, 10)}`,
+      name: `ga-setup ${new Date().toISOString().slice(0, 16)}`,
     });
     if (v.compilerError)
-      throw new Error("GTM compiler error: version not created");
+      throw new Error(
+        "GTM compiler error: version not created (an auto-added entity may have landed late: re-run)",
+      );
     await call("POST", `${GTM}/${v.containerVersion.path}:publish`);
   });
 } else console.log("ok    workspace has nothing unpublished");

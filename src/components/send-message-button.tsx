@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { ContactForm } from "@/components/contact-form";
+import { ga } from "@/lib/analytics";
 import styles from "./cta-button.module.css";
 
 /**
@@ -57,6 +58,7 @@ export function SendMessageButton({
           setOpen(true);
         }}
         className={cn(styles.cta, className)}
+        {...ga("contact_open")}
       >
         {label ?? dict.sendDialog.open}
       </a>

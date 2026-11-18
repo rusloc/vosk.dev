@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import type { GaAttrs } from "@/lib/analytics";
 import styles from "./cta-button.module.css";
 
 const SIZE_CLASS = {
@@ -29,6 +30,7 @@ export function ReportDialog({
   trigger,
   size = "full",
   defaultOpen = false,
+  ga,
   children,
 }: {
   label: string;
@@ -46,6 +48,8 @@ export function ReportDialog({
   size?: "full" | "panel" | "wide";
   /** Open as soon as it mounts: the report's chat when the page's Ask AI opened the report (11-06). Client-mounted only. */
   defaultOpen?: boolean;
+  /** GA click event on the trigger (`src/lib/analytics.ts`). */
+  ga?: GaAttrs;
   /** The popup content; a function gets `close`, for content that closes its own popup (the chat's "Open in report"). */
   children: ReactNode | ((close: () => void) => ReactNode);
 }) {
@@ -99,6 +103,7 @@ export function ReportDialog({
             setOpen(true);
           }}
           className={styles.cta}
+          {...ga}
         >
           {label}
         </a>
@@ -107,6 +112,7 @@ export function ReportDialog({
           type="button"
           onClick={() => setOpen(true)}
           className={trigger?.className ?? styles.cta}
+          {...ga}
         >
           {trigger?.content ?? label}
         </button>

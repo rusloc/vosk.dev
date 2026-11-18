@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { trackEvent } from "@/components/analytics";
 
 /**
  * The AI chat inside its popup (ADR-0005, 11-06). The visitor asks anything; the answer streams from the report's
@@ -93,6 +94,10 @@ export function ChatPanel({
     ]);
     setInput("");
     setBusy(true);
+    // The count only: the question's text never goes to GA.
+    trackEvent("chat_question", {
+      content_id: endpoint.split("/").pop() ?? "",
+    });
     const controller = new AbortController();
     abort.current = controller;
 

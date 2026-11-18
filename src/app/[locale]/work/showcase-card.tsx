@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { LocalizedShowcase } from "@/lib/work";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
+import { ga } from "@/lib/analytics";
 import { FlowMock, ReportMock } from "./report-mock";
 import titleStyles from "../blog/title-bar.module.css";
 
@@ -35,6 +36,7 @@ export function ShowcaseCard({
             <Link
               href={href}
               className="hover:text-primary relative transition-colors"
+              {...ga("select_content", slug, "showcase")}
             >
               {title}
             </Link>
@@ -61,6 +63,7 @@ export function ShowcaseCard({
       <Link
         href={href}
         aria-label={`Open “${title}”`}
+        {...ga("select_content", slug, "showcase")}
         className="bg-foreground text-background inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center self-start rounded-full transition-opacity hover:opacity-90"
       >
         <svg

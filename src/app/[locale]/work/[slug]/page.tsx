@@ -18,6 +18,7 @@ import { ChatPanel } from "@/components/chat/chat-panel";
 import { SalesDashboardLazy } from "@/components/sales-dashboard-lazy";
 import { SupersetEmbed } from "@/components/superset-embed";
 import { getPostBySlug } from "@/lib/content";
+import { ga } from "@/lib/analytics";
 import { buildMetadata } from "@/lib/metadata";
 import { getSalesDashboardData } from "@/lib/sales-dashboard";
 import { breadcrumbGraph, showcaseGraph } from "@/lib/structured-data";
@@ -221,6 +222,7 @@ export default async function ShowcasePage({ params }: Props) {
             closeLabel={t.closeReport}
             trigger={askAiTrigger(t.askAi)}
             size="wide"
+            ga={ga("chat_open", slug)}
           >
             <div className="flex h-full">
               <div className="bg-muted hidden min-w-0 flex-1 flex-col items-center justify-center gap-5 p-10 lg:flex">
@@ -246,6 +248,7 @@ export default async function ShowcasePage({ params }: Props) {
             label={t.openWorkflow}
             title={`${title} — ${PLATFORM_LABEL.automation}`}
             closeLabel={t.closeReport}
+            ga={ga("report_open", slug, "n8n_workflow")}
           >
             <N8nWorkflow
               flow={showcase.workflow}
@@ -260,6 +263,7 @@ export default async function ShowcasePage({ params }: Props) {
             title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
             closeLabel={t.closeReport}
             href={showcase.powerBi.href}
+            ga={ga("report_open", slug, "power_bi")}
           >
             <iframe
               src={showcase.powerBi.embedUrl}
@@ -277,6 +281,11 @@ export default async function ShowcasePage({ params }: Props) {
             title={reportTitle}
             closeLabel={t.closeReport}
             href={showcase.platform === "power-bi" ? showcase.href : undefined}
+            ga={ga(
+              "report_open",
+              slug,
+              showcase.platform === "power-bi" ? "power_bi" : "web_report",
+            )}
             openOnQuery={
               showcase.platform === "js"
                 ? REPORT_QUERY_KEYS[showcase.report]
@@ -323,6 +332,7 @@ export default async function ShowcasePage({ params }: Props) {
             title={reportTitle}
             closeLabel={t.closeReport}
             trigger={askAiTrigger(t.askAi)}
+            ga={ga("chat_open", slug)}
           >
             <JsReportLazy report={chatReport} chat chatOpen />
           </ReportDialog>
@@ -436,6 +446,7 @@ export default async function ShowcasePage({ params }: Props) {
                   <Link
                     href={localizedPath(l, `/work/${r.slug}`)}
                     className="text-primary font-medium hover:underline"
+                    {...ga("select_content", r.slug, "related_showcase")}
                   >
                     {r.title}
                   </Link>

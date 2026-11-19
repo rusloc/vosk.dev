@@ -134,6 +134,8 @@ src/
   components/     → shared UI (nav, footer, cards, contact-form, mdx-components, primitives)
   lib/            → content.ts (MDX seam), work.ts (showcase registry), schema.ts (Zod), env.ts, site.ts, metadata.ts
   lib/pnl/        → the P&L showcase's engine, loader and state (framework-free); components/pnl/ its UI
+  fonts/          → self-hosted woff2 for next/font/local, built by scripts/fonts-build.py (OFL). Never next/font/google:
+                    its build-time download failed 3 of 5 production builds on 11-18
 content/
   blog/*.mdx      → articles
 data/             → synthetic demo warehouses as plain SQL: P&L (Superset), sales/ (Cube); <report>/parquet + checks + sql for the JS reports

@@ -34,19 +34,6 @@ export const en = {
     h1: "Freelance Power BI and Microsoft Fabric consultant",
     proofDp600: "Microsoft DP-600 certified",
     proofHours: "EU and UK hours",
-    servicesTitle: "Services",
-    casesTitle: "Case studies",
-    casesAll: "All case studies",
-    pricingTitle: "Monthly support plans",
-    pricingBody:
-      "Or a fixed-scope project, or one urgent fix before a deadline.",
-    pricingLink: "All services & prices",
-    postsTitle: "From the blog",
-    postsAll: "All posts",
-    contactTitle: "Got data that should be a report?",
-    contactBody:
-      "Tell me what you need to see and where the data lives, and I'll tell you what it would take.",
-    contactLink: "Get in touch",
     // Headline is split so the two emphasized words can be styled; word order
     // differs per language, hence the five parts.
     headline: {

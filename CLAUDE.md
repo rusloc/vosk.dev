@@ -85,6 +85,15 @@ and roles are plain Postgres, so a move is a connection-string change.
 - **Domain**: `vosk.dev`.
 - **Canonical site URL at runtime**: `NEXT_PUBLIC_SITE_URL` env var — never hard-code the domain in code.
 
+## Landing page — clean, no scroll (owner, 2026-11-19)
+
+- **The home page is the hero and nothing else**: the topical H1 line, the headline, the lede, the two buttons
+  (Work, Services) and the proof bar. It fits the screen with **no scrolling** on desktop, laptop and phone.
+- **No sections below the hero.** Case studies, prices, posts, service cards and contact blocks belong on their own pages
+  (/work, /services, /blog, /contact), even when an SEO spec asks for them on the home page (spec T-03 was rolled back
+  on 11-19). Anything added to the hero must still fit the screen; check it in a headless browser at 1440×900,
+  1366×768 and 390×844 before shipping.
+
 ## Stack — the site
 
 - **Next.js (App Router)** + **TypeScript strict** + **Tailwind CSS**, deployed on **Vercel**.

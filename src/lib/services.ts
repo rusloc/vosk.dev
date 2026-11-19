@@ -10,7 +10,7 @@ import { showcases, type Showcase } from "./work";
  * the visible strings from there; a title that names a price builds it from the same dictionary.
  *
  * `draft: true`: the page builds and is reachable (preview deploys), but it is `noindex, follow` and stays out of the
- * sitemap, the nav, the footer, the home page and the /services hub. The owner flips it after approving the copy.
+ * sitemap, the nav, the footer and the /services hub. The owner flips it after approving the copy.
  *
  * Server-only in effect: it reads the post files and the showcase registry.
  */
@@ -199,7 +199,7 @@ export function getService(slug: string): ServiceEntry | undefined {
   return services.find((s) => s.slug === slug);
 }
 
-/** Service pages that may be linked from the nav, the footer, the home page and the hub, and listed in the sitemap. */
+/** Service pages that may be linked from the nav, the footer and the hub, and listed in the sitemap. */
 export function getPublishedServices(): ServiceEntry[] {
   return services.filter((s) => !s.draft);
 }

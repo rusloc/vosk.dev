@@ -1,15 +1,15 @@
 ---
 name: hot-spots
-description: Files that came up repeatedly in vosk.dev reviews (per-report plumbing, showcase page, chat-tools, nav) so the next run reads them first
+description: Files that came up repeatedly in vosk.dev reviews (showcase page, chat-tools, report apps, client env imports) so the next run reads them first
 metadata:
   type: project
 ---
 
-First seen 2026-11-18:
-- `src/app/[locale]/work/[slug]/page.tsx` (462 lines): hand-kept chat list, every report button, SEO JSON-LD.
-- Per-report plumbing, copied per report: `src/app/api/<report>/[...path]/route.ts`, `src/lib/<report>/server.ts`, `src/lib/<report>/artifacts.ts`, `src/lib/<report>/data/loader.ts`, `scripts/<report>-load.ts`. A new report adds copy n+1.
-- `src/lib/<report>/chat-tools.ts` (352-963 lines): closure factories + system prompts.
-- `src/components/nav.tsx` + `src/lib/site.ts` + `src/lib/env.ts`: client bundle weight on every page.
+- `src/app/[locale]/work/[slug]/page.tsx` (480 lines at 11-19, growing each feature): every report button, data chat, JSON-LD; its static client imports set the JS of all 11 showcase pages. Raised 11-18 (L2) and 11-19 (S3, B4).
+- `src/lib/<report>/chat-tools.ts` (324-845-line factories): B1 both runs.
+- `src/components/<report>/*-app.tsx` and `pnl/shell.tsx`: Board components 300-500 lines; load + chat now shared (`report-load.ts`, `chat/report-chat.tsx`).
+- Client modules importing config: `superset-embed.tsx` -> `lib/env.ts` (11-19); nav -> site.ts was S1 (fixed 11-18). Grep every run.
+- Per-report plumbing is now thin (11-18 cleanup): routes and server.ts are 14-18 lines each over `src/lib/report-data/`; a new report adds a route, server.ts, artifacts.ts and a load script that call it.
 - `src/lib/structured-data.ts`, `src/lib/metadata.ts`, `src/lib/i18n/en.ts`: the SEO pass edits these.
 
 Related: [[open-findings]]

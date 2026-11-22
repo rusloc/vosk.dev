@@ -25,7 +25,7 @@ export default function OpengraphImage() {
         VOSK
       </div>
       <div style={{ fontSize: 44, fontWeight: 600, marginTop: 8 }}>
-        Freelance BI Analyst &amp; Developer
+        Power BI &amp; Fabric Consultant
       </div>
       <div style={{ fontSize: 30, marginTop: 28, color: "#6f6a5f" }}>
         Dashboards, data pipelines &amp; analytics that turn raw data into

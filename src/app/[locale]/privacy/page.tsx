@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const l = resolveLocale(locale);
   const t = getDictionary(l).privacy;
-  // A legal page, not a search target: reachable from every footer, kept out of the index and the sitemap.
+  // A legal page, not a search target: reachable from the consent card and the ad landing pages, kept out of the index and the sitemap.
   return buildMetadata({
     title: t.title,
     description: t.metaDescription,

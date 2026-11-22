@@ -16,13 +16,14 @@
 @media (min-width: 900px) {
   :global(html):has(.root) {
     --u: min(calc(100vw / 1440), calc(100vh / 810));
+    /* Content column 1120 (was the design's 1280): more free space around every view (owner, 11-22). */
     --x0: max(
       calc(var(--u) * 24),
-      calc((100vw - var(--u) * 1280) / 2 + var(--u) * 24)
+      calc((100vw - var(--u) * 1120) / 2 + var(--u) * 24)
     );
     --xr: max(
       calc(var(--u) * 128),
-      calc((100vw - var(--u) * 1280) / 2 + var(--u) * 24)
+      calc((100vw - var(--u) * 1120) / 2 + var(--u) * 24)
     );
     scroll-snap-type: y mandatory;
   }
@@ -984,14 +985,19 @@
   transition:
     transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
     border-color 0.3s,
-    background 0.3s;
+    background 0.3s,
+    box-shadow 0.3s;
 }
 
+/* The highlighted card glows (owner, 11-22). */
 .stair:hover,
 .stair:focus-within {
   transform: translateY(calc(var(--u) * -6));
   border-color: #ffa63d;
   background: rgba(255, 166, 61, 0.1);
+  box-shadow:
+    0 0 calc(var(--u) * 36) calc(var(--u) * 2) rgba(255, 166, 61, 0.38),
+    0 0 calc(var(--u) * 10) rgba(255, 166, 61, 0.45);
 }
 
 .tierHead {
@@ -1063,6 +1069,11 @@
 .msNote strong {
   color: #fff8e7;
   font-weight: 600;
+}
+
+.msNote .free strong {
+  color: #ffa63d;
+  font-weight: 700;
 }
 
 /* ---- 04 contact ---- */
@@ -1164,14 +1175,31 @@
 
   .lbk {
     flex: 0 0 50%;
-    padding: calc(var(--u) * 26) calc(var(--u) * 56) calc(var(--u) * 150)
+    padding: calc(var(--u) * 32) calc(var(--u) * 56) calc(var(--u) * 150)
       var(--x0);
   }
 
   .rbk {
     flex: 1 1 0;
-    padding: calc(var(--u) * 26) var(--xr) calc(var(--u) * 40)
+    padding: calc(var(--u) * 32) var(--xr) calc(var(--u) * 40)
       calc(var(--u) * 112);
+  }
+
+  /* Views 2 and 3 sit in the middle of the screen, clear of the header and of the CTA row (owner, 11-22). */
+  .secHead {
+    padding-top: calc(var(--u) * 40);
+    padding-bottom: calc(var(--u) * 18);
+  }
+
+  .ms {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .msBody {
+    padding-top: calc(var(--u) * 24);
+    padding-bottom: calc(var(--u) * 120);
   }
 
   .seam {

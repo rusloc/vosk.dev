@@ -126,8 +126,8 @@ function Arrow() {
 }
 
 /**
- * The pill "Message" button with its two pulsing rings, and "FREE initial call" beside it.
- * `dark` = the ink version for orange backgrounds.
+ * The pill "Message" button with its two pulsing rings, and "See all services & pricing" beside it (owner, 11-22: the
+ * link moved here, "FREE initial call" went to the note on the right). `dark` = the ink version for orange backgrounds.
  */
 function MessageButton({
   dark,
@@ -154,14 +154,21 @@ function MessageButton({
           </span>
         </Link>
       </span>
-      <span className={`${s.free} ${dark ? s.freeInk : ""}`}>
-        <strong>FREE</strong> initial call
-      </span>
+      <ServicesLink ink={dark} />
     </div>
   );
 }
 
-/** "See all services & pricing", the note link at the bottom right of a section. */
+/** "FREE initial call", the note at the bottom right of a section. */
+function Free({ ink }: { ink?: boolean }) {
+  return (
+    <span className={`${s.free} ${ink ? s.freeInk : ""}`}>
+      <strong>FREE</strong> initial call
+    </span>
+  );
+}
+
+/** "See all services & pricing", beside each Message button. */
 function ServicesLink({ ink }: { ink?: boolean }) {
   return (
     <Link href="/services" className={`${s.noteLink} ${ink ? s.inkLink : ""}`}>
@@ -320,7 +327,7 @@ export function FabricLanding() {
           </div>
         </div>
         <p className={s.note}>
-          <ServicesLink />
+          <Free />
         </p>
         <MessageButton />
       </section>
@@ -377,7 +384,7 @@ export function FabricLanding() {
               ))}
             </ul>
             <p className={`${s.note} ${s.in}`}>
-              <ServicesLink ink />
+              <Free ink />
             </p>
           </div>
         </div>
@@ -467,7 +474,7 @@ export function FabricLanding() {
             Have an ongoing project or starting a new one? Monthly capacity from{" "}
             <strong>$1,500</strong>.
           </span>{" "}
-          <span aria-hidden="true">|</span> <ServicesLink />
+          <span aria-hidden="true">|</span> <Free />
         </p>
         <MessageButton />
       </section>
@@ -484,9 +491,9 @@ export function FabricLanding() {
             state the task, I deliver.
           </p>
         </div>
-        {/* The design's 11-20 update ends on the services link; Privacy stays beside it (ads policy). */}
+        {/* Privacy stays beside the note (ads policy). */}
         <p className={`${s.note} ${s.split2}`}>
-          <ServicesLink ink />
+          <Free ink />
           <span aria-hidden="true">|</span>
           <Link href="/privacy" className={`${s.noteLink} ${s.inkLink}`}>
             Privacy

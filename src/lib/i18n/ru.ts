@@ -26,7 +26,7 @@ export const ru: Dictionary = {
   },
   home: {
     // English placeholder: Russian is not published.
-    h1: "Freelance Power BI and Microsoft Fabric consultant",
+    h1: "Power BI and Microsoft Fabric consultant",
     headline: {
       lead: "Экономьте ",
       em1: "деньги",
@@ -37,13 +37,6 @@ export const ru: Dictionary = {
     lede: "Полный цикл BI-решений на современном open-source и SaaS стеке: MS Fabric, Power BI, Apache Superset. От извлечения сырых данных до визуализации.",
     cta: "Кейсы",
     ctaSecondary: "Цены",
-  },
-  footer: {
-    available: "Открыт для новых проектов",
-    rss: "RSS-лента",
-    about: "Обо мне",
-    contact: "Контакты",
-    privacy: "Конфиденциальность",
   },
   services: {
     title: "Услуги",
@@ -200,8 +193,8 @@ export const ru: Dictionary = {
   about: {
     title: "About",
     metaTitle: `About ${AUTHOR_NAME}: Power BI & Fabric Consultant (DP-600)`,
-    metaDescription: `${AUTHOR_NAME}, freelance Power BI and Microsoft Fabric consultant with the DP-600 certificate. Based in Turkey, working remotely.`,
-    lede: "Freelance Power BI and Microsoft Fabric consultant.",
+    metaDescription: `${AUTHOR_NAME}, Power BI and Microsoft Fabric consultant with the DP-600 certificate. Based in Turkey, working remotely.`,
+    lede: "Power BI and Microsoft Fabric consultant.",
     body: [
       "I build Power BI and Fabric reports, the data models and SQL under them, and the pipelines that keep them fresh. Around them: n8n automations for reports, inboxes and invoices, and AI chats that answer questions straight from your data.",
       "I'm based in Turkey and work remotely.",

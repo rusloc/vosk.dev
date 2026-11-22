@@ -10,7 +10,7 @@ import { showcases, type Showcase } from "./work";
  * the visible strings from there; a title that names a price builds it from the same dictionary.
  *
  * `draft: true`: the page builds and is reachable (preview deploys), but it is `noindex, follow` and stays out of the
- * sitemap, the nav, the footer and the /services hub. The owner flips it after approving the copy.
+ * sitemap, the nav and the /services hub. The owner flips it after approving the copy.
  *
  * Server-only in effect: it reads the post files and the showcase registry.
  */
@@ -40,7 +40,7 @@ export const services: ServiceEntry[] = [
     title: "Power BI Consulting & Dashboard Development",
     h1: "Power BI consulting and dashboard development",
     description:
-      "Freelance Power BI consulting: dashboards your team opens every morning, the data model and DAX under them, and the SQL that keeps them fresh.",
+      "Power BI consulting and development: dashboards your team opens every morning, the data model and DAX under them, and the SQL that keeps them fresh.",
     audience:
       "For a team that has the data but not the report. The numbers live in a database, a few Excel files and an app or two, and every month someone glues them together by hand. Or there's a Power BI report already, but it's slow, nobody trusts the totals and the person who built it has left. I build the report end to end: from your sources to a model that answers the questions you actually ask.",
     deliverables: [
@@ -94,7 +94,7 @@ export const services: ServiceEntry[] = [
     title: `Power BI Support Retainer from ${en.services.subscription.tiers[0]!.price}/month`,
     h1: "Power BI support on a monthly retainer",
     description:
-      "Power BI support on a monthly retainer: fixes, new reports, model changes and refresh problems, handled by one freelance consultant who knows your reports.",
+      "Power BI support on a monthly retainer: fixes, new reports, model changes and refresh problems, handled by one consultant who knows your reports.",
     audience:
       "For a company that already runs on Power BI and keeps finding things to fix and add. Reports break after a source changes, refreshes fail at night, the wishlist grows, and there's no data person on the team to take it. A retainer gives you a set number of hours each month: you set the priorities, I get them shipped.",
     deliverables: [
@@ -199,7 +199,7 @@ export function getService(slug: string): ServiceEntry | undefined {
   return services.find((s) => s.slug === slug);
 }
 
-/** Service pages that may be linked from the nav, the footer and the hub, and listed in the sitemap. */
+/** Service pages that may be linked from the nav and the hub, and listed in the sitemap. */
 export function getPublishedServices(): ServiceEntry[] {
   return services.filter((s) => !s.draft);
 }

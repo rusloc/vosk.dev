@@ -26,7 +26,7 @@ const IN_LANGUAGE = "en-US";
 const AREA_SERVED = "Worldwide";
 
 /**
- * Home-page structured data: the freelancer (Person), the practice
+ * Home-page structured data: the consultant (Person), the practice
  * (ProfessionalService) and the site (WebSite), linked by @id.
  * Emit once on the home page via <JsonLd data={homeGraph()} />. Takes no locale:
  * every URL in this graph is the site origin and the language is the constant

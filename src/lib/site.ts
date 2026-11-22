@@ -20,7 +20,7 @@ export const siteConfig = {
   author: {
     name: AUTHOR_NAME,
     firstName: "Kirill",
-    jobTitle: "Freelance Power BI & Microsoft Fabric Consultant",
+    jobTitle: "Power BI & Microsoft Fabric Consultant",
   },
   nav: [
     { href: "/", label: "Home" },

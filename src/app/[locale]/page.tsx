@@ -33,7 +33,7 @@ export default async function Home({ params }: Props) {
       <JsonLd data={homeGraph()} />
       <HomeBackdrop />
       <CodeTyper />
-      {/* Fills the space between nav and footer and centres the hero in it: no scroll at 1280×720 and on phones. */}
+      {/* Fills the space below the nav and centres the hero in it: no scroll at 1280×720 and on phones. */}
       <Container className="home-hero flex flex-1 items-center py-6 sm:py-10">
         <div className="w-full max-w-3xl">
           {/* The H1 carries the topic words (SEO spec T-03, 11-18); the headline, brand voice that names nothing

@@ -13,7 +13,7 @@ import { locales, type Locale } from "@/lib/i18n/config";
 // Single manual lastmod for the static marketing routes. Bump when content
 // meaningfully changes — a per-request `new Date()` here is a lastmod lie that
 // trains crawlers to ignore the signal. Blog posts use their real frontmatter date.
-const SITE_UPDATED = new Date("2026-11-19"); // 11-19: home back to the hero only (owner: clean, no scroll); 11-18: SEO Block 1 (titles, home sections, /about, all plans on /services, showcase CTA box); 11-17: showcase search descriptions and data labels, P&L title, Power BI on the executive dashboard, services and contact copy; 11-16: two n8n workflow showcases on /work; 11-15: showcase copy rewritten, client type on every showcase; 11-09: DP-600 link on Contacts; 11-06: "Coal mining" title, ACME Marketing Ask AI; 11-04/05: showcase titles and About bullets, ACME Marketing added
+const SITE_UPDATED = new Date("2026-11-22"); // 11-22: "freelance" > "consultant" in titles, H1, descriptions, OG card, JSON-LD jobTitle (R-11); 11-19: home back to the hero only (owner: clean, no scroll); 11-18: SEO Block 1 (titles, home sections, /about, all plans on /services, showcase CTA box); 11-17: showcase search descriptions and data labels, P&L title, Power BI on the executive dashboard, services and contact copy; 11-16: two n8n workflow showcases on /work; 11-15: showcase copy rewritten, client type on every showcase; 11-09: DP-600 link on Contacts; 11-06: "Coal mining" title, ACME Marketing Ask AI; 11-04/05: showcase titles and About bullets, ACME Marketing added
 
 function newestOf(page: Date, ...entries: { updated: string }[]): Date {
   return new Date(

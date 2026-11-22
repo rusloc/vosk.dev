@@ -80,8 +80,8 @@ and roles are plain Postgres, so a move is a connection-string change.
 
 ## Project identity — the site
 
-- **Project**: VOSK.DEV — personal website of a freelance **BI (Business Intelligence) analyst / developer**.
-- **Goal**: win freelance clients — establish credibility, showcase dashboard/data work, convert visitors to leads.
+- **Project**: VOSK.DEV — personal website of a **BI (Business Intelligence) consultant** (never "freelance/freelancer" in copy, owner 11-19).
+- **Goal**: win clients — establish credibility, showcase dashboard/data work, convert visitors to leads.
 - **Domain**: `vosk.dev`.
 - **Canonical site URL at runtime**: `NEXT_PUBLIC_SITE_URL` env var — never hard-code the domain in code.
 
@@ -93,6 +93,11 @@ and roles are plain Postgres, so a move is a connection-string change.
   (/work, /services, /blog, /contact), even when an SEO spec asks for them on the home page (spec T-03 was rolled back
   on 11-19). Anything added to the hero must still fit the screen; check it in a headless browser at 1440×900,
   1366×768 and 390×844 before shipping.
+
+## No site footer (owner, 2026-11-22)
+
+- **No footer on any page.** The site is nav + page; `components/footer.tsx` was removed. Privacy stays reachable from the
+  consent card and the ad landing pages; "Change cookie choice" lives on /privacy.
 
 ## Ad landing pages — `/lp/*` (owner, 2026-11-20)
 
@@ -154,7 +159,7 @@ src/
   app/            → routes under [locale]/ (home, work, services, contact, blog) + layout, sitemap, robots
   app/api/        → superset/guest-token; mirelo/[...path], marketing/[...path], pnl/[...path], trucks/[...path] and nordmark/[...path] (the JS reports' data from Supabase); chat/mirelo, chat/marketing, chat/pnl, chat/trucks and chat/nordmark (the AI chat, ADR-0005) — the Route Handlers
   proxy.ts        → locale rewriting middleware; excludes /api/*
-  components/     → shared UI (nav, footer, cards, contact-form, mdx-components, primitives)
+  components/     → shared UI (nav, cards, contact-form, mdx-components, primitives)
   lib/            → content.ts (MDX seam), work.ts (showcase registry), schema.ts (Zod), env.ts, site.ts, metadata.ts
   lib/pnl/        → the P&L showcase's engine, loader and state (framework-free); components/pnl/ its UI
   fonts/          → self-hosted woff2 for next/font/local, built by scripts/fonts-build.py (OFL). Never next/font/google:

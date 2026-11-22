@@ -11,9 +11,9 @@ export const en = {
     // Site-wide defaults used by the root layout / OpenGraph, and `siteConfig.title` / `.description` (src/lib/site.ts).
     // 11-18 (SEO spec T-02): the name, not "VOSK", ends every title: "Vosk" alone is a speech-recognition toolkit.
     // DRAFT, owner review: the description.
-    title: `Freelance Power BI & Fabric Consultant | ${AUTHOR_NAME}`,
+    title: `Power BI & Fabric Consultant | ${AUTHOR_NAME}`,
     description:
-      "Freelance Power BI and Microsoft Fabric consultant: reports, data models, n8n automations and AI chats over your data.",
+      "Power BI and Microsoft Fabric consultant: reports, data models, n8n automations and AI chats over your data.",
   },
   nav: {
     home: "Home",
@@ -31,7 +31,7 @@ export const en = {
   home: {
     // 11-18 (SEO spec T-03). DRAFT, owner review (I-03): the H1, which takes the topic words; the headline above
     // stays as the line under it, styled as before. The sections below the hero are new copy too.
-    h1: "Freelance Power BI and Microsoft Fabric consultant",
+    h1: "Power BI and Microsoft Fabric consultant",
     // Headline is split so the two emphasized words can be styled; word order
     // differs per language, hence the five parts.
     headline: {
@@ -48,13 +48,6 @@ export const en = {
     lede: "Power BI and Microsoft Fabric reporting, n8n automations and AI chats over your data, and the SQL underneath. From raw data to live data that you can see and chat with.",
     cta: "Showcase",
     ctaSecondary: "Services & pricing",
-  },
-  footer: {
-    available: "Available for new projects",
-    rss: "RSS feed",
-    about: "About",
-    contact: "Contact",
-    privacy: "Privacy",
   },
   services: {
     title: "Services",
@@ -216,8 +209,8 @@ export const en = {
   about: {
     title: "About",
     metaTitle: `About ${AUTHOR_NAME}: Power BI & Fabric Consultant (DP-600)`,
-    metaDescription: `${AUTHOR_NAME}, freelance Power BI and Microsoft Fabric consultant with the DP-600 certificate. Based in Turkey, working remotely.`,
-    lede: "Freelance Power BI and Microsoft Fabric consultant.",
+    metaDescription: `${AUTHOR_NAME}, Power BI and Microsoft Fabric consultant with the DP-600 certificate. Based in Turkey, working remotely.`,
+    lede: "Power BI and Microsoft Fabric consultant.",
     body: [
       "I build Power BI and Fabric reports, the data models and SQL under them, and the pipelines that keep them fresh. Around them: n8n automations for reports, inboxes and invoices, and AI chats that answer questions straight from your data.",
       "I'm based in Turkey and work remotely.",
@@ -266,9 +259,9 @@ export const en = {
   },
   contact: {
     title: "Contact",
-    metaTitle: "Contact a Freelance BI Analyst",
+    metaTitle: "Contact a BI Consultant",
     metaDescription:
-      "Get in touch about a Power BI, Fabric, automation or analytics project, by form or email. Freelance BI analyst in Turkey.",
+      "Get in touch about a Power BI, Fabric, automation or analytics project, by form or email. BI consultant in Turkey.",
     // 11-17 (spec C9): where and when, from the owner's Upwork overview (docs/job/p1-guide.html)
     intro:
       "Send your business related message straight into my email box. I'm in Turkey, working remotely.",
@@ -310,13 +303,13 @@ export const en = {
     title: "Blog",
     metaTitle: "Blog — Power BI, DAX & SQL notes",
     metaDescription:
-      "Hands-on notes on Power BI, DAX, SQL and data modeling from a freelance BI analyst — working patterns from real client work, not tutorials.",
+      "Hands-on notes on Power BI, DAX, SQL and data modeling from a BI consultant — working patterns from real client work, not tutorials.",
     intro:
       "Working notes from client projects: Power BI and DAX patterns, SQL and Postgres workflows, and the delivery plumbing around them.",
     // `{tag}` is replaced with the tag's display label — every tag page used to
     // share the generic blog description above.
     tagMetaDescription:
-      "Every article tagged {tag} — hands-on notes on BI, dashboards, data models and the tooling around them, from a freelance BI analyst.",
+      "Every article tagged {tag} — hands-on notes on BI, dashboards, data models and the tooling around them, from a BI consultant.",
     tagIntro: "Every article tagged {tag}, newest first.",
     breadcrumbHome: "Home",
     related: "Related posts",

@@ -8,7 +8,6 @@ import { withTitleSuffix } from "@/lib/metadata";
 import { locales, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { SiteNav } from "@/components/nav";
-import { SiteFooter } from "@/components/footer";
 import { Analytics } from "@/components/analytics";
 import { LeadSourceCapture } from "@/components/lead-source-capture";
 
@@ -87,12 +86,11 @@ export default async function LocaleLayout({ children, params }: Props) {
           locale={locale as Locale}
           dict={dict}
         />
-        {/* Home only (its hero carries `home-hero`): a flex column, so the hero fills the space between nav and footer
+        {/* Home only (its hero carries `home-hero`): a flex column, so the hero fills the space below the nav
             and the page doesn't scroll (CLAUDE.md "Landing page"). Other pages keep a plain block main. */}
         <main className="flex-1 has-[>.home-hero]:flex has-[>.home-hero]:flex-col">
           {children}
         </main>
-        <SiteFooter locale={locale as Locale} dict={dict} />
         <Analytics gtmId={env.NEXT_PUBLIC_GTM_ID} />
         <LeadSourceCapture />
       </body>

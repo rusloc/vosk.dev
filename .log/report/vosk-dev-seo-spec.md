@@ -305,15 +305,15 @@ Ask once, in one message, when a task first needs one. Never guess.
 | T-05 | done (draft copy) | 2026-11-18 | `/about` (absolute title, nav, sitemap); post header shows "Kirill Vosk" → /about (rel=author) and "Updated" when set; Person url and BlogPosting author url → /about. Years, industries, photo, name note: I-04 / I-08. |
 | T-06 | done (fallback) | 2026-11-18 | `siteConfig.bookingUrl` / `replyTime` empty → page unchanged. Waits on I-06. |
 | T-07 | done | 2026-11-18 | Server-rendered; each of the 8 plan names once in the built HTML, no aria-hidden clone; H1 = `services.heading`; serviceGraph unchanged. |
-| T-08 | todo | | |
-| T-09 | todo | | |
-| T-10 | todo | | |
-| T-11 | todo | | |
-| T-12 | todo | | |
-| T-13 | todo | | |
-| T-14 | todo | | |
-| T-15 | todo | | |
-| T-16 | todo | | |
+| T-08 | dropped | 2026-11-19 | Owner's suggestion, agreed: separate search titles help the blog, not the campaign. |
+| T-09 | partly | 2026-11-19 | Footer done (published service pages, About, Contact, Privacy, LinkedIn, Upwork, GitHub, RSS). Nav "Services" menu and post / case-study → service links wait until a service page is live (owner redesigns them). |
+| T-10 | todo (drop suggested) | 2026-11-19 | Agent suggests dropping: only one or two service pages will go live, and the owner brings ad-only landing pages (11-20). |
+| T-11 | done | 2026-11-19 | `hasCredential` DP-600 on Person; Person emitted on /about (same `@id`). `areaServed` unchanged (Worldwide). Rich Results Test after the push. |
+| T-12 | done | 2026-11-20 | Owner: "open to Google". `noindex` removed from `online-sales-cube`; `updated` 2026-11-20; docs/08 §9 marked. Verify on production: robots `index, follow`, URL in the sitemap. |
+| T-13 | done | 2026-11-19 | `MIN_INDEXED_TAG_POSTS` = 4 in `content.ts`; `js` (3) and `python` (1) noindex and out of the sitemap; `sitemap.test.ts`. |
+| T-14 | done | 2026-11-19 | Required `updated` on every showcase (2026-11-19); `/work` = newest of them; test. |
+| T-15 | done | 2026-11-19 | `host` removed from `robots.ts`. |
+| T-16 | done | 2026-11-20 | semantic layer: "really" dropped (154); give-the-agent-eyes: "A 2,200-line query: 5 minutes > 15 seconds." (148), ">" at the owner's word. |
 
 ## 7. After each block is deployed
 

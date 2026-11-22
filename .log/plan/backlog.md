@@ -9,6 +9,16 @@
 
 # Backlog
 
+## New on 11-20
+
+- **Ad landing pages at `/lp/*`** (owner, 11-20): one page per ad campaign, one-way links into the site, noindex, not in
+  the sitemap (CLAUDE.md "Ad landing pages"). `/lp/fabric` built and re-fit to the 12:58 export, not pushed; landing #2
+  waits for the owner's design. Open: real client logos for the Clients strip; Privacy placement; PSI after the push.
+  **11-22:** landing #2 built, `/lp/ai-automation` (n8n flow + data chat); open: no price on it (the design has none,
+  R-09 asks for one), PSI after the push.
+- **Contact details block moved from /contact to /about** (owner, 11-20). Open: one of the two DP-600 links on /about;
+  the /contact meta description still says "by form or email".
+
 ## New on 11-18
 
 - **Google Analytics added to the site** (owner, 11-18) = Goal B go-live: code since 07-09, needs the GA4 + GTM ids and

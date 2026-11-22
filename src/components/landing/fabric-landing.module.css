@@ -1058,24 +1058,6 @@
   color: #dcc9b6;
 }
 
-.msNote {
-  flex-wrap: wrap;
-  gap: calc(var(--u) * 4) calc(var(--u) * 14);
-  font-size: calc(var(--u) * 15);
-  line-height: 1.5;
-  color: #dcc9b6;
-}
-
-.msNote strong {
-  color: #fff8e7;
-  font-weight: 600;
-}
-
-.msNote .free strong {
-  color: #ffa63d;
-  font-weight: 700;
-}
-
 /* ---- 04 contact ---- */
 
 .last {

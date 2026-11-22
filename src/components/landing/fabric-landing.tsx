@@ -469,12 +469,8 @@ export function FabricLanding() {
             ))}
           </div>
         </div>
-        <p className={`${s.note} ${s.msNote}`}>
-          <span>
-            Have an ongoing project or starting a new one? Monthly capacity from{" "}
-            <strong>$1,500</strong>.
-          </span>{" "}
-          <span aria-hidden="true">|</span> <Free />
+        <p className={s.note}>
+          <Free />
         </p>
         <MessageButton />
       </section>

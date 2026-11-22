@@ -72,7 +72,7 @@ export const services: ServiceEntry[] = [
       },
       {
         q: "Do you work remotely?",
-        a: "Yes. I'm in Turkey and work on EU and UK hours.",
+        a: "Yes. I'm in Turkey and work remotely.",
       },
       {
         q: "What if we need changes after the project?",
@@ -128,8 +128,8 @@ export const services: ServiceEntry[] = [
         a: "An urgent fix or a fixed-scope project is a fine way to see how I work before a retainer.",
       },
       {
-        q: "Which hours do you work?",
-        a: "I'm in Turkey and work remotely on EU and UK hours.",
+        q: "Do you work remotely?",
+        a: "Yes. I'm in Turkey and work remotely.",
       },
     ],
     caseSlugs: ["marketing-acquisition-dashboard", "online-sales-report"],
@@ -182,7 +182,7 @@ export const services: ServiceEntry[] = [
       },
       {
         q: "Do you work remotely?",
-        a: "Yes. I'm in Turkey and work on EU and UK hours.",
+        a: "Yes. I'm in Turkey and work remotely.",
       },
     ],
     caseSlugs: ["pnl-suite", "executive-dashboard"],

@@ -1,3 +1,4 @@
+import type { LeadSource } from "./lead-source";
 import { siteConfig } from "./site";
 
 /**
@@ -100,12 +101,39 @@ function button(href: string, label: string): string {
 
 // ── 1. Notification → owner's inbox ──────────────────────────────────────────
 
+/**
+ * The Source block's rows (R-07): landing page, campaign tags, and whether a Google click id came with the visit.
+ * The id itself is never printed.
+ */
+export function sourceRows(source: LeadSource = {}): [string, string][] {
+  if (!Object.values(source).some(Boolean)) return [["Source", "not recorded"]];
+  const tags: [string, string | undefined][] = [
+    [
+      "Source / medium",
+      [source.utm_source, source.utm_medium].filter(Boolean).join(" / "),
+    ],
+    ["Campaign", source.utm_campaign],
+    ["Keyword", source.utm_term],
+    ["Ad", source.utm_content],
+  ];
+  const present = tags.filter((r): r is [string, string] => Boolean(r[1]));
+  return [
+    ["Landing page", source.landing_path ?? "not recorded"],
+    ...(present.length
+      ? present
+      : [["Campaign tags", "none"] as [string, string]]),
+    ["Google Ads click", source.gclid ? "yes" : "no"],
+  ];
+}
+
 export function renderContactEmail(input: {
   email: string;
   subject?: string;
   message: string;
+  source?: LeadSource;
 }): { html: string; text: string } {
   const { email, subject, message } = input;
+  const source = sourceRows(input.source);
 
   const text = [
     `New message from the ${siteConfig.name} website`,
@@ -114,6 +142,9 @@ export function renderContactEmail(input: {
     subject ? `Subject: ${subject}` : null,
     "",
     message,
+    "",
+    "Source",
+    ...source.map(([label, value]) => `${label}: ${value}`),
     "",
     `— Reply directly to this email to respond to ${email}.`,
   ]
@@ -143,7 +174,18 @@ export function renderContactEmail(input: {
 ${subjectRow}
 </table>
 ${messagePanel(safeMessage)}
-${button(replyHref, `Reply to ${safeEmail}`)}`;
+${button(replyHref, `Reply to ${safeEmail}`)}
+<p style="margin:28px 0 6px;font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:${C.muted};">Source</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+${source
+  .map(
+    ([label, value]) => `<tr>
+<td style="padding:4px 0;font-size:13px;color:${C.muted};width:132px;vertical-align:top;">${label}</td>
+<td style="padding:4px 0;font-size:13px;color:${C.fg};word-break:break-all;">${escapeHtml(value)}</td>
+</tr>`,
+  )
+  .join("\n")}
+</table>`;
 
   const html = shell({
     preheader: escapeHtml(

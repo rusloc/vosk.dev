@@ -508,7 +508,7 @@ committed snapshot fallback only if it actually bites.
 | **1 · Data** ✅ **done 09-21** | `data/sales/001`–`004`, applied via MCP | build | ✅ `003-verify` clean, fingerprint `b7e0006d…` · ✅ §5 acceptance A–D · ✅ advisors zero lints. **Owner still to run** `alter role cube_reader login password …` |
 | **2 · Cube** — deployed 09-21 | account, deployment, pooler connection, model, view | **owner** | ⏳ Playground figures not reported back · ⏳ `/v1/cubesql` answers `403 Authorization header isn't set` unauthenticated, so the route exists — **an authenticated query has not been run** |
 | **3 · Site** — built 09-21 | §8 | build | ✅ `typecheck` · `lint` · 133 tests · `build` · ✅ env unset ⇒ entry hidden, build green · ✅ full pipeline against a local `/cubesql` mock: page prerenders as ISR (`● 1d`), all-years totals **$4.77M / 34,293 orders** match §4 · ✅ rendered and inspected over CDP — six states incl. hover, table view and 390 px; console clean, no hydration error · ⏳ **live Cube, Vercel preview, figures to the cent** — blocked on the secret |
-| **4 · Copy** — drafted 09-21 | real write-up; `noindex` until it is | owner + build | the entry says what it is: synthetic data, real stack. **`noindex: true` stays until the owner signs the copy off** |
+| **4 · Copy** — drafted 09-21 | real write-up; `noindex` until it is | owner + build | the entry says what it is: synthetic data, real stack. ~~**`noindex: true` stays until the owner signs the copy off**~~ **Signed off 2026-11-20 (owner: "open to Google"); `noindex` removed** |
 
 **To unblock the ⏳ rows — owner, ~5 min.** Create `.env.local` (the assistant is denied `.env*`, by
 design) and add the same two variables in Vercel → vosk-dev → Settings → Environment Variables,

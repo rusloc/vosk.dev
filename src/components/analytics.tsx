@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { GoogleTagManager } from "@next/third-parties/google";
+import { defaultLocale, localizedPath } from "@/lib/i18n/config";
 
 const STORAGE_KEY = "vosk.consent";
 type Consent = "granted" | "denied";
@@ -22,9 +23,26 @@ function readConsent(): Consent | null {
   const v = localStorage.getItem(STORAGE_KEY);
   return v === "granted" || v === "denied" ? v : null;
 }
-function writeConsent(choice: Consent) {
-  localStorage.setItem(STORAGE_KEY, choice);
+function writeConsent(choice: Consent | null) {
+  if (choice) localStorage.setItem(STORAGE_KEY, choice);
+  else localStorage.removeItem(STORAGE_KEY);
   listeners.forEach((l) => l());
+}
+
+/**
+ * The /privacy page's "Change cookie choice" (R-06): forgets the choice, so the consent card shows again. Analytics
+ * already loaded in this tab stays until the next page load.
+ */
+export function ChangeConsentButton({ label }: { label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={() => writeConsent(null)}
+      className="border-border hover:bg-muted cursor-pointer rounded-md border px-3 py-1.5 text-sm transition-colors"
+    >
+      {label}
+    </button>
+  );
 }
 
 /**
@@ -68,7 +86,13 @@ export function Analytics({ gtmId }: { gtmId?: string }) {
       className="border-border bg-background fixed right-4 bottom-16 z-[70] w-64 rounded-lg border p-3 text-xs shadow-lg md:bottom-4"
     >
       <p className="text-muted-foreground">
-        I use analytics cookies to see what&apos;s useful and improve the site.
+        I use analytics cookies to see what&apos;s useful and improve the site.{" "}
+        <a
+          href={localizedPath(defaultLocale, "/privacy")}
+          className="hover:text-foreground underline"
+        >
+          Privacy
+        </a>
       </p>
       <div className="mt-2 flex justify-end gap-2">
         <button

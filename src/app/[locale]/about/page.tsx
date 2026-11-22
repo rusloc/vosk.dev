@@ -1,20 +1,48 @@
+import { Fragment } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Container } from "@/components/container";
+import { JsonLd } from "@/components/json-ld";
 import { PageHeader } from "@/components/page-header";
 import { buildMetadata } from "@/lib/metadata";
+import { aboutGraph } from "@/lib/structured-data";
 import { siteConfig } from "@/lib/site";
-import { localizedPath, resolveLocale } from "@/lib/i18n/config";
+import { ga } from "@/lib/analytics";
+import { resolveLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 type Props = { params: Promise<{ locale: string }> };
 
-// Profile rows, in the Contacts card's order; `rel="me"` pairs with the Person's JSON-LD `sameAs`.
-const PROFILES = [
-  ["LinkedIn", siteConfig.social.linkedin],
-  ["Upwork", siteConfig.social.upwork],
-  ["GitHub", siteConfig.social.github],
-] as const;
+/**
+ * A profile row of the Contacts block. Until `siteConfig.social` holds a real URL it renders dull text: a link to a
+ * platform's root would dead-end the visitor. `rel="me"` pairs with the Person's JSON-LD `sameAs`. Every row shares one
+ * link text, so the `aria-label` names the platform (WCAG 2.5.3: it still contains the visible text).
+ */
+function Profile({
+  url,
+  platform,
+  text,
+  pending,
+}: {
+  url: string;
+  platform: string;
+  text: string;
+  pending: string;
+}) {
+  if (!url) {
+    return <span className="text-muted-foreground/60 italic">{pending}</span>;
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="me noopener noreferrer"
+      aria-label={`${platform}: ${text}`}
+      className="text-primary hover:underline"
+    >
+      {text}
+    </a>
+  );
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
@@ -39,6 +67,7 @@ export default async function AboutPage({ params }: Props) {
 
   return (
     <Container className="py-10 sm:py-12">
+      <JsonLd data={aboutGraph()} />
       <PageHeader title={siteConfig.author.name}>{t.lede}</PageHeader>
 
       <div className="mt-6 max-w-prose space-y-4">
@@ -73,40 +102,58 @@ export default async function AboutPage({ params }: Props) {
         </p>
       </section>
 
+      {/* Moved here from /contact (owner, 11-20). A two-column grid, so the label column sizes to the longest label. */}
       <section className="mt-10 max-w-prose">
-        <h2 className={h2}>{t.profilesTitle}</h2>
-        <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-          {PROFILES.filter(([, url]) => url).map(([name, url]) => (
-            <li key={name}>
-              <a
-                href={url}
-                target="_blank"
-                rel="me noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                {name}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
+        <h2 className={h2}>{t.contactsTitle}</h2>
+        <dl className="mt-3 grid grid-cols-[auto_1fr] items-baseline gap-x-6 gap-y-3 text-sm">
+          <dt className="text-muted-foreground">{t.labelName}</dt>
+          <dd className="font-medium">{siteConfig.author.firstName}</dd>
 
-      <p className="mt-10 max-w-prose">
-        {t.nextBody}{" "}
-        <Link
-          href={localizedPath(l, "/work")}
-          className="text-primary hover:underline"
-        >
-          {t.nextWork}
-        </Link>
-        {" · "}
-        <Link
-          href={localizedPath(l, "/services")}
-          className="text-primary hover:underline"
-        >
-          {t.nextServices}
-        </Link>
-      </p>
+          <dt className="text-muted-foreground">{t.labelEmail}</dt>
+          <dd>
+            <a
+              href={`mailto:${siteConfig.contactEmail}`}
+              className="text-primary hover:underline"
+              {...ga("email_click", undefined, "about")}
+            >
+              {siteConfig.contactEmail}
+            </a>
+          </dd>
+
+          {(
+            [
+              [t.labelLinkedin, siteConfig.social.linkedin],
+              [t.labelUpwork, siteConfig.social.upwork],
+              [t.labelGithub, siteConfig.social.github],
+            ] as const
+          ).map(([platform, url]) => (
+            <Fragment key={platform}>
+              <dt className="text-muted-foreground">{platform}</dt>
+              <dd>
+                <Profile
+                  url={url}
+                  platform={platform}
+                  text={t.linkProfile}
+                  pending={t.linkPending}
+                />
+              </dd>
+            </Fragment>
+          ))}
+
+          <dt className="text-muted-foreground">{t.labelDp600}</dt>
+          <dd>
+            <a
+              href={siteConfig.dp600Url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${t.labelDp600}: ${t.linkCertificate}`}
+              className="text-primary hover:underline"
+            >
+              {t.linkCertificate}
+            </a>
+          </dd>
+        </dl>
+      </section>
     </Container>
   );
 }

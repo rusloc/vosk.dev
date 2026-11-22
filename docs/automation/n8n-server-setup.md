@@ -1,5 +1,11 @@
 # n8n server setup — step by step (Bluehost VPS, 2026-11-15)
 
+> **⛔ Abandoned 2026-11-15, late evening. Bluehost is not reliable and is not to be used.** Bluehost cancelled the
+> owner's payment and the account, after two outages the same day (the first VPS, then its replacement, stopped answering
+> on every port). Nothing was built on it. The owner moves to a hosted n8n (provider not chosen yet). This guide stays as
+> history; what still applies on the next host: step 11 (Google project, consent screen, OAuth client: change the
+> redirect URI to the new host's), the Gmail scope choice, the credential list, and step 9b's token method.
+
 The server for the inbox automation showcase (`README.md` in this folder). Every step says **who** does it, **where**
 (your PC in PowerShell, the server over SSH, or a web page) and **how to check** it worked. Do them in order.
 
@@ -8,23 +14,34 @@ The server for the inbox automation showcase (`README.md` in this folder). Every
 | | |
 |---|---|
 | Host | Bluehost "Standard VPS - NVMe 2": 1 core, 2 GB RAM, 50 GB NVMe |
-| IP | `129.121.173.84` |
+| IP | `129.121.162.175` |
 | Open ports | 22 (SSH), 80 (HTTP), 443 (HTTPS). 5678, 5432, 3000, 8080 closed. Good. |
 | Already running | **n8n, preinstalled by Bluehost**, behind the **Traefik** proxy. Port 80 serves the n8n editor over plain HTTP; port 443 has only Traefik's self-signed default certificate. |
 | n8n state | **No owner account yet** (`showSetupOnFirstLoad: true`): whoever opens the page first becomes the owner. |
 | DNS for vosk.dev | GoDaddy (nameservers `ns55`/`ns56.domaincontrol.com`). `n8n.vosk.dev` does not exist yet. |
 
+### Server replaced 2026-11-15, late evening
+
+The first VPS (`129.121.173.84`, host `pwx.imv.mybluehost.me`) stopped answering on every port. n8n now runs on a new
+instance: host **`ead.imv.mybluehost.me`**, IP **`129.121.162.175`** (DNS, checked), `/healthz` 200 over HTTPS. Every
+address in this guide now points there. Consequences: the old MCP token is dead (401 with it), so the owner makes a new
+one (step 9b) and re-saves `N8N_MCP_TOKEN`; Google's redirect URI changes to the new host (step 11, part 6). The bare
+IP again serves n8n over plain HTTP.
+
+New token saved and checked the same evening: 272 chars, `initialize` 200 (n8n MCP Server 1.2.0), `tools/list` 200.
+Google redirect URI moved to the new host by the owner.
+
 ### Status 2026-11-15, evening (checked from outside)
 
 - **Step 0 done:** the owner account is claimed (vosk.dev@gmail.com); the setup page is gone.
-- **HTTPS already works on Bluehost's own name:** `https://pwx.imv.mybluehost.me` has a valid Let's Encrypt
+- **HTTPS already works on Bluehost's own name:** `https://ead.imv.mybluehost.me` has a valid Let's Encrypt
   certificate and HTTP redirects to HTTPS there. **Decision: use this address and skip `n8n.vosk.dev`** (steps 3 and
   the domain part of step 6): visitors never see the n8n address (they email the inbox and get a sheet link), so a
-  vosk.dev name buys nothing. Everywhere below, read `n8n.vosk.dev` as `pwx.imv.mybluehost.me`; Google's redirect URI
-  (step 11) is `https://pwx.imv.mybluehost.me/rest/oauth2-credential/callback`.
-- **Still open:** the bare IP `http://129.121.173.84` serves the editor over plain HTTP, and the login cookie is not
+  vosk.dev name buys nothing. Everywhere below, read `n8n.vosk.dev` as `ead.imv.mybluehost.me`; Google's redirect URI
+  (step 11) is `https://ead.imv.mybluehost.me/rest/oauth2-credential/callback`.
+- **Still open:** the bare IP `http://129.121.162.175` serves the editor over plain HTTP, and the login cookie is not
   marked secure (`N8N_SECURE_COOKIE=false`). Until step 6 fixes both: **sign in only at the https address**, never the IP.
-- **MCP:** n8n's instance MCP server is at `https://pwx.imv.mybluehost.me/mcp-server/http`; it refuses calls without
+- **MCP:** n8n's instance MCP server is at `https://ead.imv.mybluehost.me/mcp-server/http`; it refuses calls without
   a token (401, checked). Connecting it is step 9b.
 
 So we don't install n8n from scratch: we claim it, give it a name and HTTPS, lock the server down and back it up.
@@ -35,7 +52,7 @@ So we don't install n8n from scratch: we claim it, give it a name and HTTPS, loc
 ## Step 0 — Claim the n8n owner account. Do this first, today (you, browser, 3 min)
 
 1. Open your password manager and generate a password: 24+ characters.
-2. Open **http://129.121.173.84** in the browser.
+2. Open **http://129.121.162.175** in the browser.
 3. You should see **"Set up owner account"**. Enter your email (e.g. vosk.dev@gmail.com), first and last name, the password. Submit.
 4. Skip the "customize n8n" questions if offered.
 
@@ -48,7 +65,7 @@ is to reinstall the VPS from the Bluehost panel and start again.
 
 ## Step 1 — Find your SSH login in the Bluehost panel (you, browser, 5 min)
 
-1. Log in at bluehost.com → your VPS (the one with IP 129.121.173.84).
+1. Log in at bluehost.com → your VPS (the one with IP 129.121.162.175).
 2. Find the server's **SSH / root access** details: the user name (usually `root`) and either a root password or a
    place to add an SSH key. Bluehost names this section differently across panels; look for "SSH", "Root access" or
    "Server credentials".
@@ -67,7 +84,7 @@ Press Enter for a passphrase or type one (recommended; you'll be asked for it on
 Copy the **public** key to the server (asks for the root password from step 1 once):
 
 ```powershell
-type "$env:USERPROFILE\.ssh\vosk_n8n.pub" | ssh root@129.121.173.84 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+type "$env:USERPROFILE\.ssh\vosk_n8n.pub" | ssh root@129.121.162.175 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 ```
 
 If the Bluehost panel has an "add SSH key" box, you can paste the contents of `vosk_n8n.pub` there instead.
@@ -76,7 +93,7 @@ Make logins short. Create or edit `C:\Users\vosk\.ssh\config` (Notepad is fine) 
 
 ```
 Host n8n
-    HostName 129.121.173.84
+    HostName 129.121.162.175
     User root
     IdentityFile ~/.ssh/vosk_n8n
 ```
@@ -91,7 +108,7 @@ Never send me the file `vosk_n8n` (no `.pub`): that is the private key.
 2. **Add New Record**:
    - Type: **A**
    - Name: **n8n**
-   - Value: **129.121.173.84**
+   - Value: **129.121.162.175**
    - TTL: default (1 hour)
 3. Save. **Don't change any other record**: the site (`vosk.dev`, `www`) points at Vercel.
 
@@ -101,7 +118,7 @@ Check, in PowerShell (may take a few minutes to an hour):
 nslookup n8n.vosk.dev
 ```
 
-It must answer `129.121.173.84`.
+It must answer `129.121.162.175`.
 
 ## Step 4 — Look at how Bluehost set n8n up (you on the server, or me; 10 min, read-only)
 
@@ -203,12 +220,12 @@ Needs step 3 (DNS answers the right IP) and ports 80/443 open. What changes, wha
 | `EXECUTIONS_DATA_PRUNE` / `EXECUTIONS_DATA_MAX_AGE` | `true` / `336` | keep run history 14 days, disk stays small |
 | `N8N_DIAGNOSTICS_ENABLED` | `false` | no telemetry |
 | `NODE_OPTIONS` | `--max-old-space-size=1024` | n8n can't eat all 2 GB |
-| Traefik | Let's Encrypt certificate for `n8n.vosk.dev`, HTTP → HTTPS redirect, **no route on the bare IP** | the plain-HTTP editor on 129.121.173.84 goes away |
+| Traefik | Let's Encrypt certificate for `n8n.vosk.dev`, HTTP → HTTPS redirect, **no route on the bare IP** | the plain-HTTP editor on 129.121.162.175 goes away |
 
 Then: `docker compose up -d` in the project folder.
 
 Check (PowerShell): `curl.exe -I https://n8n.vosk.dev/healthz` answers `HTTP/1.1 200` with no certificate warning, and
-`http://129.121.173.84` no longer shows the n8n editor.
+`http://129.121.162.175` no longer shows the n8n editor.
 
 ## Step 7 — Save the encryption key (you, server, 2 min)
 
@@ -249,7 +266,7 @@ I never open that file; my scripts load it and use the key to push the workflows
 `.mcp.json` in this repo already lists the server as `n8n`, with the token read from an environment variable
 `N8N_MCP_TOKEN` (so the token never lands in git).
 
-1. n8n (https://pwx.imv.mybluehost.me) → **Settings** → **Instance-level MCP** (may be called "MCP Access") → turn it
+1. n8n (https://ead.imv.mybluehost.me) → **Settings** → **Instance-level MCP** (may be called "MCP Access") → turn it
    **on** → copy the **access token**.
 2. In n8n, open each workflow the agent may use and switch on **"Available in MCP"** (in the workflow's settings).
    Workflows not switched on stay invisible to it.
@@ -281,18 +298,47 @@ Bluehost snapshots, if your plan has them, are a bonus, not the plan.
 
 Detailed in `README.md` → "Self-hosted n8n: what it takes", items 3–6. In short:
 
-1. **Demo Gmail**: a new Gmail account, 2-step verification on, nothing private in it ever.
-2. **Google Cloud project**, signed in as that Gmail, at console.cloud.google.com:
-   1. New project "vosk-inbox-demo".
-   2. APIs & Services → Library → enable **Gmail API**, **Google Sheets API**, **Google Drive API**.
-   3. OAuth consent screen: type **External**, app name "vosk inbox demo", your email as support and developer
-      contact; add yourself (the demo Gmail) as a test user; then **Publish app** so its status is **In production**.
-      (Testing-mode tokens expire after 7 days and the flows stop.)
-   4. Credentials → Create credentials → **OAuth client ID** → type **Web application** → Authorized redirect URI:
-      `https://n8n.vosk.dev/rest/oauth2-credential/callback`. Copy the client ID and secret.
-   5. In n8n: Credentials → **Add** → "Google OAuth2 API" (or the Gmail / Google Sheets credential) → paste ID and
-      secret → **Sign in with Google** as the demo Gmail. Click through the "unverified app" warning (Advanced → Go to
-      vosk inbox demo); only you ever see it.
+1. **Demo Gmail**: **`n8n.opc@gmail.com`** (owner, 2026-11-15), 2-step verification on, nothing private in it ever. Every
+   Google step below is done signed in as this account, and every n8n Google credential signs in with it.
+2. **Google Cloud project and OAuth client** (about 15 min), at console.cloud.google.com, **signed in as the demo
+   Gmail only** (use a private window so your own Google account can't slip in). No billing account is needed.
+   1. **Project.** Top bar → project picker → **New project** → name `vosk-inbox-demo`, no organisation → **Create**.
+      Check the picker now shows it selected; every step below happens inside it.
+   2. **APIs.** ☰ → APIs & Services → **Library**. Search and **Enable** each: **Gmail API**, **Google Sheets API**,
+      **Google Drive API**.
+   3. **Consent screen** (☰ → APIs & Services → **OAuth consent screen**; it opens "Google Auth Platform"). If it says
+      "not configured yet", click **Get started**:
+      - App information: app name `vosk inbox demo`, user support email = the demo Gmail.
+      - Audience: **External**.
+      - Contact information: the demo Gmail. Agree to the policy → **Create**.
+      - Skip **Data Access** (n8n asks for the scopes itself at sign-in).
+      - **Branding** (Google asks for it before publishing): **no logo** (a logo forces Google's verification);
+        Application home page `https://vosk.dev`; privacy policy and terms links empty unless Google refuses to save
+        (vosk.dev has no /privacy page yet, checked 11-15); Authorized domains: **`mybluehost.me`** (the redirect
+        address's domain; not on the public suffix list, so Google accepts it) and **`vosk.dev`** (the home page) → Save.
+   4. **Publish.** Google Auth Platform → **Audience** → Publishing status "Testing" → **Publish app** → Confirm. It
+      must read **In production**: in Testing, Google expires the sign-in after 7 days and the flows stop silently.
+      Google will not ask for verification to publish; the cost is the "unverified app" warning in step 6, seen by you only.
+   5. **OAuth client.** Google Auth Platform → **Clients** → **Create client**:
+      - Application type **Web application**, name `n8n`.
+      - Authorized JavaScript origins: leave empty.
+      - Authorized redirect URIs → **Add URI** → `https://ead.imv.mybluehost.me/rest/oauth2-credential/callback`.
+        Copy it from n8n (the credential dialog shows it as "OAuth Redirect URL") rather than typing it; if n8n shows the
+        bare IP or http, stop and tell me.
+      - **Create.** A box shows the **Client ID** and **Client secret**. **The secret is shown only now**: click
+        **Download JSON** or copy both into your password manager before closing. Lost it? Add a new secret on the client
+        page and delete the old one. Never paste either into chat or the repo.
+   6. **n8n.** Credentials → **Add credential** → **Gmail OAuth2 API** → paste Client ID and Client secret → **Sign in
+      with Google** → pick the demo Gmail → "Google hasn't verified this app" → **Advanced** → **Go to vosk inbox demo
+      (unsafe)** → on the permissions page tick **only two** for Gmail: "View, compose and send email from your Gmail
+      account" (`gmail.modify`: read, label, trash) and "See and edit your email labels" (`gmail.labels`). Leave the full
+      "read, compose, send and permanently delete all your email" scope, both add-on scopes and the drafts scope off: the
+      flows reply through Resend, never through Gmail (owner asked, 11-15) → **Continue**. n8n shows "Account connected"; **Save**, name it
+      `Gmail demo`. Repeat with **Google Sheets OAuth2 API** (`Sheets demo`) and **Google Drive OAuth2 API**
+      (`Drive demo`), same ID and secret, same sign-in.
+   7. **Errors.** `redirect_uri_mismatch`: the URI in step 5 differs from n8n's by a character (http, slash, host); fix
+      it on the client page, wait 5 minutes, retry. `access_denied` / "app is in testing": step 4 was not done.
+      `Access blocked`: you signed in with a different Google account.
 3. **AI API key** for n8n only, with a monthly spending limit set at the provider; add it in n8n as a credential.
 4. **Resend key**: resend.com → API Keys → Create → permission **Sending access**, domain **vosk.dev**; add it in n8n
    as a header credential (`Authorization: Bearer <key>`).

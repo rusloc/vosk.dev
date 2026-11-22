@@ -1,0 +1,74 @@
+/*
+ * The numbered section dock, shared by the /lp/* pages. Sizes are multiples of the page's --u, the font is the page's
+ * --mono; the ink is --lp-ink (#1c1917 on /lp/fabric, the default; #2a0c0f on /lp/ai-automation).
+ */
+
+.dock {
+  position: absolute;
+  right: calc(var(--u) * 6);
+  top: min(50vh, calc(var(--u) * 405));
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: calc(var(--u) * 4);
+  border-radius: calc(var(--u) * 18);
+  background: var(--lp-ink, #1c1917);
+  border: 1px solid rgba(255, 248, 231, 0.22);
+  box-shadow: 0 calc(var(--u) * 18) calc(var(--u) * 40) calc(var(--u) * -18)
+    rgba(0, 0, 0, 0.7);
+}
+
+.dk {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 3);
+  width: calc(var(--u) * 44);
+  min-height: calc(var(--u) * 44);
+  border-radius: calc(var(--u) * 12);
+  color: #dcc9b6;
+  text-decoration: none;
+  font-family: var(--mono);
+  font-size: calc(var(--u) * 13);
+  line-height: 1.1;
+  transition:
+    background 0.25s,
+    color 0.25s;
+}
+
+.dkL {
+  display: none;
+  font-size: calc(var(--u) * 11);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dk:hover {
+  background: rgba(255, 248, 231, 0.1);
+  color: #fff8e7;
+}
+
+.dk.on,
+.dk.on:hover {
+  background: #ffa63d;
+  color: var(--lp-ink, #1c1917);
+}
+
+@media (min-width: 900px) {
+  .dock {
+    right: calc(var(--u) * 12);
+    top: calc(var(--u) * 405);
+    padding: calc(var(--u) * 8);
+  }
+
+  .dk {
+    width: calc(var(--u) * 76);
+    min-height: calc(var(--u) * 60);
+  }
+
+  .dkL {
+    display: block;
+  }
+}

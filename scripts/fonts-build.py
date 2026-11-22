@@ -41,13 +41,16 @@ FACES = [
     ("geist/GeistMono-Variable.woff2", "geistmono/GeistMono[wght].ttf", {}, SITE),
     ("inter/Inter-Variable.woff2", "inter/Inter[opsz,wght].ttf", {"opsz": 14, "wght": (400, 800)}, REPORT),
     ("manrope/Manrope-Variable.woff2", "manrope/Manrope[wght].ttf", {"wght": (600, 700)}, REPORT),
+    # The ad landing pages (/lp/*, 11-20): the owner's design sets Host Grotesk, upright and italic, 400-700.
+    ("host-grotesk/HostGrotesk-Variable.woff2", "hostgrotesk/HostGrotesk[wght].ttf", {"wght": (400, 700)}, SITE),
+    ("host-grotesk/HostGrotesk-Italic-Variable.woff2", "hostgrotesk/HostGrotesk-Italic[wght].ttf", {"wght": (400, 700)}, SITE),
     ("ibm-plex/IBMPlexSans-Variable.woff2", "ibmplexsans/IBMPlexSans[wdth,wght].ttf", {"wdth": 100, "wght": (400, 700)}, REPORT),
     ("ibm-plex/IBMPlexSans-Italic-Variable.woff2", "ibmplexsans/IBMPlexSans-Italic[wdth,wght].ttf", {"wdth": 100, "wght": (400, 700)}, REPORT),
 ] + [
     (f"ibm-plex/IBMPlexSansCondensed-{s}.woff2", f"ibmplexsanscondensed/IBMPlexSansCondensed-{s}.ttf", None, REPORT)
     for s in ["Regular", "Italic", "Medium", "MediumItalic", "SemiBold", "SemiBoldItalic", "Bold", "BoldItalic"]
 ]
-LICENSES = {"geist": "geist", "inter": "inter", "manrope": "manrope", "ibm-plex": "ibmplexsans"}
+LICENSES = {"geist": "geist", "inter": "inter", "manrope": "manrope", "ibm-plex": "ibmplexsans", "host-grotesk": "hostgrotesk"}
 
 
 def fetch(path: str) -> bytes:

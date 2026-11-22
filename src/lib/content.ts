@@ -97,6 +97,16 @@ export function getPostBySlug(slug: string): Post | null {
 export type TagSummary = { tag: string; slug: string; count: number };
 
 /**
+ * A tag page with fewer posts than this is thin: it stays reachable but is `noindex, follow` and out of the sitemap
+ * (SEO spec T-13, 11-19). One constant for both places.
+ */
+export const MIN_INDEXED_TAG_POSTS = 4;
+
+export function isTagIndexable(tag: TagSummary): boolean {
+  return tag.count >= MIN_INDEXED_TAG_POSTS;
+}
+
+/**
  * Every tag in use, most-used first then alphabetical. Derived from
  * {@link getAllPosts}, so a tag that only appears on a hidden draft doesn't mint
  * a page. Drives `generateStaticParams` for /blog/tag/[tag] and the sitemap.

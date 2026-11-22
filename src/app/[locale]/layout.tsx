@@ -10,6 +10,7 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { SiteNav } from "@/components/nav";
 import { SiteFooter } from "@/components/footer";
 import { Analytics } from "@/components/analytics";
+import { LeadSourceCapture } from "@/components/lead-source-capture";
 
 type Props = {
   children: React.ReactNode;
@@ -93,6 +94,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         </main>
         <SiteFooter locale={locale as Locale} dict={dict} />
         <Analytics gtmId={env.NEXT_PUBLIC_GTM_ID} />
+        <LeadSourceCapture />
       </body>
     </html>
   );

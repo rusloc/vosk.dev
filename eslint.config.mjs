@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
     ".archive/**",
     // The P&L design mockup: reference material with a minified bundle, not site code.
     "docs/pnl/design-mockup/**",
+    // The trail: reports, and design exports with vendored React bundles (11-20, the ad landing page), not site code.
+    ".log/**",
   ]),
 ]);
 

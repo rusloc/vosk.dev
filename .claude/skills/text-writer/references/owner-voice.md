@@ -54,7 +54,23 @@ Then: "re-write the LN article and site blog-post too", meaning the same punches
 | Education: Learn Power BI, DAX, SQL or data modeling one-on-one — at your own pace, on real problems, no slide decks. | Initial consulting: Want an expert review of you tech stack/code or just need to understand & learn? General BI/AI understandable consulting | A question that names the reader's two situations (review, or learn), then a plain label. "&" and "/" are fine. Published with "your" fixed and "understandable" turned into "in plain words". |
 | Semantic layers (Cube) | Semantic layers design | Name the skill, not the vendor tool. |
 
+## Role wording, 2026-11-19
+
+| Draft (rejected) | Owner's version (verbatim) | What it teaches |
+|---|---|---|
+| Freelance Power BI and Microsoft Fabric consultant; Freelance BI analyst | "i need to be called "Consultant" not a freelancer all over the site; freelancer sounds toxic" | The role is **Consultant**. Never "freelance", "freelancer" or "freelance BI analyst" in anything published under the owner's name. |
+
+## Arrows, 2026-11-20
+
+- Asked to trim "A 2,200-line query went from five minutes to 15 seconds." the owner said: **use ">" instead of
+  arrow**. Shipped: "A 2,200-line query: 5 minutes > 15 seconds." Teaches: in the owner's copy a change or a step is
+  written with `>`, never `→`.
+
 ## What the samples teach
+
+- **The owner is a Consultant, never a freelancer** (11-19): "Power BI and Microsoft Fabric consultant", "BI
+  consultant". "Freelance" / "freelancer" reads as cheap to them. Platform names that contain the word (an Upwork URL)
+  stay as they are.
 
 - **Open with a casual question or a blunt claim** about the reader's problem ("Wanna get…?", "Want your data agent to
   stop making up numbers?"). Never with a scene-setting statement about the author ("That's the kind of … I worry about").
@@ -77,3 +93,4 @@ Then: "re-write the LN article and site blog-post too", meaning the same punches
   Em dashes, straw-man "not X but Y", stock openers/closers and emoji are still out.
 - The longer pieces (LinkedIn article, site post) carry the **same punches** as the post, in the same order, with the
   detail (SQL, links, the catch) hung on them.
+- **`>` for a change or a step, never `→`** (11-20): "5 minutes > 15 seconds".

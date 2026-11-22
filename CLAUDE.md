@@ -88,11 +88,23 @@ and roles are plain Postgres, so a move is a connection-string change.
 ## Landing page — clean, no scroll (owner, 2026-11-19)
 
 - **The home page is the hero and nothing else**: the topical H1 line, the headline, the lede, the two buttons
-  (Work, Services) and the proof bar. It fits the screen with **no scrolling** on desktop, laptop and phone.
+  (Work, Services); no proof bar since 11-19 (DP-600 lives on /about; working hours are not stated anywhere on the site). It fits the screen with **no scrolling** on desktop, laptop and phone.
 - **No sections below the hero.** Case studies, prices, posts, service cards and contact blocks belong on their own pages
   (/work, /services, /blog, /contact), even when an SEO spec asks for them on the home page (spec T-03 was rolled back
   on 11-19). Anything added to the hero must still fit the screen; check it in a headless browser at 1440×900,
   1366×768 and 390×844 before shipping.
+
+## Ad landing pages — `/lp/*` (owner, 2026-11-20)
+
+- **One page per ad campaign, built from the owner's design** (`.log/report/engineer-landing/` for `/lp/fabric`,
+  `.log/report/n8n-landing/` for `/lp/ai-automation`, 11-22).
+  They live in `src/app/lp/` with a layout of their own (no site nav or footer; the proxy skips `lp/`); the page code is
+  in `src/components/landing/` (one CSS module per page; the section dock is shared, `landing-dock.tsx`).
+- **One way only:** a landing page links into the site (brand, /contact, /services, /privacy, a /work demo); nothing on the site links
+  to a landing page. `noindex, follow`, no canonical, not in the sitemap, and **never disallowed in robots.txt** (Google
+  must crawl a page to see its noindex, and the Ads crawler must reach it). The consent card and the lead source (R-07)
+  run there as on the site.
+- No invented proof: the design's "Clients" logo strip stays out until the owner supplies real logos.
 
 ## Stack — the site
 
@@ -119,6 +131,8 @@ and roles are plain Postgres, so a move is a connection-string change.
   system (Ledger tokens, CSS Modules) stays inside `components/pnl/`; the site keeps Tailwind and Geist.
 - **Agreed addition (2026-11-05):** Manrope via `next/font` (`components/marketing/manrope-font.ts`), scoped to the ACME
   Marketing report's root, like IBM Plex for the P&L.
+- **Agreed addition (2026-11-20):** Host Grotesk (+ Geist Mono) self-hosted via `next/font/local`
+  (`components/landing/landing-fonts.ts`), scoped to the `/lp/*` landing layout, from the owner's design.
 - **Agreed addition (2026-11-06):** `@anthropic-ai/sdk` (exact 1.5.0), the LLM SDK for the report AI chat: a closed set of
   tools over the report engine, run server-side in `/api/chat/<report>` (ADR-0005; `src/lib/chat/`,
   `src/lib/mirelo/chat-tools.ts`, `src/lib/marketing/chat-tools.ts`, `src/lib/pnl/chat-tools.ts`, `src/lib/trucks/chat-tools.ts`, `src/lib/nordmark/chat-tools.ts`, `src/components/chat/`).

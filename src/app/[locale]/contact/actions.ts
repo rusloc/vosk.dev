@@ -3,7 +3,12 @@
 import { headers } from "next/headers";
 import { Resend } from "resend";
 import { z } from "zod";
-import { makeContactSchema, type ContactState } from "@/lib/schema";
+import {
+  leadSourceSchema,
+  makeContactSchema,
+  type ContactState,
+} from "@/lib/schema";
+import { SOURCE_FIELDS } from "@/lib/lead-source";
 import { getContactConfig } from "@/lib/contact-config";
 import { renderContactEmail, renderAutoReplyEmail } from "@/lib/contact-email";
 import { siteConfig } from "@/lib/site";
@@ -73,10 +78,21 @@ export async function submitContactForm(
   }
 
   const { email, subject, message } = parsed.data;
+  // R-07: where the visitor came from; any bad value is dropped, never an error.
+  const source = leadSourceSchema.parse(
+    Object.fromEntries(
+      SOURCE_FIELDS.map((f) => [f, formData.get(f) ?? undefined]),
+    ),
+  );
 
   try {
     const resend = new Resend(apiKey);
-    const { html, text } = renderContactEmail({ email, subject, message });
+    const { html, text } = renderContactEmail({
+      email,
+      subject,
+      message,
+      source,
+    });
     const { error } = await resend.emails.send({
       from,
       to,

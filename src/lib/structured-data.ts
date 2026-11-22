@@ -39,7 +39,7 @@ const AREA_SERVED = "Worldwide";
  * full name is what this markup has to match: it is the H1 of `/about` and the byline of every post.
  */
 export function homeGraph(): Record<string, unknown> {
-  const { name, title, description, author, contactEmail } = siteConfig;
+  const { name, title, description, contactEmail } = siteConfig;
 
   return {
     "@context": "https://schema.org",
@@ -65,16 +65,7 @@ export function homeGraph(): Record<string, unknown> {
           "ETL",
         ],
       },
-      {
-        "@type": "Person",
-        "@id": PERSON_ID,
-        name: author.name,
-        jobTitle: author.jobTitle,
-        // The page about the person (SEO spec T-05), not the site root.
-        url: absoluteUrl("en", "/about"),
-        sameAs: Object.values(siteConfig.social).filter(Boolean),
-        worksFor: { "@id": ORG_ID },
-      },
+      personNode(),
       {
         "@type": "WebSite",
         "@id": WEBSITE_ID,
@@ -85,6 +76,35 @@ export function homeGraph(): Record<string, unknown> {
       },
     ],
   };
+}
+
+/**
+ * The Person, one node with one `@id` wherever it is emitted (home graph, `/about`). The DP-600 credential is shown
+ * on `/about` and `/contact` (SEO spec T-11, 11-19).
+ */
+function personNode(): Record<string, unknown> {
+  const { author } = siteConfig;
+  return {
+    "@type": "Person",
+    "@id": PERSON_ID,
+    name: author.name,
+    jobTitle: author.jobTitle,
+    // The page about the person (SEO spec T-05), not the site root.
+    url: absoluteUrl("en", "/about"),
+    sameAs: Object.values(siteConfig.social).filter(Boolean),
+    worksFor: { "@id": ORG_ID },
+    hasCredential: {
+      "@type": "EducationalOccupationalCredential",
+      name: "Microsoft Certified: Fabric Analytics Engineer Associate (DP-600)",
+      credentialCategory: "certification",
+      url: siteConfig.dp600Url,
+    },
+  };
+}
+
+/** `/about` structured data: the Person alone, the same entity as the home graph's (SEO spec T-11). */
+export function aboutGraph(): Record<string, unknown> {
+  return { "@context": "https://schema.org", ...personNode() };
 }
 
 /**
@@ -193,6 +213,8 @@ export function collectionGraph(
  * range is `priceSpecification`, not `price`.
  */
 function tierOffer(tier: Tier, name: string, url: string) {
+  // A free tier (Initial consulting, 11-19) shows "Free"; its markup price is 0, and it has no unit.
+  const free = tier.price === "Free";
   return {
     "@type": "Offer",
     name,
@@ -200,9 +222,9 @@ function tierOffer(tier: Tier, name: string, url: string) {
     priceCurrency: "USD",
     priceSpecification: {
       "@type": "PriceSpecification",
-      price: tier.price,
+      price: free ? 0 : tier.price,
       priceCurrency: "USD",
-      unitText: tier.unit,
+      ...(tier.unit ? { unitText: tier.unit } : {}),
     },
     availability: "https://schema.org/InStock",
     url,

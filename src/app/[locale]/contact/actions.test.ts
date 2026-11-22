@@ -132,6 +132,67 @@ describe("submitContactForm — happy path", () => {
   });
 });
 
+/** R-07: the source travels with the form and shows in the owner's email only. */
+describe("submitContactForm — lead source", () => {
+  // The spec's acceptance send: an ad click landing on a service page.
+  const AD_CLICK = {
+    landing_path: "/services/power-bi-consulting",
+    utm_source: "google",
+    utm_medium: "cpc",
+    utm_campaign: "uae-test",
+    utm_term: "power bi consultant",
+    gclid: "Cj0KCQiA-secret-click-id",
+  };
+
+  it("shows landing page, source, campaign and keyword in the notification, and no click id", async () => {
+    await submit(validFields(AD_CLICK));
+
+    const { html, text } = mocks.send.mock.calls[0]![0];
+    for (const v of [
+      "/services/power-bi-consulting",
+      "google / cpc",
+      "uae-test",
+      "power bi consultant",
+    ]) {
+      expect(text).toContain(v);
+      expect(html).toContain(v);
+    }
+    expect(text).toContain("Google Ads click: yes");
+    expect(text + html).not.toContain(AD_CLICK.gclid);
+  });
+
+  it("keeps the source out of the visitor's auto-reply", async () => {
+    await submit(validFields(AD_CLICK));
+
+    const { html, text } = mocks.send.mock.calls[1]![0];
+    expect(text + html).not.toContain("uae-test");
+    expect(text + html).not.toContain("Landing page");
+  });
+
+  it("caps long values, drops unknown fields and still sends", async () => {
+    const result = await submit(
+      validFields({ utm_campaign: "x".repeat(500), utm_evil: "injected" }),
+    );
+
+    expect(result.status).toBe("success");
+    const { text } = mocks.send.mock.calls[0]![0];
+    expect(text).toContain(`Campaign: ${"x".repeat(200)}\n`);
+    expect(text).not.toContain("injected");
+  });
+
+  it("says 'not recorded' when the form carried no source", async () => {
+    await submit();
+
+    expect(mocks.send.mock.calls[0]![0].text).toContain("Source: not recorded");
+  });
+
+  it("escapes a tag that carries markup", async () => {
+    await submit(validFields({ utm_term: "<script>alert(1)</script>" }));
+
+    expect(mocks.send.mock.calls[0]![0].html).not.toContain("<script>");
+  });
+});
+
 describe("submitContactForm — honeypot", () => {
   it("reports success without sending anything when `company` is filled", async () => {
     const result = await submit(validFields({ company: "Acme Bots Inc" }));

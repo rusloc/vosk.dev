@@ -38,6 +38,9 @@ type ShowcaseBase<Text, Paragraphs> = {
   // owner's order (11-05: Cube, exec, P&L, mining, lender, marketing, oldest to newest), not history. 11-16: the n8n
   // showcases are dated between the reports, so every list page mixes both (4 cards a page).
   published: `${number}-${number}-${number}`;
+  // The sitemap `lastmod` of this case study's page (SEO spec T-14, 11-19). Bump it when the entry's copy or report
+  // changes; `/work` takes the newest of these.
+  updated: `${number}-${number}-${number}`;
   title: Text;
   summary: Text; // concise — the list-card blurb
   // The search snippet (meta description, og:description, JSON-LD), 120–160 characters (11-17 SEO check: the card
@@ -138,6 +141,7 @@ export function localize(s: Showcase, locale: Locale): LocalizedShowcase {
   const base = {
     slug: s.slug,
     published: s.published,
+    updated: s.updated,
     title: s.title[locale],
     summary: s.summary[locale],
     description: (s.description ?? s.summary)[locale],
@@ -205,6 +209,7 @@ const allShowcases: Showcase[] = [
   {
     slug: "ceo-digest",
     published: "2026-11-16",
+    updated: "2026-11-19",
     platform: "automation",
     // The Tidewell data chat + "email me this" (docs/ceo-digest/chat-and-email.md, 11-16): the chat answers on the site
     // (src/lib/ceo-digest/, /api/chat/ceo-digest); n8n starts only when a report is emailed. The canvas is the public
@@ -258,6 +263,7 @@ const allShowcases: Showcase[] = [
   {
     slug: "inbox-to-sheet-ai",
     published: "2026-11-04",
+    updated: "2026-11-19",
     platform: "automation",
     // n8n workflow "Inbox to sheet (public demo)", live since 11-16 (docs/automation/README.md, Flow 0). Its public
     // copy is data/n8n/inbox-to-sheet.json: re-export it (scripts/n8n-export.ts) after every change in n8n.
@@ -292,6 +298,7 @@ const allShowcases: Showcase[] = [
   {
     slug: "invoice-pdf-parser",
     published: "2026-11-02",
+    updated: "2026-11-19",
     platform: "automation",
     // n8n workflow "Invoice PDF to sheet (public demo)" (11-16), public copy in data/n8n/invoice-pdf-to-sheet.json.
     // The samples are synthetic, made for this page (public/samples/automation/).
@@ -340,6 +347,7 @@ const allShowcases: Showcase[] = [
   {
     slug: "pnl-suite",
     published: "2026-10-30",
+    updated: "2026-11-19",
     platform: "js",
     report: "pnl",
     data: "synthetic",
@@ -380,6 +388,7 @@ const allShowcases: Showcase[] = [
   {
     slug: "executive-dashboard",
     published: "2026-10-29",
+    updated: "2026-11-19",
     platform: "js",
     report: "nordmark",
     // Production still reads the static public/data/nordmark files; the switch to nordmark_demo (/api/nordmark,
@@ -427,6 +436,7 @@ const allShowcases: Showcase[] = [
   {
     slug: "online-sales-report",
     published: "2026-11-03",
+    updated: "2026-11-19",
     platform: "js",
     report: "mirelo",
     // Published-to-web Power BI flavour (owner, 11-03): the Mirelo Sales report, published 11-03
@@ -474,6 +484,7 @@ const allShowcases: Showcase[] = [
   {
     slug: "marketing-acquisition-dashboard",
     published: "2026-11-05",
+    updated: "2026-11-19",
     platform: "js",
     report: "marketing",
     // The ACME Marketing report published to web from Fabric (owner, 11-05). The web flavour reads Supabase schema
@@ -521,6 +532,7 @@ const allShowcases: Showcase[] = [
   {
     slug: "mining-time-utilization",
     published: "2026-10-31",
+    updated: "2026-11-19",
     platform: "js",
     report: "trucks",
     data: "client",
@@ -571,6 +583,7 @@ const allShowcases: Showcase[] = [
   {
     slug: "finance-pl-overview",
     published: "2026-07-31",
+    updated: "2026-11-19",
     platform: "superset",
     data: "synthetic",
     description: {
@@ -610,6 +623,7 @@ const allShowcases: Showcase[] = [
   {
     slug: "online-sales-cube",
     published: "2026-09-21",
+    updated: "2026-11-20",
     platform: "cube",
     data: "synthetic",
     description: {
@@ -629,8 +643,6 @@ const allShowcases: Showcase[] = [
     },
     metric: "$4.77M",
     articleSlug: "your-own-bi-front-end-with-cube",
-    // Until the owner has signed off the write-up (docs/08 §9, phase 4).
-    noindex: true,
     // The page's text since 10-22, when the dashboard moved into the popup like every
     // other showcase. Facts from docs/08 §7, the as-built dashboard.
     details: {
@@ -709,9 +721,14 @@ export function getShowcaseSlugs(): string[] {
   return showcases.map((s) => s.slug);
 }
 
-/** Slugs safe to advertise in the sitemap — {@link getShowcaseSlugs} minus `noindex` entries. */
+/** Showcases safe to advertise in the sitemap: {@link showcases} minus `noindex` entries. */
+export function getIndexableShowcases(): Showcase[] {
+  return showcases.filter((s) => !s.noindex);
+}
+
+/** Slugs of {@link getIndexableShowcases}. */
 export function getIndexableShowcaseSlugs(): string[] {
-  return showcases.filter((s) => !s.noindex).map((s) => s.slug);
+  return getIndexableShowcases().map((s) => s.slug);
 }
 
 export function getShowcase(slug: string): Showcase | undefined {

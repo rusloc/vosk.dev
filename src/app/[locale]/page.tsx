@@ -7,7 +7,6 @@ import { JsonLd } from "@/components/json-ld";
 import { homeGraph } from "@/lib/structured-data";
 import { ga } from "@/lib/analytics";
 import { buildMetadata } from "@/lib/metadata";
-import { siteConfig } from "@/lib/site";
 import { localizedPath, resolveLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
@@ -66,21 +65,6 @@ export default async function Home({ params }: Props) {
               ga={ga("cta_click", undefined, "services")}
             />
           </div>
-
-          {/* Proof bar: what a visitor can check. Further items only from the owner (I-04). */}
-          <ul className="text-muted-foreground mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-            <li>
-              <a
-                href={siteConfig.dp600Url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-foreground underline underline-offset-4"
-              >
-                {t.proofDp600}
-              </a>
-            </li>
-            <li>{t.proofHours}</li>
-          </ul>
         </div>
       </Container>
     </>

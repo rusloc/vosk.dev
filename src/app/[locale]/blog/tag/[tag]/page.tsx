@@ -6,7 +6,7 @@ import { JsonLd } from "@/components/json-ld";
 import { PageHeader } from "@/components/page-header";
 import { buildMetadata } from "@/lib/metadata";
 import { breadcrumbGraph, collectionGraph } from "@/lib/structured-data";
-import { getAllTags, getPostsByTag } from "@/lib/content";
+import { getAllTags, getPostsByTag, isTagIndexable } from "@/lib/content";
 import { tagLabel } from "@/lib/tags";
 import { locales, resolveLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -37,6 +37,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: t.tagMetaDescription.replace("{tag}", label),
     path: `/blog/tag/${tag}`,
     locale: l,
+    ...(isTagIndexable(summary)
+      ? {}
+      : { robots: { index: false, follow: true } }),
   });
 }
 

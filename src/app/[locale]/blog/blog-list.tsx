@@ -95,10 +95,14 @@ export function BlogList({
           {/* Both labels share one grid cell so the pill width stays constant
               regardless of which is shown — no layout shift on toggle. */}
           <span className="grid">
-            <span className={`col-start-1 row-start-1 ${asc ? "invisible" : ""}`}>
+            <span
+              className={`col-start-1 row-start-1 ${asc ? "invisible" : ""}`}
+            >
               {t.newestFirst}
             </span>
-            <span className={`col-start-1 row-start-1 ${asc ? "" : "invisible"}`}>
+            <span
+              className={`col-start-1 row-start-1 ${asc ? "" : "invisible"}`}
+            >
               {t.oldestFirst}
             </span>
           </span>

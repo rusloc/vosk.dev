@@ -3,6 +3,7 @@
 import { useActionState, useEffect } from "react";
 import { submitContactForm } from "@/app/[locale]/contact/actions";
 import { trackLead } from "@/components/analytics";
+import { readLandingSource } from "@/lib/lead-source";
 import type { ContactState } from "@/lib/schema";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -43,7 +44,15 @@ export function ContactForm({
   }
 
   return (
-    <form action={formAction} className="space-y-5" noValidate>
+    <form
+      // R-07: the tab's landing path and campaign tags go with the message, for the owner's email only.
+      action={(fd) => {
+        for (const [key, value] of readLandingSource()) fd.set(key, value);
+        formAction(fd);
+      }}
+      className="space-y-5"
+      noValidate
+    >
       {/* Locale travels with the submission so the action replies in-language. */}
       <input type="hidden" name="locale" value={locale} />
 

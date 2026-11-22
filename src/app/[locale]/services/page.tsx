@@ -42,10 +42,8 @@ export default async function ServicesPage({ params }: Props) {
       />
 
       {/* Title matches the blog / showcase pages: plain, no highlight. `heading` is the H1; `title` stays the nav label
-          and the breadcrumb name (SEO spec T-07). The intro under it is the page's only prose. */}
-      <PageHeader title={t.heading} introClassName="text-sm sm:text-base">
-        {t.intro}
-      </PageHeader>
+          and the breadcrumb name (SEO spec T-07). No intro under it since 11-19 (owner). */}
+      <PageHeader title={t.heading} />
 
       <ServiceGroups
         groups={[t.subscription, t.project, t.other]}

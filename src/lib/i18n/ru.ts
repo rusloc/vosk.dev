@@ -27,8 +27,6 @@ export const ru: Dictionary = {
   home: {
     // English placeholder: Russian is not published.
     h1: "Freelance Power BI and Microsoft Fabric consultant",
-    proofDp600: "Microsoft DP-600 certified",
-    proofHours: "EU and UK hours",
     headline: {
       lead: "Экономьте ",
       em1: "деньги",
@@ -43,17 +41,19 @@ export const ru: Dictionary = {
   footer: {
     available: "Открыт для новых проектов",
     rss: "RSS-лента",
+    about: "Обо мне",
+    contact: "Контакты",
+    privacy: "Конфиденциальность",
   },
   services: {
     title: "Услуги",
-    heading: "Power BI & Fabric services and pricing",
+    heading:
+      "Data & Fabric engineering, Power BI, n8n, AI agents and automation",
     // The hub's links to the service pages (SEO spec T-04); the list shows only pages out of draft.
     pagesTitle: "Services in detail",
     metaTitle: "Услуги по Power BI и цены",
     metaDescription:
       "Консалтинг по Power BI и Apache Superset — дашборды, модели данных, пайплайны. Подписка, проекты и срочные работы, с ценами.",
-    intro:
-      "Внедрение и консалтинг по BI на Power BI и Apache Superset — выберите подходящий формат. Месячный объём для команд с постоянной отчётной нагрузкой, проекты с фиксированным объёмом под конкретную задачу и разовые срочные работы, когда отчёт сломался перед дедлайном.",
     subscription: {
       eyebrow: "Подписка",
       badge: "Помесячная оплата",
@@ -132,8 +132,8 @@ export const ru: Dictionary = {
         {
           name: "Первичная консультация",
           desc: "Нужен экспертный взгляд на ваш стек или код, или просто хотите разобраться? Консультации по BI и AI понятным языком.",
-          price: "$50",
-          unit: "в час",
+          price: "Бесплатно",
+          unit: "",
         },
       ],
     },
@@ -149,15 +149,62 @@ export const ru: Dictionary = {
       ],
     },
   },
+  // English placeholder: Russian is not published.
+  privacy: {
+    title: "Privacy",
+    metaDescription:
+      "What vosk.dev collects and why: analytics only after you accept the cookie card, contact form messages sent by email, questions asked in the AI chats.",
+    lede: "What this site collects, and what it doesn't.",
+    updated: "Updated 19 November 2026",
+    sections: [
+      {
+        title: "Analytics",
+        body: [
+          "Google Analytics, through Google Tag Manager, loads only after you press Accept on the cookie card. It counts page views and clicks on the main buttons, such as Message, a report or the contact form, and shows whether a visit came from a Google ad.",
+          "Press Decline and nothing loads. Your choice is kept in your own browser (localStorage, key vosk.consent), not on my server.",
+        ],
+      },
+      {
+        title: "Contact form",
+        body: [
+          "The form sends your email address, the subject and the message to my mailbox through Resend, an email service, and sends you a copy. The site keeps no database of messages.",
+          "With the message the form also sends the page you first opened on this site and, if the link you came by had campaign tags (for example from an ad), those tags. They are kept in your browser tab until it closes, without a cookie, and go nowhere else.",
+        ],
+      },
+      {
+        title: "AI chats",
+        body: [
+          "Questions typed into a report's Ask AI chat go to an AI model provider to get the answer. For each question the site logs its size, cost and a scrambled, shortened form of your IP address, never the text.",
+          "The Tidewell data chat emails a report only to an address you type and confirm yourself. My n8n automation server sends it.",
+        ],
+      },
+      {
+        title: "Reports and previews",
+        body: [
+          "Some reports load from outside services, such as Microsoft Power BI, and workflow previews load from n8n, only when you click to open them. Those services follow their own privacy policies.",
+        ],
+      },
+      {
+        title: "Hosting",
+        body: [
+          "The site runs on Vercel, which keeps short-lived technical logs to run and protect the service.",
+        ],
+      },
+    ],
+    contactTitle: "Questions",
+    contactBody:
+      "To ask what I hold about you, or to have it deleted, write to",
+    changeChoice: "Change cookie choice",
+  },
   // English placeholder: Russian is not published (SEO spec, section 1).
   about: {
     title: "About",
     metaTitle: `About ${AUTHOR_NAME}: Power BI & Fabric Consultant (DP-600)`,
-    metaDescription: `${AUTHOR_NAME}, freelance Power BI and Microsoft Fabric consultant with the DP-600 certificate. Based in Turkey, working remotely on EU and UK hours.`,
+    metaDescription: `${AUTHOR_NAME}, freelance Power BI and Microsoft Fabric consultant with the DP-600 certificate. Based in Turkey, working remotely.`,
     lede: "Freelance Power BI and Microsoft Fabric consultant.",
     body: [
       "I build Power BI and Fabric reports, the data models and SQL under them, and the pipelines that keep them fresh. Around them: n8n automations for reports, inboxes and invoices, and AI chats that answer questions straight from your data.",
-      "I'm based in Turkey and work remotely on EU and UK hours.",
+      "I'm based in Turkey and work remotely.",
     ],
     stackTitle: "What I work with",
     stack: [
@@ -173,11 +220,15 @@ export const ru: Dictionary = {
     credential:
       "Microsoft Certified: Fabric Analytics Engineer Associate (DP-600)",
     linkCertificate: "see certificate",
-    profilesTitle: "Profiles",
-    nextBody:
-      "Wanna see the work? Open the showcase, or check services and prices.",
-    nextWork: "Showcase",
-    nextServices: "Services & pricing",
+    contactsTitle: "Contacts",
+    labelName: "Имя",
+    labelEmail: "Почта",
+    labelLinkedin: "LinkedIn",
+    labelUpwork: "Upwork",
+    labelGithub: "GitHub",
+    labelDp600: "DP-600",
+    linkProfile: "смотреть профиль",
+    linkPending: "Скоро",
   },
   // English placeholder: Russian is not published.
   serviceDetail: {
@@ -199,15 +250,6 @@ export const ru: Dictionary = {
     metaDescription:
       "Напишите о проекте на Power BI, Superset или аналитике — через форму или почту. BI-аналитик на фрилансе, работаю с клиентами по всему миру.",
     intro: "Отправьте деловое сообщение прямо мне на почту.",
-    labelName: "Имя",
-    labelEmail: "Почта",
-    labelLinkedin: "LinkedIn",
-    labelUpwork: "Upwork",
-    labelGithub: "GitHub",
-    labelDp600: "DP-600",
-    linkProfile: "смотреть профиль",
-    linkCertificate: "смотреть сертификат",
-    linkPending: "Скоро",
     bookCall: "Book a 20-minute call",
   },
   form: {

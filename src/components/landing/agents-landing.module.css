@@ -1276,11 +1276,12 @@
   }
 }
 
+/* The flare crosses the button in the first 40% of its 2.2s beat, as each border ring leaves it (owner, 11-23). */
 @keyframes sheen {
-  0%,
-  70% {
+  0% {
     transform: translateX(-140%) skewX(-18deg);
   }
+  40%,
   100% {
     transform: translateX(340%) skewX(-18deg);
   }
@@ -1459,7 +1460,8 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .fxFace::after {
-    animation: sheen 7s ease-in-out infinite;
+    /* One sweep per ring: the rings fire every 2.2s (4.4s each, the second 2.2s late), so the flare runs at 2.2s. */
+    animation: sheen 2.2s ease-in-out infinite;
   }
 
   .fxArrow {

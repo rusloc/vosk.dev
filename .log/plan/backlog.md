@@ -9,6 +9,15 @@
 
 # Backlog
 
+## New on 11-23
+
+- **Ads readiness of `/lp/fab` and `/lp/ai`** (check 11-23, `daily-2026-11-23.md`): crawlable by AdsBot, fast (phone LCP
+  ~2 s), tagged, linked to Ads. Open: (1) consent card over the Message button on `/lp/ai` phone; (2) no CTA on the
+  first phone screen of `/lp/fab`; (3) Consent Mode v2 or keep accept-first (owner); (4) R-08 + `generate_lead` import;
+  (5) tiny desktop labels from the scale (floor on label size?); (6) price on `/lp/ai` (R-09).
+- **Landing addresses changed** (owner, 11-23): `/lp/fabric` → `/lp/fab`, `/lp/ai-automation` → `/lp/ai` (old 404). Ads
+  must use the new ones.
+
 ## New on 11-20
 
 - **Ad landing pages at `/lp/*`** (owner, 11-20): one page per ad campaign, one-way links into the site, noindex, not in

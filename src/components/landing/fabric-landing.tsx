@@ -20,46 +20,46 @@ const cta = ga("cta_click", SLUG, "landing_contact");
 const ENGINEER = [
   [
     "Fabric lakehouse & warehouse builds",
-    "Raw data lands in OneLake, gets cleaned in the lakehouse and modelled in the warehouse. One place for every number.",
+    "All your data in one place: raw files land in the lakehouse, clean tables live in the warehouse, every report reads the same numbers.",
   ],
   [
     "ETL / ELT pipelines",
-    "Pipelines that pull from your sources on a schedule and keep the data fresh, with data quality monitoring on top.",
+    "Pipelines pull fresh data from your apps and databases on schedule, so nobody copy-pastes Excel at 8 am again.",
   ],
   [
     "dbt models & tests",
-    "Transformations as versioned SQL, with tests on every model. Changes are reviewed in Git before they reach a report.",
+    "Every data rule is tested SQL kept in Git, so a broken number gets caught before your boss sees it.",
   ],
   [
     "Semantic models & DAX",
-    "A star schema and measures defined once, so every report agrees on what revenue means.",
+    "Revenue, margin and churn defined once in the model, so every Power BI report gives the same answer.",
   ],
   [
     "Refresh automation & scheduling",
-    "Refreshes run on a schedule and in the right order, so the morning dashboard is already up to date.",
+    "Data refreshes run overnight in the right order, so the dashboard is fresh before your first coffee.",
   ],
 ] as const;
 
 const ARCHITECT = [
   [
     "Warehouse & architecture design",
-    "The blueprint before the build: layers, naming and what goes where. It is cheaper to change on paper.",
+    "A clear blueprint of layers and data flows before anything is built, because fixing a drawing is way cheaper than fixing a platform.",
   ],
   [
     "Semantic layers design",
-    "One agreed set of KPI and metric definitions that Power BI, and anything else, reads from.",
+    "One shared dictionary of KPIs that Power BI, Excel and your AI tools all read, so nobody argues whose number is right.",
   ],
   [
     "Row-level security & access",
-    "Who sees which rows, decided on purpose. Roles, workspaces and access mapped out before anyone asks.",
+    "Everyone sees only their own rows: sales gets their region, the CEO gets it all, set once with roles.",
   ],
   [
     "Audits & code reviews",
-    "An expert review of your existing stack or code: what is slow, what is fragile and what to fix first.",
+    "A fresh expert look at your current setup: what is slow, what is fragile and what to fix first.",
   ],
   [
     "Documentation & handover",
-    "Everything written down, so your team can run the platform without me.",
+    "Everything written down in plain words, so your team runs the platform without calling me.",
   ],
 ] as const;
 
@@ -220,7 +220,7 @@ function RoleLine({
         <Plus />
       </button>
       <div
-        className={`${s.pop} ${side === "left" ? s.popLeft : s.popRight}`}
+        className={s.pop}
         id={id}
         role="tooltip"
       >

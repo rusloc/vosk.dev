@@ -66,6 +66,13 @@ Then: "re-write the LN article and site blog-post too", meaning the same punches
   arrow**. Shipped: "A 2,200-line query: 5 minutes > 15 seconds." Teaches: in the owner's copy a change or a step is
   written with `>`, never `→`.
 
+## Landing card edits, 2026-11-23 (`/lp/fab` view 2)
+
+| Draft | Owner's version (verbatim) | What it teaches |
+|---|---|---|
+| Power BI reports & dashboards | "Power BI reports, Fabric apps, custom dashboards" | A run-on list of what they ship beats a generic pair; name the products (Fabric apps) next to Power BI. |
+| Fast, clean reports built on that model, the kind your team actually opens every morning. | "Fast, clean reports built ontop of models, that teams actually open every morning." | Generic "teams" over "your team"; drop the "the kind" hedge. Shipped as "on top of" (spelling only), the comma kept. |
+
 ## What the samples teach
 
 - **The owner is a Consultant, never a freelancer** (11-19): "Power BI and Microsoft Fabric consultant", "BI

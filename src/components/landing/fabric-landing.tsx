@@ -23,34 +23,50 @@ const ENGINEER = [
     "All your data in one place: raw files land in the lakehouse, clean tables live in the warehouse, every report reads the same numbers.",
   ],
   [
-    "ETL / ELT pipelines",
-    "Pipelines pull fresh data from your apps and databases on schedule, so nobody copy-pastes Excel at 8 am again.",
+    "ETL / ELT pipelines & ingestion",
+    "Pipelines pull fresh data from your apps, databases and APIs on schedule, so nobody copy-pastes Excel at 8 am again.",
   ],
   [
-    "dbt models & tests",
-    "Every data rule is tested SQL kept in Git, so a broken number gets caught before your boss sees it.",
+    "dbt models & data quality tests",
+    "Every transformation is versioned SQL with tests, so a broken number gets caught before your boss sees it.",
   ],
   [
-    "Semantic models & DAX",
-    "Revenue, margin and churn defined once in the model, so every Power BI report gives the same answer.",
+    "Business logic as code",
+    "Your rules, like what counts as a sale or an active customer, written once in SQL or PySpark instead of hiding in 20 Excel files.",
   ],
   [
-    "Refresh automation & scheduling",
-    "Data refreshes run overnight in the right order, so the dashboard is fresh before your first coffee.",
+    "Semantic models, DAX & business metrics",
+    "Revenue, margin and churn defined once in the semantic model, so every Power BI report gives the same answer.",
+  ],
+  [
+    "Power BI reports, Fabric apps, custom dashboards",
+    "Fast, clean reports built on top of models, that teams actually open every morning.",
+  ],
+  [
+    "Refresh automation & monitoring",
+    "Refreshes run overnight in the right order with an alert if anything breaks, so the dashboard is fresh before your first coffee.",
   ],
 ] as const;
 
 const ARCHITECT = [
   [
-    "Warehouse & architecture design",
+    "Data platform & warehouse architecture",
     "A clear blueprint of layers and data flows before anything is built, because fixing a drawing is way cheaper than fixing a platform.",
   ],
   [
-    "Semantic layers design",
-    "One shared dictionary of KPIs that Power BI, Excel and your AI tools all read, so nobody argues whose number is right.",
+    "Semantic layer design",
+    "One shared layer of tables, relationships and measures that Power BI, Excel and your AI tools all read, so nobody argues whose number is right.",
   ],
   [
-    "Row-level security & access",
+    "Ontology & business entities",
+    "A map of your business in data terms, customers, orders, products and how they connect, so people and AI agents ask questions in your own words.",
+  ],
+  [
+    "Business metrics catalogue",
+    "Every KPI gets one owner, one formula and one plain definition, so finance and sales finally mean the same thing by revenue.",
+  ],
+  [
+    "Row-level security & governance",
     "Everyone sees only their own rows: sales gets their region, the CEO gets it all, set once with roles.",
   ],
   [

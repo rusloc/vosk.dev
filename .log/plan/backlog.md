@@ -15,7 +15,7 @@
   the sitemap (CLAUDE.md "Ad landing pages"). `/lp/fabric` built and re-fit to the 12:58 export, not pushed; landing #2
   waits for the owner's design. Open: real client logos for the Clients strip; Privacy placement; PSI after the push.
   **11-22:** both pages LIVE (`7f4acb0`): `/lp/ai-automation` (n8n flow + data chat) and `/lp/fabric` (tweaked: services
-  link by Message, FREE note right, card glow, narrower centred views, $1,500 line gone 19:42, not pushed). Open: no
+  link by Message, FREE note right, card glow, narrower centred views, $1,500 line gone 19:42, live 22:47 `549e777`). Open: no
   price on `/lp/ai-automation` (R-09); PSI on both.
 - **No site footer** (owner, 11-22, live): Privacy linked only from the consent card and `/lp/*`. Open: a Privacy line
   under the contact form?

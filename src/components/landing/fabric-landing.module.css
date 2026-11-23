@@ -5,17 +5,24 @@
  */
 
 :global(html):has(.root) {
+  --u0: 1px;
   --u: 1px;
+  --gy: 0px;
   --x0: calc(var(--u) * 20);
   --xr: calc(var(--u) * 68);
   background: #2a0c0f;
   scroll-snap-type: y proximity;
-  scroll-padding-top: calc(var(--u) * 73);
+  scroll-padding-top: calc(var(--u0) * 73);
 }
 
 @media (min-width: 900px) {
   :global(html):has(.root) {
-    --u: min(calc(100vw / 1440), calc(100vh / 810));
+    /* --u0 is the design's unit; --u, the content's, is 0.9 of it: every view's content is 10% smaller and sits
+       around the screen centre, about 20% more free space around it (owner, 11-23). The header and the dock keep --u0;
+       --gy lifts the bottom CTA row by half the height the content gave up. */
+    --u0: min(calc(100vw / 1440), calc(100vh / 810));
+    --u: calc(var(--u0) * 0.9);
+    --gy: calc((100vh - var(--u0) * 73) * 0.05);
     /* Content column 1120 (was the design's 1280): more free space around every view (owner, 11-22). */
     --x0: max(
       calc(var(--u) * 24),
@@ -76,6 +83,7 @@
   position: sticky;
   top: 0;
   z-index: 50;
+  --u: var(--u0);
   height: calc(var(--u) * 73);
   background: #2a0c0f;
   border-bottom: 1px solid rgba(255, 248, 231, 0.14);
@@ -1108,7 +1116,7 @@
 @media (min-width: 900px) {
   .pg {
     /* At least one screen under the header, so the last section also snaps flush on screens taller than 16:9. */
-    min-height: max(calc(var(--u) * 737), calc(100vh - var(--u) * 73));
+    min-height: max(calc(var(--u0) * 737), calc(100vh - var(--u0) * 73));
     padding-top: 0;
     padding-bottom: 0;
   }
@@ -1192,7 +1200,7 @@
   .note.in {
     position: absolute;
     right: var(--xr);
-    bottom: calc(var(--u) * 56);
+    bottom: calc(var(--u) * 56 + var(--gy));
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -1205,7 +1213,7 @@
   .cta.in {
     position: absolute;
     left: var(--x0);
-    bottom: calc(var(--u) * 56);
+    bottom: calc(var(--u) * 56 + var(--gy));
     margin: 0;
   }
 

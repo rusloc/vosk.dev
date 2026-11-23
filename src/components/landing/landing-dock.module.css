@@ -1,9 +1,11 @@
 /*
  * The numbered section dock, shared by the /lp/* pages. Sizes are multiples of the page's --u, the font is the page's
- * --mono; the ink is --lp-ink (#1c1917 on /lp/fabric, the default; #2a0c0f on /lp/ai-automation).
+ * --mono; the ink is --lp-ink (#1c1917 on /lp/fabric, the default; #2a0c0f on /lp/ai). The dock keeps the design's
+ * unit (--u0) while the page content is scaled down.
  */
 
 .dock {
+  --u: var(--u0);
   position: absolute;
   right: calc(var(--u) * 6);
   top: min(50vh, calc(var(--u) * 405));

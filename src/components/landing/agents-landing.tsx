@@ -13,7 +13,7 @@ import s from "./agents-landing.module.css";
  * a dead end); a Privacy link sits beside the last "FREE initial call" (ads policy, as on /lp/fabric).
  */
 
-const SLUG = "lp-ai-automation";
+const SLUG = "lp-ai";
 const cta = ga("cta_click", SLUG, "landing_contact");
 
 const SECTIONS = [

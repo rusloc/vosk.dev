@@ -102,7 +102,7 @@ and roles are plain Postgres, so a move is a connection-string change.
 ## Ad landing pages — `/lp/*` (owner, 2026-11-20)
 
 - **One page per ad campaign, built from the owner's design** (`.log/report/engineer-landing/` for `/lp/fabric`,
-  `.log/report/n8n-landing/` for `/lp/ai-automation`, 11-22).
+  `.log/report/n8n-landing/` for `/lp/ai`, 11-22; was `/lp/ai-automation` until 11-23).
   They live in `src/app/lp/` with a layout of their own (no site nav or footer; the proxy skips `lp/`); the page code is
   in `src/components/landing/` (one CSS module per page; the section dock is shared, `landing-dock.tsx`).
 - **One way only:** a landing page links into the site (brand, /contact, /services, /privacy, a /work demo); nothing on the site links

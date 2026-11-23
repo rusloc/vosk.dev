@@ -14,7 +14,7 @@ import s from "./fabric-landing.module.css";
  * the 11-20 update).
  */
 
-const SLUG = "lp-fabric";
+const SLUG = "lp-fab";
 const cta = ga("cta_click", SLUG, "landing_contact");
 
 const ENGINEER = [

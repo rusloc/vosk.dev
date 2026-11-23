@@ -1,6 +1,6 @@
 /*
  * Ad landing page #2 (AI agents, n8n and automation), from the owner's design (.log/report/n8n-landing/, 11-22).
- * Same system as /lp/fabric: every size is a multiple of --u, 1px on phones and 1/1440 of the screen (capped by
+ * Same system as /lp/fab: every size is a multiple of --u, 1px on phones and 1/1440 of the screen (capped by
  * height, 810) from 900px up, so a section fits one screen on desktop. The page scrolls the document.
  */
 
@@ -17,12 +17,13 @@
 
 @media (min-width: 900px) {
   :global(html):has(.root) {
-    /* --u0 is the design's unit; --u, the content's, is 0.9 of it: every view's content is 10% smaller and sits
-       around the screen centre, about 20% more free space around it (owner, 11-23). The header and the dock keep --u0;
-       --gy lifts the bottom CTA row by half the height the content gave up. */
+    /* --u0 is the design's unit; --k scales the content (--u) down around the screen centre for more free space
+       (owner, 11-23: 0.9, then 25% more). The header and the dock keep --u0; --gy lifts the bottom CTA row by half
+       the height the content gave up. */
+    --k: 0.675;
     --u0: min(calc(100vw / 1440), calc(100vh / 810));
-    --u: calc(var(--u0) * 0.9);
-    --gy: calc((100vh - var(--u0) * 73) * 0.05);
+    --u: calc(var(--u0) * var(--k));
+    --gy: calc((100vh - var(--u0) * 73) * (1 - var(--k)) / 2);
     --x0: max(
       calc(var(--u) * 24),
       calc((100vw - var(--u) * 1280) / 2 + var(--u) * 24)
@@ -43,7 +44,6 @@
 
 .root {
   --mono: var(--font-lp-mono), ui-monospace, Menlo, monospace;
-  --lp-ink: #2a0c0f;
   position: relative;
   overflow-x: clip;
   background: #2a0c0f;
@@ -210,6 +210,7 @@
 .emIndigo {
   font-style: italic;
   color: #4f46e5;
+  white-space: nowrap; /* "Just ask." stays on one line (owner, 11-23) */
 }
 
 .lede {
@@ -284,14 +285,14 @@
   height: calc(var(--u) * 160);
   border-radius: calc(var(--u) * 20);
   box-shadow: 0 calc(var(--u) * 22) calc(var(--u) * 36) calc(var(--u) * -18)
-    rgba(14, 10, 60, 0.8);
+    rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .tPaper {
-  background: #fffdf6;
+  background: #fff8e7;
   color: #2a0c0f;
 }
 
@@ -365,7 +366,7 @@
   overflow: hidden;
   width: calc(var(--u) * 88);
   height: calc(var(--u) * 114);
-  background: #fffdf6;
+  background: #fff8e7;
   border-radius: calc(var(--u) * 9);
   padding: calc(var(--u) * 10);
   transform: rotate(-4deg);
@@ -389,7 +390,7 @@
 .docLine {
   height: calc(var(--u) * 6);
   border-radius: calc(var(--u) * 3);
-  background: #dccfb0;
+  background: color-mix(in srgb, #2a0c0f 16%, #fff8e7);
 }
 
 .docTotal {
@@ -417,8 +418,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #16a34a;
-  color: #fff;
+  background: #4f46e5;
+  color: #fff8e7;
 }
 
 .ok2 {
@@ -524,11 +525,11 @@
 .sheet {
   position: relative;
   width: 100%;
-  background: #fffdf6;
+  background: #fff8e7;
   border-radius: calc(var(--u) * 14);
   padding: calc(var(--u) * 14);
   box-shadow: 0 calc(var(--u) * 22) calc(var(--u) * 36) calc(var(--u) * -18)
-    rgba(14, 10, 60, 0.8);
+    rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
   gap: calc(var(--u) * 8);
@@ -543,11 +544,11 @@
 
 .sRow > span {
   border-radius: calc(var(--u) * 4);
-  background: #f3ead2;
+  background: color-mix(in srgb, #2a0c0f 6%, #fff8e7);
 }
 
 .sHead > span {
-  background: #dccfb0;
+  background: color-mix(in srgb, #2a0c0f 16%, #fff8e7);
 }
 
 .sNew {
@@ -563,7 +564,7 @@
   width: calc(var(--u) * 22);
   height: calc(var(--u) * 22);
   border-radius: 50%;
-  background: #16a34a;
+  background: #4f46e5;
 }
 
 .ok4 svg {
@@ -614,10 +615,10 @@
 
 .chat {
   position: relative;
-  background: #fffdf6;
+  background: #fff8e7;
   border-radius: calc(var(--u) * 20);
   box-shadow: 0 calc(var(--u) * 44) calc(var(--u) * 70) calc(var(--u) * -30)
-    rgba(70, 25, 0, 0.6);
+    rgba(0, 0, 0, 0.45);
   overflow: hidden;
 }
 
@@ -628,12 +629,12 @@
   justify-content: space-between;
   gap: calc(var(--u) * 4) calc(var(--u) * 16);
   padding: calc(var(--u) * 14) calc(var(--u) * 20);
-  border-bottom: 1px solid #eadfc6;
+  border-bottom: 1px solid color-mix(in srgb, #2a0c0f 11%, #fff8e7);
   font-family: var(--mono);
   font-size: calc(var(--u) * 11);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #57503f;
+  color: color-mix(in srgb, #2a0c0f 80%, #fff8e7);
 }
 
 .live {
@@ -647,7 +648,7 @@
   width: calc(var(--u) * 8);
   height: calc(var(--u) * 8);
   border-radius: 50%;
-  background: #16a34a;
+  background: #4f46e5;
 }
 
 .msgs {
@@ -677,7 +678,7 @@
 .bot {
   align-self: flex-start;
   max-width: 86%;
-  background: #f3ead2;
+  background: color-mix(in srgb, #2a0c0f 6%, #fff8e7);
   padding: calc(var(--u) * 11) calc(var(--u) * 16);
   border-radius: calc(var(--u) * 16) calc(var(--u) * 16) calc(var(--u) * 16)
     calc(var(--u) * 4);
@@ -711,7 +712,7 @@
   flex: 0 0 calc(var(--u) * 56);
   font-family: var(--mono);
   font-size: calc(var(--u) * 11);
-  color: #57503f;
+  color: color-mix(in srgb, #2a0c0f 80%, #fff8e7);
 }
 
 .barTrack {
@@ -742,7 +743,7 @@
   align-items: center;
   gap: calc(var(--u) * 10);
   padding: calc(var(--u) * 12) calc(var(--u) * 16);
-  border-top: 1px solid #eadfc6;
+  border-top: 1px solid color-mix(in srgb, #2a0c0f 11%, #fff8e7);
   text-decoration: none;
   color: #2a0c0f;
 }
@@ -754,10 +755,10 @@
   align-items: center;
   min-height: calc(var(--u) * 44);
   padding: 0 calc(var(--u) * 14);
-  border: 1px solid #dccfb0;
+  border: 1px solid color-mix(in srgb, #2a0c0f 16%, #fff8e7);
   border-radius: calc(var(--u) * 10);
   background: #fff8e7;
-  color: #8a7f68;
+  color: color-mix(in srgb, #2a0c0f 55%, #fff8e7);
   font-size: calc(var(--u) * 16);
   white-space: nowrap;
   overflow: hidden;
@@ -827,7 +828,7 @@
   border-radius: 999px;
   background: #ffa63d;
   color: #2a0c0f;
-  border: calc(var(--u) * 3) solid #fffdf6;
+  border: calc(var(--u) * 3) solid #fff8e7;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -944,7 +945,7 @@
   background: linear-gradient(
     100deg,
     transparent,
-    rgba(255, 255, 255, 0.5),
+    rgba(255, 248, 231, 0.5),
     transparent
   );
   transform: translateX(-140%) skewX(-18deg);

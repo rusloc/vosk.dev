@@ -10,7 +10,7 @@ import s from "./agents-landing.module.css";
  * JS off (only the dock's highlight and the header's colour fallback need it) and with reduced motion.
  *
  * Changed from the design: the chat's input box is a link into the live chat demo (a box that takes no input would be
- * a dead end); a Privacy link sits beside the last "FREE initial call" (ads policy, as on /lp/fabric).
+ * a dead end); a Privacy link sits beside the last "FREE initial call" (ads policy, as on /lp/fab).
  */
 
 const SLUG = "lp-ai";
@@ -293,7 +293,7 @@ export function AgentsLanding() {
                     {(
                       [
                         ["Search", 88, "#2a0c0f"],
-                        ["Social", 58, "#e8a531"],
+                        ["Social", 58, "#ffa63d"],
                         ["Email", 30, "#4f46e5"],
                       ] as const
                     ).map(([name, w, color]) => (
@@ -349,7 +349,7 @@ export function AgentsLanding() {
             </div>
           </div>
         </div>
-        {/* The design ends on "FREE initial call"; Privacy stays beside it (ads policy, as on /lp/fabric). */}
+        {/* The design ends on "FREE initial call"; Privacy stays beside it (ads policy, as on /lp/fab). */}
         <p className={s.note}>
           <span className={`${s.free} ${s.freeIndigo}`}>
             <strong>FREE</strong> initial call

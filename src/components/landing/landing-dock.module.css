@@ -1,7 +1,7 @@
 /*
  * The numbered section dock, shared by the /lp/* pages. Sizes are multiples of the page's --u, the font is the page's
- * --mono; the ink is --lp-ink (#1c1917 on /lp/fabric, the default; #2a0c0f on /lp/ai). The dock keeps the design's
- * unit (--u0) while the page content is scaled down.
+ * --mono; colours are the four brand colours (CLAUDE.md). The dock keeps the design's unit (--u0) while the page
+ * content is scaled down.
  */
 
 .dock {
@@ -15,7 +15,7 @@
   gap: 2px;
   padding: calc(var(--u) * 4);
   border-radius: calc(var(--u) * 18);
-  background: var(--lp-ink, #1c1917);
+  background: #2a0c0f;
   border: 1px solid rgba(255, 248, 231, 0.22);
   box-shadow: 0 calc(var(--u) * 18) calc(var(--u) * 40) calc(var(--u) * -18)
     rgba(0, 0, 0, 0.7);
@@ -30,7 +30,7 @@
   width: calc(var(--u) * 44);
   min-height: calc(var(--u) * 44);
   border-radius: calc(var(--u) * 12);
-  color: #dcc9b6;
+  color: color-mix(in srgb, #fff8e7 80%, #2a0c0f);
   text-decoration: none;
   font-family: var(--mono);
   font-size: calc(var(--u) * 13);
@@ -55,7 +55,7 @@
 .dk.on,
 .dk.on:hover {
   background: #ffa63d;
-  color: var(--lp-ink, #1c1917);
+  color: #2a0c0f;
 }
 
 @media (min-width: 900px) {

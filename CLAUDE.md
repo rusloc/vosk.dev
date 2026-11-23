@@ -101,8 +101,8 @@ and roles are plain Postgres, so a move is a connection-string change.
 
 ## Ad landing pages — `/lp/*` (owner, 2026-11-20)
 
-- **One page per ad campaign, built from the owner's design** (`.log/report/engineer-landing/` for `/lp/fabric`,
-  `.log/report/n8n-landing/` for `/lp/ai`, 11-22; was `/lp/ai-automation` until 11-23).
+- **One page per ad campaign, built from the owner's design** (`.log/report/engineer-landing/` for `/lp/fab`,
+  `.log/report/n8n-landing/` for `/lp/ai`, 11-22; `/lp/fabric` and `/lp/ai-automation` until 11-23).
   They live in `src/app/lp/` with a layout of their own (no site nav or footer; the proxy skips `lp/`); the page code is
   in `src/components/landing/` (one CSS module per page; the section dock is shared, `landing-dock.tsx`).
 - **One way only:** a landing page links into the site (brand, /contact, /services, /privacy, a /work demo); nothing on the site links
@@ -110,6 +110,9 @@ and roles are plain Postgres, so a move is a connection-string change.
   must crawl a page to see its noindex, and the Ads crawler must reach it). The consent card and the lead source (R-07)
   run there as on the site.
 - No invented proof: the design's "Clients" logo strip stays out until the owner supplies real logos.
+- **Four colours only (owner, 11-23):** blue `#4F46E5`, orange `#FFA63D`, white `#FFF8E7`, black `#2A0C0F`. A tint or
+  shade is one of them at an opacity (`rgba`) or a `color-mix` of two of them (muted text, paper shades, the Fabric
+  stack layers); no other hex, no greens or greys. Shadows and masks alone use neutral black (`rgba(0, 0, 0, …)`, `#000`).
 
 ## Stack — the site
 

@@ -345,6 +345,39 @@ const allShowcases: Showcase[] = [
     },
   },
   {
+    slug: "freight-sales-report",
+    published: "2026-11-24",
+    updated: "2026-11-24",
+    // The "Freight Sales Demo" report, published to web from Fabric (owner, 11-24). A real client's report with
+    // anonymised names. Its web flavour (a custom JS report reading Parquet shipped in the build, owner 11-24) is next:
+    // this entry then becomes `platform: "js"` with this link as its `powerBi`, and the page gets both buttons.
+    platform: "power-bi",
+    embedUrl:
+      "https://app.fabric.microsoft.com/view?r=eyJrIjoiMDg0N2IxZDktZDdhMS00N2JkLWI2MGItMDg4ZTgyODE5OWRmIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
+    href: "https://app.fabric.microsoft.com/view?r=eyJrIjoiMDg0N2IxZDktZDdhMS00N2JkLWI2MGItMDg4ZTgyODE5OWRmIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
+    data: "client",
+    description: {
+      en: "Power BI sales report of an international freight forwarder: expected vs actual revenue, gross profit, shipments and clients, down to each shipment.",
+    },
+    title: { en: "Freight forwarding sales report" },
+    summary: {
+      en: "Expected vs actual revenue and gross profit of a freight forwarder, down to each shipment.",
+    },
+    client: { en: "International freight forwarding company" },
+    // the first figure on the report's first screen: expected revenue, USD, 1 Jun – 31 Oct 2026
+    metric: "$21.0M",
+    // From the published report itself (Overview, Operational date / Accounting date / Top N clients), read 11-24.
+    details: {
+      en: [
+        "Sales read two ways: **expected**, by the shipment's operational date, and **actual**, by the accounting date.",
+        "Revenue, gross profit, shipments and clients against the previous period of the same length, each marked good or off track.",
+        "Down to one row per shipment: client, account manager and sales user, in USD or local currency, flat or as a pivot.",
+        "A Top N clients page for who brings the revenue, company by company.",
+        "Built in **Power BI** on **Microsoft Fabric**, from the company's own sales data.",
+      ],
+    },
+  },
+  {
     slug: "pnl-suite",
     published: "2026-10-30",
     updated: "2026-11-19",

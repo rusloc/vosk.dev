@@ -49,6 +49,10 @@ executive dashboard and the P&L) and reads it at runtime through the site's own 
 Report data does not ship in the Vercel build. **Neon** (hosted Postgres, a project per report) is
 the agreed alternative when the 500 MB free plan runs out or `qbo` needs the room; the seeds, loaders
 and roles are plain Postgres, so a move is a connection-string change.
+_Exception (owner, 2026-11-24):_ the **freight forwarding sales report** (`/work/freight-sales-report`) keeps its custom
+JS version's **Parquet in the repo build**, read in the browser (`hyparquet`, as the P&L did before 11-09): no
+`<report>_demo` schema, no reader login, no `<REPORT>_DATABASE_URL`. Anyone can download those files, as anyone can
+open its Power BI publish-to-web link.
 
 - **The site holds one credential per report: a `<report>_reader` login that can read its own
   `<report>_demo` schema and nothing else.** It never holds a credential that reaches `qbo`,

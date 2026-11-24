@@ -9,6 +9,13 @@
 
 # Backlog
 
+## New on 11-24
+
+- **🎯 "Logistics sales monitor"** (owner, 11-24): a new report arrives; embed its Power BI file and build a custom JS
+  report on top (pattern: Trucks). Steps on `plan-2026-11-24.md` Today 1. Space: the database is 65.3 % of 500 MB
+  (11-24); past ~70 % the report goes to Neon.
+- **`vosk.dev` does not resolve on the owner's network** (11-23 22:07, daily finding 8): local or ISP DNS, the site is up.
+
 ## New on 11-23
 
 - **Ads readiness of `/lp/fab` and `/lp/ai`** (check 11-23, `daily-2026-11-23.md`): crawlable by AdsBot, fast (phone LCP

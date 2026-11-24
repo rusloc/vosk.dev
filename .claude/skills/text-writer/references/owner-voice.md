@@ -73,6 +73,15 @@ Then: "re-write the LN article and site blog-post too", meaning the same punches
 | Power BI reports & dashboards | "Power BI reports, Fabric apps, custom dashboards" | A run-on list of what they ship beats a generic pair; name the products (Fabric apps) next to Power BI. |
 | Fast, clean reports built on that model, the kind your team actually opens every morning. | "Fast, clean reports built ontop of models, that teams actually open every morning." | Generic "teams" over "your team"; drop the "the kind" hedge. Shipped as "on top of" (spelling only), the comma kept. |
 
+## Showcase subtitle, 2026-11-24 (`/work` intro)
+
+- The subtitle ran three sentences: "Dashboards and automations written up as short case studies: demos on synthetic data
+  and client work under anonymised names, each card says which. Open any one for the story and the live report — filter
+  and drill down as its users do. Built in …". The owner asked: **max two sentences and two rows length**. Shipped:
+  "Dashboards and automations as short case studies: open any one live and drill down as its users do. Built in Power
+  BI, n8n, Custom JS, and Cube + Tremor." Teaches: a page intro fits two rows on desktop; drop what the cards already
+  say (the data label) and keep the one action (open live, drill down).
+
 ## What the samples teach
 
 - **The owner is a Consultant, never a freelancer** (11-19): "Power BI and Microsoft Fabric consultant", "BI

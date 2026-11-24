@@ -12,10 +12,12 @@ import { URL_KEYS as TRUCKS_KEYS } from "./trucks/engine/url-state";
  * The reports built in this repo (`platform: "js"` showcases): each is a client component under
  * `components/<report>/` over a framework-free engine in `lib/<report>/`. Each loads its data through its own server
  * route (`/api/<report>/*`, from its `<report>_demo` schema; Nordmark from `public/data/nordmark/` until its go-live) and
- * computes every number in the browser. They were handed over as standalone apps
+ * computes every number in the browser. The freight report reads Parquet shipped in the build (public/data/freight/,
+ * owner 11-24) and has no server route. They were handed over as standalone apps
  * (docs/<report>/) and are owned here since.
  */
-export type JsReport = "pnl" | "mirelo" | "nordmark" | "marketing" | "trucks";
+export type JsReport =
+  "pnl" | "mirelo" | "nordmark" | "marketing" | "trucks" | "freight";
 
 /**
  * The query-string keys each report's state is encoded with. A showcase-page URL carrying one of them is a
@@ -27,6 +29,7 @@ export const REPORT_QUERY_KEYS: Record<JsReport, readonly string[]> = {
   nordmark: NORDMARK_KEYS,
   marketing: MARKETING_KEYS,
   trucks: TRUCKS_KEYS,
+  freight: [], // no shared report links yet: its view does not travel in the URL
 };
 
 /** Reports whose view travels in the URL hash: a shared link with one of these opens the popup as well. */

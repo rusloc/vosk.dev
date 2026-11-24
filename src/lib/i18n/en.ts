@@ -343,7 +343,8 @@ export const en = {
       "BI dashboard and automation case studies to open live: demos on synthetic data and client work under anonymised names, built in {platforms}.",
     // The platform list after `lead` is built from the showcases on the site (lib/work.ts).
     intro: {
-      lead: "Dashboards and automations written up as short case studies: demos on synthetic data and client work under anonymised names, each card says which. Open any one for the story and the live report — filter and drill down as its users do. Built in ",
+      // Two sentences, two rows on desktop (owner, 11-24).
+      lead: "Dashboards and automations as short case studies: open any one live and drill down as its users do. Built in ",
       tail: ".",
     },
     empty: "Case studies coming soon.",
@@ -379,6 +380,7 @@ export const en = {
     dataLabel: {
       synthetic: "Demo on synthetic data",
       client: "Real operating figures, names anonymised",
+      anonymised: "Client report, anonymised data",
     },
     // The foot of a showcase page (11-17 SEO check: no way on from a showcase but back). One sentence and the buttons
     // (owner, 11-18). `nextCtaBooking` replaces `nextCta` once `siteConfig.bookingUrl` is set, with a "Book a free call"

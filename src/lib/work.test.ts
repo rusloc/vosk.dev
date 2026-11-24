@@ -98,7 +98,9 @@ describe("search snippets (11-17 SEO check)", () => {
       const text = view.description ?? view.summary;
       expect(text.length, s.slug).toBeGreaterThanOrEqual(120);
       expect(text.length, s.slug).toBeLessThanOrEqual(160);
-      expect(["synthetic", "client"], s.slug).toContain(view.data);
+      expect(["synthetic", "client", "anonymised"], s.slug).toContain(
+        view.data,
+      );
     }
   });
 });

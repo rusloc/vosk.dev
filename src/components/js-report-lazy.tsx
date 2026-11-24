@@ -19,10 +19,14 @@ const REPORTS: Record<
     import("./marketing/marketing-app").then((m) => m.MarketingApp),
   ),
   trucks: dynamic(() => import("./trucks/trucks-app").then((m) => m.TrucksApp)),
+  freight: dynamic(() =>
+    import("./freight/freight-app").then((m) => m.FreightApp),
+  ),
 };
 
 /**
- * `chat`: the report shows the site's Ask AI button (Mirelo, ACME Marketing and the P&L; Nordmark ignores it). `chatOpen`: its chat
+ * `chat`: the report shows the site's Ask AI button (Mirelo, ACME Marketing, the P&L and ACME Trucks; Nordmark and
+ * the freight report ignore it). `chatOpen`: its chat
  * opens as soon as the report is up (the page's Ask AI button, 11-06).
  */
 export function JsReportLazy({

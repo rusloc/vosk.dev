@@ -52,7 +52,7 @@ and roles are plain Postgres, so a move is a connection-string change.
 _Exception (owner, 2026-11-24):_ the **freight forwarding sales report** (`/work/freight-sales-report`) keeps its custom
 JS version's **Parquet in the repo build**, read in the browser (`hyparquet`, as the P&L did before 11-09): no
 `<report>_demo` schema, no reader login, no `<REPORT>_DATABASE_URL`. Anyone can download those files, as anyone can
-open its Power BI publish-to-web link.
+open its Power BI publish-to-web link. Built 11-24: `docs/freight/README.md`.
 
 - **The site holds one credential per report: a `<report>_reader` login that can read its own
   `<report>_demo` schema and nothing else.** It never holds a credential that reaches `qbo`,
@@ -175,6 +175,7 @@ content/
   blog/*.mdx      → articles
 data/             → synthetic demo warehouses as plain SQL: P&L (Superset), sales/ (Cube); <report>/parquet + checks + sql for the JS reports
 public/images/    → work/<slug>/… and blog/<slug>/… assets
+public/data/freight/ → the freight sales report's Parquet, shipped as delivered (11-24); engine lib/freight/, UI components/freight/
 data/pnl/parquet/ → the P&L showcase's frozen data (Parquet + manifest; was public/data/pnl until 11-09, now loaded into pnl_demo); spec and decisions in docs/pnl/
 ```
 

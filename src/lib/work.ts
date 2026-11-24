@@ -48,7 +48,8 @@ type ShowcaseBase<Text, Paragraphs> = {
   description?: Text;
   // Where the figures come from, said on the card and the page (11-17, Upwork / site spec C4): "synthetic" = a demo on
   // made-up data, "client" = real operating figures under anonymised names. Required, so a new entry has to say.
-  data: "synthetic" | "client";
+  // 11-24: "anonymised" = a client's report on anonymised data (the freight report: names generated, amounts scaled).
+  data: "synthetic" | "client" | "anonymised";
   client: Text; // the client type, shown as "Client: …" under the detail page's title (owner, 11-15; off the cards 11-16)
   // the detail page's bullet summary: at most 5 points, one of them on the tech (owner, 11-15), under the report
   // buttons. `**…**` marks a key phrase in bold (11-16).
@@ -348,16 +349,19 @@ const allShowcases: Showcase[] = [
     slug: "freight-sales-report",
     published: "2026-11-24",
     updated: "2026-11-24",
-    // The "Freight Sales Demo" report, published to web from Fabric (owner, 11-24). A real client's report with
-    // anonymised names. Its web flavour (a custom JS report reading Parquet shipped in the build, owner 11-24) is next:
-    // this entry then becomes `platform: "js"` with this link as its `powerBi`, and the page gets both buttons.
-    platform: "power-bi",
-    embedUrl:
-      "https://app.fabric.microsoft.com/view?r=eyJrIjoiMDg0N2IxZDktZDdhMS00N2JkLWI2MGItMDg4ZTgyODE5OWRmIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
-    href: "https://app.fabric.microsoft.com/view?r=eyJrIjoiMDg0N2IxZDktZDdhMS00N2JkLWI2MGItMDg4ZTgyODE5OWRmIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
-    data: "client",
+    // A client's report on anonymised data (owner, 11-24). Power BI: "Freight Sales Demo", published to web from
+    // Fabric. Web report: components/freight over Parquet shipped in the build (public/data/freight/, owner 11-24; no
+    // server route, so no env gate). No Ask AI for now (owner). docs/freight/README.md.
+    platform: "js",
+    report: "freight",
+    powerBi: {
+      embedUrl:
+        "https://app.fabric.microsoft.com/view?r=eyJrIjoiMDg0N2IxZDktZDdhMS00N2JkLWI2MGItMDg4ZTgyODE5OWRmIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
+      href: "https://app.fabric.microsoft.com/view?r=eyJrIjoiMDg0N2IxZDktZDdhMS00N2JkLWI2MGItMDg4ZTgyODE5OWRmIiwidCI6IjBjZWM3Mzk3LWE0MDQtNDMwZi04MmQzLWQzMzIyZjdlZmM2OCIsImMiOjl9",
+    },
+    data: "anonymised",
     description: {
-      en: "Power BI sales report of an international freight forwarder: expected vs actual revenue, gross profit, shipments and clients, down to each shipment.",
+      en: "Sales report of an international freight forwarder, in Power BI and as a web report: expected vs actual revenue, gross profit, shipments, top clients.",
     },
     title: { en: "Freight forwarding sales report" },
     summary: {
@@ -372,8 +376,8 @@ const allShowcases: Showcase[] = [
         "Sales read two ways: **expected**, by the shipment's operational date, and **actual**, by the accounting date.",
         "Revenue, gross profit, shipments and clients against the previous period of the same length, each marked good or off track.",
         "Down to one row per shipment: client, account manager and sales user, in USD or local currency, flat or as a pivot.",
-        "A Top N clients page for who brings the revenue, company by company.",
-        "Built in **Power BI** on **Microsoft Fabric**, from the company's own sales data.",
+        "Top N clients by revenue and gross profit, or by volume: TEU, CBM, chargeable weight.",
+        "Built in **Power BI** on **Microsoft Fabric**, and as a **web report** drawn on this site from the same data.",
       ],
     },
   },

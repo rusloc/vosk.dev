@@ -190,6 +190,13 @@ data/pnl/parquet/ → the P&L showcase's frozen data (Parquet + manifest; was pu
   itself (`components/sales-dashboard.tsx`); it is hidden until `CUBE_API_URL` + `CUBE_API_SECRET` are set.
   An `automation` entry (11-16) is an n8n workflow: its text, then "How to test" on the live demo inbox, then one
   "n8n workflow" button that opens the canvas in the popup.
+- **A showcase page fits one screen, no scroll, on desktop (owner, 11-25):** two columns from `lg` (title, buttons and
+  "About" on the left; "Try it yourself", the contact box and the related titles on the right). `details` is **three
+  bullets of one sentence each**: what the report is about, its metrics, the tech under the hood (`work.test.ts` checks
+  it). Measure at 1440×900 and 1366×768 after any change to a showcase's text.
+- **Buttons (owner, 11-25):** one look, `components/cta-button.module.css`: black (`.cta`), orange (`.cta .accent`, which
+  replaced every blue button) and white with a border (`.cta .outline`, the secondary, e.g. "See pricing"); each one
+  hovers with the same blue slide. No `bg-primary` buttons on the site pages.
 - All pages are Server Components / statically rendered. `[slug]` routes use `generateStaticParams()`. Client components are the exception (contact form, theme toggle, mobile menu) — mark them `'use client'`.
 
 ## Available agents & skills

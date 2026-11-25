@@ -9,6 +9,12 @@
 
 # Backlog
 
+## New on 11-25
+
+- **`/work` subtitle names topics, not tools** (owner, 11-25 10:14): Fabric, Power BI, Semantic layer, Dashboards, n8n,
+  AI agents, in place of the platform list built from `work.ts`. Today 1 of `plan-2026-11-25.md`.
+- ✅ The freight forwarding sales report (11-24): Power BI + web report live, `e0012da` (`docs/freight/README.md`).
+
 ## New on 11-24
 
 - **🎯 "Logistics sales monitor"** (owner, 11-24): a new report arrives; embed its Power BI file and build a custom JS

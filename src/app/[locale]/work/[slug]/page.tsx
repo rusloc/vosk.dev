@@ -38,6 +38,7 @@ import {
 import { locales, localizedPath, resolveLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { ReportMock } from "../report-mock";
+import cta from "@/components/cta-button.module.css";
 
 /** A line of showcase copy with its `**key phrases**` in bold (lib/work.ts, 11-16). */
 function withBold(text: string) {
@@ -177,23 +178,29 @@ export default async function ShowcasePage({ params }: Props) {
           describes the same Home → Showcase → title hierarchy this link walks up. */}
       <BackLink href={localizedPath(l, "/work")} label={t.backToShowcase} />
 
-      {/* No platform pill beside the title (owner, 11-04): the buttons below name the format. */}
-      <header className="mt-3">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          {title}
-        </h1>
-        {/* The client type, stated plainly (owner, 11-15). */}
-        <p className="text-muted-foreground mt-1.5">
-          {t.clientLabel}:{" "}
-          <span className="text-foreground font-medium">{showcase.client}</span>
-        </p>
-        {/* Where the figures come from (11-17, spec C4), as on the card. */}
-        <p className="text-muted-foreground mt-1 text-sm">
-          {t.dataLabel[showcase.data]}
-        </p>
-      </header>
+      {/* One screen, no scroll, on desktop (owner, 11-25): two columns from lg, the story on the left (title, buttons,
+          three bullets), the try-it steps and the way on to the right. One column below lg. */}
+      <div className="mt-3 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-x-14">
+        <div>
+          {/* No platform pill beside the title (owner, 11-04): the buttons below name the format. */}
+          <header>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {title}
+            </h1>
+            {/* The client type, stated plainly (owner, 11-15). */}
+            <p className="text-muted-foreground mt-1.5">
+              {t.clientLabel}:{" "}
+              <span className="text-foreground font-medium">
+                {showcase.client}
+              </span>
+            </p>
+            {/* Where the figures come from (11-17, spec C4), as on the card. */}
+            <p className="text-muted-foreground mt-1 text-sm">
+              {t.dataLabel[showcase.data]}
+            </p>
+          </header>
 
-      {/* Every showcase is a text page with a button: the report opens in a popup on
+          {/* Every showcase is a text page with a button: the report opens in a popup on
           request (owner's call, 10-22), so the page is the story a crawler can read.
           Power BI's public URL doubles as the no-JS fallback; Superset has no public
           URL — the SDK mints a guest token per viewer (ADR-0002) — and Cube is drawn
@@ -205,276 +212,290 @@ export default async function ShowcasePage({ params }: Props) {
           labels 11-03), each opening its report in the same popup. Every showcase uses
           the same two names (owner, 11-04): "Power BI" for a Power BI report, "Web report"
           for everything drawn on the site (JS, Cube, Superset). */}
-      <div className="mt-5 flex flex-wrap gap-3">
-        {/* An n8n workflow (11-16): one button that opens its canvas, drawn by n8n's hosted preview (our server
+          <div className="mt-5 flex flex-wrap gap-3">
+            {/* An n8n workflow (11-16): one button that opens its canvas, drawn by n8n's hosted preview (our server
             stays private). Owner's order, 11-16: this button, then "Try it yourself", then "About this project". */}
-        {/* "Ask AI" (owner, 11-16): a 16:9 popup, the chat on the right and on the left an empty slot, a dull report
+            {/* "Ask AI" (owner, 11-16): a 16:9 popup, the chat on the right and on the left an empty slot, a dull report
             picture over "Your APP or BI REPORT here", where a client's own app would sit. Below `lg` the chat alone. It
             answers from the route; nothing loads before. */}
-        {dataChat && (
-          <ReportDialog
-            label={t.askAi}
-            title={title}
-            closeLabel={t.closeReport}
-            trigger={askAiTrigger(t.askAi)}
-            size="wide"
-            ga={ga("chat_open", slug)}
-          >
-            <div className="flex h-full">
-              <div className="bg-muted hidden min-w-0 flex-1 flex-col items-center justify-center gap-5 p-10 lg:flex">
-                <div className="w-full max-w-[420px] opacity-40 grayscale">
-                  <ReportMock metric="" />
+            {dataChat && (
+              <ReportDialog
+                label={t.askAi}
+                title={title}
+                closeLabel={t.closeReport}
+                trigger={askAiTrigger(t.askAi)}
+                size="wide"
+                ga={ga("chat_open", slug)}
+              >
+                <div className="flex h-full">
+                  <div className="bg-muted hidden min-w-0 flex-1 flex-col items-center justify-center gap-5 p-10 lg:flex">
+                    <div className="w-full max-w-[420px] opacity-40 grayscale">
+                      <ReportMock metric="" />
+                    </div>
+                    <p className="text-muted-foreground text-lg font-medium tracking-tight">
+                      {t.chatAppSlot}
+                    </p>
+                  </div>
+                  <div className="border-border min-w-0 flex-1 lg:w-[420px] lg:flex-none lg:border-l">
+                    <ChatPanel
+                      endpoint={`/api/chat/${dataChat}`}
+                      suggestions={CEO_DIGEST_SUGGESTIONS}
+                      standalone={CEO_DIGEST_CHAT_COPY}
+                    />
+                  </div>
                 </div>
-                <p className="text-muted-foreground text-lg font-medium tracking-tight">
-                  {t.chatAppSlot}
-                </p>
-              </div>
-              <div className="border-border min-w-0 flex-1 lg:w-[420px] lg:flex-none lg:border-l">
-                <ChatPanel
-                  endpoint={`/api/chat/${dataChat}`}
-                  suggestions={CEO_DIGEST_SUGGESTIONS}
-                  standalone={CEO_DIGEST_CHAT_COPY}
-                />
-              </div>
-            </div>
-          </ReportDialog>
-        )}
-        {showcase.platform === "automation" && canvas && (
-          <ReportDialog
-            label={t.openWorkflow}
-            title={`${title} — ${PLATFORM_LABEL.automation}`}
-            closeLabel={t.closeReport}
-            ga={ga("report_open", slug, "n8n_workflow")}
-          >
-            <N8nWorkflow
-              flow={showcase.workflow}
-              loadingLabel={t.workflowLoading}
-              errorLabel={t.workflowError}
-            />
-          </ReportDialog>
-        )}
-        {showcase.platform === "js" && showcase.powerBi && (
-          <ReportDialog
-            label={t.openPowerBi}
-            title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
-            closeLabel={t.closeReport}
-            href={showcase.powerBi.href}
-            ga={ga("report_open", slug, "power_bi")}
-          >
-            <iframe
-              src={showcase.powerBi.embedUrl}
-              title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
-              allowFullScreen
-              className="h-full w-full border-0"
-            />
-          </ReportDialog>
-        )}
-        {webReport && (
-          <ReportDialog
-            label={
-              showcase.platform === "power-bi" ? t.openPowerBi : t.openWebReport
-            }
-            title={reportTitle}
-            closeLabel={t.closeReport}
-            href={showcase.platform === "power-bi" ? showcase.href : undefined}
-            ga={ga(
-              "report_open",
-              slug,
-              showcase.platform === "power-bi" ? "power_bi" : "web_report",
+              </ReportDialog>
             )}
-            openOnQuery={
-              showcase.platform === "js"
-                ? REPORT_QUERY_KEYS[showcase.report]
-                : undefined
-            }
-            openOnHash={
-              showcase.platform === "js"
-                ? REPORT_HASHES[showcase.report]
-                : undefined
-            }
-          >
-            {showcase.platform === "cube" ? (
-              <div className="p-4 sm:p-6">
-                <SalesDashboardLazy
-                  data={await getSalesDashboardData()}
-                  labels={dict.salesDashboard}
+            {showcase.platform === "automation" && canvas && (
+              <ReportDialog
+                label={t.openWorkflow}
+                title={`${title} — ${PLATFORM_LABEL.automation}`}
+                closeLabel={t.closeReport}
+                ga={ga("report_open", slug, "n8n_workflow")}
+              >
+                <N8nWorkflow
+                  flow={showcase.workflow}
+                  loadingLabel={t.workflowLoading}
+                  errorLabel={t.workflowError}
                 />
-              </div>
-            ) : showcase.platform === "js" ? (
-              <JsReportLazy report={showcase.report} chat={chat} />
-            ) : showcase.platform === "superset" ? (
-              <SupersetEmbed
-                slug={showcase.slug}
-                embedId={showcase.embedId}
+              </ReportDialog>
+            )}
+            {showcase.platform === "js" && showcase.powerBi && (
+              <ReportDialog
+                label={t.openPowerBi}
+                title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
+                closeLabel={t.closeReport}
+                href={showcase.powerBi.href}
+                ga={ga("report_open", slug, "power_bi")}
+              >
+                <iframe
+                  src={showcase.powerBi.embedUrl}
+                  title={`${title} — ${PLATFORM_LABEL["power-bi"]}`}
+                  allowFullScreen
+                  className="h-full w-full border-0"
+                />
+              </ReportDialog>
+            )}
+            {webReport && (
+              <ReportDialog
+                label={
+                  showcase.platform === "power-bi"
+                    ? t.openPowerBi
+                    : t.openWebReport
+                }
                 title={reportTitle}
-                loadingLabel={t.dashboardLoading}
-                errorLabel={t.dashboardError}
-              />
-            ) : showcase.platform === "power-bi" ? (
-              <iframe
-                src={showcase.embedUrl}
-                title={reportTitle}
-                allowFullScreen
-                className="h-full w-full border-0"
-              />
-            ) : null}
-          </ReportDialog>
-        )}
-        {/* Ask AI opens the web report with its chat already up (owner, 11-06): the chat then asks about the
-            report's view, and a figures card's link applies in place, as from the report's own button. */}
-        {chatReport && (
-          <ReportDialog
-            label={t.askAi}
-            title={reportTitle}
-            closeLabel={t.closeReport}
-            trigger={askAiTrigger(t.askAi)}
-            ga={ga("chat_open", slug)}
-          >
-            <JsReportLazy report={chatReport} chat chatOpen />
-          </ReportDialog>
-        )}
-      </div>
-
-      {showcase.platform === "automation" && (
-        <section className="mt-8 max-w-prose">
-          <h2 className="text-lg font-semibold tracking-tight">
-            {t.howToTestHeading}
-          </h2>
-          <ol className="text-foreground/85 marker:text-muted-foreground mt-3 list-decimal space-y-1.5 pl-5 leading-relaxed">
-            {showcase.test.steps.map((step, i) => (
-              <li key={i}>
-                {step.split(/(\{email\})/).map((part, j) =>
-                  part === "{email}" ? (
-                    <a
-                      key={j}
-                      href={`mailto:${showcase.test.email}`}
-                      className="text-primary font-medium break-all hover:underline"
-                    >
-                      {showcase.test.email}
-                    </a>
-                  ) : (
-                    withBold(part)
-                  ),
+                closeLabel={t.closeReport}
+                href={
+                  showcase.platform === "power-bi" ? showcase.href : undefined
+                }
+                ga={ga(
+                  "report_open",
+                  slug,
+                  showcase.platform === "power-bi" ? "power_bi" : "web_report",
                 )}
-              </li>
-            ))}
-          </ol>
-          {/* The sample files in a compact dropdown (owner, 11-16): a native <details>, so no client JS. */}
-          {showcase.test.samples && (
-            <details className="border-border mt-4 w-fit rounded-md border px-3 py-2 text-sm">
-              <summary className="cursor-pointer font-medium select-none">
-                {t.samplesLabel}
-              </summary>
-              <ul className="mt-2 space-y-1">
-                {showcase.test.samples.map((sample, i) => (
-                  <li key={sample.href}>
-                    <a
-                      href={sample.href}
-                      download
-                      className="text-primary font-medium hover:underline"
-                    >
-                      {t.sampleName.replace("{n}", String(i + 1))}
-                    </a>{" "}
-                    <span className="text-muted-foreground">{sample.note}</span>
-                  </li>
+                openOnQuery={
+                  showcase.platform === "js"
+                    ? REPORT_QUERY_KEYS[showcase.report]
+                    : undefined
+                }
+                openOnHash={
+                  showcase.platform === "js"
+                    ? REPORT_HASHES[showcase.report]
+                    : undefined
+                }
+              >
+                {showcase.platform === "cube" ? (
+                  <div className="p-4 sm:p-6">
+                    <SalesDashboardLazy
+                      data={await getSalesDashboardData()}
+                      labels={dict.salesDashboard}
+                    />
+                  </div>
+                ) : showcase.platform === "js" ? (
+                  <JsReportLazy report={showcase.report} chat={chat} />
+                ) : showcase.platform === "superset" ? (
+                  <SupersetEmbed
+                    slug={showcase.slug}
+                    embedId={showcase.embedId}
+                    title={reportTitle}
+                    loadingLabel={t.dashboardLoading}
+                    errorLabel={t.dashboardError}
+                  />
+                ) : showcase.platform === "power-bi" ? (
+                  <iframe
+                    src={showcase.embedUrl}
+                    title={reportTitle}
+                    allowFullScreen
+                    className="h-full w-full border-0"
+                  />
+                ) : null}
+              </ReportDialog>
+            )}
+            {/* Ask AI opens the web report with its chat already up (owner, 11-06): the chat then asks about the
+            report's view, and a figures card's link applies in place, as from the report's own button. */}
+            {chatReport && (
+              <ReportDialog
+                label={t.askAi}
+                title={reportTitle}
+                closeLabel={t.closeReport}
+                trigger={askAiTrigger(t.askAi)}
+                ga={ga("chat_open", slug)}
+              >
+                <JsReportLazy report={chatReport} chat chatOpen />
+              </ReportDialog>
+            )}
+          </div>
+
+          <section className="mt-8 max-w-prose">
+            <h2 className="text-lg font-semibold tracking-tight">
+              {t.aboutHeading}
+            </h2>
+            <div className="text-foreground/85 mt-3 space-y-4 leading-relaxed">
+              {/* A dry bullet summary (owner, 11-05): what the report shows and which metrics reveal the detail. */}
+              <ul className="marker:text-muted-foreground list-disc space-y-1.5 pl-5">
+                {details.map((point, i) => (
+                  <li key={i}>{withBold(point)}</li>
                 ))}
               </ul>
-            </details>
-          )}
-        </section>
-      )}
-
-      <section className="mt-8 max-w-prose">
-        <h2 className="text-lg font-semibold tracking-tight">
-          {t.aboutHeading}
-        </h2>
-        <div className="text-foreground/85 mt-3 space-y-4 leading-relaxed">
-          {/* A dry bullet summary (owner, 11-05): what the report shows and which metrics reveal the detail. */}
-          <ul className="marker:text-muted-foreground list-disc space-y-1.5 pl-5">
-            {details.map((point, i) => (
-              <li key={i}>{withBold(point)}</li>
-            ))}
-          </ul>
-          {/* The long-form story, linked by its own title as the anchor. */}
-          {article && (
-            <p>
-              {t.writeUp}:{" "}
-              <Link
-                href={localizedPath(l, `/blog/${article.slug}`)}
-                className="text-primary font-medium hover:underline"
-              >
-                {article.title}
-              </Link>
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* A way on from a showcase (11-17 SEO check: the page linked only back): contact and services, then the
-          next showcases on the list, wrapping round. */}
-      {/* The call to action in a box (owner, 11-18): one sentence, then the buttons. "Book a free call" and its
-          sentence appear only once `siteConfig.bookingUrl` is set: no promise of a call before a scheduler exists. */}
-      <section className="border-accent/50 bg-accent/10 mt-10 max-w-prose rounded-xl border p-5 sm:p-6">
-        <h2 className="text-lg font-semibold tracking-tight">
-          {siteConfig.bookingUrl ? t.nextCtaBooking : t.nextCta}
-        </h2>
-        <div className="mt-4 flex flex-wrap gap-3 text-sm font-medium">
-          {siteConfig.bookingUrl && (
-            <a
-              href={siteConfig.bookingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={CTA_PRIMARY}
-              {...ga("booking_click", slug, "showcase")}
-            >
-              {t.nextBook}
-            </a>
-          )}
-          <Link
-            href={localizedPath(l, "/contact")}
-            className={siteConfig.bookingUrl ? CTA_SECONDARY : CTA_PRIMARY}
-            {...ga("cta_click", slug, "showcase_contact")}
-          >
-            {t.nextContact}
-          </Link>
-          <Link
-            href={localizedPath(l, "/services")}
-            className={CTA_SECONDARY}
-            {...ga("cta_click", slug, "showcase_pricing")}
-          >
-            {t.nextServices}
-          </Link>
-        </div>
-      </section>
-
-      <section className="mt-8 max-w-prose">
-        {related.length > 0 && (
-          <>
-            <h2 className="text-base font-semibold tracking-tight">
-              {t.relatedTitle}
-            </h2>
-            <ul className="mt-2 space-y-1.5">
-              {related.map((r) => (
-                <li key={r.slug}>
+              {/* The long-form story, linked by its own title as the anchor. */}
+              {article && (
+                <p>
+                  {t.writeUp}:{" "}
                   <Link
-                    href={localizedPath(l, `/work/${r.slug}`)}
+                    href={localizedPath(l, `/blog/${article.slug}`)}
                     className="text-primary font-medium hover:underline"
-                    {...ga("select_content", r.slug, "related_showcase")}
                   >
-                    {r.title}
+                    {article.title}
                   </Link>
-                  <span className="text-muted-foreground"> · {r.summary}</span>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </section>
+                </p>
+              )}
+            </div>
+          </section>
+        </div>
+
+        {/* Right column on desktop: how to try it, then the way on. */}
+        <div className="mt-10 space-y-8 lg:mt-0 lg:space-y-6">
+          {showcase.platform === "automation" && (
+            <section>
+              <h2 className="text-lg font-semibold tracking-tight">
+                {t.howToTestHeading}
+              </h2>
+              <ol className="text-foreground/85 marker:text-muted-foreground mt-3 list-decimal space-y-1.5 pl-5 leading-relaxed">
+                {showcase.test.steps.map((step, i) => (
+                  <li key={i}>
+                    {step.split(/(\{email\})/).map((part, j) =>
+                      part === "{email}" ? (
+                        <a
+                          key={j}
+                          href={`mailto:${showcase.test.email}`}
+                          className="text-primary font-medium break-all hover:underline"
+                        >
+                          {showcase.test.email}
+                        </a>
+                      ) : (
+                        withBold(part)
+                      ),
+                    )}
+                  </li>
+                ))}
+              </ol>
+              {/* The sample files in a compact dropdown (owner, 11-16): a native <details>, so no client JS. */}
+              {showcase.test.samples && (
+                <details className="border-border mt-4 w-fit rounded-md border px-3 py-2 text-sm">
+                  <summary className="cursor-pointer font-medium select-none">
+                    {t.samplesLabel}
+                  </summary>
+                  <ul className="mt-2 space-y-1">
+                    {showcase.test.samples.map((sample, i) => (
+                      <li key={sample.href}>
+                        <a
+                          href={sample.href}
+                          download
+                          className="text-primary font-medium hover:underline"
+                        >
+                          {t.sampleName.replace("{n}", String(i + 1))}
+                        </a>{" "}
+                        <span className="text-muted-foreground">
+                          {sample.note}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </section>
+          )}
+
+          {/* A way on from a showcase (11-17 SEO check: the page linked only back): contact and services, then the
+          next showcases on the list, wrapping round. */}
+          {/* The call to action in a box (owner, 11-18): one sentence, then the buttons. "Book a free call" and its
+          sentence appear only once `siteConfig.bookingUrl` is set: no promise of a call before a scheduler exists. */}
+          <section className="border-accent/50 bg-accent/10 max-w-prose rounded-xl border p-5 sm:p-6">
+            <h2 className="text-lg font-semibold tracking-tight">
+              {siteConfig.bookingUrl ? t.nextCtaBooking : t.nextCta}
+            </h2>
+            <div className="mt-4 flex flex-wrap gap-3 text-sm font-medium">
+              {siteConfig.bookingUrl && (
+                <a
+                  href={siteConfig.bookingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={CTA_PRIMARY}
+                  {...ga("booking_click", slug, "showcase")}
+                >
+                  {t.nextBook}
+                </a>
+              )}
+              <Link
+                href={localizedPath(l, "/contact")}
+                className={siteConfig.bookingUrl ? CTA_SECONDARY : CTA_PRIMARY}
+                {...ga("cta_click", slug, "showcase_contact")}
+              >
+                {t.nextContact}
+              </Link>
+              <Link
+                href={localizedPath(l, "/services")}
+                className={CTA_SECONDARY}
+                {...ga("cta_click", slug, "showcase_pricing")}
+              >
+                {t.nextServices}
+              </Link>
+            </div>
+          </section>
+
+          <section className="max-w-prose">
+            {related.length > 0 && (
+              <>
+                <h2 className="text-base font-semibold tracking-tight">
+                  {t.relatedTitle}
+                </h2>
+                <ul className="mt-2 space-y-1.5">
+                  {related.map((r) => (
+                    <li key={r.slug}>
+                      <Link
+                        href={localizedPath(l, `/work/${r.slug}`)}
+                        className="text-primary font-medium hover:underline"
+                        {...ga("select_content", r.slug, "related_showcase")}
+                      >
+                        {r.title}
+                      </Link>
+                      {/* Titles only on desktop, so the page fits one screen (11-25). */}
+                      <span className="text-muted-foreground lg:hidden">
+                        {" "}
+                        · {r.summary}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </section>
+        </div>
+      </div>
     </Container>
   );
 }
 
-const CTA_PRIMARY =
-  "bg-primary text-primary-foreground inline-flex rounded-md px-4 py-2 transition-opacity hover:opacity-90";
-const CTA_SECONDARY =
-  "border-border hover:border-foreground inline-flex rounded-md border bg-white px-4 py-2 transition-colors";
+// Orange, and white for the secondary, both with the blue wipe of the black CTAs (owner, 11-25).
+const CTA_PRIMARY = `${cta.cta} ${cta.accent}`;
+const CTA_SECONDARY = `${cta.cta} ${cta.outline}`;

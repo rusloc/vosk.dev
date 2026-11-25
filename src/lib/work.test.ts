@@ -104,3 +104,21 @@ describe("search snippets (11-17 SEO check)", () => {
     }
   });
 });
+
+describe("showcase page text", () => {
+  // Owner, 11-25: every page fits one screen, so each showcase says three things in one sentence each: what the report
+  // is about, its metrics, the tech under the hood.
+  it("has three one-sentence bullets per showcase", async () => {
+    const work = await loadWork(SET);
+    const slugs = work.getShowcaseSlugs();
+    expect(slugs.length).toBeGreaterThan(5);
+    for (const slug of slugs) {
+      const { details } = work.localize(work.getShowcase(slug)!, "en");
+      expect(details, slug).toHaveLength(3);
+      for (const point of details)
+        expect(point.match(/[.!?](\s|$)/g), `${slug}: ${point}`).toHaveLength(
+          1,
+        );
+    }
+  });
+});

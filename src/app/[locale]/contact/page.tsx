@@ -9,6 +9,7 @@ import { ga } from "@/lib/analytics";
 import { siteConfig } from "@/lib/site";
 import { resolveLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import cta from "@/components/cta-button.module.css";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -50,7 +51,7 @@ export default async function ContactPage({ params }: Props) {
           href={siteConfig.bookingUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-primary text-primary-foreground mt-5 inline-flex rounded-md px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
+          className={`${cta.cta} ${cta.accent} mt-5`}
           {...ga("booking_click", undefined, "contact")}
         >
           {t.bookCall}

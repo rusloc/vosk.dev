@@ -7,6 +7,7 @@ import { readLandingSource } from "@/lib/lead-source";
 import type { ContactState } from "@/lib/schema";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import cta from "./cta-button.module.css";
 
 const initialState: ContactState = { status: "idle" };
 
@@ -122,7 +123,7 @@ export function ContactForm({
       <button
         type="submit"
         disabled={pending}
-        className="bg-primary text-primary-foreground inline-flex h-11 cursor-pointer items-center justify-center rounded-md px-6 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        className={`${cta.cta} ${cta.accent}`}
       >
         {pending ? t.sending : t.submit}
       </button>

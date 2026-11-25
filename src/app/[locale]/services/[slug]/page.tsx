@@ -11,6 +11,7 @@ import { localize } from "@/lib/work";
 import { ga } from "@/lib/analytics";
 import { locales, localizedPath, resolveLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import cta from "@/components/cta-button.module.css";
 import { ShowcaseCard } from "../../work/showcase-card";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
@@ -171,7 +172,7 @@ export default async function ServicePage({ params }: Props) {
         <p className="text-muted-foreground mt-2">{t.ctaBody}</p>
         <Link
           href={localizedPath(l, "/contact")}
-          className="bg-primary text-primary-foreground mt-5 inline-flex rounded-md px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
+          className={`${cta.cta} ${cta.accent} mt-5`}
           {...ga("cta_click", slug, "service_contact")}
         >
           {t.ctaContact}

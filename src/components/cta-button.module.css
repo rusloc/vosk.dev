@@ -1,4 +1,5 @@
-/* The one CTA style — nav "Message", plus the home hero pair. The nav button is
+/* The one CTA style — nav "Message", the home hero pair, the report buttons, and
+   (with `.accent` / `.outline` below) every other site button. The nav button is
    the benchmark: a 40px pill, cream on near-black.
 
    Hover wipes a --primary fill in from the left. The fill's leading edge is
@@ -63,9 +64,57 @@
   outline-offset: 2px;
 }
 
+/* Two more grounds under the same blue wipe (owner, 11-25): the site's former blue
+   buttons are orange, and a secondary button ("See pricing") keeps its white ground
+   and grey border. Dark label on orange and on white; it turns white as the blue
+   comes in, since dark text on the blue fill would not read. */
+.accent,
+.outline {
+  color: var(--foreground);
+  transition:
+    box-shadow 0.3s ease,
+    color 0.35s ease,
+    border-color 0.35s ease;
+}
+
+.accent {
+  background-color: rgb(var(--accent-rgb));
+}
+
+.outline {
+  border: 1px solid var(--border);
+  background-color: #fff;
+}
+
+.accent:hover,
+.accent:focus-visible,
+.outline:hover,
+.outline:focus-visible {
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+/* The consent card's Accept: the same button at 28px. */
+.small {
+  height: 1.75rem;
+  padding: 0 0.75rem;
+  font-size: inherit;
+}
+
+.cta:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cta:disabled::before {
+  transform: translateX(-105%) skewX(-10deg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cta,
-  .cta::before {
+  .cta::before,
+  .accent,
+  .outline {
     transition: none;
   }
 }

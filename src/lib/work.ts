@@ -210,7 +210,7 @@ const allShowcases: Showcase[] = [
   {
     slug: "ceo-digest",
     published: "2026-11-16",
-    updated: "2026-11-19",
+    updated: "2026-11-25",
     platform: "automation",
     // The Tidewell data chat + "email me this" (docs/ceo-digest/chat-and-email.md, 11-16): the chat answers on the site
     // (src/lib/ceo-digest/, /api/chat/ceo-digest); n8n starts only when a report is emailed. The canvas is the public
@@ -234,14 +234,14 @@ const allShowcases: Showcase[] = [
     },
     details: {
       en: [
-        "A manager opens **Ask AI** and asks about marketing, cash flow or clients in plain words. The figures come back in the chat. No waiting for an analyst.",
-        "**There is no text-to-SQL.** The LLM can only call a closed set of **PostgreSQL functions** and writes from the rows they return. **This nearly removes hallucinations**: the model never writes a query, so it can't invent one or reach another table, and every figure comes from the rows the functions return.",
-        "**Email me this** starts an **n8n workflow**. It runs the same functions for the period, adds three short takeaways and sends an HTML report with the tables. Sends are capped per address and per day.",
+        "A manager asks about a SaaS company's marketing, cash flow or clients in plain words and gets the figures in the chat, or as a report by email.",
+        "Weekly MRR, marketing spend and clicks, cash, receivables and payables, down to each customer and invoice.",
+        "Under the hood: no text-to-SQL, the LLM only calls a closed set of **PostgreSQL functions**, which nearly removes hallucinations, and an **n8n workflow** emails the report.",
       ],
       ru: [
-        "Руководитель открывает **Спросить ИИ** и простыми словами спрашивает о маркетинге, денежном потоке или клиентах. Цифры приходят в чат. Ждать аналитика не нужно.",
-        "**Text-to-SQL здесь нет.** LLM может только вызывать закрытый набор **функций PostgreSQL** и пишет по строкам, которые они вернули. **Это почти полностью убирает галлюцинации**: модель не пишет запросов, поэтому не может выдумать запрос или добраться до другой таблицы, а каждая цифра берётся из строк, которые вернули функции.",
-        "**«Пришли это на почту»** запускает **воркфлоу n8n**. Он выполняет те же функции за период, добавляет три коротких вывода и отправляет HTML-отчёт с таблицами. Отправки ограничены по адресу и по дням.",
+        "Руководитель простыми словами спрашивает о маркетинге, денежном потоке или клиентах SaaS-компании и получает цифры в чате или отчётом на почту.",
+        "Еженедельный MRR, расходы и клики маркетинга, деньги, дебиторка и кредиторка, вплоть до каждого клиента и счёта.",
+        "Под капотом: без text-to-SQL, LLM вызывает только закрытый набор **функций PostgreSQL**, что почти полностью убирает галлюцинации, а отчёт на почту отправляет **воркфлоу n8n**.",
       ],
     },
     test: {
@@ -264,7 +264,7 @@ const allShowcases: Showcase[] = [
   {
     slug: "inbox-to-sheet-ai",
     published: "2026-11-04",
-    updated: "2026-11-19",
+    updated: "2026-11-25",
     platform: "automation",
     // n8n workflow "Inbox to sheet (public demo)", live since 11-16 (docs/automation/README.md, Flow 0). Its public
     // copy is data/n8n/inbox-to-sheet.json: re-export it (scripts/n8n-export.ts) after every change in n8n.
@@ -281,8 +281,8 @@ const allShowcases: Showcase[] = [
     details: {
       en: [
         "Every email to a shared inbox becomes a row in a Google Sheet about a minute after it lands, so nobody has to open each one to see what it asks.",
-        'An LLM (Claude Haiku) writes the topic in one sentence and pulls out the deadline. "By the end of this week" becomes the date of that Sunday.',
-        "Safe on a public inbox: addresses are masked, names and links are kept out of the sheet, attachments are only counted, and replies are capped per sender and per day.",
+        'Each row carries the topic in one sentence and the deadline as a date: "by the end of this week" becomes that Sunday.',
+        "Under the hood: an **n8n** workflow with an LLM (Claude Haiku), masked addresses and replies capped per sender, safe on a public inbox.",
       ],
     },
     test: {
@@ -299,7 +299,7 @@ const allShowcases: Showcase[] = [
   {
     slug: "invoice-pdf-parser",
     published: "2026-11-02",
-    updated: "2026-11-19",
+    updated: "2026-11-25",
     platform: "automation",
     // n8n workflow "Invoice PDF to sheet (public demo)" (11-16), public copy in data/n8n/invoice-pdf-to-sheet.json.
     // The samples are synthetic, made for this page (public/samples/automation/).
@@ -316,8 +316,8 @@ const allShowcases: Showcase[] = [
     details: {
       en: [
         "A PDF invoice sent by email becomes a row in a Google Sheet, so accounts payable stops retyping invoices by hand.",
-        'An LLM (Claude Haiku) reads the vendor, number, dates, currency, totals and every line item. "Net 30" turns into a due date.',
-        "Then the arithmetic is checked: lines against the subtotal, subtotal plus tax against the total. A mismatch shows in the Check column, and a scanned PDF with no text is reported as one.",
+        "Vendor, number, dates, currency, totals and every line item, with lines checked against the subtotal and subtotal plus tax against the total.",
+        'Under the hood: an **n8n** workflow with an LLM (Claude Haiku) that turns "Net 30" into a due date and reports a scanned PDF with no text.',
       ],
     },
     test: {
@@ -348,7 +348,7 @@ const allShowcases: Showcase[] = [
   {
     slug: "freight-sales-report",
     published: "2026-11-24",
-    updated: "2026-11-24",
+    updated: "2026-11-25",
     // A client's report on anonymised data (owner, 11-24). Power BI: "Freight Sales Demo", published to web from
     // Fabric. Web report: components/freight over Parquet shipped in the build (public/data/freight/, owner 11-24; no
     // server route, so no env gate). No Ask AI for now (owner). docs/freight/README.md.
@@ -373,18 +373,16 @@ const allShowcases: Showcase[] = [
     // From the published report itself (Overview, Operational date / Accounting date / Top N clients), read 11-24.
     details: {
       en: [
-        "Sales read two ways: **expected**, by the shipment's operational date, and **actual**, by the accounting date.",
-        "Revenue, gross profit, shipments and clients against the previous period of the same length, each marked good or off track.",
-        "Down to one row per shipment: client, account manager and sales user, in USD or local currency, flat or as a pivot.",
-        "Top N clients by revenue and gross profit, or by volume: TEU, CBM, chargeable weight.",
-        "Built in **Power BI** on **Microsoft Fabric**, and as a **web report** drawn on this site from the same data.",
+        "Sales of an international freight forwarder read two ways: **expected** by the shipment's operational date, **actual** by the accounting date.",
+        "Revenue, gross profit, shipments and clients vs the previous period, down to each shipment, plus Top N clients by revenue, gross profit or TEU.",
+        "Under the hood: **Power BI** on **Microsoft Fabric**, and the same report as a **web report** drawn on this site from the same data.",
       ],
     },
   },
   {
     slug: "pnl-suite",
     published: "2026-10-30",
-    updated: "2026-11-19",
+    updated: "2026-11-25",
     platform: "js",
     report: "pnl",
     data: "synthetic",
@@ -407,25 +405,21 @@ const allShowcases: Showcase[] = [
     // The page's text: what the report does, short on purpose. Spec and build notes: docs/pnl/.
     details: {
       en: [
-        "Two very different businesses, a consumer goods maker and an e-commerce SaaS, on one P&L layout. The CFO reads both the same way.",
-        "Every line vs budget, latest estimate or last year, from the block down to the account. USD, EUR or GBP, at actual or constant FX.",
-        "The drivers behind the money: units and price per unit for the goods side; GMV, take rate, active merchants and ARR for the SaaS.",
-        "Bridges walk revenue and profit from budget to actual, driver by driver, with FX split out. Then region and category: who grows, who actually earns.",
-        "Under the hood: complex ETL into a PostgreSQL backend, and an AI chat that answers only from the report's numbers, checked against 63 known answers.",
+        "Budget vs actual management P&L for a two-company group, a consumer goods maker and an e-commerce SaaS, on one layout the CFO reads the same way.",
+        "Every line vs budget, latest estimate or last year, with KPIs, variances, revenue and profit bridges, and profitability by region and category.",
+        "Under the hood: complex ETL into a **PostgreSQL** backend, and an AI chat that answers only from the report's numbers, checked against 63 known answers.",
       ],
       ru: [
-        "Два совсем разных бизнеса, производитель потребительских товаров и e-commerce SaaS, в одном макете P&L. Финдиректор читает оба одинаково.",
-        "Каждая строка против бюджета, последней оценки или прошлого года, от блока до счёта. USD, EUR или GBP, по фактическому или постоянному курсу.",
-        "Драйверы денег: штуки и цена за штуку у товаров; GMV, take rate, активные мерчанты и ARR у SaaS.",
-        "Мосты ведут выручку и прибыль от бюджета к факту по драйверам, FX отдельно. Дальше регионы и категории: кто растёт, а кто реально зарабатывает.",
-        "Под капотом: сложный ETL в PostgreSQL и AI-чат, который отвечает только цифрами отчёта и сверен с 63 эталонными ответами.",
+        "План против факта в управленческом P&L группы из двух компаний, производителя потребительских товаров и e-commerce SaaS, в одном макете, который финдиректор читает одинаково.",
+        "Каждая строка против бюджета, последней оценки или прошлого года, с KPI, отклонениями, мостами выручки и прибыли и прибыльностью по регионам и категориям.",
+        "Под капотом: сложный ETL в бэкенд на **PostgreSQL** и AI-чат, который отвечает только по цифрам отчёта и проверен на 63 известных ответах.",
       ],
     },
   },
   {
     slug: "executive-dashboard",
     published: "2026-10-29",
-    updated: "2026-11-19",
+    updated: "2026-11-25",
     platform: "js",
     report: "nordmark",
     // Production still reads the static public/data/nordmark files; the switch to nordmark_demo (/api/nordmark,
@@ -455,25 +449,21 @@ const allShowcases: Showcase[] = [
     // Spec and build notes: docs/nordmark/.
     details: {
       en: [
-        "A retailer with stores in the Netherlands and Belgium, a web shop and a wholesale arm. Management wants the whole business on one screen.",
-        "Twelve KPI cards, each on track, watch or off track against budget, last year or the previous period.",
-        "Net sales, total margin and weeks of cover lead. Behind them sit markdowns, availability, like-for-like growth, GMROI, sell-through and supplier OTIF.",
-        "Weeks follow the 4-5-4 retail calendar, the same one the buyers plan in. Every card shows its formula and where to drill next.",
-        "Under the hood: complex ETL into compact Parquet files, every number computed right in the browser, and the same report in Power BI.",
+        "A retailer's stores in the Netherlands and Belgium, its web shop and its wholesale arm, on one screen for management.",
+        "Twelve KPI cards, from net sales, margin and weeks of cover to GMROI, sell-through and supplier OTIF, each on track, watch or off track, on the 4-5-4 retail calendar.",
+        "Under the hood: complex ETL into compact Parquet files, every number computed right in the browser, and the same report in **Power BI**.",
       ],
       ru: [
-        "Ритейлер с магазинами в Нидерландах и Бельгии, интернет-магазином и оптом. Руководству нужен весь бизнес на одном экране.",
-        "Двенадцать карточек KPI, у каждой статус: в норме, внимание или вне цели, против бюджета, прошлого года или прошлого периода.",
-        "Ведут чистые продажи, общая маржа и недели запаса. За ними уценки, доступность товара, рост сопоставимых продаж, GMROI, sell-through и OTIF поставщиков.",
-        "Недели идут по розничному календарю 4-5-4, тому же, по которому планируют закупщики. На каждой карточке её формула и куда копать дальше.",
-        "Под капотом: сложный ETL в компактные Parquet-файлы, все цифры считаются прямо в браузере, и тот же отчёт в Power BI.",
+        "Магазины ритейлера в Нидерландах и Бельгии, интернет-магазин и опт на одном экране для руководства.",
+        "Двенадцать карточек KPI, от чистых продаж, маржи и недель запаса до GMROI, sell-through и OTIF поставщиков, у каждой статус в норме, внимание или вне цели, по розничному календарю 4-5-4.",
+        "Под капотом: сложный ETL в компактные файлы Parquet, каждая цифра считается прямо в браузере, и тот же отчёт в **Power BI**.",
       ],
     },
   },
   {
     slug: "online-sales-report",
     published: "2026-11-03",
-    updated: "2026-11-19",
+    updated: "2026-11-25",
     platform: "js",
     report: "mirelo",
     // Published-to-web Power BI flavour (owner, 11-03): the Mirelo Sales report, published 11-03
@@ -503,25 +493,21 @@ const allShowcases: Showcase[] = [
     // Spec and build notes: docs/mirelo/ (the owner's four review rounds of 11-01; data live from Supabase since 11-03).
     details: {
       en: [
-        "A neobank that lends online in three markets, all in EUR. Sales and risk finally read the same numbers, and any total drills down to the loans and the client card.",
-        "Loans: the application funnel, approval rates, the budget-to-actual bridge, and how each agent is doing against quota and SLA.",
-        "Portfolio quality the way risk wants it: 30+ DPD, DPD buckets, vintage curves, roll rates by product.",
-        "Revenue split into interest, fees, interchange and subscriptions, against budget, plus who subscribed and who churned.",
-        "Under the hood: complex ETL into a PostgreSQL backend, the same report in Power BI, and an AI chat that answers only from the report's numbers.",
+        "A neobank lending online in three markets, where sales and risk finally read the same numbers, down to the loan and the client card.",
+        "Application funnel, approval rates, agents vs quota, 30+ DPD, vintages and roll rates, and revenue from interest, fees, interchange and subscriptions vs budget.",
+        "Under the hood: complex ETL into a **PostgreSQL** backend, the same report in **Power BI**, and an AI chat that answers only from the report's numbers.",
       ],
       ru: [
-        "Необанк, который кредитует онлайн на трёх рынках, всё в евро. Продажи и риски наконец смотрят на одни цифры, и любой итог раскрывается до займов и карточки клиента.",
-        "Займы: воронка заявок, уровень одобрения, мост от бюджета к факту и как каждый агент идёт против квоты и SLA.",
-        "Качество портфеля так, как его хотят видеть риски: просрочка 30+, корзины просрочки, кривые винтажей, переходы между корзинами по продуктам.",
-        "Выручка по частям: проценты, комиссии, интерчейндж и подписки против бюджета, плюс кто подписался и кто ушёл.",
-        "Под капотом: сложный ETL в PostgreSQL, тот же отчёт в Power BI и AI-чат, который отвечает только цифрами отчёта.",
+        "Необанк, который кредитует онлайн на трёх рынках: продажи и риски наконец смотрят на одни цифры, вплоть до займа и карточки клиента.",
+        "Воронка заявок, уровень одобрения, агенты против квоты, просрочка 30+, винтажи и переходы между корзинами, выручка от процентов, комиссий, интерчейнджа и подписок против бюджета.",
+        "Под капотом: сложный ETL в бэкенд на **PostgreSQL**, тот же отчёт в **Power BI** и AI-чат, который отвечает только по цифрам отчёта.",
       ],
     },
   },
   {
     slug: "marketing-acquisition-dashboard",
     published: "2026-11-05",
-    updated: "2026-11-19",
+    updated: "2026-11-25",
     platform: "js",
     report: "marketing",
     // The ACME Marketing report published to web from Fabric (owner, 11-05). The web flavour reads Supabase schema
@@ -551,25 +537,21 @@ const allShowcases: Showcase[] = [
     // Spec and build notes: docs/marketing/ (the pack of 11-05 and what changed here).
     details: {
       en: [
-        "An accounting and invoicing SaaS buys sign-ups on 8 ad networks, for web, iOS and Android. This is where marketing checks that the money works.",
-        "The vitals: spend, new paying clients, trial-to-paid conversion, time to activation, CAC and 90-day ROAS. Each one sits next to last year.",
-        "Every channel and campaign gets pacing vs plan, CPA, ROAS and a fatigue flag, so you catch a dying ad before it eats the budget.",
-        "Cohorts answer what finance actually asks: how many months until a channel pays back, and what LTV:CAC looks like per channel.",
-        "Under the hood: complex ETL into a PostgreSQL backend, the same report in Power BI, and an AI chat that answers only from the report's numbers.",
+        "An accounting SaaS buys sign-ups on 8 ad networks for web, iOS and Android, and this is where marketing checks that the money works.",
+        "Spend, new paying clients, trial-to-paid, CAC and 90-day ROAS vs last year, pacing and fatigue per campaign, payback and LTV:CAC per channel.",
+        "Under the hood: complex ETL into a **PostgreSQL** backend, the same report in **Power BI**, and an AI chat that answers only from the report's numbers.",
       ],
       ru: [
-        "SaaS для бухгалтерии и выставления счетов покупает регистрации в 8 рекламных сетях, для веба, iOS и Android. Здесь маркетинг проверяет, что деньги работают.",
-        "Ключевые показатели: расходы, новые платящие клиенты, конверсия из триала в оплату, время до активации, CAC и ROAS за 90 дней. Каждый рядом с прошлым годом.",
-        "У каждого канала и кампании темп против плана, CPA, ROAS и флаг выгорания, чтобы поймать умирающую рекламу до того, как она съест бюджет.",
-        "Когорты отвечают на вопрос финансов: через сколько месяцев канал окупается и какой у него LTV:CAC.",
-        "Под капотом: сложный ETL в PostgreSQL, тот же отчёт в Power BI и AI-чат, который отвечает только цифрами отчёта.",
+        "SaaS для бухгалтерии покупает регистрации в 8 рекламных сетях для веба, iOS и Android, и здесь маркетинг проверяет, что деньги работают.",
+        "Расходы, новые платящие клиенты, конверсия из триала в оплату, CAC и ROAS за 90 дней против прошлого года, темп и выгорание по кампаниям, окупаемость и LTV:CAC по каналам.",
+        "Под капотом: сложный ETL в бэкенд на **PostgreSQL**, тот же отчёт в **Power BI** и AI-чат, который отвечает только по цифрам отчёта.",
       ],
     },
   },
   {
     slug: "mining-time-utilization",
     published: "2026-10-31",
-    updated: "2026-11-19",
+    updated: "2026-11-25",
     platform: "js",
     report: "trucks",
     data: "client",
@@ -602,25 +584,21 @@ const allShowcases: Showcase[] = [
     // short on purpose. The long-form story is the linked `articleSlug` write-up.
     details: {
       en: [
-        "A coal mine runs its trucks and excavators 24/7. The question is where those hours actually go.",
-        "A waterfall from 100% of calendar time down to effective work, with maintenance and every kind of idle taken off in turn.",
-        "Two checkpoints matter: ready for work, and effective work time. Both against the weekly and monthly plan.",
-        "Utilization counted plain, or weighted by excavator bucket size, so an idle hour of a big machine counts for more.",
-        "Real operating figures, names anonymised. Under the hood: complex ETL into a PostgreSQL backend, Power BI, and an AI chat that answers only from the report's numbers.",
+        "A coal mine runs its trucks and excavators 24/7, and this shows where those hours actually go.",
+        "A waterfall from calendar time down to effective work, ready-for-work and effective time vs the weekly and monthly plan, and utilization weighted by bucket size.",
+        "Under the hood: complex ETL into a **PostgreSQL** backend, **Power BI**, and an AI chat that answers only from the report's numbers.",
       ],
       ru: [
-        "Разрез гоняет самосвалы и экскаваторы круглосуточно. Вопрос в том, куда на самом деле уходят эти часы.",
-        "Водопад от 100% календарного времени до эффективной работы: обслуживание и каждый вид простоя вычитаются по очереди.",
-        "Важны две точки: готовность к работе и эффективное рабочее время. Обе против недельного и месячного плана.",
-        "Использование считается линейно или с весом по объёму ковша экскаватора, чтобы час простоя большой машины весил больше.",
-        "Реальные производственные цифры, названия обезличены. Под капотом: сложный ETL в PostgreSQL, Power BI и AI-чат, который отвечает только цифрами отчёта.",
+        "Разрез гоняет самосвалы и экскаваторы круглосуточно, и здесь видно, куда на самом деле уходят эти часы.",
+        "Водопад от календарного времени до эффективной работы, готовность к работе и эффективное время против недельного и месячного плана, использование с весом по объёму ковша.",
+        "Под капотом: сложный ETL в бэкенд на **PostgreSQL**, **Power BI** и AI-чат, который отвечает только по цифрам отчёта.",
       ],
     },
   },
   {
     slug: "finance-pl-overview",
     published: "2026-07-31",
-    updated: "2026-11-19",
+    updated: "2026-11-25",
     platform: "superset",
     data: "synthetic",
     description: {
@@ -643,24 +621,20 @@ const allShowcases: Showcase[] = [
     details: {
       en: [
         "Three fiscal years of monthly P&L for a company in four regions: actual, budget and forecast side by side.",
-        "Budget vs actual by account and by cost centre, 8 of them.",
-        "A margin waterfall from revenue down to operating profit.",
-        "Variances sorted so the lines worth explaining come first, and the finance team stops hunting for them.",
-        "Under the hood: complex ETL into a PostgreSQL warehouse, Apache Superset on top.",
+        "Budget vs actual by account and across 8 cost centres, a margin waterfall down to operating profit, and variances sorted so the ones worth explaining come first.",
+        "Under the hood: complex ETL into a **PostgreSQL** warehouse, **Apache Superset** on top.",
       ],
       ru: [
         "Три финансовых года помесячного P&L компании в четырёх регионах: факт, бюджет и прогноз рядом.",
-        "План против факта по счетам и по центрам затрат, их 8.",
-        "Водопад маржи от выручки до операционной прибыли.",
-        "Отклонения отсортированы так, что строки, которые стоит объяснить, идут первыми, и финансистам не надо их искать.",
-        "Под капотом: сложный ETL в хранилище на PostgreSQL, сверху Apache Superset.",
+        "План против факта по счетам и 8 центрам затрат, водопад маржи до операционной прибыли и отклонения, отсортированные так, что строки, которые стоит объяснить, идут первыми.",
+        "Под капотом: сложный ETL в хранилище на **PostgreSQL**, сверху **Apache Superset**.",
       ],
     },
   },
   {
     slug: "online-sales-cube",
     published: "2026-09-21",
-    updated: "2026-11-20",
+    updated: "2026-11-25",
     platform: "cube",
     data: "synthetic",
     description: {
@@ -684,18 +658,14 @@ const allShowcases: Showcase[] = [
     // other showcase. Facts from docs/08 §7, the as-built dashboard.
     details: {
       en: [
-        "An online shop's sales in USD: revenue, profit, orders and margin, each against the same months last year.",
-        "Revenue, profit and orders month by month.",
-        "Top 5 categories or countries, ranked by revenue, profit or margin.",
-        "Sales by channel, and one definition per metric across every chart, so two charts never disagree.",
-        "Under the hood: complex ETL into a PostgreSQL star schema, Cube as the semantic layer, charts drawn on this site.",
+        "An online shop's sales in USD, each month against the same month last year.",
+        "Revenue, profit, orders and margin by month, the top 5 categories or countries, and sales by channel.",
+        "Under the hood: a **PostgreSQL** star schema, **Cube** as the semantic layer with one definition per metric, and charts drawn on this site.",
       ],
       ru: [
-        "Продажи интернет-магазина в долларах: выручка, прибыль, заказы и маржа, каждая против тех же месяцев прошлого года.",
-        "Выручка, прибыль и заказы по месяцам.",
-        "Топ-5 категорий или стран по выручке, прибыли или марже.",
-        "Продажи по каналам и одно определение каждой метрики во всех графиках, так что два графика никогда не спорят.",
-        "Под капотом: сложный ETL в схему «звезда» на PostgreSQL, Cube как семантический слой, графики нарисованы на этом сайте.",
+        "Продажи интернет-магазина в долларах, каждый месяц против того же месяца прошлого года.",
+        "Выручка, прибыль, заказы и маржа по месяцам, топ-5 категорий или стран и продажи по каналам.",
+        "Под капотом: схема «звезда» на **PostgreSQL**, **Cube** как семантический слой с одним определением каждой метрики и графики, нарисованные на этом сайте.",
       ],
     },
   },

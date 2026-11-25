@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { GoogleTagManager } from "@next/third-parties/google";
 import { defaultLocale, localizedPath } from "@/lib/i18n/config";
+import cta from "./cta-button.module.css";
 
 const STORAGE_KEY = "vosk.consent";
 type Consent = "granted" | "denied";
@@ -105,7 +106,7 @@ export function Analytics({ gtmId }: { gtmId?: string }) {
         <button
           type="button"
           onClick={() => writeConsent("granted")}
-          className="bg-primary text-primary-foreground cursor-pointer rounded-md px-3 py-1 font-medium transition-opacity hover:opacity-90"
+          className={`${cta.cta} ${cta.accent} ${cta.small}`}
         >
           Accept
         </button>

@@ -22,6 +22,9 @@ const REPORTS: Record<
   freight: dynamic(() =>
     import("./freight/freight-app").then((m) => m.FreightApp),
   ),
+  cashflow: dynamic(() =>
+    import("./cashflow/cashflow-app").then((m) => m.CashflowApp),
+  ),
 };
 
 /**

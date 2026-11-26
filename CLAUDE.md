@@ -41,6 +41,7 @@ _Amended 2026-10-20: the lead engine's `public` tables are gone; `qbo` is the se
 | `pnl_demo` _(loaded 2026-11-09)_ | **site report data** — the management P&L custom JS report | synthetic two-company P&L (334,700 + 88,012 fact rows, ops, the manifest's lookups); schema SQL in `data/pnl/sql/`, loader `scripts/pnl-load.ts`, read by `/api/pnl/*` as JSON columns in chunks of one version × 12 months (`docs/pnl/README.md`, 11-09) | `pnl_loader` (load, from the owner's machine) and `pnl_reader` (the site's server routes) |
 | `trucks_demo` _(loaded 2026-11-09)_ | **site report data** — the ACME Trucks custom JS report | **real aggregated operating figures** under anonymised names (9,414 rows + manifest); schema SQL in `data/trucks/sql/`, loader `scripts/trucks-load.ts`, read by `/api/trucks/*` as columns (`docs/trucks/README.md`) | `trucks_loader` (load, from the owner's machine) and `trucks_reader` (the site's server routes) |
 | `ceo_digest_demo` _(schema + roles created 2026-11-16, tables pending the owner's apply)_ | **site + n8n showcase data** — the Tidewell data chat with reports by email (11-16 evening; was the Monday KPI email) | synthetic SaaS SME (Tidewell): weekly MRR, marketing with clicks, cash, receivables, payables, plus customers and their invoices; SQL in `data/ceo-digest/sql/` 001–006, read through the `fn_*` functions of 006 (`docs/ceo-digest/chat-and-email.md`) | `ceo_digest_loader` (optional refill), `ceo_digest_reader` (the site's chat route, `CEO_DIGEST_DATABASE_URL`) and `ceo_digest_n8n` (the n8n email workflow's Postgres credential) |
+| `cashflow_demo` _(schema + tables + roles created 2026-11-26, load pending)_ | **site report data** — the ACME Cash Flow custom JS report ("Cash flow demo") | synthetic QuickBooks Online services firm, Jan 2024 – Oct 2026 (34 + 578 + 2,838 + 777 rows + manifest, money in integer cents); schema SQL in `data/cashflow/sql/`, build `scripts/cashflow-build.ts`, loader `scripts/cashflow-load.ts`, read by `/api/cashflow/*` as columns (`docs/cashflow/README.md`) | `cashflow_loader` (load, from the owner's machine) and `cashflow_reader` (the site's server routes) |
 | `nordmark_demo` _(created 2026-11-15, load pending)_ | **site report data** — the Nordmark retail executive dashboard custom JS report | synthetic retail cubes (4,599 + 1,029 + 95 + 190 rows + manifest); schema SQL in `data/nordmark/sql/`, loader `scripts/nordmark-load.ts`, read by `/api/nordmark/*` as columns (`docs/nordmark/README.md`, 11-15) | `nordmark_loader` (load, from the owner's machine) and `nordmark_reader` (the site's server routes) |
 
 _Amended 2026-11-02: **the site is a shopfront for reports, and report data lives in this project.**_
@@ -143,6 +144,9 @@ open its Power BI publish-to-web link. Built 11-24: `docs/freight/README.md`.
   system (Ledger tokens, CSS Modules) stays inside `components/pnl/`; the site keeps Tailwind and Geist.
 - **Agreed addition (2026-11-05):** Manrope via `next/font` (`components/marketing/manrope-font.ts`), scoped to the ACME
   Marketing report's root, like IBM Plex for the P&L.
+- **Agreed additions (2026-11-26):** `hyparquet-writer` (exact 0.18.0, **devDependency**, only `scripts/cashflow-build.ts`
+  writes the cash flow pack with it); Space Grotesk + JetBrains Mono self-hosted via `next/font/local`
+  (`components/cashflow/cashflow-fonts.ts`, `preload: false`), scoped to the ACME Cash Flow report's root.
 - **Agreed addition (2026-11-20):** Host Grotesk (+ Geist Mono) self-hosted via `next/font/local`
   (`components/landing/landing-fonts.ts`), scoped to the `/lp/*` landing layout, from the owner's design.
 - **Agreed addition (2026-11-06):** `@anthropic-ai/sdk` (exact 1.5.0), the LLM SDK for the report AI chat: a closed set of
@@ -164,7 +168,7 @@ open its Power BI publish-to-web link. Built 11-24: `docs/freight/README.md`.
 ```
 src/
   app/            → routes under [locale]/ (home, work, services, contact, blog) + layout, sitemap, robots
-  app/api/        → superset/guest-token; mirelo/[...path], marketing/[...path], pnl/[...path], trucks/[...path] and nordmark/[...path] (the JS reports' data from Supabase); chat/mirelo, chat/marketing, chat/pnl, chat/trucks and chat/nordmark (the AI chat, ADR-0005) — the Route Handlers
+  app/api/        → superset/guest-token; mirelo/[...path], marketing/[...path], pnl/[...path], trucks/[...path], nordmark/[...path] and cashflow/[...path] (the JS reports' data from Supabase); chat/mirelo, chat/marketing, chat/pnl, chat/trucks and chat/nordmark (the AI chat, ADR-0005) — the Route Handlers
   proxy.ts        → locale rewriting middleware; excludes /api/*
   components/     → shared UI (nav, cards, contact-form, mdx-components, primitives)
   lib/            → content.ts (MDX seam), work.ts (showcase registry), schema.ts (Zod), env.ts, site.ts, metadata.ts
@@ -260,8 +264,9 @@ git push
 - Site runtime env: `NEXT_PUBLIC_SITE_URL`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL` — validated in `src/lib/env.ts` (build fails if missing).
   Optional, server-only (11-06): `CHAT_LLM_API_KEY`, `CHAT_ENABLED` (`1` = the Ask AI button and route are on; read at
   build for the button), `CHAT_DAILY_CAP_USD` (default 0.5), `CHAT_IP_HASH_SALT`. Per-report readers, server-only:
-  `MIRELO_DATABASE_URL`, `MARKETING_DATABASE_URL`, `PNL_DATABASE_URL`, `TRUCKS_DATABASE_URL` (11-09), `NORDMARK_DATABASE_URL` (11-15); a JS report whose reader URL is unset
-  shows no "Web report" button (`isJsReportLive`). Tidewell data chat (11-16), server-only: `CEO_DIGEST_DATABASE_URL`,
+  `MIRELO_DATABASE_URL`, `MARKETING_DATABASE_URL`, `PNL_DATABASE_URL`, `TRUCKS_DATABASE_URL` (11-09), `NORDMARK_DATABASE_URL` (11-15), `CASHFLOW_DATABASE_URL` (11-26); a JS report whose reader URL is unset
+  shows no "Web report" button (`isJsReportLive`); `/work/cash-flow-demo` stays hidden until its URL is set (no Power
+  BI flavour yet). Tidewell data chat (11-16), server-only: `CEO_DIGEST_DATABASE_URL`,
   `N8N_DIGEST_WEBHOOK_URL`, `N8N_DIGEST_WEBHOOK_SECRET` (`src/lib/ceo-digest/config.ts`); `/work/ceo-digest` stays hidden
   until all three are set.
 

@@ -1,0 +1,711 @@
+{
+ "dataset": "acme-cash-flow/1",
+ "source": {
+  "engine_version": "1.0.0",
+  "seed": 42,
+  "preset": "typical"
+ },
+ "as_of": "2026-11-05",
+ "start_date": "2024-01-01",
+ "end_date": "2026-10-31",
+ "currency": "USD",
+ "company": "ACME Advisory Services LLC",
+ "months": [
+  "2024-01",
+  "2024-02",
+  "2024-03",
+  "2024-04",
+  "2024-05",
+  "2024-06",
+  "2024-07",
+  "2024-08",
+  "2024-09",
+  "2024-10",
+  "2024-11",
+  "2024-12",
+  "2025-01",
+  "2025-02",
+  "2025-03",
+  "2025-04",
+  "2025-05",
+  "2025-06",
+  "2025-07",
+  "2025-08",
+  "2025-09",
+  "2025-10",
+  "2025-11",
+  "2025-12",
+  "2026-01",
+  "2026-02",
+  "2026-03",
+  "2026-04",
+  "2026-05",
+  "2026-06",
+  "2026-07",
+  "2026-08",
+  "2026-09",
+  "2026-10"
+ ],
+ "lines": [
+  {
+   "code": "D_REC_CUST",
+   "section": "OP",
+   "label": "Receipts from customers",
+   "direction": "IN"
+  },
+  {
+   "code": "D_REC_OTHER",
+   "section": "OP",
+   "label": "Other operating receipts",
+   "direction": "IN"
+  },
+  {
+   "code": "D_PAY_SUPP",
+   "section": "OP",
+   "label": "Payments to suppliers",
+   "direction": "OUT"
+  },
+  {
+   "code": "D_PAY_PAYROLL",
+   "section": "OP",
+   "label": "Payroll and contractor payments",
+   "direction": "OUT"
+  },
+  {
+   "code": "D_PAY_TAX",
+   "section": "OP",
+   "label": "Taxes paid",
+   "direction": "OUT"
+  },
+  {
+   "code": "D_PAY_INT",
+   "section": "OP",
+   "label": "Interest paid",
+   "direction": "OUT"
+  },
+  {
+   "code": "D_PAY_CC",
+   "section": "OP",
+   "label": "Credit card settlements",
+   "direction": "OUT"
+  },
+  {
+   "code": "D_PAY_OTHER",
+   "section": "OP",
+   "label": "Other operating payments",
+   "direction": "OUT"
+  },
+  {
+   "code": "D_INV_PURCHASE",
+   "section": "INV",
+   "label": "Purchase of fixed assets",
+   "direction": "OUT"
+  },
+  {
+   "code": "D_INV_PROCEEDS",
+   "section": "INV",
+   "label": "Proceeds from asset sales",
+   "direction": "IN"
+  },
+  {
+   "code": "D_INV_LOANS_MADE",
+   "section": "INV",
+   "label": "Loans and deposits made",
+   "direction": "OUT"
+  },
+  {
+   "code": "D_INV_LOANS_RETURNED",
+   "section": "INV",
+   "label": "Loans and deposits returned",
+   "direction": "IN"
+  },
+  {
+   "code": "D_FIN_PROCEEDS",
+   "section": "FIN",
+   "label": "Loan proceeds",
+   "direction": "IN"
+  },
+  {
+   "code": "D_FIN_REPAID",
+   "section": "FIN",
+   "label": "Loan principal repaid",
+   "direction": "OUT"
+  },
+  {
+   "code": "D_FIN_CONTRIB",
+   "section": "FIN",
+   "label": "Owner contributions",
+   "direction": "IN"
+  },
+  {
+   "code": "D_FIN_DRAWS",
+   "section": "FIN",
+   "label": "Owner draws and dividends",
+   "direction": "OUT"
+  }
+ ],
+ "accounts": [
+  {
+   "id": 4,
+   "label": "Accounts Receivable (A/R)",
+   "group": "OP",
+   "override": false
+  },
+  {
+   "id": 6,
+   "label": "Prepaid Expenses",
+   "group": "OP",
+   "override": false
+  },
+  {
+   "id": 8,
+   "label": "Office Equipment · Original Cost",
+   "group": "INV",
+   "override": false
+  },
+  {
+   "id": 9,
+   "label": "Depreciation · Office Equipment",
+   "group": "DEP",
+   "override": false
+  },
+  {
+   "id": 11,
+   "label": "Vehicles · Original Cost",
+   "group": "INV",
+   "override": false
+  },
+  {
+   "id": 12,
+   "label": "Depreciation · Vehicles",
+   "group": "DEP",
+   "override": false
+  },
+  {
+   "id": 14,
+   "label": "Accounts Payable (A/P)",
+   "group": "OP",
+   "override": false
+  },
+  {
+   "id": 15,
+   "label": "Harborline Visa Business",
+   "group": "OP",
+   "override": false
+  },
+  {
+   "id": 17,
+   "label": "Payroll Liabilities · Federal Payroll Taxes",
+   "group": "OP",
+   "override": false
+  },
+  {
+   "id": 18,
+   "label": "Payroll Liabilities · State Payroll Taxes",
+   "group": "OP",
+   "override": false
+  },
+  {
+   "id": 19,
+   "label": "Sales Tax Payable",
+   "group": "OP",
+   "override": false
+  },
+  {
+   "id": 20,
+   "label": "Line of Credit - Larkspur Bank",
+   "group": "FIN",
+   "override": true
+  },
+  {
+   "id": 21,
+   "label": "Accrued Liabilities",
+   "group": "OP",
+   "override": false
+  },
+  {
+   "id": 22,
+   "label": "Term Loan - Larkspur Bank",
+   "group": "FIN",
+   "override": false
+  },
+  {
+   "id": 23,
+   "label": "Vehicle Loan - Crestline Auto Finance",
+   "group": "FIN",
+   "override": false
+  },
+  {
+   "id": 26,
+   "label": "Owner's Equity · Owner Investments",
+   "group": "FIN",
+   "override": false
+  },
+  {
+   "id": 27,
+   "label": "Owner's Equity · Owner Draws",
+   "group": "FIN",
+   "override": false
+  }
+ ],
+ "counterparties": [
+  {
+   "id": 0,
+   "name": "(no name)"
+  },
+  {
+   "id": 6,
+   "name": "Handyline Repairs"
+  },
+  {
+   "id": 15,
+   "name": "Brightway Auto Exchange"
+  },
+  {
+   "id": 16,
+   "name": "Larkspur Bank"
+  },
+  {
+   "id": 17,
+   "name": "Harborline Card Services"
+  },
+  {
+   "id": 18,
+   "name": "Marlowe & Pratt CPAs"
+  },
+  {
+   "id": 19,
+   "name": "Federal Payroll Tax Deposit"
+  },
+  {
+   "id": 20,
+   "name": "Keystone Mutual Insurance"
+  },
+  {
+   "id": 21,
+   "name": "Cobalt Ridge Systems"
+  },
+  {
+   "id": 22,
+   "name": "Quarry Street Properties"
+  },
+  {
+   "id": 23,
+   "name": "Bramble Street Creative"
+  },
+  {
+   "id": 24,
+   "name": "Jordan Avery (Owner)"
+  },
+  {
+   "id": 25,
+   "name": "Paystream Payroll Services"
+  },
+  {
+   "id": 26,
+   "name": "Valley Light & Power"
+  },
+  {
+   "id": 27,
+   "name": "State Sales Tax Office"
+  },
+  {
+   "id": 28,
+   "name": "Secretary of State Filings"
+  },
+  {
+   "id": 29,
+   "name": "State Payroll Tax Agency"
+  },
+  {
+   "id": 30,
+   "name": "Quarrystone Data Labs"
+  },
+  {
+   "id": 31,
+   "name": "Brindle & Finch Consulting"
+  },
+  {
+   "id": 32,
+   "name": "Tidewater Dev Collective"
+  },
+  {
+   "id": 34,
+   "name": "Northgate Cloud Partners"
+  },
+  {
+   "id": 35,
+   "name": "Larchmont Analytics Group"
+  },
+  {
+   "id": 36,
+   "name": "Kettle Creek Contractors"
+  },
+  {
+   "id": 37,
+   "name": "Cirrus Fiber Telecom"
+  },
+  {
+   "id": 38,
+   "name": "Crestline Auto Finance"
+  },
+  {
+   "id": 39,
+   "name": "Avery Pendleton"
+  },
+  {
+   "id": 40,
+   "name": "Casey Hollister"
+  },
+  {
+   "id": 41,
+   "name": "Jules Brightwater"
+  },
+  {
+   "id": 42,
+   "name": "Quinn Greywood"
+  },
+  {
+   "id": 43,
+   "name": "Morgan Everly"
+  },
+  {
+   "id": 44,
+   "name": "Reese Sterling"
+  },
+  {
+   "id": 45,
+   "name": "Redfern Builders"
+  },
+  {
+   "id": 46,
+   "name": "Yarrowby Freight"
+  },
+  {
+   "id": 47,
+   "name": "Alderbrook Supply Co."
+  },
+  {
+   "id": 48,
+   "name": "Lanternfield Credit Union"
+  },
+  {
+   "id": 49,
+   "name": "Fernhollow Dental Group"
+  },
+  {
+   "id": 50,
+   "name": "Quillstone Realty"
+  },
+  {
+   "id": 51,
+   "name": "Zephyr Bay Law Partners"
+  },
+  {
+   "id": 52,
+   "name": "Cinderhill Family Clinic"
+  },
+  {
+   "id": 53,
+   "name": "Umberfield Coffee Roasters"
+  },
+  {
+   "id": 54,
+   "name": "Elmstead Brewing Co."
+  },
+  {
+   "id": 55,
+   "name": "Copperleaf Logistics Co."
+  },
+  {
+   "id": 56,
+   "name": "Ironvale Family Clinic"
+  },
+  {
+   "id": 57,
+   "name": "Kestrel Point Builders"
+  },
+  {
+   "id": 58,
+   "name": "Oakhaven Realty"
+  },
+  {
+   "id": 59,
+   "name": "Briarcliff Home Health"
+  },
+  {
+   "id": 60,
+   "name": "Amberwick Bakehouse"
+  },
+  {
+   "id": 61,
+   "name": "Emberline Outfitters"
+  },
+  {
+   "id": 62,
+   "name": "Thistledown Bakehouse"
+  },
+  {
+   "id": 63,
+   "name": "Yarrowby Engineering"
+  },
+  {
+   "id": 64,
+   "name": "Juniper Row Builders"
+  },
+  {
+   "id": 65,
+   "name": "Juniper Row Credit Union"
+  },
+  {
+   "id": 66,
+   "name": "Velvet Ridge Brewing Co."
+  },
+  {
+   "id": 67,
+   "name": "Granitecrest Veterinary"
+  },
+  {
+   "id": 68,
+   "name": "Granitecrest Family Clinic"
+  },
+  {
+   "id": 69,
+   "name": "Yarrowby Credit Union"
+  },
+  {
+   "id": 70,
+   "name": "Redfern Realty"
+  },
+  {
+   "id": 71,
+   "name": "Alderbrook Family Clinic"
+  },
+  {
+   "id": 72,
+   "name": "Saltmarsh Veterinary"
+  },
+  {
+   "id": 73,
+   "name": "Bluefin Law Partners"
+  },
+  {
+   "id": 74,
+   "name": "Kestrel Point Property Mgmt"
+  },
+  {
+   "id": 75,
+   "name": "Zephyr Bay Supply Co."
+  },
+  {
+   "id": 76,
+   "name": "Kestrel Point Freight"
+  },
+  {
+   "id": 77,
+   "name": "Umberfield Brewing Co."
+  },
+  {
+   "id": 78,
+   "name": "Umberfield Outfitters"
+  },
+  {
+   "id": 79,
+   "name": "Willowmere Dental Group"
+  },
+  {
+   "id": 80,
+   "name": "Kestrel Point Dental Group"
+  },
+  {
+   "id": 81,
+   "name": "Bluefin Brewing Co."
+  },
+  {
+   "id": 82,
+   "name": "Velvet Ridge Builders"
+  },
+  {
+   "id": 83,
+   "name": "Elmstead Law Partners"
+  },
+  {
+   "id": 84,
+   "name": "Zephyr Bay Builders"
+  },
+  {
+   "id": 85,
+   "name": "Ironvale Coffee Roasters"
+  },
+  {
+   "id": 86,
+   "name": "Juniper Row Law Partners"
+  },
+  {
+   "id": 87,
+   "name": "Saltmarsh Freight"
+  },
+  {
+   "id": 88,
+   "name": "Velvet Ridge Coffee Roasters"
+  },
+  {
+   "id": 89,
+   "name": "Bluefin Family Clinic"
+  },
+  {
+   "id": 90,
+   "name": "Driftwood Bakehouse"
+  },
+  {
+   "id": 91,
+   "name": "Yarrowby Builders"
+  },
+  {
+   "id": 92,
+   "name": "Cinderhill Academy"
+  },
+  {
+   "id": 93,
+   "name": "Briarcliff Architects"
+  },
+  {
+   "id": 94,
+   "name": "Velvet Ridge Supply Co."
+  },
+  {
+   "id": 95,
+   "name": "Briarcliff Academy"
+  },
+  {
+   "id": 96,
+   "name": "Willowmere Academy"
+  },
+  {
+   "id": 97,
+   "name": "Granitecrest Builders"
+  },
+  {
+   "id": 98,
+   "name": "Velvet Ridge Academy"
+  },
+  {
+   "id": 99,
+   "name": "Kestrel Point Home Health"
+  },
+  {
+   "id": 100,
+   "name": "Tatum Lockridge"
+  },
+  {
+   "id": 101,
+   "name": "Briarcliff Property Mgmt"
+  },
+  {
+   "id": 102,
+   "name": "Bluefin Credit Union"
+  },
+  {
+   "id": 103,
+   "name": "Juniper Row Realty"
+  },
+  {
+   "id": 104,
+   "name": "Sawyer Merriweather"
+  },
+  {
+   "id": 105,
+   "name": "Amberwick Brewing Co."
+  },
+  {
+   "id": 106,
+   "name": "Fernhollow Law Partners"
+  },
+  {
+   "id": 107,
+   "name": "Harper Fairbrook"
+  },
+  {
+   "id": 108,
+   "name": "Redfern Brewing Co."
+  },
+  {
+   "id": 109,
+   "name": "Velvet Ridge Architects"
+  },
+  {
+   "id": 110,
+   "name": "Juniper Row Freight"
+  },
+  {
+   "id": 111,
+   "name": "Fernhollow Academy"
+  }
+ ],
+ "files": [
+  {
+   "name": "month.parquet",
+   "rows": 34,
+   "bytes": 2664,
+   "sha256": "bd879a343a4ef4be4e6ca0a8207d8504ffb2180da93e54ca0b34388117d2082d",
+   "columns": {
+    "month_key": "string",
+    "cash_open": "int32",
+    "cash_close": "int32",
+    "net_income": "int32",
+    "revenue": "int32",
+    "interest_expense": "int32",
+    "depreciation_expense": "int32",
+    "ar_close": "int32",
+    "ap_close": "int32",
+    "spend": "int32",
+    "debt_close": "int32",
+    "term_principal": "int32"
+   }
+  },
+  {
+   "name": "statement-month.parquet",
+   "rows": 578,
+   "bytes": 1903,
+   "sha256": "81d19665ee59c89daf74209570fa1e8424839888051c365d29533e585a3e99e8",
+   "columns": {
+    "account_id": "int32",
+    "month_key": "string",
+    "adjustment_cents": "int32"
+   }
+  },
+  {
+   "name": "ledger.parquet",
+   "rows": 2838,
+   "bytes": 45549,
+   "sha256": "e5ed41d564201836c7182047304308b3141fd4a1ad92f9791ffd59df3aad0a1f",
+   "columns": {
+    "txn_date": "string",
+    "line_code": "string",
+    "counterparty_id": "int32",
+    "txn_id": "int32",
+    "txn_type": "string",
+    "doc_number": "string",
+    "amount_cents": "int32",
+    "cleared": "string",
+    "memo": "string"
+   }
+  },
+  {
+   "name": "control.parquet",
+   "rows": 777,
+   "bytes": 5640,
+   "sha256": "4e19175e50655f04eb3d3eff71b03ff0179024b0358ccd6d224233e26020fe0a",
+   "columns": {
+    "period_key": "string",
+    "metric_code": "string",
+    "scope": "string",
+    "value": "double"
+   }
+  }
+ ],
+ "asserts": {
+  "control_values": 1554,
+  "periods": 38
+ }
+}

@@ -46,11 +46,14 @@ FACES = [
     ("host-grotesk/HostGrotesk-Italic-Variable.woff2", "hostgrotesk/HostGrotesk-Italic[wght].ttf", {"wght": (400, 700)}, SITE),
     ("ibm-plex/IBMPlexSans-Variable.woff2", "ibmplexsans/IBMPlexSans[wdth,wght].ttf", {"wdth": 100, "wght": (400, 700)}, REPORT),
     ("ibm-plex/IBMPlexSans-Italic-Variable.woff2", "ibmplexsans/IBMPlexSans-Italic[wdth,wght].ttf", {"wdth": 100, "wght": (400, 700)}, REPORT),
+    # The ACME Cash Flow report (11-26): Space Grotesk for text, JetBrains Mono for figures, 400-700 (handoff js-spec 04 § 2).
+    ("space-grotesk/SpaceGrotesk-Variable.woff2", "spacegrotesk/SpaceGrotesk[wght].ttf", {"wght": (400, 700)}, REPORT),
+    ("jetbrains-mono/JetBrainsMono-Variable.woff2", "jetbrainsmono/JetBrainsMono[wght].ttf", {"wght": (400, 700)}, REPORT),
 ] + [
     (f"ibm-plex/IBMPlexSansCondensed-{s}.woff2", f"ibmplexsanscondensed/IBMPlexSansCondensed-{s}.ttf", None, REPORT)
     for s in ["Regular", "Italic", "Medium", "MediumItalic", "SemiBold", "SemiBoldItalic", "Bold", "BoldItalic"]
 ]
-LICENSES = {"geist": "geist", "inter": "inter", "manrope": "manrope", "ibm-plex": "ibmplexsans", "host-grotesk": "hostgrotesk"}
+LICENSES = {"geist": "geist", "inter": "inter", "manrope": "manrope", "ibm-plex": "ibmplexsans", "host-grotesk": "hostgrotesk", "space-grotesk": "spacegrotesk", "jetbrains-mono": "jetbrainsmono"}
 
 
 def fetch(path: str) -> bytes:

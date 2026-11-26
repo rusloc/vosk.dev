@@ -1,3 +1,4 @@
+import { URL_KEYS as CASHFLOW_KEYS } from "./cashflow/engine/url-state";
 import {
   URL_KEYS as MARKETING_KEYS,
   VIEW_HASHES as MARKETING_HASHES,
@@ -17,7 +18,13 @@ import { URL_KEYS as TRUCKS_KEYS } from "./trucks/engine/url-state";
  * (docs/<report>/) and are owned here since.
  */
 export type JsReport =
-  "pnl" | "mirelo" | "nordmark" | "marketing" | "trucks" | "freight";
+  | "pnl"
+  | "mirelo"
+  | "nordmark"
+  | "marketing"
+  | "trucks"
+  | "freight"
+  | "cashflow";
 
 /**
  * The query-string keys each report's state is encoded with. A showcase-page URL carrying one of them is a
@@ -30,6 +37,7 @@ export const REPORT_QUERY_KEYS: Record<JsReport, readonly string[]> = {
   marketing: MARKETING_KEYS,
   trucks: TRUCKS_KEYS,
   freight: [], // no shared report links yet: its view does not travel in the URL
+  cashflow: CASHFLOW_KEYS, // 2026-11-26
 };
 
 /** Reports whose view travels in the URL hash: a shared link with one of these opens the popup as well. */
@@ -46,6 +54,7 @@ export const REPORT_DATA_ENV: Partial<Record<JsReport, string>> = {
   marketing: "MARKETING_DATABASE_URL",
   pnl: "PNL_DATABASE_URL", // 2026-11-09: the P&L rows moved to Supabase (pnl_demo)
   trucks: "TRUCKS_DATABASE_URL", // 2026-11-09
+  cashflow: "CASHFLOW_DATABASE_URL", // 2026-11-26: cashflow_demo
   // nordmark: "NORDMARK_DATABASE_URL" returns with its Supabase go-live. Until then production reads the static
   // public/data/nordmark files, so the button stays on (11-16 hotfix: b539448 shipped this gate before the load).
 };

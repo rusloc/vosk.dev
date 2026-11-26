@@ -346,6 +346,35 @@ const allShowcases: Showcase[] = [
     },
   },
   {
+    slug: "cash-flow-demo",
+    published: "2026-11-26",
+    updated: "2026-11-26",
+    // The ACME Cash Flow report (owner, 11-26), built from the rusloc/pnl hand-off (docs/cashflow/README.md): a statement
+    // of cash flows for a synthetic QuickBooks Online company. Data in Supabase schema cashflow_demo through
+    // /api/cashflow; the page lists only once CASHFLOW_DATABASE_URL is set (isJsReportLive). The Power BI flavour comes
+    // later; no Ask AI (owner).
+    platform: "js",
+    report: "cashflow",
+    data: "synthetic",
+    description: {
+      en: "Cash flow statement of a small services company as a web report: opening to closing cash, operating, investing and financing activities, daily cash movements and every payment behind them.",
+    },
+    title: { en: "Cash flow demo" },
+    summary: {
+      en: "Where a company’s cash came from and went, from the statement down to each payment.",
+    },
+    client: { en: "IT and analytics services firm on QuickBooks Online" },
+    // closing cash, Oct 2026 (the report’s landing month)
+    metric: "$315K",
+    details: {
+      en: [
+        "A cash flow statement for a small IT services firm on QuickBooks Online, read from opening to closing cash.",
+        "Operating, investing and financing activities, free cash flow, cash conversion and DSO, each day’s cash on a heatmap, and every payment behind a figure.",
+        "Under the hood: a custom JS report on **PostgreSQL**, every figure reconciled to the control totals to the cent.",
+      ],
+    },
+  },
+  {
     slug: "freight-sales-report",
     published: "2026-11-24",
     updated: "2026-11-25",
@@ -697,6 +726,10 @@ export const showcases: Showcase[] = allShowcases
           s.chat === undefined ||
           (isCeoDigestConfigured() && process.env.CHAT_ENABLED === "1")
         );
+      case "js":
+        // the cash flow demo (11-26) has no Power BI flavour yet: until CASHFLOW_DATABASE_URL is set its page has nothing to
+        // open, so it stays off the site (the other JS reports keep their pages either way)
+        return s.report !== "cashflow" || isJsReportLive(s.report);
       default:
         return true;
     }

@@ -200,12 +200,9 @@ ${source
 
 // ── 2. Auto-reply → visitor ──────────────────────────────────────────────────
 
-export function renderAutoReplyEmail(input: {
-  email: string;
-  subject?: string;
-  message: string;
-}): { html: string; text: string } {
-  const { message } = input;
+// It never repeats what the visitor wrote (11-25 audit): the form takes any address, so an echo would let a stranger
+// mail their own text to someone else from this domain.
+export function renderAutoReplyEmail(): { html: string; text: string } {
   const author = siteConfig.author.firstName;
   const workUrl = `${siteConfig.url.replace(/\/$/, "")}/work`;
 
@@ -214,20 +211,13 @@ export function renderAutoReplyEmail(input: {
     "",
     `Hi — I've received your message and I'll get back to you personally, usually within a day or two.`,
     "",
-    "Here's what you sent:",
-    message,
-    "",
     `In the meantime, you can browse recent dashboards: ${workUrl}`,
     "",
     `— ${author}, ${siteConfig.name}`,
   ].join("\n");
 
-  const safeMessage = escapeHtml(message).replace(/\n/g, "<br>");
-
   const body = `${eyebrow("Message received")}${heading("Thanks for reaching out")}
 <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:${C.fg};">Hi — I've received your message and I'll get back to you personally, usually within a day or two.</p>
-<p style="margin:0;font-size:13px;color:${C.muted};">Here's what you sent, for your records:</p>
-${messagePanel(safeMessage)}
 ${button(escapeHtml(workUrl), "Browse recent dashboards")}
 <p style="margin:24px 0 0;font-size:14px;color:${C.fg};">— ${escapeHtml(author)}, <span style="color:${C.muted};">${siteConfig.name}.DEV</span></p>`;
 

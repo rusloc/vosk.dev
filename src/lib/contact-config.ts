@@ -12,12 +12,12 @@ import { siteConfig } from "./site";
 const DEFAULT_FROM = "VOSK Website <onboarding@resend.dev>";
 
 const contactEnvSchema = z.object({
-  // Resend API key. When absent, the form no-ops gracefully.
-  RESEND_API_KEY: z.string().min(1).optional(),
+  // Resend API key. When absent or empty, the form no-ops gracefully (an empty value used to throw: 11-25 audit).
+  RESEND_API_KEY: z.string().min(1).optional().catch(undefined),
   // Inbox that receives messages. Plain email; malformed → falls back to default.
   CONTACT_TO_EMAIL: z.email().optional().catch(undefined),
   // Verified sender. Accepts "Name <email>" or a bare address, so not email-validated.
-  CONTACT_FROM_EMAIL: z.string().min(1).optional(),
+  CONTACT_FROM_EMAIL: z.string().min(1).optional().catch(undefined),
 });
 
 export type ContactConfig = {

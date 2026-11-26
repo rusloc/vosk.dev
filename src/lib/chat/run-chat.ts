@@ -50,6 +50,7 @@ export async function runChat<C>({
   turns,
   emit,
   signal,
+  onCost,
 }: {
   client: Anthropic;
   tools: ChatToolset<C>;
@@ -57,6 +58,8 @@ export async function runChat<C>({
   turns: readonly ChatTurn[];
   emit: (e: ChatEvent) => void;
   signal?: AbortSignal;
+  /** Called with each model call's cost as soon as it is known, so a question cut off midway still counts (11-25). */
+  onCost?: (usd: number) => void;
 }): Promise<ChatUsage> {
   const messages: Anthropic.MessageParam[] = turns.map((t) => ({
     role: t.role,
@@ -108,11 +111,13 @@ export async function runChat<C>({
     const cacheWrite = u.cache_creation_input_tokens ?? 0;
     usage.inputTokens += u.input_tokens + cacheRead + cacheWrite;
     usage.outputTokens += u.output_tokens;
-    usage.costUsd +=
+    const cost =
       u.input_tokens * PRICE.in +
       u.output_tokens * PRICE.out +
       cacheRead * PRICE.cacheRead +
       cacheWrite * PRICE.cacheWrite;
+    usage.costUsd += cost;
+    onCost?.(cost);
     usage.stop = message.stop_reason;
 
     if (message.stop_reason === "refusal") {

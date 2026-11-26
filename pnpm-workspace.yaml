@@ -2,3 +2,17 @@ allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: true
+
+# Security patches for transitive build-time packages (11-25 audit): same major, fixed release.
+overrides:
+  js-yaml@3: ^3.15.2
+  nanoid@3: ^3.3.18
+  browserslist: ^4.28.7
+  baseline-browser-mapping: ^2.11.0
+  source-map-js: ^1.2.2
+  # dev tooling (eslint, tailwind)
+  brace-expansion@1: ^1.1.21
+  brace-expansion@5: ^5.0.12
+  js-yaml@4: ^4.3.2
+  postcss: ^8.5.23
+  vite@8: ^8.2.4

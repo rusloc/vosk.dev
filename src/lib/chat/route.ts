@@ -24,6 +24,27 @@ const MAX_PER_WINDOW = 20; // questions per IP per window
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_IN_FLIGHT = 4;
 
+/**
+ * A browser always sends `Origin` on a fetch POST; a page of this site sends its own host. A script without the header,
+ * or another site's page, gets 403 before any model call (11-25: bots spending the LLM budget or the email tool).
+ * Compared with the host the request came to, so preview deploys work too.
+ */
+export function isSameOrigin(req: Request): boolean {
+  const origin = req.headers.get("origin");
+  if (!origin) return false;
+  let host: string;
+  try {
+    host = new URL(origin).host;
+  } catch {
+    return false;
+  }
+  return (
+    host === new URL(req.url).host ||
+    host === req.headers.get("x-forwarded-host") ||
+    host === req.headers.get("host")
+  );
+}
+
 const fail = (status: number, error: string) =>
   Response.json(
     { error },
@@ -106,12 +127,14 @@ export function chatRoute<C>({
   return async function POST(req: Request) {
     const key = process.env.CHAT_LLM_API_KEY;
     if (process.env.CHAT_ENABLED !== "1" || !key) return fail(503, "off");
+    if (!isSameOrigin(req)) return fail(403, "forbidden");
 
     const ip = clientIp(req);
     if (isRateLimited(ip)) return fail(429, "rate");
-    if (spentToday() >= Number(process.env.CHAT_DAILY_CAP_USD ?? "0.5"))
+    // A cap that is not a number ("0,5", "$1") pauses the chat rather than switching the cap off (11-25).
+    const cap = Number(process.env.CHAT_DAILY_CAP_USD ?? "0.5");
+    if (!Number.isFinite(cap) || spentToday() >= cap)
       return fail(503, "paused");
-    if (inFlight >= MAX_IN_FLIGHT) return fail(429, "busy");
 
     const raw = await req.text();
     if (raw.length > MAX_BODY) return fail(413, "too long");
@@ -145,6 +168,8 @@ export function chatRoute<C>({
       .digest("hex")
       .slice(0, 12);
     const started = Date.now();
+    // Checked here, in the same tick as the increment: before the awaits above, a burst could pass it (11-25).
+    if (inFlight >= MAX_IN_FLIGHT) return fail(429, "busy");
     inFlight++;
 
     const stream = new ReadableStream<Uint8Array>({
@@ -174,8 +199,11 @@ export function chatRoute<C>({
             turns: parsed.data.messages,
             emit: send,
             signal: req.signal,
+            onCost: (usd) => {
+              spentToday(); // rolls the day over first
+              spend.usd += usd;
+            },
           });
-          spend.usd += usage.costUsd;
           send({ type: "done" });
           // One line per question, no text and no raw IP.
           console.log(

@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MAX_SENDS, WEEK_ROWS, createChatTools } from "./chat-tools";
+import {
+  MAX_DAILY_SENDS,
+  MAX_SENDS,
+  WEEK_ROWS,
+  createChatTools,
+} from "./chat-tools";
 import type { DigestContext, FetchLike } from "./chat-tools";
 import type { CustomerRow, DigestData, Meta } from "./queries";
 
@@ -549,6 +554,25 @@ describe("send_email_report", () => {
     clock.now += 24 * 60 * 60 * 1000 - 110_000;
     expect((await send("203.0.113.7")).ok).toBe(true);
     expect((await send("203.0.113.7")).ok).toBe(false);
+  });
+
+  it(`stops at ${MAX_DAILY_SENDS} emails a day across all visitors`, async () => {
+    const { tools, post, clock } = setup();
+    for (let i = 0; i < MAX_DAILY_SENDS; i++) {
+      clock.now += 1000;
+      expect(
+        (await tools.run("send_email_report", SEND, visitor(`198.51.100.${i}`)))
+          .ok,
+      ).toBe(true);
+    }
+    const over = await tools.run(
+      "send_email_report",
+      SEND,
+      visitor("203.0.113.99"),
+    );
+    expect(over.ok).toBe(false);
+    expect(over.text).toContain("daily email limit");
+    expect(post).toHaveBeenCalledTimes(MAX_DAILY_SENDS);
   });
 
   it("a send that was not queued does not use up the limit", async () => {

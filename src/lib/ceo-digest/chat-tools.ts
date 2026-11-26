@@ -27,6 +27,9 @@ export const RESULT_CAP = 4000;
 export const WEEK_ROWS = 26;
 /** Emails one visitor (IP) may send in 24 hours from this route; n8n keeps its own per-address and daily limits. */
 export const MAX_SENDS = 2;
+/** Emails all visitors together may send in 24 hours from one instance (11-25), so a bot on many IPs runs dry fast. */
+export const MAX_DAILY_SENDS = 20;
+const ALL = "*"; // the key the daily total is kept under, beside the per-IP ones
 const SEND_WINDOW_MS = 24 * 60 * 60 * 1000;
 const WEBHOOK_TIMEOUT_MS = 10_000;
 const DEFAULT_CUSTOMER_ROWS = 10;
@@ -347,14 +350,22 @@ export function createChatTools({
         return fail(
           `Not sent: this visitor has reached the limit of ${MAX_SENDS} emails in 24 hours. The figures are still available here in the chat.`,
         );
+      const everyone = recentSends(ALL);
+      if (everyone.length >= MAX_DAILY_SENDS)
+        return fail(
+          "Not sent: the demo's daily email limit is reached. It can be requested again tomorrow; the figures are still available here in the chat.",
+        );
       // Counted before the call, so two questions at once cannot both pass; given back if nothing was queued.
       const stamp = now();
       sends.set(ctx.ip, [...recent, stamp]);
-      const giveBack = () =>
-        sends.set(
-          ctx.ip,
-          (sends.get(ctx.ip) ?? []).filter((t) => t !== stamp),
-        );
+      sends.set(ALL, [...everyone, stamp]);
+      const giveBack = () => {
+        for (const key of [ctx.ip, ALL])
+          sends.set(
+            key,
+            (sends.get(key) ?? []).filter((t) => t !== stamp),
+          );
+      };
 
       let status: number;
       try {

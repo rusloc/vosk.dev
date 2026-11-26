@@ -2,7 +2,6 @@
 
 import { embedDashboard } from "@superset-ui/embedded-sdk";
 import { useEffect, useRef, useState } from "react";
-import { env } from "@/lib/env";
 
 /**
  * Mounts a self-hosted Superset dashboard in an iframe using a short-lived guest token.
@@ -12,17 +11,20 @@ import { env } from "@/lib/env";
  * that refresh is failing, not that the initial mount was wrong. Verify on a real deploy
  * and leave the page open past the six-minute mark; anything shorter proves nothing.
  *
- * Copy is passed in rather than read here so this stays a locale-agnostic client component.
+ * Copy is passed in rather than read here so this stays a locale-agnostic client component; the domain too, so the
+ * env module (and Zod with it) stays out of the client bundle (11-25 review).
  */
 export function SupersetEmbed({
   slug,
   embedId,
+  domain,
   title,
   loadingLabel,
   errorLabel,
 }: {
   slug: string;
   embedId: string;
+  domain: string | undefined;
   title: string;
   loadingLabel: string;
   errorLabel: string;
@@ -31,7 +33,7 @@ export function SupersetEmbed({
   const [status, setStatus] = useState<"loading" | "ready" | "failed">(
     "loading",
   );
-  const supersetDomain = env.NEXT_PUBLIC_SUPERSET_DOMAIN;
+  const supersetDomain = domain;
 
   useEffect(() => {
     const mountPoint = ref.current;

@@ -73,14 +73,16 @@ function scripted(replies: ReturnType<typeof reply>[]) {
 async function ask(replies: ReturnType<typeof reply>[]) {
   const { client, sent } = scripted(replies);
   const events: ChatEvent[] = [];
+  const costs: number[] = [];
   const usage = await runChat({
     client,
     tools,
     ctx: tools.defaults,
     turns: [{ role: "user", content: "How is revenue doing?" }],
     emit: (e) => events.push(e),
+    onCost: (usd) => costs.push(usd),
   });
-  return { usage, events, sent };
+  return { usage, events, sent, costs };
 }
 
 describe("runChat", () => {
@@ -102,6 +104,15 @@ describe("runChat", () => {
       outputTokens: 200,
     });
     expect(usage.costUsd).toBeCloseTo(2 * (1000 * 0.1e-6 + 100 * 0.5e-6), 10);
+  });
+
+  it("reports each model call's cost as it happens, so a cut-off question still counts", async () => {
+    const { usage, costs } = await ask([
+      reply("tool_use", snapshot("t1")),
+      reply("end_turn", { type: "text", text: "Revenue is €1.3m." }),
+    ]);
+    expect(costs).toHaveLength(2);
+    expect(costs[0]! + costs[1]!).toBeCloseTo(usage.costUsd, 12);
   });
 
   it("stops at 3 model calls, the last with tools off, and runs at most 4 lookups", async () => {

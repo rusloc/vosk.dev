@@ -10,15 +10,23 @@ export type ContactMessages = {
 
 /** Contact form input. Validated on the server before any email is sent. */
 export function makeContactSchema(msg: ContactMessages) {
-  return z.object({
-    email: z.email(msg.invalidEmail).max(200),
-    subject: z.string().trim().max(150).optional(),
-    message: z
-      .string()
-      .trim()
-      .min(10, msg.messageTooShort)
-      .max(5000, msg.messageTooLong),
-  });
+  return z
+    .object({
+      email: z.email(msg.invalidEmail).max(200),
+      // One line: it goes into the email subject header (11-25 audit).
+      subject: z
+        .string()
+        .trim()
+        .max(150)
+        .transform((s) => s.replace(/\s+/g, " "))
+        .optional(),
+      message: z
+        .string()
+        .trim()
+        .min(10, msg.messageTooShort)
+        .max(5000, msg.messageTooLong),
+    })
+    .strict();
 }
 
 export type ContactInput = z.infer<ReturnType<typeof makeContactSchema>>;

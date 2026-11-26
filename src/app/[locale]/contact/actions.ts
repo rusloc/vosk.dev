@@ -22,6 +22,11 @@ const MAX_PER_WINDOW = 5;
 const WINDOW_MS = 60 * 60 * 1000; // 1 hour
 const hits = new Map<string, number[]>();
 
+// A person needs more than this to type an address and a message; a script posts at once (11-25: an invisible check
+// in place of a captcha). The form sends how long it was open. A script that sends a large number gets past it, as it
+// gets past the honeypot: both stop the bots that fill and post forms blindly.
+const MIN_FILL_MS = 3000;
+
 function isRateLimited(key: string, now: number): boolean {
   const recent = (hits.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
   recent.push(now);
@@ -40,6 +45,11 @@ export async function submitContactForm(
 
   // Honeypot: bots fill hidden fields. Pretend success so we don't tip them off.
   if (String(formData.get("company") ?? "").trim() !== "") {
+    return { status: "success", message: t.success };
+  }
+  // Too fast, or no timing at all: treated like the honeypot.
+  const elapsed = Number(formData.get("elapsed"));
+  if (!Number.isFinite(elapsed) || elapsed < MIN_FILL_MS) {
     return { status: "success", message: t.success };
   }
 
@@ -113,7 +123,7 @@ export async function submitContactForm(
     // above, so a failure here must not fail the submission; `replyTo` points at
     // the owner so the visitor's reply lands in the right place.
     try {
-      const reply = renderAutoReplyEmail({ email, subject, message });
+      const reply = renderAutoReplyEmail();
       await resend.emails.send({
         from,
         to: email,

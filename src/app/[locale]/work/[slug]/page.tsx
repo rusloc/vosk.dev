@@ -18,9 +18,10 @@ import {
   CEO_DIGEST_SUGGESTIONS,
   askAiTrigger,
 } from "@/components/chat/ask-ai";
-import { ChatPanel } from "@/components/chat/chat-panel";
+import { ChatPanelLazy } from "@/components/chat/chat-panel-lazy";
 import { SalesDashboardLazy } from "@/components/sales-dashboard-lazy";
-import { SupersetEmbed } from "@/components/superset-embed";
+import { SupersetEmbedLazy } from "@/components/superset-embed-lazy";
+import { env } from "@/lib/env";
 import { getPostBySlug } from "@/lib/content";
 import { ga } from "@/lib/analytics";
 import { buildMetadata } from "@/lib/metadata";
@@ -237,7 +238,7 @@ export default async function ShowcasePage({ params }: Props) {
                     </p>
                   </div>
                   <div className="border-border min-w-0 flex-1 lg:w-[420px] lg:flex-none lg:border-l">
-                    <ChatPanel
+                    <ChatPanelLazy
                       endpoint={`/api/chat/${dataChat}`}
                       suggestions={CEO_DIGEST_SUGGESTIONS}
                       standalone={CEO_DIGEST_CHAT_COPY}
@@ -314,7 +315,8 @@ export default async function ShowcasePage({ params }: Props) {
                 ) : showcase.platform === "js" ? (
                   <JsReportLazy report={showcase.report} chat={chat} />
                 ) : showcase.platform === "superset" ? (
-                  <SupersetEmbed
+                  <SupersetEmbedLazy
+                    domain={env.NEXT_PUBLIC_SUPERSET_DOMAIN}
                     slug={showcase.slug}
                     embedId={showcase.embedId}
                     title={reportTitle}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { submitContactForm } from "@/app/[locale]/contact/actions";
 import { trackLead } from "@/components/analytics";
 import { readLandingSource } from "@/lib/lead-source";
@@ -27,6 +27,12 @@ export function ContactForm({
     initialState,
   );
 
+  // When the form appeared: the action is told how long it was open (the server's bot check, 11-25).
+  const openedAt = useRef(0);
+  useEffect(() => {
+    openedAt.current = Date.now();
+  }, []);
+
   // Lead conversion — fires once on success (covers the Contacts page and the
   // nav popup, which both render this form). No-op until GTM loads.
   useEffect(() => {
@@ -49,6 +55,7 @@ export function ContactForm({
       // R-07: the tab's landing path and campaign tags go with the message, for the owner's email only.
       action={(fd) => {
         for (const [key, value] of readLandingSource()) fd.set(key, value);
+        fd.set("elapsed", String(Date.now() - openedAt.current));
         formAction(fd);
       }}
       className="space-y-5"

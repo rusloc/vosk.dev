@@ -53,6 +53,7 @@ type Fields = Record<string, string>;
 
 function formData(fields: Fields): FormData {
   const fd = new FormData();
+  fd.set("elapsed", "60000"); // a person who took a minute; a test overrides it
   for (const [key, value] of Object.entries(fields)) fd.set(key, value);
   return fd;
 }
@@ -169,6 +170,13 @@ describe("submitContactForm — lead source", () => {
     expect(text + html).not.toContain("Landing page");
   });
 
+  it("never repeats the visitor's message in the auto-reply", async () => {
+    await submit(validFields());
+
+    const { html, text } = mocks.send.mock.calls[1]![0];
+    expect(text + html).not.toContain(VALID_MESSAGE);
+  });
+
   it("caps long values, drops unknown fields and still sends", async () => {
     const result = await submit(
       validFields({ utm_campaign: "x".repeat(500), utm_evil: "injected" }),
@@ -209,6 +217,15 @@ describe("submitContactForm — honeypot", () => {
     expect(result.status).toBe("success");
     expect(mocks.send).toHaveBeenCalledTimes(2);
   });
+
+  it.each(["500", "", "soon"])(
+    "sends nothing and reports success when the form was open too briefly (elapsed %j)",
+    async (elapsed) => {
+      const result = await submit(validFields({ elapsed }));
+      expect(result).toEqual({ status: "success", message: en.form.success });
+      expect(mocks.send).not.toHaveBeenCalled();
+    },
+  );
 
   it("skips validation entirely when the honeypot trips", async () => {
     const result = await submit({ email: "not-an-email", company: "bot" });

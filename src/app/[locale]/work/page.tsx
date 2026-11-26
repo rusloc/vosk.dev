@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/container";
 import { PageHeader } from "@/components/page-header";
 import { buildMetadata } from "@/lib/metadata";
-import { getShowcasePlatformLabels, localize, showcases } from "@/lib/work";
+import { localize, showcases } from "@/lib/work";
 import { resolveLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { ShowcaseCard } from "./showcase-card";
@@ -14,12 +14,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const l = resolveLocale(locale);
   const t = getDictionary(l).work;
-  const platforms = new Intl.ListFormat(l, { type: "conjunction" }).format(
-    getShowcasePlatformLabels(),
-  );
   return buildMetadata({
     title: t.metaTitle,
-    description: t.metaDescription.replace("{platforms}", platforms),
+    description: t.metaDescription,
     path: "/work",
     locale: l,
   });
@@ -29,28 +26,20 @@ export default async function WorkPage({ params }: Props) {
   const { locale } = await params;
   const l = resolveLocale(locale);
   const t = getDictionary(l).work;
-  // The intro names the platforms of the showcases actually listed, so it can't drift
-  // from the cards (a hidden Superset entry once left it promising Superset).
-  const platforms = new Intl.ListFormat(l, {
-    type: "conjunction",
-  }).formatToParts(getShowcasePlatformLabels());
 
   return (
     <Container className="py-10 sm:py-12">
       {/* Matches the blog benchmark height on desktop; cards stretch to fill. */}
       <div className="flex flex-col lg:min-h-[660px]">
-        <PageHeader title={t.title}>
+        {/* wider than the default intro, so the topics list takes two rows on desktop (11-26) */}
+        <PageHeader title={t.title} introClassName="max-w-3xl">
           {t.intro.lead}
-          {platforms.map((part, i) =>
-            part.type === "element" ? (
-              <strong key={i} className="text-foreground font-medium">
-                {part.value}
-              </strong>
-            ) : (
-              part.value
-            ),
-          )}
-          {t.intro.tail}
+          {t.intro.topics.map((topic, i) => (
+            <span key={topic}>
+              {i > 0 && " | "}
+              <strong className="text-foreground font-medium">{topic}</strong>
+            </span>
+          ))}
         </PageHeader>
 
         {showcases.length === 0 ? (
@@ -63,7 +52,6 @@ export default async function WorkPage({ params }: Props) {
                 key={showcase.slug}
                 showcase={localize(showcase, l)}
                 locale={l}
-                dataLabel={t.dataLabel[showcase.data]}
               />
             ))}
           />

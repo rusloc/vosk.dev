@@ -199,6 +199,15 @@ export const en = {
         ],
       },
     ],
+    // DRAFT for the owner to approve (live chat spec, "Privacy", 11-26): shown only while the live chat is configured
+    // (lib/livechat/config.ts). Checked against docs/livechat/README.md; confirm the wording before the chat goes live.
+    liveChat: {
+      title: "Live chat",
+      body: [
+        "Messages you type into the chat window, and your email address if you leave one, are stored in the site's database and relayed through Telegram to me. A cookie (vosk_chat) links your browser to your conversation; it is set only when you send your first message.",
+        "To limit abuse, the site also keeps a scrambled form of your IP address, never the address itself. Everything is deleted 90 days after the last message.",
+      ],
+    },
     contactTitle: "Questions",
     contactBody:
       "To ask what I hold about you, or to have it deleted, write to",
@@ -340,12 +349,19 @@ export const en = {
     // The client type under a showcase title and on its card (owner, 11-15).
     clientLabel: "Client",
     metaDescription:
-      "BI dashboard and automation case studies to open live: demos on synthetic data and client work under anonymised names, built in {platforms}.",
-    // The platform list after `lead` is built from the showcases on the site (lib/work.ts).
+      "Sample work to open live: Power BI and Fabric dashboards, n8n automations, AI agents and chats, data engineering, semantic layers and ontologies.",
+    // The owner's words (11-26): a lead, then the topics in bold, split by " | ". Fixed copy, no longer built from the
+    // showcases' platforms.
     intro: {
-      // Two sentences, two rows on desktop (owner, 11-24).
-      lead: "Dashboards and automations as short case studies: open any one live and drill down as its users do. Built in ",
-      tail: ".",
+      lead: "My sample work and live/interactive examples: ",
+      topics: [
+        "Power BI / Fabric dashboards & report",
+        "n8n automations",
+        "AI agents and chats",
+        "data engineering solutions",
+        "semantic layers",
+        "ontologies",
+      ],
     },
     empty: "Case studies coming soon.",
     backToShowcase: "Back to showcase",

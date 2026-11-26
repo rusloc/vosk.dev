@@ -184,6 +184,15 @@ export const ru: Dictionary = {
         ],
       },
     ],
+    // DRAFT for the owner to approve (live chat spec, "Privacy", 11-26): shown only while the live chat is configured
+    // (lib/livechat/config.ts). Checked against docs/livechat/README.md; confirm the wording before the chat goes live.
+    liveChat: {
+      title: "Live chat",
+      body: [
+        "Messages you type into the chat window, and your email address if you leave one, are stored in the site's database and relayed through Telegram to me. A cookie (vosk_chat) links your browser to your conversation; it is set only when you send your first message.",
+        "To limit abuse, the site also keeps a scrambled form of your IP address, never the address itself. Everything is deleted 90 days after the last message.",
+      ],
+    },
     contactTitle: "Questions",
     contactBody:
       "To ask what I hold about you, or to have it deleted, write to",
@@ -312,10 +321,17 @@ export const ru: Dictionary = {
     aboutHeading: "О проекте",
     clientLabel: "Клиент",
     metaDescription:
-      "Кейсы BI-дашбордов с живыми отчётами: клиентские проекты с изменёнными цифрами и демо на синтетических данных, сделано в {platforms}.",
+      "Примеры работ, которые можно открыть вживую: дашборды Power BI и Fabric, автоматизации n8n, ИИ-агенты и чаты, инженерия данных, семантические слои и онтологии.",
     intro: {
-      lead: "Дашборды и автоматизации в виде коротких кейсов: откройте любой вживую и проваливайтесь в детали, как его пользователи. Сделано в ",
-      tail: ".",
+      lead: "Мои примеры работ и живые интерактивные демо: ",
+      topics: [
+        "дашборды и отчёты Power BI / Fabric",
+        "автоматизации n8n",
+        "ИИ-агенты и чаты",
+        "решения по инженерии данных",
+        "семантические слои",
+        "онтологии",
+      ],
     },
     empty: "Кейсы скоро появятся.",
     backToShowcase: "Назад в портфолио",

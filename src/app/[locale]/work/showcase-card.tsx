@@ -14,11 +14,9 @@ import titleStyles from "../blog/title-bar.module.css";
 export function ShowcaseCard({
   showcase,
   locale,
-  dataLabel,
 }: {
   showcase: LocalizedShowcase;
   locale: Locale;
-  dataLabel: string; // "Demo on synthetic data" / "Real operating figures, names anonymised" (11-17, spec C4)
 }) {
   const { slug, title, summary, metric } = showcase;
   const href = localizedPath(locale, `/work/${slug}`);
@@ -27,11 +25,14 @@ export function ShowcaseCard({
     <article className="group bg-background border-border relative flex gap-6 rounded-lg border p-5 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(31,27,22,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
       {/* Left — title and summary */}
       <div className="min-w-0 flex-1">
-        <p className="text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase">
-          {dataLabel}
-        </p>
-        <h2 className="text-xl font-semibold tracking-tight">
-          <span className="relative inline-block">
+        {/* Every card is one size (owner, 11-26): no data label above the title (the detail page keeps it), the title
+            on one line, the summary held at exactly two, so paging through the list never moves the layout. */}
+        <h2
+          // the padding gives the blurred title bar room inside truncate's clip (11-26)
+          className="-my-3 -ml-4 truncate py-3 pl-4 text-xl font-semibold tracking-tight"
+          title={title}
+        >
+          <span className="relative">
             <span aria-hidden="true" className={titleStyles.titleBar} />
             <Link
               href={href}
@@ -43,9 +44,8 @@ export function ShowcaseCard({
           </span>
         </h2>
 
-        {/* No "Client: …" line here since 11-16 (owner): the detail page keeps it. Two lines at most, so four
-            cards fit a page. */}
-        <p className="text-muted-foreground mt-2 line-clamp-2 max-w-xl">
+        {/* No "Client: …" line here since 11-16 (owner): the detail page keeps it. */}
+        <p className="text-muted-foreground mt-2 line-clamp-2 min-h-[2lh] max-w-xl">
           {summary}
         </p>
       </div>

@@ -743,20 +743,6 @@ export function isJsReportLive(report: JsReport): boolean {
   return key === undefined || !!process.env[key];
 }
 
-/** Platform labels of the showcases on the site, in list order — the /work intro names these. */
-export function getShowcasePlatformLabels(): string[] {
-  return [
-    ...new Set(
-      showcases.flatMap((s) => [
-        PLATFORM_LABEL[s.platform],
-        ...(s.platform === "js" && s.powerBi
-          ? [PLATFORM_LABEL["power-bi"]]
-          : []),
-      ]),
-    ),
-  ];
-}
-
 export function getShowcaseSlugs(): string[] {
   return showcases.map((s) => s.slug);
 }

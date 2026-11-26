@@ -179,9 +179,10 @@ export default async function ShowcasePage({ params }: Props) {
           describes the same Home → Showcase → title hierarchy this link walks up. */}
       <BackLink href={localizedPath(l, "/work")} label={t.backToShowcase} />
 
-      {/* One screen, no scroll, on desktop (owner, 11-25): two columns from lg, the story on the left (title, buttons,
-          three bullets), the try-it steps and the way on to the right. One column below lg. */}
-      <div className="mt-3 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-x-14">
+      {/* One screen, no scroll, on desktop (owner, 11-25): two columns from lg. Left (owner, 11-26): title, buttons, "Try
+          it yourself" when there is one, then "About this project". Right: the contact box and the way on. One column
+          below lg. */}
+      <div className="mt-3 lg:grid lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-x-10">
         <div>
           {/* No platform pill beside the title (owner, 11-04): the buttons below name the format. */}
           <header>
@@ -348,7 +349,62 @@ export default async function ShowcasePage({ params }: Props) {
             )}
           </div>
 
-          <section className="mt-8 max-w-prose">
+          {/* Left column, stacked (owner, 11-26): the steps to try it first when a showcase has them, then About. */}
+          {showcase.platform === "automation" && (
+            <section className="mt-6 max-w-prose">
+              {/* The heading and, on its right, the sample files: a native <details> (no client JS, owner 11-16) whose
+              list opens over the content below, so the column stays short enough for one screen (11-26). */}
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-lg font-semibold tracking-tight">
+                  {t.howToTestHeading}
+                </h2>
+                {showcase.test.samples && (
+                  <details className="border-border bg-background relative rounded-md border px-3 py-1 text-sm">
+                    <summary className="cursor-pointer font-medium select-none">
+                      {t.samplesLabel}
+                    </summary>
+                    <ul className="border-border bg-background absolute top-full right-0 z-10 mt-1 w-max max-w-xs space-y-1 rounded-md border px-3 py-2 shadow-md">
+                      {showcase.test.samples.map((sample, i) => (
+                        <li key={sample.href}>
+                          <a
+                            href={sample.href}
+                            download
+                            className="text-primary font-medium hover:underline"
+                          >
+                            {t.sampleName.replace("{n}", String(i + 1))}
+                          </a>{" "}
+                          <span className="text-muted-foreground">
+                            {sample.note}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </div>
+              <ol className="text-foreground/85 marker:text-muted-foreground mt-3 list-decimal space-y-1.5 pl-5 leading-relaxed">
+                {showcase.test.steps.map((step, i) => (
+                  <li key={i}>
+                    {step.split(/(\{email\})/).map((part, j) =>
+                      part === "{email}" ? (
+                        <a
+                          key={j}
+                          href={`mailto:${showcase.test.email}`}
+                          className="text-primary font-medium break-all hover:underline"
+                        >
+                          {showcase.test.email}
+                        </a>
+                      ) : (
+                        withBold(part)
+                      ),
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+
+          <section className="mt-6 max-w-prose">
             <h2 className="text-lg font-semibold tracking-tight">
               {t.aboutHeading}
             </h2>
@@ -375,59 +431,8 @@ export default async function ShowcasePage({ params }: Props) {
           </section>
         </div>
 
-        {/* Right column on desktop: how to try it, then the way on. */}
+        {/* Right column on desktop: the contact box, then the way on. */}
         <div className="mt-10 space-y-8 lg:mt-0 lg:space-y-6">
-          {showcase.platform === "automation" && (
-            <section>
-              <h2 className="text-lg font-semibold tracking-tight">
-                {t.howToTestHeading}
-              </h2>
-              <ol className="text-foreground/85 marker:text-muted-foreground mt-3 list-decimal space-y-1.5 pl-5 leading-relaxed">
-                {showcase.test.steps.map((step, i) => (
-                  <li key={i}>
-                    {step.split(/(\{email\})/).map((part, j) =>
-                      part === "{email}" ? (
-                        <a
-                          key={j}
-                          href={`mailto:${showcase.test.email}`}
-                          className="text-primary font-medium break-all hover:underline"
-                        >
-                          {showcase.test.email}
-                        </a>
-                      ) : (
-                        withBold(part)
-                      ),
-                    )}
-                  </li>
-                ))}
-              </ol>
-              {/* The sample files in a compact dropdown (owner, 11-16): a native <details>, so no client JS. */}
-              {showcase.test.samples && (
-                <details className="border-border mt-4 w-fit rounded-md border px-3 py-2 text-sm">
-                  <summary className="cursor-pointer font-medium select-none">
-                    {t.samplesLabel}
-                  </summary>
-                  <ul className="mt-2 space-y-1">
-                    {showcase.test.samples.map((sample, i) => (
-                      <li key={sample.href}>
-                        <a
-                          href={sample.href}
-                          download
-                          className="text-primary font-medium hover:underline"
-                        >
-                          {t.sampleName.replace("{n}", String(i + 1))}
-                        </a>{" "}
-                        <span className="text-muted-foreground">
-                          {sample.note}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
-            </section>
-          )}
-
           {/* A way on from a showcase (11-17 SEO check: the page linked only back): contact and services, then the
           next showcases on the list, wrapping round. */}
           {/* The call to action in a box (owner, 11-18): one sentence, then the buttons. "Book a free call" and its

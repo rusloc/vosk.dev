@@ -130,7 +130,8 @@ export function ContactForm({
       <button
         type="submit"
         disabled={pending}
-        className={`${cta.cta} ${cta.accent}`}
+        // black, as before 11-25 (owner, 11-26)
+        className={cta.cta}
       >
         {pending ? t.sending : t.submit}
       </button>

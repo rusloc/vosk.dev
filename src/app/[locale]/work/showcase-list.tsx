@@ -32,7 +32,7 @@ export function ShowcaseList({
           reads. The pages are stacked in one grid cell and the others are only
           `invisible` (11-17, owner), as on the blog list: the cell is as tall as
           the tallest page, so the page menu stays put on a short last page. */}
-      <div className="mt-6 grid">
+      <div className="mt-6 grid grid-cols-1">
         {Array.from({ length: pageCount }, (_, p) => (
           <ul
             key={p}

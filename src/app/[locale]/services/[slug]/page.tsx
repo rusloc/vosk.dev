@@ -118,14 +118,9 @@ export default async function ServicePage({ params }: Props) {
 
       <section className="mt-10">
         <h2 className={h2}>{t.casesTitle}</h2>
-        <div className="mt-4 grid gap-4">
+        <div className="mt-4 grid grid-cols-1 gap-4">
           {cases.map((c) => (
-            <ShowcaseCard
-              key={c.slug}
-              showcase={localize(c, l)}
-              locale={l}
-              dataLabel={dict.work.dataLabel[c.data]}
-            />
+            <ShowcaseCard key={c.slug} showcase={localize(c, l)} locale={l} />
           ))}
         </div>
       </section>

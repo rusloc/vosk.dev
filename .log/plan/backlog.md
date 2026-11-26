@@ -9,7 +9,25 @@
 
 # Backlog
 
+## New on 11-26
+
+- **🎯 "Cash flow demo"** (`/work/cash-flow-demo`, owner 11-26): ACME Cash Flow web report, built and uncommitted;
+  resume from `docs/cashflow/README.md` ("Not done": build, remaining acceptance tests, CLAUDE.md rows, AGENTS.md,
+  git block; owner: role passwords → load → `CASHFLOW_DATABASE_URL`). Power BI flavour later from rusloc/pnl.
+- `next dev` 16.4 writes `AGENTS.md` at the root: delete + `agentRules: false`, or commit (owner).
+
 ## New on 11-25
+
+- **Data routes: query strings bust the CDN cache** (scan 11-25): anyone can make `/api/<report>/*` read the database.
+  Options: refuse query strings (recommended), in-memory copy per instance, Vercel firewall rule on `/api/*`, lower
+  per-IP limits. Owner picks.
+- **Captcha on the contact form** (owner, 11-25 "maybe"): an invisible 3 s time check is in; Cloudflare Turnstile if
+  the owner supplies its two keys (+ a privacy-page line).
+- **Security push to verify live** (11-25): Next.js 16.4.6, chats same-origin only, Tidewell 20 emails a day, contact
+  time check. After the push: a showcase page, a web report + Ask AI, the contact form.
+- Kept as is (owner, 11-25): freight web report 14.7 MB per view; dead `lib/marketing/engine/tokens.ts`; duplicated
+  rate limiters; large files; one moderate dev advisory (minimatch in eslint's import plugin, needs a major).
+- ✅ Button system and showcase pages on one desktop screen (11-25, `1fce91e`, not pushed at the close).
 
 - **`/work` subtitle names topics, not tools** (owner, 11-25 10:14): Fabric, Power BI, Semantic layer, Dashboards, n8n,
   AI agents, in place of the platform list built from `work.ts`. Today 1 of `plan-2026-11-25.md`.

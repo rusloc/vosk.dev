@@ -1,4 +1,4 @@
-<!-- next-id: CAND-006 -->
+<!-- next-id: CAND-007 -->
 
 # Candidates
 
@@ -47,3 +47,12 @@ Single-occurrence observations awaiting a second sighting.
 **Tags:** cube, zod, timestamp, timezone, contract-drift, date_trunc
 **Promote-to:** defect-patterns.md on second sighting
 **Expires:** 2026-12-26
+
+### CAND-006 · An empty report table is a cacheable 200 on the data routes · first seen 2026-11-26
+
+**Where:** `src/lib/report-data/artifacts.ts` `runArtifact` (rows branch) + `src/lib/report-data/route.ts` `CACHE_CONTROL`; seen while auditing the unloaded `cashflow_demo`.
+**Why interesting:** the manifest has a "not loaded" guard (throws → 502, uncached) but a table has none: zero rows → `{col: []}` → 200 with `s-maxage=86400, stale-while-revalidate=604800`. A reader URL set (or a 002 rebuild run) before the load pins empty tables on the CDN for a day; the page then fails with "0 rows, manifest says N" until a redeploy. The loader itself is safe (truncate + insert in one transaction).
+**Watch for:** any go-live order other than load → env → deploy; a 002 rebuild on a live report; a second report hitting this in production.
+**Tags:** cdn, cache, empty-table, report-data, go-live, s-maxage
+**Promote-to:** defect-patterns.md on second sighting
+**Expires:** 2027-02-24

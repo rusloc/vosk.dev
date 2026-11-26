@@ -13,9 +13,9 @@
 - [defect-patterns.md](domain/defect-patterns.md) — 2 entries · 2/0/0 · hot: DEF-001, GAP-001 · DEF-NNN + GAP-NNN (gaps folded in, `kind:` field)
 - [test-infra-quirks.md](domain/test-infra-quirks.md) — 1 entry · 1/0/0 · hot: INFRA-001 · INFRA-NNN
 - [mock-conventions.md](domain/mock-conventions.md) — 1 entry · 1/0/0 · hot: MOCK-001 · MOCK-NNN
-- [security-findings.md](domain/security-findings.md) — 1 entry · 1/0/0 · hot: SEC-001 · SEC-NNN
-- [candidates.md](domain/candidates.md) — 4 awaiting second hit (CAND-001, 003, 004, 005); CAND-002 promoted → DEF-001
-- [coverage-map.md](domain/coverage-map.md) — last pass 2026-09-27 (Cube sales dashboard, read-only)
+- [security-findings.md](domain/security-findings.md) — 2 entries · 2/0/0 · hot: SEC-001, SEC-002 · SEC-NNN
+- [candidates.md](domain/candidates.md) — 5 awaiting second hit (CAND-001, 003, 004, 005, 006); CAND-002 promoted → DEF-001
+- [coverage-map.md](domain/coverage-map.md) — last pass 2026-11-26 (cashflow data path + applied DB state, read-only)
 - [templates/](domain/templates/) — MOCK-001.server-action.ts
 
 ## Open questions

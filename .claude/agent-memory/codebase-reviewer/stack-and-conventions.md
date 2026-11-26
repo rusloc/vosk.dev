@@ -27,9 +27,15 @@ metadata:
   `chat/report-chat.tsx`. Mirelo and P&L keep their own artifacts.ts and loaders; P&L keeps its own load effect (entity switch).
 - Each report keeps its own `ArtifactSource` interface (the typing follows its vendored parquet-columns): not a dup finding.
 - Branch-only heavy client components go behind a client `next/dynamic` wrapper (`sales-dashboard-lazy.tsx`, `js-report-lazy.tsx`); the repo measured on 09-27 that a server page ships every client component it imports.
+- Freight report (11-24, owner): Parquet shipped in the build at `public/data/freight/` (~20 MB), read in the browser with hyparquet; no route, no chat. Location is deliberate; download size is still a speed finding (S4).
+- Report URL state inside the popup: Mirelo, Nordmark, P&L use `components/report-search.ts` (`useReportSearch`, state in React, page URL keeps utm_*); Marketing keeps it in local state; Trucks (and cashflow 11-26) write the address bar with replaceState: the divergent pattern.
+- JS reports import global CSS per report (`trucks.css`, `marketing.css`, `exec.css`, `cashflow.css`) scoped under a root class; P&L/Mirelo use CSS Modules. Both are accepted.
+- Cash flow demo (11-26, uncommitted): data in Supabase `cashflow_demo`, no Ask AI, page hidden until CASHFLOW_DATABASE_URL; spec at `C:/__PBI/PNL/.sync/acme cash flow/js-spec/` (read-only, owner named it).
+- Landing pages `/lp/*`: own layout, `components/landing/` one CSS module per page, shared `landing-dock.tsx`.
 - Parked on purpose, not dead code: the ASCII portrait (`components/ascii-portrait.tsx`, `lib/ascii-portrait-art.ts`, restore note in contact page) and `lib/i18n/ru.ts` (not in `dictionaries`, English placeholders for new keys; only a test imports it).
 
 ## Judged acceptable duplication (do not re-raise)
+- (11-25) chat-tools/chat-metrics per-report similarity, the thin per-report routes + server.ts, month tables incl. freight.
 - parquet-columns x4, Tremor bar/combo chart overlap, mirelo/pnl glass + chart-scale, `MONTHS` constants across separate report engines, long metric catalogues (declarative tables of 43-60 defs).
 
 Related: [[baseline]], [[open-findings]], [[tools-here]]

@@ -18,7 +18,7 @@ The original hand-off docs specified Apache Superset self-hosted via Docker Comp
 `embed_token_granter` role and an `embed-svc` service account.
 
 That is a running service with an upgrade treadmill, a TLS certificate, and a security surface —
-attached to a **marketing showcase** for a one-person freelance site. The recurring operational cost
+attached to a **marketing showcase** for a one-person consultancy site. The recurring operational cost
 is carried in perpetuity so that a prospect can click through a demo dashboard.
 
 ## Decision

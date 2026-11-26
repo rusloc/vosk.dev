@@ -21,7 +21,7 @@ much larger line item that neither the original hand-off docs nor `ADR-0001` men
 > — [preset.io/pricing](https://preset.io/pricing/), corroborated
 > [here](https://embeddable.com/blog/preset-embedded-dashboards-alternatives)
 
-$6,000/year to host a demo dashboard on a freelance marketing site whose purpose is to win
+$6,000/year to host a demo dashboard on a consultant's marketing site whose purpose is to win
 engagements. Meanwhile [Apache Superset's embedding](https://superset.apache.org/user-docs/using-superset/embedding/)
 — the `EMBEDDED_SUPERSET` flag, `/api/v1/security/guest_token/`, and
 [`@superset-ui/embedded-sdk`](https://github.com/apache/superset/tree/master/superset-embedded-sdk)

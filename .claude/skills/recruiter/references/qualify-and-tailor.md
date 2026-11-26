@@ -7,7 +7,7 @@ Score 0–2 on each, then give a verdict: **Go / Go as contract pitch / Skip**.
 | Factor | 2 | 1 | 0 |
 |---|---|---|---|
 | Stack fit | Fabric/Power BI/dbt core | adjacent (Synapse, Snowflake + PBI) | different stack |
-| Engagement | freelance/contract/fixed | perm but open to contract | perm only, on-site |
+| Engagement | consulting/contract/fixed | perm but open to contract | perm only, on-site |
 | Location/hours | remote, EU/UK/ME hours | remote, US East | requires residency/visa or APAC hours |
 | Budget/rate | ≥ his rate | near it | far below |
 | Speed | starts ≤ 2 wk, clear scope | vague timing | long process, multiple panels |
@@ -33,7 +33,7 @@ Output, in this order:
 5. **Gaps & honest framing**: what to say if asked about each gap, plus one quick thing he could do (a lab, an Applied Skills credential, a demo) to close it.
 6. **Cover note or proposal opener** (see Workflow 4).
 
-Resume conventions: one page for contracts (two max for perm), reverse chronological, numbers in the first half of each bullet, no photo for UK/US perm roles (a photo is fine on freelance platforms), PDF named `Kirill_Vosk_<Role>_<Company>.pdf`, certifications near the top with the Microsoft Learn transcript link.
+Resume conventions: one page for contracts (two max for perm), reverse chronological, numbers in the first half of each bullet, no photo for UK/US perm roles (a photo is fine on marketplace profiles), PDF named `Kirill_Vosk_<Role>_<Company>.pdf`, certifications near the top with the Microsoft Learn transcript link.
 
 For **platform profiles** (Upwork, Contra, LinkedIn, Toptal, etc.): give field-by-field copy within the platform's limits. Headline = specialism + cert + outcome, not job title. Portfolio items = problem → what he built → result, with visuals on sample data.
 

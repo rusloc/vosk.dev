@@ -4,7 +4,7 @@ Ask what he needs only if it isn't obvious. Otherwise pick the channels that fit
 
 ### Source map (verify availability before recommending)
 
-**A. Direct-to-company (highest rate; the best freelance channel)**
+**A. Direct-to-company (highest rate; the best consulting channel)**
 - Job posts as triggers: LinkedIn Jobs, Indeed, Glassdoor, Wellfound, Welcome to the Jungle (ex-Otta), Himalayas, RemoteOK, We Work Remotely, Remotive, EU Remote Jobs. Search "Microsoft Fabric", "Power BI Developer", "BI Engineer", "Analytics Engineer", "dbt", posted in the last 7 days. A company hiring in-house has the problem now and faces 2–3 months of hiring, so pitch a **4-week bridge contract**.
 - LinkedIn people search: title contains "Head of Data", "BI Manager", "Analytics Lead", "Data Platform", company size 51–500.
 - Microsoft customer stories (Fabric filter), FabCon / SQLBits / Power BI user-group speakers and attendees, funding news (Crunchbase, weekly round-ups: Series A–B companies need a reporting layer).
@@ -14,7 +14,7 @@ Ask what he needs only if it isn't obvious. Otherwise pick the channels that fit
 - Fabric Featured Partners directory (Microsoft Fabric partners page), mid-size firms and boutiques. Contact the Data & AI practice lead or delivery manager, not careers@.
 - Known targets: Smartbridge, Collectiv, Simform, MDW, Acuvate; boutiques endjin, Data Bear, VNB Consulting, Transparity, P3 Adaptive, Coeo, Ventagium; SQLBI (training, well connected). Skip DMs to giants (Avanade, Hitachi, Accenture); they staff via agencies.
 
-**C. Freelance marketplaces**
+**C. Marketplaces**
 - General: Upwork, Contra, Freelancer.com, Fiverr Pro (productized packages), PeoplePerHour (UK).
 - Vetted networks: Toptal, Arc.dev, Proxify, Turing, Lemon.io, Index.dev, Braintrust, A.Team, Gun.io. Vetting takes 1–3 weeks and pay is often net-30, so they're month-two income.
 - Regional: Malt (FR/DE/ES/BE/NL/CH/UK; usually needs a local business), freelancermap and Hays contracting (DACH), YunoJuno (UK).

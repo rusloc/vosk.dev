@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   useCallback,
   useEffect,
   useId,
@@ -14,7 +15,6 @@ import {
 import { useConsentPending } from "@/components/analytics";
 import { CloseIcon } from "@/components/close-icon";
 import cta from "@/components/cta-button.module.css";
-import { useModal } from "@/components/use-modal";
 import {
   fetchMessages,
   sendEmail,
@@ -27,11 +27,12 @@ import {
 import { COPY } from "./copy";
 import { LIVE_CHAT_OPEN_EVENT } from "./open-event";
 import { LauncherIcon } from "./launcher-icon";
+import { threadRows, videoCall } from "./thread";
 import styles from "./live-chat.module.css";
 
 /**
- * The live chat (docs/livechat/README.md): a launcher at the bottom, under the nav's "Message" button, and a floating panel where the
- * nav's "Send a message" popup opens, the middle of the screen (on a phone too, lifted above the keyboard), messages relayed to the owner's Telegram by `/api/livechat/*`. Client-only and loaded after idle by
+ * The live chat (docs/livechat/README.md): a launcher at the bottom, under the nav's "Message" button, and a floating panel above it (on a
+ * phone too, lifted above the keyboard), messages relayed to the owner's Telegram by `/api/livechat/*`. Client-only and loaded after idle by
  * <LiveChatLazy>. No request and no cookie until the first send, except one GET on mount, which answers
  * `status: null` without a conversation (the cookie is httpOnly, so asking is the only way to know).
  */
@@ -48,6 +49,11 @@ const MAX_TEXT = 2_000;
 const LAUNCHER = 54;
 // Open, the same square stays where it is and shows a white ✕ instead of the bubble (owner, 11-27).
 const GAP = 12;
+// The panel (owner's design, 11-28): 400 px wide, up to 700 px tall, never under the site nav (57 px) plus a gap.
+const PANEL_WIDTH = 400;
+const PANEL_HEIGHT = 700;
+const NAV_CLEAR = 57 + 8;
+const CLOCK_MS = 30_000;
 
 type Msg = {
   kind: "msg";
@@ -55,6 +61,8 @@ type Msg = {
   id: number | null;
   direction: Direction;
   body: string;
+  /** When it was sent (ms), for the day dividers and "N min ago". */
+  at: number;
   state: "pending" | "sent" | "failed";
   /** A failed message the visitor may send again (not after a 400 / 403). */
   retry: boolean;
@@ -87,6 +95,7 @@ function fromServer(m: ServerMessage): Msg {
     id: m.id,
     direction: m.direction,
     body: m.body,
+    at: Date.parse(m.createdAt) || now(),
     state: failed ? "failed" : "sent",
     retry: failed,
   };
@@ -202,9 +211,6 @@ const readColumn = () => {
     : document.documentElement.clientWidth - 16;
 };
 
-const FOCUSABLE =
-  'button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([tabindex="-1"]), a[href], [tabindex="0"]';
-
 export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   // `openFirst`: a "Contact now" click loaded the widget (live-chat-lazy.tsx), so it starts open, with focus.
   const [open, setOpenState] = useState(
@@ -219,6 +225,8 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [slow, setSlow] = useState(false);
   const [announce, setAnnounce] = useState("");
+  // The visitor's clock, for "N min ago" and the day dividers; it ticks while the panel is open.
+  const [clock, setClock] = useState(now);
   const [email, setEmail] = useState("");
   const [emailState, setEmailState] = useState<
     "idle" | "busy" | "done" | "invalid" | "failed"
@@ -261,8 +269,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   const stick = useRef(true);
   const seq = useRef(0);
   const polling = useRef(false);
-  // True from the start: the panel is modal (owner, 11-27), so one that reopens itself on a reload takes focus too.
-  const focusOnOpen = useRef(true);
+  const focusOnOpen = useRef(openFirst);
   const titleId = useId();
   const inputId = useId();
   const emailId = useId();
@@ -401,7 +408,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
     [],
   );
 
-  // Focus moves into the panel when it opens.
+  // Focus moves into the panel when the visitor opens it (not when it reopens itself on the next page).
   useEffect(() => {
     if (!open || !focusOnOpen.current) return;
     focusOnOpen.current = false;
@@ -448,25 +455,10 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
     requestAnimationFrame(() => launcher.current?.focus());
   }
 
-  // Modal like the nav's "Send a message" popup (owner, 11-27): Esc closes it from anywhere and the page behind does
-  // not scroll (no `dialog` ref: this component places focus itself).
-  useModal(open, closePanel);
-  // Focus stays in the panel and the launcher; the consent card, above the fade layer, stays reachable.
   useEffect(() => {
     if (!open) return;
-    const onFocus = (e: FocusEvent) => {
-      const to = e.target;
-      if (
-        !(to instanceof Element) ||
-        dialog.current?.contains(to) ||
-        launcher.current?.contains(to) ||
-        to.closest(CONSENT_CARD)
-      )
-        return;
-      dialog.current?.focus();
-    };
-    document.addEventListener("focusin", onFocus);
-    return () => document.removeEventListener("focusin", onFocus);
+    const t = window.setInterval(() => setClock(now()), CLOCK_MS);
+    return () => window.clearInterval(t);
   }, [open]);
 
   function patch(key: string, fields: Partial<Msg>) {
@@ -493,6 +485,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
           id: null,
           direction: "visitor",
           body,
+          at: now(),
           state: "pending",
           retry: false,
         },
@@ -560,42 +553,32 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
     }
   }
 
+  // Not modal (owner, 11-28): no fade layer, no scroll lock and no Tab cycle; the page stays usable. Tab follows the
+  // DOM: the launcher, then the panel's controls, then on. Esc closes while focus is in the panel or on the launcher.
   function onDialogKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.key === "Escape") {
-      if (e.defaultPrevented) return;
-      // handled here, so a site popup listening on window (useModal) ignores it
-      e.preventDefault();
-      closePanel();
-      return;
-    }
-    if (e.key !== "Tab" || !dialog.current) return;
-    // The panel has no close button of its own (owner, 11-27): the launcher, a ✕ while open (before the panel in the DOM), is the
-    // stop after the panel's last control and before its first; the ✕'s own onKeyDown leads back in.
-    const nodes = Array.from(
-      dialog.current.querySelectorAll<HTMLElement>(FOCUSABLE),
-    );
-    const close = launcher.current;
-    const head = nodes[0];
-    const tail = nodes[nodes.length - 1];
-    const at = document.activeElement;
-    const edge = e.shiftKey
-      ? at === head || at === dialog.current
-      : at === tail || !tail;
-    if (!edge) return;
+    if (e.key !== "Escape" || e.defaultPrevented) return;
+    // handled here, so a site popup listening on window (useModal) ignores it
     e.preventDefault();
-    (close ?? (e.shiftKey ? tail : head))?.focus();
+    closePanel();
   }
 
   // Geometry: the launcher sits 16 px above the bottom, its right edge on the nav's top-right button's (owner, 11-27),
-  // lifted above the consent card (bottom-right) while that shows and the two would meet.
+  // and the panel a gap above it, its right edge on the same line (owner's design, 11-28; on a phone it keeps 16 px
+  // gutters). The consent card sits bottom-right: while it shows, whichever of the two would meet it is lifted above it.
   const base = 16;
   const launcherLeft = edge - LAUNCHER;
+  const panelLeft = Math.max(16, edge - PANEL_WIDTH);
   const [cardTop = 0, cardLeft = 0, cardRight = 0] =
     consentPending && card ? card.split(":").map(Number) : [];
-  const launcherBottom =
-    cardTop > 0 && launcherLeft < cardRight + GAP && edge > cardLeft - GAP
-      ? Math.max(base, cardTop + GAP)
-      : base;
+  const aboveCard = (left: number) =>
+    cardTop > 0 && left < cardRight + GAP && edge > cardLeft - GAP
+      ? cardTop + GAP
+      : 0;
+  const launcherBottom = Math.max(base, aboveCard(launcherLeft));
+  const panelBottom = Math.max(
+    launcherBottom + LAUNCHER + GAP,
+    aboveCard(panelLeft),
+  );
   const [vvTop = 0, vvHeight = 0, layoutHeight = 0] = viewport
     ? viewport.split(":").map(Number)
     : [];
@@ -605,37 +588,34 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   const keyboard =
     vvHeight > 0 ? Math.max(0, layoutHeight - (vvTop + vvHeight)) : 0;
 
-  // The panel opens where the nav's "Send a message" popup does (owner, 11-27; send-message-button.tsx): the middle of
-  // the screen, 448 px wide (`max-w-md`) with 16 px gutters on a phone. `inset: 0` + auto margins centre it against the
-  // same box as that popup's overlay, with no transform (the opening animation uses it), over the same fade layer.
-  // Its height leaves the launcher's strip free below it (and, to stay centred, as much above), so the ✕ is
-  // never covered. A phone gets this floating panel too, never a full-screen sheet (owner, 11-27: "it's confusing on
-  // the phone"); while a keyboard is up it sits just above it.
-  const width = "min(calc(100% - 32px), 448px)";
-  const strip = launcherBottom + LAUNCHER + GAP;
+  // Up to 700 px tall, shrinking with the window so it stays clear of the site nav above and the launcher below.
+  // A phone gets this floating panel too, never a full-screen sheet (owner, 11-27: "it's confusing on the phone");
+  // while a keyboard is up it sits just above it.
+  const panelBox = {
+    left: `max(16px, ${edge - PANEL_WIDTH}px)`,
+    width: `min(${PANEL_WIDTH}px, calc(100% - 32px))`,
+  };
   const panelStyle: React.CSSProperties =
     keyboard > 40
       ? {
-          left: 0,
-          right: 0,
+          ...panelBox,
           bottom: keyboard + 8,
-          marginInline: "auto",
-          width,
-          height: Math.max(160, Math.min(560, vvHeight - 16)),
+          height: Math.max(160, Math.min(PANEL_HEIGHT, vvHeight - 16)),
         }
       : {
-          inset: 0,
-          margin: "auto",
-          width,
-          height: `min(560px, calc(100dvh - ${strip * 2}px - 2 * ${safe}))`,
+          ...panelBox,
+          bottom: `calc(${panelBottom}px + ${safe})`,
+          height: `min(${PANEL_HEIGHT}px, calc(100dvh - ${panelBottom + NAV_CLEAR}px - ${safe}))`,
         };
+
+  const thread = threadRows(items, clock);
 
   const canSend = input.trim().length > 0 && !busy && !slow;
 
   return (
     <>
       <div
-        className="fixed z-[56]"
+        className="fixed z-[55]"
         style={{
           left: launcherLeft,
           bottom: `calc(${launcherBottom}px + ${safe})`,
@@ -655,21 +635,10 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
           aria-haspopup="dialog"
           onClick={() => (open ? closePanel() : openPanel())}
           onKeyDown={(e) => {
-            // While open, the ✕ is in the panel's Tab cycle and closes on Esc like the panel.
-            if (!open || !dialog.current) return;
-            if (e.key === "Escape") {
-              e.preventDefault();
-              closePanel();
-            } else if (e.key === "Tab") {
-              const nodes = Array.from(
-                dialog.current.querySelectorAll<HTMLElement>(FOCUSABLE),
-              );
-              const to = e.shiftKey ? nodes[nodes.length - 1] : nodes[0];
-              if (to) {
-                e.preventDefault();
-                to.focus();
-              }
-            }
+            // While open, the ✕ closes on Esc like the panel.
+            if (!open || e.key !== "Escape") return;
+            e.preventDefault();
+            closePanel();
           }}
           className={styles.launcher}
           style={{ width: LAUNCHER, height: LAUNCHER }}
@@ -692,36 +661,59 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
         )}
       </div>
 
-      {/* The fade layer of the "Send a message" popup (send-message-button.tsx: black at 40 %, no blur, no fade), under
-          the launcher so its ✕ stays clickable; a click on it closes the chat. The consent card (z-70) stays above
-          it, as it does above that popup's. */}
-      {open && (
-        <div
-          aria-hidden="true"
-          onClick={closePanel}
-          className="fixed inset-0 z-[55] bg-black/40"
-        />
-      )}
-
       {open && (
         <div
           ref={dialog}
           role="dialog"
-          aria-modal="true"
           aria-labelledby={titleId}
           tabIndex={-1}
           onKeyDown={onDialogKeyDown}
-          className={`text-foreground border-border bg-background fixed z-[55] flex flex-col overflow-hidden rounded-lg border shadow-xl outline-none ${styles.panel}`}
+          className={`text-foreground border-border bg-background fixed z-[55] flex flex-col overflow-hidden rounded-2xl border shadow-xl outline-none ${styles.panel}`}
           style={panelStyle}
         >
-          {/* On the page's cream (owner, 11-27; the "Send a message" popup's background): notes are the muted grey
-              (5.1:1 on it); Kirill's bubbles, the email card and the inputs are white with the border colour around
-              them, since white alone is 1.06:1 against the cream. */}
-          {/* No close button here (owner, 11-27): the launcher's ✕ closes it, as do Esc and a click outside. */}
-          <div className="border-border shrink-0 border-b px-4 py-2.5">
-            <h2 id={titleId} className="text-sm font-medium">
-              {COPY.title}
-            </h2>
+          {/* On the page's cream: notes are the muted grey (5.1:1 on it); Kirill's bubbles, the cards and the message
+              field are white with the border colour around them, since white alone is 1.06:1 against the cream. */}
+          <div className="border-border flex shrink-0 items-center gap-3 border-b py-3 pr-2 pl-4">
+            <span className="relative shrink-0" aria-hidden="true">
+              <span className="bg-foreground text-background flex h-10 w-10 items-center justify-center rounded-full text-base font-semibold">
+                {COPY.initial}
+              </span>
+              <span className="ring-background absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2
+                id={titleId}
+                className="text-base leading-tight font-semibold"
+              >
+                {COPY.name}
+              </h2>
+              <p className="text-muted-foreground mt-0.5 text-[13px] leading-snug">
+                {COPY.status}
+              </p>
+            </div>
+            {/* Closes the chat from inside the dialog; the launcher's ✕ and Esc do the same. */}
+            <button
+              type="button"
+              aria-label={COPY.minimise}
+              onClick={closePanel}
+              className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-foreground flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors focus-visible:outline-2"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="h-5 w-5"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m6 9 6 6 6-6"
+                />
+              </svg>
+            </button>
           </div>
 
           <div
@@ -733,15 +725,21 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
               stick.current =
                 el.scrollHeight - el.scrollTop - el.clientHeight < 40;
             }}
-            className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-3 py-3 text-sm outline-none"
+            className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4 text-[15px] leading-snug outline-none"
           >
-            <Bubble direction="owner" label body={COPY.greeting} />
-            {items.map((it, i) => {
+            <DayDivider label={thread.firstDay} first />
+            <Bubble
+              direction="owner"
+              body={COPY.greeting}
+              tight={false}
+              meta={thread.greetingMeta}
+            />
+            {thread.rows.map(({ it, day, tight, meta }) => {
               if (it.kind === "email")
                 return (
                   <div
                     key={it.key}
-                    className="border-border max-w-[85%] self-start rounded-lg border bg-white px-3 py-2"
+                    className="border-border mt-3 max-w-[85%] self-start rounded-2xl border bg-white px-3.5 py-2.5"
                   >
                     <p>{COPY.emailPrompt}</p>
                     {hasEmail || emailState === "done" ? (
@@ -765,7 +763,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
                             setEmail(e.target.value);
                             if (emailState !== "busy") setEmailState("idle");
                           }}
-                          className="border-border placeholder:text-muted-foreground min-w-0 flex-1 rounded-md border bg-white px-2 py-1 text-base sm:text-sm"
+                          className="border-border placeholder:text-muted-foreground min-w-0 flex-1 rounded-lg border bg-white px-2 py-1 text-base sm:text-sm"
                         />
                         <button
                           type="submit"
@@ -785,30 +783,27 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
                     )}
                   </div>
                 );
-              // "Kirill" heads each run of his messages; the greeting heads the first one
-              const prev = items[i - 1];
-              const label =
-                it.direction === "owner" &&
-                i > 0 &&
-                !(prev?.kind === "msg" && prev.direction === "owner");
               return (
-                <Bubble
-                  key={it.key}
-                  direction={it.direction}
-                  label={label}
-                  body={it.body}
-                  state={it.direction === "visitor" ? it.state : undefined}
-                  onRetry={
-                    it.state === "failed" && it.retry
-                      ? () => void send(it.body, it)
-                      : undefined
-                  }
-                  retryDisabled={busy || slow}
-                />
+                <Fragment key={it.key}>
+                  {day && <DayDivider label={day} />}
+                  <Bubble
+                    direction={it.direction}
+                    body={it.body}
+                    tight={tight}
+                    meta={meta}
+                    state={it.direction === "visitor" ? it.state : undefined}
+                    onRetry={
+                      it.state === "failed" && it.retry
+                        ? () => void send(it.body, it)
+                        : undefined
+                    }
+                    retryDisabled={busy || slow}
+                  />
+                </Fragment>
               );
             })}
             {status === "closed" && (
-              <p className="text-muted-foreground mt-1 text-center text-xs">
+              <p className="text-muted-foreground mt-3 text-center text-xs">
                 {COPY.closed}
               </p>
             )}
@@ -819,7 +814,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
               e.preventDefault();
               void send(input);
             }}
-            className="border-border relative shrink-0 border-t p-2"
+            className="border-border relative shrink-0 border-t p-3"
           >
             {slow && (
               <p
@@ -829,7 +824,8 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
                 {COPY.slowDown}
               </p>
             )}
-            <div className="flex items-end gap-2">
+            {/* One white field: the text, and the send button at its end. The field shows the focus ring. */}
+            <div className="border-border focus-within:outline-primary flex items-end gap-1 rounded-xl border bg-white p-1 pl-3.5 focus-within:outline-2">
               <label htmlFor={inputId} className="sr-only">
                 {COPY.inputLabel}
               </label>
@@ -856,10 +852,29 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
                     if (canSend) void send(input);
                   }
                 }}
-                className="border-border placeholder:text-muted-foreground focus-visible:outline-primary block max-h-32 min-h-10 min-w-0 flex-1 resize-none rounded-md border bg-white px-3 py-2 text-base leading-snug sm:text-sm"
+                className="placeholder:text-muted-foreground block max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2.5 text-base leading-snug outline-none sm:text-[15px]"
               />
-              <button type="submit" disabled={!canSend} className={cta.cta}>
-                {COPY.send}
+              <button
+                type="submit"
+                disabled={!canSend}
+                aria-label={COPY.send}
+                className="bg-accent text-foreground disabled:bg-muted disabled:text-muted-foreground focus-visible:outline-foreground flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.25}
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 19V5m-6 6 6-6 6 6"
+                  />
+                </svg>
               </button>
             </div>
             {/* Honeypot (contract: `website` must be empty): off screen, out of the tab order, unseen by people. */}
@@ -884,55 +899,107 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   );
 }
 
+function DayDivider({ label, first }: { label: string; first?: boolean }) {
+  return (
+    <p
+      className={`text-muted-foreground text-center text-xs ${first ? "" : "mt-4"}`}
+    >
+      {label}
+    </p>
+  );
+}
+
 function Bubble({
   direction,
-  label,
   body,
+  tight,
+  meta,
   state,
   onRetry,
   retryDisabled,
 }: {
   direction: Direction;
-  label: boolean;
   body: string;
+  /** Follows a bubble of the same side: the small gap. */
+  tight: boolean;
+  /** "Kirill · just now", under the last bubble of a run of his. */
+  meta: string | null;
   state?: Msg["state"];
   onRetry?: () => void;
   retryDisabled?: boolean;
 }) {
   if (direction === "system")
     return (
-      <p className="text-muted-foreground px-4 text-center text-xs whitespace-pre-wrap">
+      <p className="text-muted-foreground mt-3 px-4 text-center text-xs whitespace-pre-wrap">
         {body}
       </p>
     );
   const owner = direction === "owner";
+  // A video-call link of Kirill's becomes a card; the link leaves the text, which the card would only repeat.
+  const call = videoCall(direction, body);
+  const text = call ? call.rest : body;
+  const note = "text-muted-foreground mt-1 px-1 text-xs";
   return (
     <div
-      className={`flex max-w-[85%] flex-col ${owner ? "items-start self-start" : "items-end self-end"}`}
+      className={`flex max-w-[85%] flex-col ${tight ? "mt-1.5" : "mt-3"} ${owner ? "items-start self-start" : "items-end self-end"}`}
     >
-      {owner && label && (
-        <span className="text-muted-foreground mb-0.5 px-1 text-xs">
-          {COPY.owner}
-        </span>
-      )}
       {/* A text node, never HTML: whatever the visitor or the owner typed shows as typed. */}
-      <p
-        className={`rounded-lg px-3 py-2 break-words whitespace-pre-wrap ${
-          owner
-            ? "border-border text-foreground rounded-tl-sm border bg-white"
-            : "bg-foreground text-background rounded-tr-sm"
-        }`}
-      >
-        <span className="sr-only">{owner ? COPY.owner : COPY.you}: </span>
-        {body}
-      </p>
-      {state === "pending" && (
-        <span className="text-muted-foreground mt-0.5 px-1 text-xs">
-          {COPY.sending}
-        </span>
+      {text && (
+        <p
+          className={`rounded-2xl px-3.5 py-2.5 break-words whitespace-pre-wrap ${
+            owner
+              ? "border-border text-foreground border bg-white"
+              : "bg-foreground text-background"
+          }`}
+        >
+          <span className="sr-only">{owner ? COPY.owner : COPY.you}: </span>
+          {text}
+        </p>
       )}
+      {call && (
+        <div
+          className={`border-border flex max-w-full items-center gap-3 rounded-2xl border bg-white p-3 ${text ? "mt-1.5" : ""}`}
+        >
+          <span className="bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.75}
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.75 10.5 21 7.5v9l-5.25-3M4.5 6.75h9a2.25 2.25 0 0 1 2.25 2.25v6a2.25 2.25 0 0 1-2.25 2.25h-9A2.25 2.25 0 0 1 2.25 15V9A2.25 2.25 0 0 1 4.5 6.75Z"
+              />
+            </svg>
+          </span>
+          <span className="min-w-0 flex-1">
+            {!text && <span className="sr-only">{COPY.owner}: </span>}
+            <span className="block text-sm font-semibold">
+              {COPY.videoCall}
+            </span>
+            <span className="text-muted-foreground block truncate text-xs">
+              {call.host}
+            </span>
+          </span>
+          <a
+            href={call.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-accent text-foreground focus-visible:outline-foreground flex h-11 shrink-0 items-center rounded-lg px-3.5 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            {COPY.joinCall}
+          </a>
+        </div>
+      )}
+      {meta && <span className={note}>{meta}</span>}
+      {state === "pending" && <span className={note}>{COPY.sending}</span>}
       {state === "failed" && (
-        <span className="text-muted-foreground mt-0.5 px-1 text-xs">
+        <span className={note}>
           {COPY.notDelivered}
           {onRetry && (
             <>

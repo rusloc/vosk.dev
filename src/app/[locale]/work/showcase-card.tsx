@@ -25,14 +25,11 @@ export function ShowcaseCard({
     <article className="group bg-background border-border relative flex gap-6 rounded-lg border p-5 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(31,27,22,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
       {/* Left — title and summary */}
       <div className="min-w-0 flex-1">
-        {/* Every card is one size (owner, 11-26): no data label above the title (the detail page keeps it), the title
-            on one line, the summary held at exactly two, so paging through the list never moves the layout. */}
-        <h2
-          // the padding gives the blurred title bar room inside truncate's clip (11-26)
-          className="-my-3 -ml-4 truncate py-3 pl-4 text-xl font-semibold tracking-tight"
-          title={title}
-        >
-          <span className="relative">
+        {/* No data label above the title (owner, 11-26; the detail page keeps it). The title is never cut (owner, 11-27,
+            phone): it wraps, and the bar sits behind the whole wrapped block, as on the blog list. The summary keeps two
+            lines from md and gets three on a phone. */}
+        <h2 className="text-xl font-semibold tracking-tight">
+          <span className="relative inline-block">
             <span aria-hidden="true" className={titleStyles.titleBar} />
             <Link
               href={href}
@@ -45,7 +42,7 @@ export function ShowcaseCard({
         </h2>
 
         {/* No "Client: …" line here since 11-16 (owner): the detail page keeps it. */}
-        <p className="text-muted-foreground mt-2 line-clamp-2 min-h-[2lh] max-w-xl">
+        <p className="text-muted-foreground mt-2 line-clamp-3 max-w-xl md:line-clamp-2 md:min-h-[2lh]">
           {summary}
         </p>
       </div>

@@ -25,11 +25,12 @@ import {
 } from "./api";
 import { COPY } from "./copy";
 import { LIVE_CHAT_OPEN_EVENT } from "./open-event";
+import { LauncherIcon } from "./launcher-icon";
 import styles from "./live-chat.module.css";
 
 /**
- * The live chat (docs/livechat/README.md): a launcher bottom-right, a panel above it (a full-screen sheet under
- * 640 px), messages relayed to the owner's Telegram by `/api/livechat/*`. Client-only and loaded after idle by
+ * The live chat (docs/livechat/README.md): a launcher bottom-right, a floating panel above it (on a phone too, sized
+ * to the screen and lifted above the keyboard), messages relayed to the owner's Telegram by `/api/livechat/*`. Client-only and loaded after idle by
  * <LiveChatLazy>. No request and no cookie until the first send, except one GET on mount, which answers
  * `status: null` without a conversation (the cookie is httpOnly, so asking is the only way to know).
  */
@@ -42,7 +43,8 @@ const POLL_CLOSED_MS = 20_000;
 const EMAIL_PROMPT_MS = 60_000;
 const SLOW_MS = 5_000;
 const MAX_TEXT = 2_000;
-const LAUNCHER = 56;
+// 20 % larger than the old 56 px circle (owner, 11-27): the two-bubble icon reads at a glance.
+const LAUNCHER = 67;
 const GAP = 12;
 
 type Msg = {
@@ -116,6 +118,7 @@ function merge(prev: Item[], incoming: ServerMessage[]): Item[] {
 
 // Browser state read through useSyncExternalStore: the widget never renders on the server, so the server snapshots
 // below are never used for real.
+// Under 640 px ("sheet", the old full-screen name): the phone sizing and no autofocus on the textarea.
 const SHEET = "(max-width: 639.98px)";
 const media = (query: string) => ({
   subscribe: (cb: () => void) => {
@@ -133,7 +136,7 @@ function subscribeVisibility(cb: () => void) {
 }
 const readVisible = () => document.visibilityState === "visible";
 
-/** The visual viewport, so the sheet stays above the on-screen keyboard. */
+/** The visual viewport and the layout viewport's height, so the phone panel rises above the on-screen keyboard. */
 function subscribeViewport(cb: () => void) {
   const vv = window.visualViewport;
   if (!vv) return () => {};
@@ -146,7 +149,9 @@ function subscribeViewport(cb: () => void) {
 }
 const readViewport = () => {
   const vv = window.visualViewport;
-  return vv ? `${Math.round(vv.offsetTop)}:${Math.round(vv.height)}` : "";
+  return vv
+    ? `${Math.round(vv.offsetTop)}:${Math.round(vv.height)}:${window.innerHeight}`
+    : "";
 };
 
 /** How far the consent card's top edge sits above the bottom of the window (0 when it is not there). */
@@ -229,6 +234,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   const titleId = useId();
   const inputId = useId();
   const emailId = useId();
+  const maskId = useId();
 
   useEffect(() => {
     openRef.current = open;
@@ -368,18 +374,8 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   useEffect(() => {
     if (!open || !focusOnOpen.current) return;
     focusOnOpen.current = false;
-    // On a phone the textarea would pop the keyboard over the history; the sheet itself takes focus.
+    // On a phone the textarea would pop the keyboard over the history; the panel itself takes focus.
     (sheet ? dialog.current : textarea.current)?.focus();
-  }, [open, sheet]);
-
-  // The full-screen sheet holds the page still behind it.
-  useEffect(() => {
-    if (!open || !sheet) return;
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = overflow;
-    };
   }, [open, sheet]);
 
   // Newest message in view, unless the visitor scrolled up to read.
@@ -408,7 +404,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   });
   useEffect(() => {
     if (openFirst) storageSet("session", OPEN_KEY, "1");
-    // Already open (only on a desktop: a phone's sheet covers the button): the click moves focus to the message box.
+    // Already open: the click moves focus to the message box.
     const onOpen = () =>
       openRef.current ? textarea.current?.focus() : openPanelRef.current();
     window.addEventListener(LIVE_CHAT_OPEN_EVENT, onOpen);
@@ -417,7 +413,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
 
   function closePanel() {
     setOpen(false);
-    // after the sheet is gone (on a phone it covers the launcher)
+    // after the panel is gone
     requestAnimationFrame(() => launcher.current?.focus());
   }
 
@@ -544,20 +540,31 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
     consentPending && cardTop > 0 ? Math.max(base, cardTop + GAP) : base;
   const right = 16;
   const panelBottom = launcherBottom + LAUNCHER + GAP;
-  const [vvTop, vvHeight] = viewport ? viewport.split(":").map(Number) : [];
+  const [vvTop = 0, vvHeight = 0, layoutHeight = 0] = viewport
+    ? viewport.split(":").map(Number)
+    : [];
   const safe = "env(safe-area-inset-bottom, 0px)";
+  // How much of the layout viewport the on-screen keyboard covers (0 when it is down, or when the browser shrinks the
+  // layout viewport itself). A fixed panel is placed against the layout viewport, so it is lifted by this much.
+  const keyboard =
+    vvHeight > 0 ? Math.max(0, layoutHeight - (vvTop + vvHeight)) : 0;
 
+  // A phone gets a floating panel too, never a full-screen sheet (owner, 11-27: "it's confusing on the phone"): above the
+  // launcher with the page around it, or just above the keyboard while one is up.
   const panelStyle: React.CSSProperties = sheet
-    ? {
-        top: vvTop ?? 0,
-        left: 0,
-        right: 0,
-        height: vvHeight ? `${vvHeight}px` : "100dvh",
-        paddingTop: "env(safe-area-inset-top, 0px)",
-        paddingBottom: safe,
-        paddingLeft: "env(safe-area-inset-left, 0px)",
-        paddingRight: "env(safe-area-inset-right, 0px)",
-      }
+    ? keyboard > 40
+      ? {
+          right,
+          bottom: keyboard + 8,
+          width: `min(calc(100vw - ${right * 2}px), 400px)`,
+          height: Math.max(160, Math.min(560, vvHeight - 16)),
+        }
+      : {
+          right,
+          bottom: `calc(${panelBottom}px + ${safe})`,
+          width: `min(calc(100vw - ${right * 2}px), 400px)`,
+          height: `min(560px, 70dvh, calc(100dvh - ${panelBottom + 16}px - ${safe}))`,
+        }
     : {
         right,
         bottom: `calc(${panelBottom}px + ${safe})`,
@@ -590,38 +597,24 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
           aria-expanded={open}
           aria-haspopup="dialog"
           onClick={() => (open ? closePanel() : openPanel())}
-          className={`${cta.cta} shadow-lg`}
+          className={open ? `${cta.cta} shadow-lg` : styles.launcher}
           style={{
             width: LAUNCHER,
             height: LAUNCHER,
             padding: 0,
-            borderRadius: 9999,
+            borderRadius: open ? 9999 : undefined,
           }}
         >
           {open ? (
             <CloseIcon className="h-5 w-5" />
           ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.8}
-              className="h-6 w-6"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M7.5 8.25h9m-9 3.75h6M21 12c0 4.556-4.03 8.25-9 8.25a9.8 9.8 0 0 1-2.555-.337A5.97 5.97 0 0 1 5.41 20.97a6 6 0 0 1-.474-.065 4.5 4.5 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"
-              />
-            </svg>
+            <LauncherIcon maskId={maskId} />
           )}
         </button>
         {unread > 0 && !open && (
           <span
             aria-hidden="true"
-            className="bg-accent text-foreground pointer-events-none absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-semibold shadow"
+            className="bg-accent text-foreground pointer-events-none absolute top-0 right-0 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-semibold shadow"
           >
             {unread > 9 ? "9+" : unread}
           </span>
@@ -636,11 +629,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
           aria-labelledby={titleId}
           tabIndex={-1}
           onKeyDown={onDialogKeyDown}
-          className={`bg-background text-foreground fixed flex flex-col overflow-hidden outline-none ${
-            sheet
-              ? "z-[80]"
-              : `border-border z-[55] rounded-lg border shadow-xl ${styles.panel}`
-          }`}
+          className={`bg-background text-foreground border-border fixed z-[55] flex flex-col overflow-hidden rounded-lg border shadow-xl outline-none ${styles.panel}`}
           style={panelStyle}
         >
           <div className="border-border flex shrink-0 items-center justify-between gap-4 border-b py-1.5 pr-1.5 pl-4">

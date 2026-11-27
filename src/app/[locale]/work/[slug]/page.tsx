@@ -201,10 +201,10 @@ export default async function ShowcasePage({ params }: Props) {
           <h2 className="text-base font-semibold tracking-tight">
             {t.relatedTitle}
           </h2>
-          {/* Side by side on desktop under the contact box (one line, so the page fits 1366×768), stacked elsewhere. */}
-          <ul className="mt-2 space-y-1.5 lg:mt-1 lg:grid lg:grid-cols-2 lg:space-y-0 lg:gap-x-6">
+          {/* Stacked, one title per line (owner, 11-27). */}
+          <ul className="mt-2 space-y-1.5 lg:mt-1 lg:space-y-1">
             {related.map((r) => (
-              <li key={r.slug} className="lg:min-w-0 lg:truncate">
+              <li key={r.slug}>
                 <Link
                   href={localizedPath(l, `/work/${r.slug}`)}
                   title={r.title}

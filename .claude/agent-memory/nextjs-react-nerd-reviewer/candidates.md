@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-<!-- next-id: CAND-004 -->
+<!-- next-id: CAND-005 -->
 
 # Candidates (CAND-NNN)
 
@@ -43,4 +43,14 @@ gradient) or add a modifier class to the module. Never `!important`.
 **Confidence:** medium: one consumer.
 **Expires:** 2027-02-14
 **Related:** SEC-001
+**Status:** candidate
+
+### CAND-004 · checking the live chat against the consent card locally · 2026-11-27
+
+**Symptom:** A local build shows no consent card (no GTM id), and no live chat unless its six env vars (the five plus `CHAT_IP_HASH_SALT`) are in process env at BUILD time: the layout is static.
+**Cause:** `Analytics` returns null without `gtmId`; `isLiveChatConfigured()` is read when the layout prerenders.
+**Fix:** Build and start with mock live chat values in process env; for the card, append a stand-in `div[role=dialog][aria-label="Cookie consent"]` with the card's classes to `body` (the widget finds it by that selector, `useConsentPending` is true on a clean localStorage).
+**Seen:** `src/components/livechat/live-chat.tsx` (launcher moved bottom-left 11-27; it lifts above the card only where their boxes meet).
+**Confidence:** medium: one session.
+**Expires:** 2027-02-25
 **Status:** candidate

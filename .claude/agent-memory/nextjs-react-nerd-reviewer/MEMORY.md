@@ -2,6 +2,7 @@
 
 ## Hot findings (last 30 days)
 
+- 2026-11-27 · CAND-004: local check of the live chat needs its six env vars at build time; the consent card needs a stand-in element (no GTM id locally).
 - 2026-11-27 · PERF-003: a vendored `parquet-columns.ts` with a top-level hyparquet import puts 18 kB gz in every API-reading report popup; import it inside `readRows`. Nordmark's copy still has it (held work).
 - 2026-11-16 · CAND-002: an optional build input (a JSON that may not exist yet) is a template-literal `import()`, not a literal one and not an `fs` check.
 - 2026-11-16 · CAND-003: chat tools may be async and take a request context (`chatRoute({ context })`); first user is `lib/ceo-digest/`.
@@ -21,7 +22,7 @@
 - [Platform gotchas](platform-gotchas.md) — 4 entries · stalest 2026-08-01 · PG-NNN
 - [Perf hotspots](perf-hotspots.md) — 3 entries · stalest 2026-08-01 · PERF-NNN
 - [Security findings](security-findings.md) — 1 entry · stalest 2026-09-21 · SEC-NNN
-- [Candidates](candidates.md) — 3 awaiting second hit · CAND-NNN
+- [Candidates](candidates.md) — 4 awaiting second hit · CAND-NNN
 
 ## Open questions
 

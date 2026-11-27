@@ -199,15 +199,6 @@ export const en = {
         ],
       },
     ],
-    // DRAFT for the owner to approve (live chat spec, "Privacy", 11-26): shown only while the live chat is configured
-    // (lib/livechat/config.ts). Checked against docs/livechat/README.md; confirm the wording before the chat goes live.
-    liveChat: {
-      title: "Live chat",
-      body: [
-        "Messages you type into the chat window, and your email address if you leave one, are stored in the site's database and relayed through Telegram to me. A cookie (vosk_chat) links your browser to your conversation; it is set only when you send your first message.",
-        "To limit abuse, the site also keeps a scrambled form of your IP address, never the address itself. Everything is deleted 90 days after the last message.",
-      ],
-    },
     contactTitle: "Questions",
     contactBody:
       "To ask what I hold about you, or to have it deleted, write to",

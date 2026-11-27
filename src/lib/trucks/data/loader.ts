@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import { artifactSources } from "@/lib/report-data/columns";
+import { once } from "@/lib/report-data/once";
 import { checkRows, readRows } from "./parquet-columns";
 import type { ColumnSpec, RowOf } from "./parquet-columns";
 import { FILES, manifestSchema, unfilteredManifestSchema } from "./manifest";
@@ -43,15 +44,6 @@ export interface CoreFiles<M = Manifest> {
 export interface TrucksLoader<M = Manifest> {
   core(): Promise<CoreFiles<M>>;
   planWeek(): Promise<FileRows<"planWeek">>;
-}
-
-function once<T>(load: () => Promise<T>): () => Promise<T> {
-  let pending: Promise<T> | undefined;
-  return () => {
-    pending ??= load();
-    pending.catch(() => (pending = undefined));
-    return pending;
-  };
 }
 
 function build<M extends Pick<Manifest, "files">>(

@@ -36,6 +36,7 @@ import type {
   VolumeKey,
 } from "@/lib/freight/engine";
 import { int, money2, pct, periodLabel, tileValue } from "@/lib/freight/format";
+import { once } from "@/lib/report-data/once";
 import { DataTable } from "./data-table";
 import { TopClients } from "./top-clients";
 import s from "./freight.module.css";
@@ -45,7 +46,7 @@ import s from "./freight.module.css";
 // comes from lib/freight/engine. Ask AI is not built for this report (owner, 11-24): `chat` props are ignored.
 
 // Parallel range requests on one URL fail in Chromium's HTTP cache (ERR_CACHE_OPERATION_NOT_SUPPORTED, seen 11-24), so
-// they skip it; the dataset is kept in memory for the page's life (`pending`), so a second open reads nothing again.
+// they skip it; the dataset is kept in memory for the page's life (`once`), so a second open reads nothing again.
 const open = async (name: string) =>
   cachedAsyncBuffer(
     await asyncBufferFromUrl({
@@ -53,12 +54,7 @@ const open = async (name: string) =>
       requestInit: { cache: "no-store" },
     }),
   );
-let pending: Promise<Dataset> | undefined;
-function fetchDataset(): Promise<Dataset> {
-  pending ??= loadDataset(open);
-  pending.catch(() => (pending = undefined));
-  return pending;
-}
+const fetchDataset = once(() => loadDataset(open));
 
 type Tab = "oper" | "acc" | "top";
 type Pop =

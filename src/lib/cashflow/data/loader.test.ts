@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ReadArtifact } from "@/lib/report-data/columns";
 import { packReader } from "../test-utils/dataset";
 import { loadDataset, parquetSource } from "./loader";
+import { FILE_KEYS } from "./manifest";
 
 // The loader's failure paths (CF-ARC-06): each error names the file, and nothing partial reaches the engine.
 
@@ -49,6 +50,35 @@ describe("cash flow loader", () => {
     };
     await expect(loadDataset(parquetSource(read))).rejects.toThrow(
       "month.parquet: HTTP 500",
+    );
+  });
+
+  it("starts the tables with the manifest, not after it", async () => {
+    const started: string[] = [];
+    let startedByManifest = 0;
+    const read: ReadArtifact = async (name) => {
+      started.push(name);
+      if (name === "manifest.json") {
+        await new Promise((r) => setTimeout(r, 0));
+        startedByManifest = started.length;
+      }
+      return packReader(name);
+    };
+    await loadDataset(parquetSource(read));
+    expect(startedByManifest).toBe(FILE_KEYS.length + 1);
+    expect(started).toHaveLength(FILE_KEYS.length + 1);
+  });
+
+  it("reports the manifest's error first when a table fails too", async () => {
+    const bad = withManifest((m) => {
+      (m as Record<string, unknown>).extra = 1;
+    });
+    const read: ReadArtifact = async (name) => {
+      if (name === "month.parquet") throw new Error("HTTP 500");
+      return bad(name);
+    };
+    await expect(loadDataset(parquetSource(read))).rejects.toThrow(
+      /^manifest\.json: /,
     );
   });
 });

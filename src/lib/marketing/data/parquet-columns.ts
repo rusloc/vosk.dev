@@ -1,5 +1,4 @@
 // vendored from rusloc/pnl js-report/lib/data/parquet-columns.ts, 2026-10-28; source of truth stays there
-import { parquetMetadata, parquetRead } from "hyparquet";
 
 // Generic, typed column reader on top of hyparquet (shared tooling, no business logic). A file spec names every column
 // with its kind; the reader returns one plain array per column and rejects any value whose runtime type does not
@@ -49,6 +48,9 @@ export async function readRows<S extends ColumnSpec>(
   spec: S,
   label: string,
 ): Promise<RowOf<S>[]> {
+  // hyparquet loads here, not at the top of the file (site change, 2026-11-27): the browser gets its tables as columns
+  // (checkRows) and must not download the Parquet reader with this module
+  const { parquetMetadata, parquetRead } = await import("hyparquet");
   const n = Number(parquetMetadata(file).num_rows);
   const names = Object.keys(spec);
   const columns = new Map<string, unknown[]>(

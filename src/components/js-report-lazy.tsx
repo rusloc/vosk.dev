@@ -4,7 +4,8 @@ import dynamic from "next/dynamic";
 import type { JsReport } from "@/lib/js-reports";
 
 /**
- * The split point for each JS report's client chunk (its engine, hyparquet and its UI), same reason as
+ * The split point for each JS report's client chunk (its engine and its UI; hyparquet only for the reports that read
+ * Parquet in the browser, since 11-27), same reason as
  * <SalesDashboardLazy>: only the page that renders a report downloads it, and only when the popup opens. The
  * report's data files load after that, in the browser.
  */

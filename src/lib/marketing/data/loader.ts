@@ -1,4 +1,5 @@
 import { artifactSources } from "@/lib/report-data/columns";
+import { once } from "@/lib/report-data/once";
 import { checkRows, readRows } from "./parquet-columns";
 import type { ColumnSpec, RowOf } from "./parquet-columns";
 import {
@@ -59,15 +60,6 @@ export interface MarketingLoader {
   core(): Promise<CoreFiles>;
   journey(): Promise<JourneyFiles>;
   campaigns(): Promise<CampaignsFiles>;
-}
-
-function once<T>(load: () => Promise<T>): () => Promise<T> {
-  let pending: Promise<T> | undefined;
-  return () => {
-    pending ??= load();
-    pending.catch(() => (pending = undefined));
-    return pending;
-  };
 }
 
 export function createLoader(source: ArtifactSource): MarketingLoader {

@@ -30,6 +30,14 @@ const named = (file: string, e: unknown) =>
   new Error(`${file}: ${e instanceof Error ? e.message : String(e)}`);
 
 export async function loadDataset(source: ArtifactSource): Promise<Dataset> {
+  // The tables start with the manifest, not after it (their names and specs are in FILES); each is still checked
+  // against the manifest, whose own error comes first.
+  const tables = FILE_KEYS.map((k) => {
+    const { file, columns } = FILES[k];
+    const pending = source.rows(file, columns, file);
+    pending.catch(() => {}); // reported below, after the manifest
+    return { k, file, pending };
+  });
   let manifest;
   try {
     manifest = manifestSchema.parse(await source.json("manifest.json"));
@@ -38,10 +46,9 @@ export async function loadDataset(source: ArtifactSource): Promise<Dataset> {
   }
   const m = manifest;
   const entries = await Promise.all(
-    FILE_KEYS.map(async (k) => {
-      const { file, columns } = FILES[k];
+    tables.map(async ({ k, file, pending }) => {
       try {
-        const rows = await source.rows(file, columns, file);
+        const rows = await pending;
         const want = m.files.find((f) => f.name === file);
         if (!want) throw new Error("not listed in the manifest");
         if (rows.length !== want.rows)

@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import { clsx } from "clsx";
 import { ReportBoard, useBoardScale } from "@/components/report-board";
@@ -129,6 +130,28 @@ export function CashflowApp() {
   );
 }
 
+type TipAt = { tip: Tip; x: number; y: number } | null;
+
+/**
+ * The tooltip's state, outside React state: a mouse move over the heat grid re-renders <TipHost> alone, not the board
+ * and its panel.
+ */
+function tipStore() {
+  let at: TipAt = null;
+  const subs = new Set<() => void>();
+  return {
+    get: () => at,
+    set(next: TipAt) {
+      at = next;
+      subs.forEach((f) => f());
+    },
+    subscribe(f: () => void) {
+      subs.add(f);
+      return () => void subs.delete(f);
+    },
+  };
+}
+
 type Pop =
   | { kind: "cal" | "menu" | "how" | "cash" | "diagram" | "rec" }
   | { kind: "info"; id: InfoId; place: Place };
@@ -149,9 +172,7 @@ function Board({ ds }: { ds: Dataset }) {
     init.pop ? { kind: init.pop } : null,
   );
   const [cursor, setCursor] = useState<{ j: number; k: number } | null>(null);
-  const [tip, setTip] = useState<{ tip: Tip; x: number; y: number } | null>(
-    null,
-  );
+  const [tips] = useState(tipStore);
 
   const frame = useRef<HTMLDivElement>(null);
   const layer = useRef<HTMLDivElement>(null);
@@ -173,14 +194,18 @@ function Board({ ds }: { ds: Dataset }) {
     }
   }, [nav]);
 
-  const hideTip = useCallback(() => setTip(null), []);
+  const hideTip = useCallback(() => tips.set(null), [tips]);
   const showTip = useCallback(
     (t: Tip | null, at?: { x: number; y: number }) => {
       const r = frame.current?.getBoundingClientRect();
-      if (!t || !at || !r) return setTip(null);
-      setTip({ tip: t, x: (at.x - r.left) / scale, y: (at.y - r.top) / scale });
+      if (!t || !at || !r) return tips.set(null);
+      tips.set({
+        tip: t,
+        x: (at.x - r.left) / scale,
+        y: (at.y - r.top) / scale,
+      });
     },
-    [scale],
+    [scale, tips],
   );
 
   // A scroll hides the tooltip, except the S01 chip's while the chip has keyboard focus: focusing it scrolls it into
@@ -196,12 +221,15 @@ function Board({ ds }: { ds: Dataset }) {
     } else hideTip();
   };
 
-  const navigate = useCallback((next: Nav, focusPanel = true) => {
-    viewChanged.current = focusPanel;
-    setNav(next);
-    setCursor(null);
-    setTip(null);
-  }, []);
+  const navigate = useCallback(
+    (next: Nav, focusPanel = true) => {
+      viewChanged.current = focusPanel;
+      setNav(next);
+      setCursor(null);
+      tips.set(null);
+    },
+    [tips],
+  );
   const go = (e: Entry) => navigate(push(nav, e));
 
   const closePop = useCallback(() => {
@@ -212,7 +240,7 @@ function Board({ ds }: { ds: Dataset }) {
       requestAnimationFrame(() => o.focus({ preventScroll: true }));
   }, []);
   const openPop = (next: Pop, from: HTMLElement | null) => {
-    setTip(null);
+    tips.set(null);
     if (from) opener.current = from;
     setPop(next);
   };
@@ -577,9 +605,14 @@ function Board({ ds }: { ds: Dataset }) {
         </div>
       </div>
       {popNode}
-      {tip && <Tooltip tip={tip.tip} x={tip.x} y={tip.y} />}
+      <TipHost tips={tips} />
     </div>
   );
+}
+
+function TipHost({ tips }: { tips: ReturnType<typeof tipStore> }) {
+  const at = useSyncExternalStore(tips.subscribe, tips.get, tips.get);
+  return at && <Tooltip tip={at.tip} x={at.x} y={at.y} />;
 }
 
 /** Glass tooltip in board coordinates, flipped to stay on the board (mock `showTip`). */

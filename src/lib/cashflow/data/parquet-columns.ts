@@ -1,7 +1,5 @@
 // Vendored copy of js-report/lib/data/parquet-columns.ts (source of truth; ADR-0013 (h): copied, not linked).
 
-import { parquetMetadata, parquetRead } from "hyparquet";
-
 // Generic, typed column reader on top of hyparquet (shared tooling, no business logic). A file spec names every column
 // with its kind; the reader returns one plain array per column and rejects any value whose runtime type does not
 // match, so a drifted artifact fails loudly instead of leaking `unknown` into an engine. First consumer: the Mirelo
@@ -50,6 +48,9 @@ export async function readRows<S extends ColumnSpec>(
   spec: S,
   label: string,
 ): Promise<RowOf<S>[]> {
+  // hyparquet loads here, not at the top of the file (site change, 2026-11-27): the browser gets its tables as columns
+  // (checkRows) and must not download the Parquet reader with this module
+  const { parquetMetadata, parquetRead } = await import("hyparquet");
   const n = Number(parquetMetadata(file).num_rows);
   const names = Object.keys(spec);
   const columns = new Map<string, unknown[]>(

@@ -120,8 +120,15 @@ export function StatementView({
   // pin the opening row directly under the sticky column header
   useLayoutEffect(() => {
     const t = table.current;
-    if (t?.tHead) t.style.setProperty("--theadH", `${t.tHead.offsetHeight}px`);
-  });
+    const head = t?.tHead;
+    if (!t || !head) return;
+    const measure = () =>
+      t.style.setProperty("--theadH", `${head.offsetHeight}px`);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(head);
+    return () => ro.disconnect();
+  }, []);
 
   // A section row's toggle is a real button (aria-expanded is not allowed on a table row): Enter / Space click it and the
   // click reaches the row's handler; ↓ ↑ move between the three toggles.

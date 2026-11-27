@@ -14,6 +14,7 @@ import {
 import { useConsentPending } from "@/components/analytics";
 import { CloseIcon } from "@/components/close-icon";
 import cta from "@/components/cta-button.module.css";
+import { useModal } from "@/components/use-modal";
 import {
   fetchMessages,
   sendEmail,
@@ -29,8 +30,8 @@ import { LauncherIcon } from "./launcher-icon";
 import styles from "./live-chat.module.css";
 
 /**
- * The live chat (docs/livechat/README.md): a launcher at the bottom, under the nav's "Message" button, a floating panel above it (on a phone too, sized
- * to the screen and lifted above the keyboard), messages relayed to the owner's Telegram by `/api/livechat/*`. Client-only and loaded after idle by
+ * The live chat (docs/livechat/README.md): a launcher at the bottom, under the nav's "Message" button, and a floating panel where the
+ * nav's "Send a message" popup opens, the middle of the screen (on a phone too, lifted above the keyboard), messages relayed to the owner's Telegram by `/api/livechat/*`. Client-only and loaded after idle by
  * <LiveChatLazy>. No request and no cookie until the first send, except one GET on mount, which answers
  * `status: null` without a conversation (the cookie is httpOnly, so asking is the only way to know).
  */
@@ -175,10 +176,9 @@ const readCard = () => {
 };
 
 /**
- * The launcher's column (owner, 11-27): the horizontal centre of whatever sits in the nav's top-right slot, the
- * "Message" button from `md` up and the menu button below it. Measured, not derived in CSS: the slot's centre depends
- * on the button's text width. Read as "centre:pageWidth"; with no site nav on the page, the centre is the old 16 px
- * gutter's.
+ * The launcher's line (owner, 11-27): the right edge of whatever sits in the nav's top-right slot, the "Message"
+ * button from `md` up and the menu button below it; the launcher's right edge goes on it. Measured, since the nav's
+ * container rules live in the nav. With no site nav on the page, the old 16 px gutter.
  */
 const NAV_GROUP = "header nav > div:last-of-type";
 function subscribeColumn(cb: () => void) {
@@ -193,15 +193,13 @@ function subscribeColumn(cb: () => void) {
   };
 }
 const readColumn = () => {
-  const page = document.documentElement.clientWidth;
   const group = document.querySelector(NAV_GROUP);
   const box = [":scope > div > a", ":scope > button"]
     .map((q) => group?.querySelector(q)?.getBoundingClientRect())
     .find((b) => b && b.width > 0);
-  const centre = box
-    ? Math.round(box.left + box.right) / 2
-    : page - 16 - LAUNCHER / 2;
-  return `${centre}:${page}`;
+  return box
+    ? Math.round(box.right)
+    : document.documentElement.clientWidth - 16;
 };
 
 const FOCUSABLE =
@@ -243,7 +241,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   );
   const consentPending = useConsentPending();
   const card = useSyncExternalStore(subscribeCard, readCard, () => "");
-  const column = useSyncExternalStore(subscribeColumn, readColumn, () => "");
+  const edge = useSyncExternalStore(subscribeColumn, readColumn, () => 0);
 
   const launcher = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
@@ -263,7 +261,8 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   const stick = useRef(true);
   const seq = useRef(0);
   const polling = useRef(false);
-  const focusOnOpen = useRef(openFirst);
+  // True from the start: the panel is modal (owner, 11-27), so one that reopens itself on a reload takes focus too.
+  const focusOnOpen = useRef(true);
   const titleId = useId();
   const inputId = useId();
   const emailId = useId();
@@ -402,7 +401,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
     [],
   );
 
-  // Focus moves into the panel when the visitor opens it (not when it reopens itself on the next page).
+  // Focus moves into the panel when it opens.
   useEffect(() => {
     if (!open || !focusOnOpen.current) return;
     focusOnOpen.current = false;
@@ -448,6 +447,27 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
     // after the panel is gone
     requestAnimationFrame(() => launcher.current?.focus());
   }
+
+  // Modal like the nav's "Send a message" popup (owner, 11-27): Esc closes it from anywhere and the page behind does
+  // not scroll (no `dialog` ref: this component places focus itself).
+  useModal(open, closePanel);
+  // Focus stays in the panel and the launcher; the consent card, above the fade layer, stays reachable.
+  useEffect(() => {
+    if (!open) return;
+    const onFocus = (e: FocusEvent) => {
+      const to = e.target;
+      if (
+        !(to instanceof Element) ||
+        dialog.current?.contains(to) ||
+        launcher.current?.contains(to) ||
+        to.closest(CONSENT_CARD)
+      )
+        return;
+      dialog.current?.focus();
+    };
+    document.addEventListener("focusin", onFocus);
+    return () => document.removeEventListener("focusin", onFocus);
+  }, [open]);
 
   function patch(key: string, fields: Partial<Msg>) {
     setItems((prev) =>
@@ -566,30 +586,16 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
     (close ?? (e.shiftKey ? tail : head))?.focus();
   }
 
-  // Geometry: the launcher sits 16 px above the bottom, centred under the nav's top-right button (owner, 11-27), and
-  // the panel above it, its right edge on the launcher's but never past the 16 px gutter. The consent card sits
-  // bottom-right: whichever of the two would meet it is lifted above it while it shows.
+  // Geometry: the launcher sits 16 px above the bottom, its right edge on the nav's top-right button's (owner, 11-27),
+  // lifted above the consent card (bottom-right) while that shows and the two would meet.
   const base = 16;
-  const gutter = 16;
-  const [centre = 0, pageWidth = 0] = column.split(":").map(Number);
-  const launcherLeft = centre - LAUNCHER / 2;
-  const panelWidth = Math.min(pageWidth - gutter * 2, sheet ? 400 : 360);
-  const panelLeft = Math.max(
-    gutter,
-    Math.min(launcherLeft + LAUNCHER, pageWidth - gutter) - panelWidth,
-  );
+  const launcherLeft = edge - LAUNCHER;
   const [cardTop = 0, cardLeft = 0, cardRight = 0] =
     consentPending && card ? card.split(":").map(Number) : [];
-  const aboveCard = (left: number, width: number) =>
-    cardTop > 0 && left < cardRight + GAP && left + width > cardLeft - GAP
-      ? cardTop + GAP
-      : 0;
-  const launcherBottom = Math.max(base, aboveCard(launcherLeft, LAUNCHER));
-  // The panel sits a gap above the square.
-  const panelBottom = Math.max(
-    launcherBottom + LAUNCHER + GAP,
-    aboveCard(panelLeft, panelWidth),
-  );
+  const launcherBottom =
+    cardTop > 0 && launcherLeft < cardRight + GAP && edge > cardLeft - GAP
+      ? Math.max(base, cardTop + GAP)
+      : base;
   const [vvTop = 0, vvHeight = 0, layoutHeight = 0] = viewport
     ? viewport.split(":").map(Number)
     : [];
@@ -599,35 +605,37 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   const keyboard =
     vvHeight > 0 ? Math.max(0, layoutHeight - (vvTop + vvHeight)) : 0;
 
-  // A phone gets a floating panel too, never a full-screen sheet (owner, 11-27: "it's confusing on the phone"): above the
-  // launcher with the page around it, or just above the keyboard while one is up.
-  const panelStyle: React.CSSProperties = sheet
-    ? keyboard > 40
+  // The panel opens where the nav's "Send a message" popup does (owner, 11-27; send-message-button.tsx): the middle of
+  // the screen, 448 px wide (`max-w-md`) with 16 px gutters on a phone. `inset: 0` + auto margins centre it against the
+  // same box as that popup's overlay, with no transform (the opening animation uses it), over the same fade layer.
+  // Its height leaves the launcher's strip free below it (and, to stay centred, as much above), so the ✕ is
+  // never covered. A phone gets this floating panel too, never a full-screen sheet (owner, 11-27: "it's confusing on
+  // the phone"); while a keyboard is up it sits just above it.
+  const width = "min(calc(100% - 32px), 448px)";
+  const strip = launcherBottom + LAUNCHER + GAP;
+  const panelStyle: React.CSSProperties =
+    keyboard > 40
       ? {
-          left: panelLeft,
+          left: 0,
+          right: 0,
           bottom: keyboard + 8,
-          width: panelWidth,
+          marginInline: "auto",
+          width,
           height: Math.max(160, Math.min(560, vvHeight - 16)),
         }
       : {
-          left: panelLeft,
-          bottom: `calc(${panelBottom}px + ${safe})`,
-          width: panelWidth,
-          height: `min(560px, 70dvh, calc(100dvh - ${panelBottom + 16}px - ${safe}))`,
-        }
-    : {
-        left: panelLeft,
-        bottom: `calc(${panelBottom}px + ${safe})`,
-        width: panelWidth,
-        height: `min(520px, calc(100dvh - ${panelBottom + 16}px - ${safe}))`,
-      };
+          inset: 0,
+          margin: "auto",
+          width,
+          height: `min(560px, calc(100dvh - ${strip * 2}px - 2 * ${safe}))`,
+        };
 
   const canSend = input.trim().length > 0 && !busy && !slow;
 
   return (
     <>
       <div
-        className="fixed z-[55]"
+        className="fixed z-[56]"
         style={{
           left: launcherLeft,
           bottom: `calc(${launcherBottom}px + ${safe})`,
@@ -684,18 +692,32 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
         )}
       </div>
 
+      {/* The fade layer of the "Send a message" popup (send-message-button.tsx: black at 40 %, no blur, no fade), under
+          the launcher so its ✕ stays clickable; a click on it closes the chat. The consent card (z-70) stays above
+          it, as it does above that popup's. */}
+      {open && (
+        <div
+          aria-hidden="true"
+          onClick={closePanel}
+          className="fixed inset-0 z-[55] bg-black/40"
+        />
+      )}
+
       {open && (
         <div
           ref={dialog}
           role="dialog"
+          aria-modal="true"
           aria-labelledby={titleId}
           tabIndex={-1}
           onKeyDown={onDialogKeyDown}
-          className={`text-foreground border-border fixed z-[55] flex flex-col overflow-hidden rounded-lg border bg-white shadow-xl outline-none ${styles.panel}`}
+          className={`text-foreground border-foreground/20 bg-accent fixed z-[55] flex flex-col overflow-hidden rounded-lg border shadow-xl outline-none ${styles.panel}`}
           style={panelStyle}
         >
-          {/* No close button here (owner, 11-27): the launcher's ✕ under the panel closes it, as does Esc. */}
-          <div className="border-border shrink-0 border-b px-4 py-2.5">
+          {/* On the accent orange (owner, 11-27): text straight on it is the foreground (8:1; the muted grey is 2.5:1
+              there), and Kirill's bubbles, the email card and the inputs are white. */}
+          {/* No close button here (owner, 11-27): the launcher's ✕ closes it, as do Esc and a click outside. */}
+          <div className="border-foreground/15 shrink-0 border-b px-4 py-2.5">
             <h2 id={titleId} className="text-sm font-medium">
               {COPY.title}
             </h2>
@@ -718,7 +740,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
                 return (
                   <div
                     key={it.key}
-                    className="border-border max-w-[85%] self-start rounded-lg border px-3 py-2"
+                    className="border-border max-w-[85%] self-start rounded-lg border bg-white px-3 py-2"
                   >
                     <p>{COPY.emailPrompt}</p>
                     {hasEmail || emailState === "done" ? (
@@ -785,7 +807,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
               );
             })}
             {status === "closed" && (
-              <p className="text-muted-foreground mt-1 text-center text-xs">
+              <p className="text-foreground mt-1 text-center text-xs">
                 {COPY.closed}
               </p>
             )}
@@ -796,13 +818,10 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
               e.preventDefault();
               void send(input);
             }}
-            className="border-border relative shrink-0 border-t p-2"
+            className="border-foreground/15 relative shrink-0 border-t p-2"
           >
             {slow && (
-              <p
-                role="status"
-                className="text-muted-foreground px-1 pb-1.5 text-xs"
-              >
+              <p role="status" className="text-foreground px-1 pb-1.5 text-xs">
                 {COPY.slowDown}
               </p>
             )}
@@ -878,7 +897,7 @@ function Bubble({
 }) {
   if (direction === "system")
     return (
-      <p className="text-muted-foreground px-4 text-center text-xs whitespace-pre-wrap">
+      <p className="text-foreground px-4 text-center text-xs whitespace-pre-wrap">
         {body}
       </p>
     );
@@ -888,7 +907,7 @@ function Bubble({
       className={`flex max-w-[85%] flex-col ${owner ? "items-start self-start" : "items-end self-end"}`}
     >
       {owner && label && (
-        <span className="text-muted-foreground mb-0.5 px-1 text-xs">
+        <span className="text-foreground mb-0.5 px-1 text-xs">
           {COPY.owner}
         </span>
       )}
@@ -896,7 +915,7 @@ function Bubble({
       <p
         className={`rounded-lg px-3 py-2 break-words whitespace-pre-wrap ${
           owner
-            ? "bg-muted text-foreground rounded-tl-sm"
+            ? "text-foreground rounded-tl-sm bg-white"
             : "bg-foreground text-background rounded-tr-sm"
         }`}
       >
@@ -904,12 +923,12 @@ function Bubble({
         {body}
       </p>
       {state === "pending" && (
-        <span className="text-muted-foreground mt-0.5 px-1 text-xs">
+        <span className="text-foreground mt-0.5 px-1 text-xs">
           {COPY.sending}
         </span>
       )}
       {state === "failed" && (
-        <span className="text-muted-foreground mt-0.5 px-1 text-xs">
+        <span className="text-foreground mt-0.5 px-1 text-xs">
           {COPY.notDelivered}
           {onRetry && (
             <>

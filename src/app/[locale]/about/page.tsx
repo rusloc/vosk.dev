@@ -69,42 +69,47 @@ export default async function AboutPage({ params }: Props) {
   return (
     <Container className="py-10 sm:py-12">
       <JsonLd data={aboutGraph()} />
-      <PageHeader title={siteConfig.author.name}>{t.lede}</PageHeader>
-
-      {/* From lg, two columns (owner, 11-27): the text on the left, "Worked with" as a column of logos on the right,
-          its top level with the first paragraph. One column below lg, the logos in a wrapped row after the intro. */}
+      {/* From lg, two columns (owner, 11-27): the text on the left, the clients' logos as a column on the right with no
+          heading. The column starts level with the name and its logos end on the container's right edge, the line of
+          the nav's "Message" button (the nav uses the same max-width and padding). One column below lg, the logos in
+          a wrapped row after the intro. */}
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-x-16">
+        <div className="lg:col-start-1">
+          <PageHeader title={siteConfig.author.name}>{t.lede}</PageHeader>
+        </div>
+
         <div className="mt-6 max-w-prose space-y-4 lg:col-start-1">
           {t.body.map((p) => (
             <p key={p}>{p}</p>
           ))}
         </div>
 
-        {/* Logos at one height, muted until hover; each opens the company's site in a new tab (owner, 11-27). */}
-        <section className="mt-10 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:mt-6 lg:self-start">
-          <h2 className={h2}>{t.clientsTitle}</h2>
-          <ul className="mt-4 flex flex-wrap items-center gap-x-10 gap-y-6 lg:flex-col lg:items-start lg:gap-y-7">
-            {siteConfig.clients.map((c) => (
-              <li key={c.name}>
-                <a
-                  href={c.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                >
-                  <Image
-                    src={c.logo}
-                    alt={c.name}
-                    title={c.name}
-                    width={c.width}
-                    height={c.height}
-                    className={`${"tall" in c ? "h-10" : "h-8"} w-auto opacity-70 grayscale transition duration-200 hover:opacity-100 hover:grayscale-0`}
-                  />
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
+        {/* Logos at one height, muted until hover; each opens the company's site in a new tab (owner, 11-27). From lg
+            the first one is centred on the name's line (h-9 is the h1's line height), so it reads level with it. */}
+        <ul className="mt-10 flex flex-wrap items-center gap-x-10 gap-y-6 lg:col-start-2 lg:row-span-5 lg:row-start-1 lg:mt-0 lg:flex-col lg:items-end lg:gap-y-7 lg:self-start">
+          {siteConfig.clients.map((c) => (
+            <li
+              key={c.name}
+              className="lg:first:flex lg:first:h-9 lg:first:items-center"
+            >
+              <a
+                href={c.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                <Image
+                  src={c.logo}
+                  alt={c.name}
+                  title={c.name}
+                  width={c.width}
+                  height={c.height}
+                  className={`${"tall" in c ? "h-10" : "h-8"} w-auto opacity-70 grayscale transition duration-200 hover:opacity-100 hover:grayscale-0`}
+                />
+              </a>
+            </li>
+          ))}
+        </ul>
 
         <section className="mt-10 max-w-prose lg:col-start-1">
           <h2 className={h2}>{t.stackTitle}</h2>

@@ -1,0 +1,35 @@
+// The site posts { requestId, email, scope, from, to, lang } and nothing else (contract v1);
+// scope top_clients adds { top, metric } and nothing else (contract v2, 2026-11-27).
+const b = ($input.first().json.body) || {};
+const keys = Object.keys(b).sort().join(',');
+const iso = /^\d{4}-\d{2}-\d{2}$/;
+const email = String(b.email || '').trim().toLowerCase();
+const top = b.scope === 'top_clients';
+const shape = top
+  ? keys === 'email,from,lang,metric,requestId,scope,to,top'
+    && Number.isInteger(b.top) && b.top >= 1 && b.top <= 25
+    && ['billed', 'paid', 'invoices', 'overdue'].includes(b.metric)
+  : keys === 'email,from,lang,requestId,scope,to'
+    && ['marketing', 'cashflow', 'clients'].includes(b.scope);
+const valid = shape
+  && /^[0-9a-f-]{36}$/i.test(String(b.requestId))
+  && email.length <= 254
+  && /^[^\s@<>"'(),;:]+@[^\s@<>"'(),;:]+\.[a-z]{2,}$/i.test(email)
+  && iso.test(String(b.from)) && iso.test(String(b.to)) && b.from <= b.to
+  && ['en', 'ru'].includes(b.lang);
+if (!valid) return [{ json: { status: 'invalid' } }];
+
+// Rolling 24 h limits, kept in the workflow's static data (production runs only):
+// 3 emails per address, 40 in total. The address itself is not kept, only a short hash.
+const s = $getWorkflowStaticData('global');
+const now = Date.now();
+s.sent = (s.sent || []).filter((e) => now - e.t < 86400000);
+let h = 2166136261;
+for (const c of email) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+const key = h.toString(16);
+if (s.sent.filter((e) => e.k === key).length >= 3 || s.sent.length >= 40) {
+  return [{ json: { status: 'limited' } }];
+}
+s.sent.push({ k: key, t: now });
+return [{ json: { status: 'ok', requestId: b.requestId, email, scope: b.scope, from: b.from, to: b.to, lang: b.lang,
+  ...(top ? { top: b.top, metric: b.metric } : {}) } }];

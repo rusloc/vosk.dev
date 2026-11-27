@@ -59,4 +59,6 @@ export const digestData: DigestData = {
     read((sql) => q.customerSearch(sql, query, limit)),
   topCustomers: (order, limit) =>
     read((sql) => q.topCustomers(sql, order, limit)),
+  topCustomersPeriod: (from, to, metric, limit) =>
+    read((sql) => q.topCustomersPeriod(sql, from, to, metric, limit)),
 };

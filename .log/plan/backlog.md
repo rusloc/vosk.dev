@@ -9,6 +9,18 @@
 
 # Backlog
 
+## New on 11-27
+
+- **Live chat:** built, pushed, off; the agent's MCP apply of `001` blocked twice (11-26, 11-27): owner runs it in the
+  SQL editor, then the 8 steps in `docs/livechat/README.md` (`scripts/livechat-check.ts` proves each).
+- **Cash flow:** both roles still NOLOGIN (checked 11-27); owner: passwords → load → env → redeploy, or the Power BI link.
+- **Scraper** (`docs/scraper/`, owner's): advice given (Cloudflare challenge on every URL, profile-view cap, 4 defects,
+  Zefix for the list, Swiss consent rule for bulk email); waits on the owner's choice of route.
+- **/about "Worked with"** live: owner to decide "Clients" vs "Worked with", and whether ISS beside the anonymised freight
+  report is fine.
+- ✅ One showcase layout (About → contact box → More case studies; Try it on the right), n8n Contact me flare, review
+  S5/S6/S7/D9, job sheet (0 sent since 11-09: the owner sends).
+
 ## New on 11-26
 
 - ◐ **🎯 "Cash flow demo"** (`/work/cash-flow-demo`, owner 11-26): ACME Cash Flow web report — _built, verified

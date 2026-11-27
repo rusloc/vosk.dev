@@ -1,0 +1,5 @@
+=Language: {{ $('Check request and limits').first().json.lang === 'ru' ? 'Russian' : 'English' }}.
+Scope: {{ $('Check request and limits').first().json.scope }}{{ $('Check request and limits').first().json.scope === 'top_clients' ? " (the top " + $('Check request and limits').first().json.top + " clients by " + $('Check request and limits').first().json.metric + " over the period; share_pct is a client's share of all clients' " + $('Check request and limits').first().json.metric + " in the period)" : "" }}, period {{ $('Check request and limits').first().json.from }} to {{ $('Check request and limits').first().json.to }} (data ends on the meta row's data_as_of).
+
+DATA (JSON; money in whole euros, rates and months to one decimal):
+{{ JSON.stringify($json.data, (k, v) => typeof v === 'number' ? (k.endsWith('_eur') ? Math.round(v) : Math.round(v * 10) / 10) : v) }}

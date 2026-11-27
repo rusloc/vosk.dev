@@ -86,9 +86,9 @@ Over 2025–2026 about 3 % of KPI-weeks are flagged: net new MRR 11 % (seasonal 
 overdue receivables 7 %, CAC 6 %, runway 4 % (spring 2025, before the round), churn and payables 2 %, ARR 1 %; MQLs and
 trial conversion never, they stay as context for the commentary.
 
-## The chat's functions (`006-chat-functions.sql`)
+## The chat's functions (`006-chat-functions.sql`, `007-top-customers-period.sql`)
 
-Eight functions, the closed set behind the chat's tools and the email (`chat-and-email.md` has the columns). Plain
+Eight functions in 006 and a ninth in 007 (2026-11-27), the closed set behind the chat's tools and the email (`chat-and-email.md` has the columns). Plain
 SQL, `security invoker`, no dynamic SQL: text arguments are only compared as values.
 
 | Function | Returns |
@@ -101,6 +101,7 @@ SQL, `security invoker`, no dynamic SQL: text arguments are only compared as val
 | `fn_customers_by_plan(p_as_of)` | a row per plan and a total: active, new and churned in 28 days, average tenure, invoices and billed in 12 months, overdue |
 | `fn_customer_search(p_query, p_limit)` | customers whose name, city or practice type contains the text; active first, then the most billed |
 | `fn_top_customers(p_order, p_limit)` | the top by `billed`, `tenure` (active only), `invoices`, `overdue` (only those who have one), `newest` |
+| `fn_top_customers_period(p_from, p_to, p_metric, p_limit)` (**007**, 2026-11-27) | the top 1–25 over any period by `billed` (invoiced in it), `paid` (collected in it), `invoices`, `overdue` (at its last day), with each one's share and how many had any; days, not weeks |
 
 Rules they share:
 
@@ -201,6 +202,6 @@ Each can read the tables and views of `ceo_digest_demo` and run its functions, a
 can run the functions: the default grant to PUBLIC is revoked at the end of 006. `ceo_digest_loader` is optional (005
 runs as `postgres`); it stays for a refill from the owner's machine and has no right to run the functions.
 
-Order to apply, as `postgres`, each file in one call: 001, 002, 003, 004, 005, 006. After a re-run of 002 (it drops
-everything with cascade) run 003 to 006 again. 005 takes a few seconds: it writes 110,000 rows and draws churn in a
+Order to apply, as `postgres`, each file in one call: 001, 002, 003, 004, 005, 006, 007. After a re-run of 002 (it drops
+everything with cascade) run 003 to 007 again; after a re-run of 006 alone, run 007 again. 005 takes a few seconds: it writes 110,000 rows and draws churn in a
 loop of 456 steps.

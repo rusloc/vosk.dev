@@ -2,11 +2,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   MAX_DAILY_SENDS,
   MAX_SENDS,
+  TOP_RESULT_CAP,
   WEEK_ROWS,
   createChatTools,
 } from "./chat-tools";
 import type { DigestContext, FetchLike } from "./chat-tools";
-import type { CustomerRow, DigestData, Meta } from "./queries";
+import type { CustomerRow, DigestData, Meta, TopPeriodRow } from "./queries";
 
 // The Tidewell chat tools with the data and the webhook faked (no database, no n8n): the closed set, strict
 // arguments, periods clamped to the data, figures as formatted text, and everything about the email: what is posted,
@@ -37,6 +38,32 @@ const CUSTOMER: CustomerRow = {
   last_invoice_date: "2026-10-12",
   overdue_eur: 52800,
 };
+
+/** A row of fn_top_customers_period: rank 1 is the €52,800 Clinic invoice, the rest are smaller. */
+const topRow = (
+  rank: number,
+  from = "2026-07-01",
+  to = "2026-09-30",
+  name = rank === 1 ? "Zwaluw Physio Group" : `Client ${rank}`,
+): TopPeriodRow => ({
+  rank,
+  customer_id: 1000 + rank,
+  name,
+  practice_type: "Physiotherapy",
+  city: "Utrecht",
+  country: "Netherlands",
+  plan_name: "Clinic",
+  signup_date: "2022-09-14",
+  status: "active",
+  period_from: from,
+  period_to: to,
+  invoices: 1,
+  billed_eur: rank === 1 ? 52800 : 7010 - rank,
+  paid_eur: rank === 1 ? 0 : 7010 - rank,
+  overdue_eur: 0,
+  share_pct: rank === 1 ? 4.11 : 0.55,
+  ranked_customers: 2607,
+});
 
 const week = (i: number) => ({
   week_start: `2026-01-${String((i % 28) + 1).padStart(2, "0")}`,
@@ -156,6 +183,10 @@ function fakeData(over: Partial<DigestData> = {}): DigestData {
     ]),
     customerSearch: vi.fn(async () => [CUSTOMER]),
     topCustomers: vi.fn(async () => [CUSTOMER]),
+    topCustomersPeriod: vi.fn(async (from: string, to: string) => [
+      topRow(1, from, to),
+      topRow(2, from, to),
+    ]),
     ...over,
   };
 }
@@ -379,6 +410,43 @@ describe("ceo-digest chat tools", () => {
     ["search_clients", { query: "lyon", limit: 21 }, "Invalid arguments"],
     ["top_clients", { order: "revenue" }, "Invalid arguments"],
     ["top_clients", { order: "billed", limit: 0 }, "Invalid arguments"],
+    ["top_clients", { order: "billed", limit: 2.5 }, "Invalid arguments"],
+    [
+      "top_clients",
+      { order: "billed", period: "next_quarter" },
+      "Invalid arguments",
+    ],
+    [
+      "top_clients",
+      { order: "billed", from: "March", to: "2026-03-31" },
+      "Invalid arguments",
+    ],
+    [
+      "top_clients",
+      { order: "billed", period: "last_month", from: "2026-10-01" },
+      "not both",
+    ],
+    [
+      "top_clients",
+      { order: "billed", from: "2026-10-01" },
+      "both from and to",
+    ],
+    ["top_clients", { order: "paid" }, "need a period"],
+    [
+      "top_clients",
+      { order: "tenure", period: "this_month" },
+      "without a period",
+    ],
+    [
+      "top_clients",
+      { order: "billed", from: "2026-10-31", to: "2026-10-01" },
+      "ends before it starts",
+    ],
+    [
+      "top_clients",
+      { order: "billed", from: "2027-01-01", to: "2027-03-31" },
+      "the data runs 2024-01-01 to 2026-11-15",
+    ],
     ["get_meta", { extra: 1 }, "Invalid arguments"],
     ["run_sql", { query: "select 1" }, "Unknown tool"],
   ])("refuses %s %j", async (name, input, message) => {
@@ -406,6 +474,211 @@ describe("ceo-digest chat tools", () => {
       link: null,
     });
     expect(JSON.stringify(log.mock.calls)).not.toContain("password");
+  });
+});
+
+describe("top_clients over a period", () => {
+  it("offers named periods and from / to, nothing required but the order", () => {
+    const top = setup().tools.definitions.find((d) => d.name === "top_clients");
+    expect(top?.input_schema.required).toEqual(["order"]);
+    expect(Object.keys(top?.input_schema.properties as object)).toEqual([
+      "order",
+      "limit",
+      "period",
+      "from",
+      "to",
+    ]);
+  });
+
+  it("top 3 by billing last quarter: the period is resolved from the data's today", async () => {
+    const { tools, data } = setup();
+    const r = await tools.run(
+      "top_clients",
+      { order: "billed", limit: 3, period: "last_quarter" },
+      visitor(),
+    );
+    expect(data.topCustomersPeriod).toHaveBeenCalledWith(
+      "2026-07-01",
+      "2026-09-30",
+      "billed",
+      3,
+    );
+    expect(data.topCustomers).not.toHaveBeenCalled();
+    expect(r.scope).toBe(
+      "Top 3 clients by billed amount · Q3 2026, 2026-07-01 to 2026-09-30",
+    );
+    expect(r.text).toContain(
+      "1. Zwaluw Physio Group (Physiotherapy, Utrecht, Netherlands), Clinic plan, active: billed €52,800, collected €0.00, invoices 1, overdue at period end €0.00, share 4.11%",
+    );
+    expect(r.text).toContain("2. Client 2");
+    // two rows came back for three asked: said, with the listed rows' share added up here, not by the model
+    expect(r.text).toContain(
+      "2,607 clients had any billing in the period, so only 2 are listed. The 2 listed together: 4.66% of all billing.",
+    );
+    expect(r.text).toContain("overdue = past due and unpaid on 2026-09-30");
+  });
+
+  it("the top client this week is N = 1", async () => {
+    const { tools, data } = setup({
+      data: fakeData({
+        topCustomersPeriod: vi.fn(async () => [
+          topRow(1, "2026-11-09", "2026-11-15"),
+        ]),
+      }),
+    });
+    const r = await tools.run(
+      "top_clients",
+      { order: "billed", limit: 1, period: "this_week" },
+      visitor(),
+    );
+    expect(data.topCustomersPeriod).toHaveBeenCalledWith(
+      "2026-11-09",
+      "2026-11-15",
+      "billed",
+      1,
+    );
+    expect(r.scope).toBe(
+      "Top client by billed amount · W46 2026, 2026-11-09 to 2026-11-15",
+    );
+    expect(r.text).toContain("The 1 listed together: 4.11% of all billing.");
+    expect(r.text).not.toContain("only");
+  });
+
+  it.each([
+    [
+      { period: "this_month" },
+      "2026-11-01",
+      "2026-11-15",
+      "November 2026 to date, 2026-11-01 to 2026-11-15",
+    ],
+    [
+      { from: "2026-03-01", to: "2026-03-31" },
+      "2026-03-01",
+      "2026-03-31",
+      "March 2026, 2026-03-01 to 2026-03-31",
+    ],
+    [
+      { from: "2026-05-04", to: "2026-06-20" },
+      "2026-05-04",
+      "2026-06-20",
+      "2026-05-04 to 2026-06-20",
+    ],
+    [
+      { period: "last_year" },
+      "2025-01-01",
+      "2025-12-31",
+      "2025, 2025-01-01 to 2025-12-31",
+    ],
+  ])("a month, a custom range, a year: %j", async (when, from, to, label) => {
+    const { tools, data } = setup();
+    const r = await tools.run(
+      "top_clients",
+      { order: "paid", limit: 7, ...when },
+      visitor(),
+    );
+    expect(data.topCustomersPeriod).toHaveBeenCalledWith(from, to, "paid", 7);
+    expect(r.scope).toBe(`Top 7 clients by amount collected · ${label}`);
+    expect(r.text).toContain("of all collections");
+  });
+
+  it("caps N at 25 and says so", async () => {
+    const { tools, data } = setup();
+    const r = await tools.run(
+      "top_clients",
+      { order: "invoices", limit: 100, period: "this_year" },
+      visitor(),
+    );
+    expect(data.topCustomersPeriod).toHaveBeenCalledWith(
+      "2026-01-01",
+      "2026-11-15",
+      "invoices",
+      25,
+    );
+    expect(r.scope).toMatch(
+      /^Top 25 clients by number of invoices · 2026 to date/,
+    );
+    expect(r.text).toContain("At most 25 clients are listed.");
+  });
+
+  it("clamps the range to the data and says so", async () => {
+    const { tools, data } = setup();
+    const r = await tools.run(
+      "top_clients",
+      { order: "overdue", from: "2023-01-01", to: "2027-06-30" },
+      visitor(),
+    );
+    expect(data.topCustomersPeriod).toHaveBeenCalledWith(
+      "2024-01-01",
+      "2026-11-15",
+      "overdue",
+      10,
+    );
+    expect(r.text).toContain(
+      "The data runs 2024-01-01 to 2026-11-15, so the period was cut to 2024-01-01 to 2026-11-15.",
+    );
+  });
+
+  it("25 rows with long names fit the result whole", async () => {
+    const long = "Northern Lights Integrated Physiotherapy and Sports Rehab";
+    const { tools } = setup({
+      data: fakeData({
+        topCustomersPeriod: vi.fn(async () =>
+          Array.from({ length: 25 }, (_, i) =>
+            topRow(i + 1, "2024-01-01", "2026-11-15", `${long} ${i + 1}`),
+          ),
+        ),
+      }),
+    });
+    const r = await tools.run(
+      "top_clients",
+      { order: "billed", limit: 25, from: "2024-01-01", to: "2026-11-15" },
+      visitor(),
+    );
+    expect(r.text.length).toBeLessThan(TOP_RESULT_CAP);
+    expect(r.text).toContain(`25. ${long} 25`);
+    expect(r.text).not.toContain("…");
+  });
+
+  it("a period where nobody qualifies is an answer", async () => {
+    const { tools } = setup({
+      data: fakeData({ topCustomersPeriod: vi.fn(async () => []) }),
+    });
+    const r = await tools.run(
+      "top_clients",
+      { order: "overdue", period: "last_week" },
+      visitor(),
+    );
+    expect(r.ok).toBe(true);
+    expect(r.text).toContain(
+      "No client had any overdue amounts in this period.",
+    );
+  });
+
+  it("without a period the list stays as of today, cut to 20", async () => {
+    const { tools, data } = setup();
+    const r = await tools.run(
+      "top_clients",
+      { order: "billed", limit: 25 },
+      visitor(),
+    );
+    expect(data.topCustomers).toHaveBeenCalledWith("billed", 20);
+    expect(data.topCustomersPeriod).not.toHaveBeenCalled();
+    expect(r.scope).toBe("Top 20 clients by billed to date · as of 2026-11-15");
+    expect(r.text).toContain("At most 20 clients are listed without a period.");
+    const one = await tools.run(
+      "top_clients",
+      { order: "billed", limit: 1 },
+      visitor(),
+    );
+    expect(one.scope).toBe("Top client by billed to date · as of 2026-11-15");
+  });
+
+  it("the prompt tells the model about quarters and the top client", () => {
+    const prompt = setup().tools.systemPrompt();
+    expect(prompt).toContain(
+      '"last quarter" the whole previous calendar quarter',
+    );
+    expect(prompt).toContain('"the top client" means 1');
   });
 });
 
@@ -607,5 +880,75 @@ describe("send_email_report", () => {
     ]);
     expect([a.ok, b.ok].filter(Boolean).length).toBe(1);
     expect(post).toHaveBeenCalledTimes(2);
+  });
+
+  it("a top-clients email carries top and metric (contract v2)", async () => {
+    const { tools, post } = setup();
+    const r = await tools.run(
+      "send_email_report",
+      {
+        ...SEND,
+        scope: "top_clients",
+        from: "2026-07-01",
+        to: "2026-09-30",
+        top: 3,
+        metric: "paid",
+      },
+      visitor(),
+    );
+    expect(r.text).toMatch(
+      /^Queued: the top 3 clients by amount collected report for 2026-07-01 to 2026-09-30/,
+    );
+    expect(JSON.parse(post.mock.calls[0]![1].body as string)).toEqual({
+      requestId: "11111111-2222-4333-8444-555555555555",
+      email: ADDRESS,
+      scope: "top_clients",
+      from: "2026-07-01",
+      to: "2026-09-30",
+      lang: "en",
+      top: 3,
+      metric: "paid",
+    });
+  });
+
+  it("a top-clients email defaults to the top 10 by billing and cuts N to 25", async () => {
+    const { tools, post } = setup();
+    await tools.run(
+      "send_email_report",
+      { ...SEND, scope: "top_clients" },
+      visitor(),
+    );
+    await tools.run(
+      "send_email_report",
+      { ...SEND, scope: "top_clients", top: 60 },
+      visitor("198.51.100.4"),
+    );
+    const bodies = post.mock.calls.map(([, init]) =>
+      JSON.parse(init.body as string),
+    );
+    expect(bodies[0]).toMatchObject({ top: 10, metric: "billed" });
+    expect(bodies[1]).toMatchObject({ top: 25, metric: "billed" });
+  });
+
+  it("top and metric on another scope are refused, and n8n is not called", async () => {
+    const { tools, post } = setup();
+    const r = await tools.run(
+      "send_email_report",
+      { ...SEND, top: 5 },
+      visitor(),
+    );
+    expect(r.ok).toBe(false);
+    expect(r.text).toContain("top_clients scope only");
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [{ ...SEND, scope: "top_clients", top: 0 }],
+    [{ ...SEND, scope: "top_clients", metric: "tenure" }],
+  ])("refuses a bad top-clients email %j", async (input) => {
+    const { tools, post } = setup();
+    const r = await tools.run("send_email_report", input, visitor());
+    expect(r.text).toContain("Invalid arguments");
+    expect(post).not.toHaveBeenCalled();
   });
 });

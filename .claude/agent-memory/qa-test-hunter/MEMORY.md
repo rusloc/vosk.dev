@@ -15,7 +15,7 @@
 - [mock-conventions.md](domain/mock-conventions.md) — 1 entry · 1/0/0 · hot: MOCK-001 · MOCK-NNN
 - [security-findings.md](domain/security-findings.md) — 3 entries · 3/0/0 · hot: SEC-001, SEC-002, SEC-003 · SEC-NNN
 - [candidates.md](domain/candidates.md) — 5 awaiting second hit (CAND-001, 003, 004, 005, 006); CAND-002 promoted → DEF-001
-- [coverage-map.md](domain/coverage-map.md) — last pass 2026-11-27 (Telegram live chat, uncommitted, schema not applied; read-only)
+- [coverage-map.md](domain/coverage-map.md) — last pass 2026-11-27 (livechat schema applied; acceptance A C D E F pass, B declined, G H I open)
 - [templates/](domain/templates/) — MOCK-001.server-action.ts
 
 ## Open questions
@@ -23,4 +23,4 @@
 - 2026-08-01: `src/lib/contact-email.ts` `escapeHtml` is the only barrier between visitor input and email HTML, and has zero tests — propose covering it next?
 - 2026-08-01: CLAUDE.md says invalid MDX frontmatter must "fail the build loudly" — unverified, `src/lib/content.ts` has no tests.
 - 2026-09-27: `components/sales-dashboard.tsx` view logic (caption, `partialYear`, `Delta` tone, `monthLabel`) is unreachable by the node-only suite — lift into a pure `lib/` module (GAP-001), or accept it stays report-only?
-- 2026-11-27: live chat `store.ts` SQL is never executed by a test (the store is faked) — accept until the schema is applied, or add a Postgres-backed suite?
+- 2026-11-27: live chat `store.ts` SQL is never executed by a test (the store is faked) — schema applied 11-27; add a Postgres-backed suite, or accept?

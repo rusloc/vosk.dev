@@ -84,7 +84,7 @@ export const MARKETING_SUGGESTIONS = [
 export const CEO_DIGEST_SUGGESTIONS = [
   "Which marketing channel had the lowest CAC in the last 4 weeks?",
   "How much cash came in and went out last month?",
-  "Who are the top 5 clients by overdue amount?",
+  "Who were the top 3 clients by revenue last quarter?",
   "Email me the marketing report for last month.",
 ] as const;
 

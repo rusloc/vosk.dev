@@ -94,6 +94,50 @@ describe("ceo-digest SQL wrappers", () => {
     expect(calls[1]?.values).toEqual(["lyon", 1]);
   });
 
+  it("fn_top_customers_period takes the period, the metric and N as bound values, N capped at 25", async () => {
+    const row = {
+      rank: 1,
+      customer_id: 1075,
+      name: "Zwaluw Physio Group",
+      practice_type: "Physiotherapy",
+      city: "Utrecht",
+      country: "Netherlands",
+      plan_name: "Clinic",
+      signup_date: "2022-09-14",
+      status: "active",
+      period_from: "2026-07-01",
+      period_to: "2026-09-30",
+      invoices: 1,
+      billed_eur: 52800,
+      paid_eur: 0,
+      overdue_eur: 0,
+      share_pct: 4.11,
+      ranked_customers: 2607,
+    };
+    const { sql, calls } = fakeSql([row]);
+    expect(
+      await q.topCustomersPeriod(sql, "2026-07-01", "2026-09-30", "billed", 3),
+    ).toEqual([row]);
+    expect(calls[0]?.text).toBe(
+      "select to_jsonb(t) as r from ceo_digest_demo.fn_top_customers_period($::date, $::date, $::text, $::int) as t",
+    );
+    expect(calls[0]?.values).toEqual(["2026-07-01", "2026-09-30", "billed", 3]);
+    await q.topCustomersPeriod(sql, "2024-01-01", "2026-11-15", "paid", 500);
+    await q.topCustomersPeriod(sql, "2024-01-01", "2026-11-15", "paid", 0);
+    expect(calls[1]?.values[3]).toBe(25);
+    expect(calls[2]?.values[3]).toBe(1);
+    // a column off the 007 contract fails loudly
+    await expect(
+      q.topCustomersPeriod(
+        fakeSql([{ ...row, billed_to_date_eur: 1 }]).sql,
+        "2026-07-01",
+        "2026-09-30",
+        "billed",
+        3,
+      ),
+    ).rejects.toThrow();
+  });
+
   it("refuses a row with a column outside the contract", async () => {
     const { sql } = fakeSql([{ ...CUSTOMER, email: "x@y.z" }]);
     await expect(q.topCustomers(sql, "billed", 5)).rejects.toThrow();

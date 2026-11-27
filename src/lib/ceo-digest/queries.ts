@@ -124,6 +124,30 @@ const customerRow = z
   })
   .strict();
 
+// fn_top_customers_period (007): the top customers over a period, with all four figures, the clamped period, the
+// share of the metric and how many customers had any.
+const topPeriodRow = z
+  .object({
+    rank: z.number().int(),
+    customer_id: z.union([z.number(), z.string()]),
+    name: text,
+    practice_type: label,
+    city: label,
+    country: label,
+    plan_name: label,
+    signup_date: date,
+    status: text,
+    period_from: date,
+    period_to: date,
+    invoices: num,
+    billed_eur: num,
+    paid_eur: num,
+    overdue_eur: num,
+    share_pct: num,
+    ranked_customers: num,
+  })
+  .strict();
+
 export type Meta = z.infer<typeof metaRow>;
 export type MarketingChannelRow = z.infer<typeof marketingChannelRow>;
 export type MarketingWeekRow = z.infer<typeof marketingWeekRow>;
@@ -131,6 +155,7 @@ export type CashCategoryRow = z.infer<typeof cashCategoryRow>;
 export type CashWeekRow = z.infer<typeof cashWeekRow>;
 export type PlanRow = z.infer<typeof planRow>;
 export type CustomerRow = z.infer<typeof customerRow>;
+export type TopPeriodRow = z.infer<typeof topPeriodRow>;
 
 export const TOP_ORDERS = [
   "billed",
@@ -144,11 +169,22 @@ export type TopOrder = (typeof TOP_ORDERS)[number];
 /** The most rows the customer functions return (the contract's cap; the functions enforce it too). */
 export const MAX_CUSTOMER_ROWS = 20;
 
+/** What fn_top_customers_period ranks by, over its period (007). */
+export const PERIOD_METRICS = [
+  "billed",
+  "paid",
+  "invoices",
+  "overdue",
+] as const;
+export type PeriodMetric = (typeof PERIOD_METRICS)[number];
+/** The most rows fn_top_customers_period returns (007 enforces it too). */
+export const MAX_TOP_ROWS = 25;
+
 const rows = <T>(schema: z.ZodType<T>, result: readonly { r?: unknown }[]) =>
   result.map((x) => schema.parse(x.r));
 
-const limited = (limit: number) =>
-  Math.max(1, Math.min(Math.trunc(limit), MAX_CUSTOMER_ROWS));
+const limited = (limit: number, max = MAX_CUSTOMER_ROWS) =>
+  Math.max(1, Math.min(Math.trunc(limit), max));
 
 export async function meta(sql: SqlTag): Promise<Meta> {
   const [row] = rows(
@@ -213,6 +249,18 @@ export const topCustomers = async (
     await sql`select to_jsonb(t) as r from ceo_digest_demo.fn_top_customers(${order}::text, ${limited(limit)}::int) as t`,
   );
 
+export const topCustomersPeriod = async (
+  sql: SqlTag,
+  from: string,
+  to: string,
+  metric: PeriodMetric,
+  limit: number,
+) =>
+  rows(
+    topPeriodRow,
+    await sql`select to_jsonb(t) as r from ceo_digest_demo.fn_top_customers_period(${from}::date, ${to}::date, ${metric}::text, ${limited(limit, MAX_TOP_ROWS)}::int) as t`,
+  );
+
 /** What the chat tools read: the functions above, bound to a connection (server.ts) or faked in a test. */
 export interface DigestData {
   meta(): Promise<Meta>;
@@ -223,4 +271,10 @@ export interface DigestData {
   customersByPlan(asOf: string): Promise<PlanRow[]>;
   customerSearch(query: string, limit: number): Promise<CustomerRow[]>;
   topCustomers(order: TopOrder, limit: number): Promise<CustomerRow[]>;
+  topCustomersPeriod(
+    from: string,
+    to: string,
+    metric: PeriodMetric,
+    limit: number,
+  ): Promise<TopPeriodRow[]>;
 }

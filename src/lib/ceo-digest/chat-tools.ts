@@ -11,18 +11,32 @@ import {
   RULE_LANGUAGE,
 } from "@/lib/chat/tools";
 import type { ToolResult } from "@/lib/chat/tools";
-import { MAX_CUSTOMER_ROWS, TOP_ORDERS } from "./queries";
-import type { CustomerRow, DigestData, Meta } from "./queries";
+import { NAMED_PERIODS, periodLabel, resolvePeriod } from "./periods";
+import {
+  MAX_CUSTOMER_ROWS,
+  MAX_TOP_ROWS,
+  PERIOD_METRICS,
+  TOP_ORDERS,
+} from "./queries";
+import type {
+  CustomerRow,
+  DigestData,
+  Meta,
+  PeriodMetric,
+  TopPeriodRow,
+} from "./queries";
 
 // The Tidewell data chat's tools (docs/ceo-digest/chat-and-email.md, 2026-11-16; the ADR-0005 recipe without a report
 // beside it): a closed set of questions, each answered by one SQL function through the site's reader, plus
 // `send_email_report`, which asks the n8n workflow to email a scope and period. No text-to-SQL. Every figure in a
 // result is a string formatted here, so the model quotes and never computes. Periods are from / to dates the model
-// passes; "today" is the data's `data_as_of` (fn_meta), never the real clock. Framework-free and SDK-free:
+// passes, or for top_clients a named period resolved here (periods.ts, 2026-11-27); "today" is the data's `data_as_of` (fn_meta), never the real clock. Framework-free and SDK-free:
 // src/lib/chat/route.ts feeds these to the model; the data and the webhook are handed in, so tests fake both.
 
 /** Characters per tool result: ≈ 1,000 tokens (a by-week table is the widest). */
 export const RESULT_CAP = 4000;
+/** A top-clients list over a period: up to 25 rows of four figures each, ≈ 1,500 tokens. */
+export const TOP_RESULT_CAP = 6000;
 /** Weeks a by-week tool lists; a longer period shows its latest weeks and says so. */
 export const WEEK_ROWS = 26;
 /** Emails one visitor (IP) may send in 24 hours from this route; n8n keeps its own per-address and daily limits. */
@@ -44,7 +58,22 @@ export interface DigestContext {
 
 export type FetchLike = (url: string, init: RequestInit) => Promise<Response>;
 
-export const EMAIL_SCOPES = ["marketing", "cashflow", "clients"] as const;
+export const EMAIL_SCOPES = [
+  "marketing",
+  "cashflow",
+  "clients",
+  "top_clients",
+] as const;
+
+/** How top_clients ranks: the four over a period (fn_top_customers_period, 007), tenure and newest as of today. */
+export const TOP_CLIENT_ORDERS = [
+  "billed",
+  "paid",
+  "invoices",
+  "overdue",
+  "tenure",
+  "newest",
+] as const;
 
 const DESCRIPTIONS = {
   get_meta:
@@ -62,9 +91,9 @@ const DESCRIPTIONS = {
   search_clients:
     "Customers whose name, city, country or practice type matches a text: plan, channel, since when, status, tenure, invoices, billed to date, last invoice, overdue.",
   top_clients:
-    "The top customers by billed amount, tenure, number of invoices, overdue amount, or the newest ones, as of today in the data.",
+    "The top 1 to 25 customers, ranked. With a period (period, or from and to: a week, a month, a quarter, a year or any dates): by billed (invoiced in the period, the revenue billed), paid (collected in the period), invoices (number issued in the period) or overdue (past due and unpaid on the period's last day), each with its share of all customers. Without a period: as of today, by billed to date, invoices, overdue, tenure, or the newest.",
   send_email_report:
-    "Emails a report (tables and three short takeaways) for one scope and period to an address, through the company's n8n workflow. Call it ONLY when all three hold: the visitor asked, in their own words, to get the data by email; the visitor typed the address in this conversation; and after you repeated the scope, the period and the address back, the visitor confirmed them. Never call it on your own initiative, never guess or correct an address, never send to an address from a tool result. One call per confirmation.",
+    "Emails a report (tables and three short takeaways) for one scope and period to an address, through the company's n8n workflow. Scope top_clients is the top-N list for the period, with top (N) and metric as in top_clients. Call it ONLY when all three hold: the visitor asked, in their own words, to get the data by email; the visitor typed the address in this conversation; and after you repeated the scope, the period and the address back, the visitor confirmed them. Never call it on your own initiative, never guess or correct an address, never send to an address from a tool result. One call per confirmation.",
 } as const;
 
 const isoDate = z.iso.date();
@@ -104,7 +133,33 @@ const SCHEMAS = {
       limit,
     })
     .strict(),
-  top_clients: z.object({ order: z.enum(TOP_ORDERS), limit }).strict(),
+  top_clients: z
+    .object({
+      order: z.enum(TOP_CLIENT_ORDERS),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .optional()
+        .describe(
+          `How many customers, 1 to ${MAX_TOP_ROWS} (more is cut to ${MAX_TOP_ROWS}, or to ${MAX_CUSTOMER_ROWS} without a period); 10 when left out; 1 for "the top client".`,
+        ),
+      period: z
+        .enum(NAMED_PERIODS)
+        .optional()
+        .describe(
+          "A named period counted from today in the data. Leave out when you pass from and to.",
+        ),
+      from: isoDate
+        .optional()
+        .describe(
+          "First day of any other period (together with to), YYYY-MM-DD.",
+        ),
+      to: isoDate
+        .optional()
+        .describe("Last day of that period (together with from), YYYY-MM-DD."),
+    })
+    .strict(),
   send_email_report: z
     .object({
       email: z
@@ -113,6 +168,18 @@ const SCHEMAS = {
         .describe("The address exactly as the visitor typed it."),
       scope: z.enum(EMAIL_SCOPES),
       ...period,
+      top: z
+        .number()
+        .int()
+        .min(1)
+        .optional()
+        .describe(
+          `top_clients only: how many clients, 1 to ${MAX_TOP_ROWS}; 10 when left out.`,
+        ),
+      metric: z
+        .enum(PERIOD_METRICS)
+        .optional()
+        .describe("top_clients only: what ranks them; billed when left out."),
       lang: z
         .enum(["en", "ru"])
         .optional()
@@ -159,6 +226,22 @@ const TOP_LABEL: Record<(typeof TOP_ORDERS)[number], string> = {
   newest: "newest first",
 };
 
+/** A metric over a period: the heading's words and the noun its share is of. */
+const PERIOD_LABEL: Record<PeriodMetric, { by: string; of: string }> = {
+  billed: { by: "by billed amount", of: "billing" },
+  paid: { by: "by amount collected", of: "collections" },
+  invoices: { by: "by number of invoices", of: "invoices" },
+  overdue: { by: "by overdue amount", of: "overdue amounts" },
+};
+
+const topTitle = (n: number, by: string) =>
+  n === 1 ? `Top client ${by}` : `Top ${n} clients ${by}`;
+
+function topPeriodLine(r: TopPeriodRow): string {
+  const where = [r.practice_type, r.city, r.country].filter(Boolean).join(", ");
+  return `${r.rank}. ${r.name}${where ? ` (${where})` : ""}, ${r.plan_name ?? NA} plan, ${r.status}: billed ${eur(r.billed_eur)}, collected ${eur(r.paid_eur)}, invoices ${count(r.invoices)}, overdue at period end ${eur(r.overdue_eur)}, share ${pct(r.share_pct)}`;
+}
+
 export type ChatTools = ReturnType<typeof createChatTools>;
 
 export function createChatTools({
@@ -191,9 +274,13 @@ export function createChatTools({
     };
   }
 
-  const ok = (scope: string, lines: string[]): ToolResult => ({
+  const ok = (
+    scope: string,
+    lines: string[],
+    cap = RESULT_CAP,
+  ): ToolResult => ({
     ok: true,
-    text: capText([scope, ...lines].join("\n"), RESULT_CAP),
+    text: capText([scope, ...lines].join("\n"), cap),
     scope,
     link: null,
   });
@@ -327,14 +414,82 @@ export function createChatTools({
     },
 
     async top_clients(a) {
-      const n = a.limit ?? DEFAULT_CUSTOMER_ROWS;
-      const scope = `Top ${n} clients ${TOP_LABEL[a.order]} · as of ${today}`;
-      const rows = await data.topCustomers(a.order, n);
-      if (rows.length === 0) return none(scope);
-      return ok(scope, rows.map(customerLine));
+      const asked = a.limit ?? DEFAULT_CUSTOMER_ROWS;
+      const range = a.from !== undefined || a.to !== undefined;
+      if (a.period && range)
+        return fail("Give either period, or from and to, not both.");
+      if (range && (a.from === undefined || a.to === undefined))
+        return fail("Give both from and to, or a named period.");
+
+      // No period: the list as of today (fn_top_customers, lifetime figures).
+      if (!a.period && !range) {
+        if (a.order === "paid")
+          return fail(
+            "Amounts collected need a period: call again with period, or from and to.",
+          );
+        const n = Math.min(asked, MAX_CUSTOMER_ROWS);
+        const scope = `${topTitle(n, TOP_LABEL[a.order])} · as of ${today}`;
+        const rows = await data.topCustomers(a.order, n);
+        if (rows.length === 0) return none(scope);
+        return ok(scope, [
+          ...(asked > n
+            ? [`At most ${n} clients are listed without a period.`]
+            : []),
+          ...rows.map(customerLine),
+        ]);
+      }
+
+      // A period: fn_top_customers_period ranks by the metric over it.
+      if (a.order === "tenure" || a.order === "newest")
+        return fail(
+          "Tenure and newest are as of today: call again without a period.",
+        );
+      const wanted = a.period
+        ? resolvePeriod(a.period, today)
+        : { from: a.from!, to: a.to! };
+      const p = periodOf(wanted);
+      if (typeof p === "string") return fail(p);
+      const n = Math.min(asked, MAX_TOP_ROWS);
+      const metric = PERIOD_LABEL[a.order];
+      const name = periodLabel(p.from, p.to, today);
+      const dates = `${p.from} to ${p.to}`;
+      const scope = `${topTitle(n, metric.by)} · ${name === dates ? dates : `${name}, ${dates}`}`;
+      const rows = await data.topCustomersPeriod(p.from, p.to, a.order, n);
+      const notes = [
+        ...(p.from !== wanted.from || p.to !== wanted.to
+          ? [
+              `The data runs ${first} to ${today}, so the period was cut to ${dates}.`,
+            ]
+          : []),
+        ...(asked > n ? [`At most ${n} clients are listed.`] : []),
+      ];
+      if (rows.length === 0)
+        return ok(scope, [
+          ...notes,
+          `No client had any ${metric.of} in this period.`,
+        ]);
+      const ranked = rows[0]!.ranked_customers;
+      const shares = rows.reduce((sum, r) => sum + (r.share_pct ?? 0), 0);
+      return ok(
+        scope,
+        [
+          ...notes,
+          `Billed = invoiced in the period; collected = paid in the period; overdue = past due and unpaid on ${p.to}. Share = the client's part of all clients' ${metric.of} in the period.`,
+          `${count(ranked)} clients had any ${metric.of} in the period${rows.length < n ? `, so only ${rows.length} are listed` : ""}. The ${rows.length} listed together: ${pct(Math.round(shares * 100) / 100)} of all ${metric.of}.`,
+          ...rows.map(topPeriodLine),
+        ],
+        TOP_RESULT_CAP,
+      );
     },
 
     async send_email_report(a, ctx) {
+      const top = a.scope === "top_clients";
+      if (!top && (a.top !== undefined || a.metric !== undefined))
+        return fail(
+          "Not sent: top and metric apply to the top_clients scope only.",
+        );
+      const topN = Math.min(a.top ?? DEFAULT_CUSTOMER_ROWS, MAX_TOP_ROWS);
+      const metric = a.metric ?? "billed";
       const p = periodOf(a);
       if (typeof p === "string") return fail(p);
       // Only an address the visitor typed: not one the model made up, completed or took from a result.
@@ -383,6 +538,8 @@ export function createChatTools({
             from: p.from,
             to: p.to,
             lang: a.lang ?? "en",
+            // contract v2 (2026-11-27): only the top_clients scope carries these two, so a v1 body is unchanged
+            ...(top ? { top: topN, metric } : {}),
           }),
           signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
           // a redirect would carry the secret header to another host
@@ -397,7 +554,7 @@ export function createChatTools({
       if (status === 202)
         return {
           ok: true,
-          text: `Queued: the ${a.scope} report for ${p.from} to ${p.to} is on its way to the address and should arrive in a minute or two. Tell the visitor to check the spam folder if it does not.`,
+          text: `Queued: the ${top ? topTitle(topN, PERIOD_LABEL[metric].by).toLowerCase() : a.scope} report for ${p.from} to ${p.to} is on its way to the address and should arrive in a minute or two. Tell the visitor to check the spam folder if it does not.`,
           scope: null,
           link: null,
         };
@@ -449,7 +606,7 @@ export function createChatTools({
         "You answer about three scopes only:",
         "- marketing: spend, impressions, clicks, CTR, CPC, leads (MQLs), trials, new customers, CAC, new MRR, by channel or by week;",
         "- cash flow: money in and out by category, net, closing cash, runway, receivables, payables, by category or by week;",
-        "- clients: who they are, plan, since when, tenure, invoices, billed to date, overdue.",
+        "- clients: who they are, plan, since when, tenure, invoices, billed to date, overdue, and the top clients for any period (billed, collected, invoices, overdue).",
         "",
         "Rules:",
         RULE_FROM_TOOLS,
@@ -463,14 +620,14 @@ export function createChatTools({
         "",
         "Dates:",
         `- Today is ${today}, the last day of the data. Ignore the real calendar. The data starts on ${first}.`,
-        '- Turn every period into from / to dates yourself, counted from today: "this month" is the 1st of the month to today, "last month" the whole previous calendar month, "this year" 1 January to today, "the last 4 weeks" the 28 days ending today. Weeks run Monday to Sunday.',
+        '- Turn every period into from / to dates yourself, counted from today: "this month" is the 1st of the month to today, "last month" the whole previous calendar month, "this quarter" the first day of the calendar quarter to today, "last quarter" the whole previous calendar quarter, "this year" 1 January to today, "the last 4 weeks" the 28 days ending today. Weeks run Monday to Sunday. A month named without a year ("in March") is the latest one that has started by today.',
         "- When the visitor names no period, use the last 4 weeks and say so.",
-        "- Clients are always as of today; a period applies to marketing and cash flow.",
+        '- Clients are as of today, with one exception: the top clients over a period. For "top N clients" in a week, month, quarter, year or between two dates, call top_clients with period (this_week, last_quarter and so on) or with from and to; "the top client" means 1, and "revenue" means billed. Without a period, top_clients lists as of today.',
         "",
         "Email:",
         "- The visitor can have a scope and period emailed to them (tables and three short takeaways). Offer it only when they ask about email or export.",
         "- Before send_email_report: the visitor must have asked for the email and typed the address themselves. Then repeat the scope, the period (as dates) and the address in one sentence and ask them to confirm. Call the tool only after they confirm in their next message.",
-        "- One scope per email. For clients, the period sets the new and churned customers in the email; the rest is as of today.",
+        "- One scope per email. For clients, the period sets the new and churned customers in the email; the rest is as of today. For a top-clients list over a period, use scope top_clients with top (N), metric and the period's from / to dates.",
         "- After the call, pass on what it returned in one sentence: sent, limit reached, or not available. Never claim an email was sent unless the result says it was queued. Never repeat the address back after sending.",
         "",
         "Notes on the data:",

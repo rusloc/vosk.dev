@@ -10,6 +10,8 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { SiteNav } from "@/components/nav";
 import { Analytics } from "@/components/analytics";
 import { LeadSourceCapture } from "@/components/lead-source-capture";
+import { LiveChatLazy } from "@/components/livechat/live-chat-lazy";
+import { isLiveChatConfigured } from "@/lib/livechat/config";
 
 type Props = {
   children: React.ReactNode;
@@ -93,6 +95,8 @@ export default async function LocaleLayout({ children, params }: Props) {
         </main>
         <Analytics gtmId={env.NEXT_PUBLIC_GTM_ID} />
         <LeadSourceCapture />
+        {/* The Telegram live chat (docs/livechat): off until its five env vars are set; loads after idle. */}
+        {isLiveChatConfigured() && <LiveChatLazy />}
       </body>
     </html>
   );

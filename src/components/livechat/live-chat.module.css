@@ -1,0 +1,17 @@
+/* The panel rises into place when it opens; nothing moves for a visitor who asks for reduced motion. */
+.panel {
+  animation: livechat-in 160ms ease-out;
+}
+
+@keyframes livechat-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+}

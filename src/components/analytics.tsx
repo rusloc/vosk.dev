@@ -30,6 +30,11 @@ function writeConsent(choice: Consent | null) {
   listeners.forEach((l) => l());
 }
 
+/** True while the visitor has not chosen, so the consent card may be on screen (the live chat launcher moves up). */
+export function useConsentPending(): boolean {
+  return useSyncExternalStore(subscribe, readConsent, () => null) === null;
+}
+
 /**
  * The /privacy page's "Change cookie choice" (R-06): forgets the choice, so the consent card shows again. Analytics
  * already loaded in this tab stays until the next page load.

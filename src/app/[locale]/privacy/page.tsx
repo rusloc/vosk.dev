@@ -6,8 +6,23 @@ import { buildMetadata } from "@/lib/metadata";
 import { siteConfig } from "@/lib/site";
 import { resolveLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { isLiveChatConfigured } from "@/lib/livechat/config";
 
 type Props = { params: Promise<{ locale: string }> };
+
+/**
+ * DRAFT for the owner to approve (live chat spec, "Privacy", 11-26), checked against docs/livechat/README.md and
+ * lib/livechat/handlers.ts. Shown only while the live chat is configured. Kept here, not in the dictionary: the
+ * dictionary travels whole to the nav on every page, and a draft should not.
+ */
+const LIVE_CHAT_DRAFT = {
+  title: "Live chat",
+  body: [
+    "Messages you type into the chat window, and your email address if you leave one, are stored in the site's database and relayed to me through Telegram, where my copy of the conversation stays until I delete it. With your first message the chat also records the page you wrote from, the site that sent you there, your country and the type of device.",
+    "A cookie (__Host-vosk_chat) links your browser to your conversation; it is set only when you send your first message. Your browser also keeps two small notes on this device (which replies you have seen, and whether the email prompt was shown).",
+    "To limit abuse, the site keeps a salted hash of your IP address, never the address itself. The site deletes a conversation 90 days after its last message.",
+  ],
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
@@ -35,7 +50,10 @@ export default async function PrivacyPage({ params }: Props) {
       <PageHeader title={t.title}>{t.lede}</PageHeader>
       <p className="text-muted-foreground mt-2 text-sm">{t.updated}</p>
 
-      {t.sections.map((s) => (
+      {[
+        ...t.sections,
+        ...(isLiveChatConfigured() ? [LIVE_CHAT_DRAFT] : []),
+      ].map((s) => (
         <section key={s.title} className="mt-8 max-w-prose">
           <h2 className={h2}>{s.title}</h2>
           <div className="mt-3 space-y-3">

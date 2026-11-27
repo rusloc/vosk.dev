@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { clientIp, rateLimiter } from "@/lib/report-data/rate-limit";
+import { isSameOrigin } from "@/lib/same-origin";
 import { runChat } from "./run-chat";
 import type { ChatEvent } from "./run-chat";
 import type { ChatToolset } from "./tools";
@@ -23,27 +24,6 @@ const MAX_BODY = 16_000; // characters
 const MAX_PER_WINDOW = 20; // questions per IP per window
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_IN_FLIGHT = 4;
-
-/**
- * A browser always sends `Origin` on a fetch POST; a page of this site sends its own host. A script without the header,
- * or another site's page, gets 403 before any model call (11-25: bots spending the LLM budget or the email tool).
- * Compared with the host the request came to, so preview deploys work too.
- */
-export function isSameOrigin(req: Request): boolean {
-  const origin = req.headers.get("origin");
-  if (!origin) return false;
-  let host: string;
-  try {
-    host = new URL(origin).host;
-  } catch {
-    return false;
-  }
-  return (
-    host === new URL(req.url).host ||
-    host === req.headers.get("x-forwarded-host") ||
-    host === req.headers.get("host")
-  );
-}
 
 const fail = (status: number, error: string) =>
   Response.json(

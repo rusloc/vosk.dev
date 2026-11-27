@@ -45,7 +45,7 @@ export const en = {
     // page's only body copy, so it carries the query terms on its own.
     // 11-17 (Upwork / site spec C1–C3, C11): the tools the showcase and the CV prove, automation named, one word per
     // destination ("Showcase", "Services") as in the nav.
-    lede: "Power BI and Microsoft Fabric reporting, n8n automations and AI chats over your data, and the SQL underneath. From raw data to live data that you can see and chat with.",
+    lede: "Microsoft Fabric, Power BI and data engineering solutions, n8n automations and AI agents, ontologies and semantic layers for your data. From raw to live data that you can see and chat with.",
     cta: "Showcase",
     ctaSecondary: "Services & pricing",
   },

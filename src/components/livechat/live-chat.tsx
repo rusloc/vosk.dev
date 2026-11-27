@@ -29,7 +29,7 @@ import { LauncherIcon } from "./launcher-icon";
 import styles from "./live-chat.module.css";
 
 /**
- * The live chat (docs/livechat/README.md): a launcher bottom-right, a floating panel above it (on a phone too, sized
+ * The live chat (docs/livechat/README.md): a launcher bottom-left, a floating panel above it (on a phone too, sized
  * to the screen and lifted above the keyboard), messages relayed to the owner's Telegram by `/api/livechat/*`. Client-only and loaded after idle by
  * <LiveChatLazy>. No request and no cookie until the first send, except one GET on mount, which answers
  * `status: null` without a conversation (the cookie is httpOnly, so asking is the only way to know).
@@ -43,8 +43,8 @@ const POLL_CLOSED_MS = 20_000;
 const EMAIL_PROMPT_MS = 60_000;
 const SLOW_MS = 5_000;
 const MAX_TEXT = 2_000;
-// 20 % larger than the old 56 px circle (owner, 11-27): the two-bubble icon reads at a glance.
-const LAUNCHER = 67;
+// A black rounded square, 20 % smaller than the 67 px two-bubble icon it replaced (owner, 11-27).
+const LAUNCHER = 54;
 // Open, the launcher is a 34 px close circle (owner, 11-27: half the icon) in a 44 px hit area, centred where the icon was.
 const CLOSE = 34;
 const CLOSE_HIT = 44;
@@ -157,7 +157,8 @@ const readViewport = () => {
     : "";
 };
 
-/** How far the consent card's top edge sits above the bottom of the window (0 when it is not there). */
+/** The consent card's box as "top:left:width": how far its top edge sits above the bottom of the window, its left edge,
+ *  and the page's width ("" when it is not there). A string, so the snapshot is stable between changes. */
 const CONSENT_CARD = '[role="dialog"][aria-label="Cookie consent"]';
 function subscribeCard(cb: () => void) {
   const mo = new MutationObserver(cb);
@@ -168,11 +169,11 @@ function subscribeCard(cb: () => void) {
     window.removeEventListener("resize", cb);
   };
 }
-const readCardTop = () => {
-  const card = document.querySelector(CONSENT_CARD);
-  return card
-    ? Math.ceil(window.innerHeight - card.getBoundingClientRect().top)
-    : 0;
+const readCard = () => {
+  const box = document.querySelector(CONSENT_CARD)?.getBoundingClientRect();
+  return box
+    ? `${Math.ceil(window.innerHeight - box.top)}:${Math.floor(box.left)}:${document.documentElement.clientWidth}`
+    : "";
 };
 
 const FOCUSABLE =
@@ -213,7 +214,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
     () => "",
   );
   const consentPending = useConsentPending();
-  const cardTop = useSyncExternalStore(subscribeCard, readCardTop, () => 0);
+  const card = useSyncExternalStore(subscribeCard, readCard, () => "");
 
   const launcher = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
@@ -237,7 +238,6 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   const titleId = useId();
   const inputId = useId();
   const emailId = useId();
-  const maskId = useId();
 
   useEffect(() => {
     openRef.current = open;
@@ -537,14 +537,21 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
     (close ?? (e.shiftKey ? tail : head))?.focus();
   }
 
-  // Geometry: the launcher sits 16 px from the bottom-right corner, above the consent card while it shows (the card
-  // shares that corner); the desktop panel sits above the launcher.
+  // Geometry: the launcher sits 16 px from the bottom-left corner (owner, 11-27) and the panel above it. The consent
+  // card sits bottom-right: whichever of the two would reach under it (the panel on a phone, the launcher only on a
+  // very narrow one) is lifted above it while it shows.
   const base = 16;
-  const launcherBottom =
-    consentPending && cardTop > 0 ? Math.max(base, cardTop + GAP) : base;
-  const right = 16;
+  const left = 16;
+  const [cardTop = 0, cardLeft = 0, pageWidth = 0] =
+    consentPending && card ? card.split(":").map(Number) : [];
+  const aboveCard = (width: number) =>
+    cardTop > 0 && cardLeft < left + width + GAP ? cardTop + GAP : 0;
+  const launcherBottom = Math.max(base, aboveCard(LAUNCHER));
   // The close circle's top edge, then the gap: the panel sits just above the ✕.
-  const panelBottom = launcherBottom + Math.ceil((LAUNCHER + CLOSE) / 2) + GAP;
+  const panelBottom = Math.max(
+    launcherBottom + Math.ceil((LAUNCHER + CLOSE) / 2) + GAP,
+    aboveCard(Math.min(pageWidth - left * 2, sheet ? 400 : 360)),
+  );
   const closeInset = (LAUNCHER - CLOSE_HIT) / 2;
   const [vvTop = 0, vvHeight = 0, layoutHeight = 0] = viewport
     ? viewport.split(":").map(Number)
@@ -560,22 +567,22 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   const panelStyle: React.CSSProperties = sheet
     ? keyboard > 40
       ? {
-          right,
+          left,
           bottom: keyboard + 8,
-          width: `min(calc(100vw - ${right * 2}px), 400px)`,
+          width: `min(calc(100vw - ${left * 2}px), 400px)`,
           height: Math.max(160, Math.min(560, vvHeight - 16)),
         }
       : {
-          right,
+          left,
           bottom: `calc(${panelBottom}px + ${safe})`,
-          width: `min(calc(100vw - ${right * 2}px), 400px)`,
+          width: `min(calc(100vw - ${left * 2}px), 400px)`,
           height: `min(560px, 70dvh, calc(100dvh - ${panelBottom + 16}px - ${safe}))`,
         }
     : {
-        right,
+        left,
         bottom: `calc(${panelBottom}px + ${safe})`,
         width: 360,
-        maxWidth: `calc(100vw - ${right * 2}px)`,
+        maxWidth: `calc(100vw - ${left * 2}px)`,
         height: `min(520px, calc(100dvh - ${panelBottom + 16}px - ${safe}))`,
       };
 
@@ -586,7 +593,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
       <div
         className="fixed z-[55]"
         style={{
-          right: open ? right + closeInset : right,
+          left: open ? left + closeInset : left,
           bottom: `calc(${open ? launcherBottom + closeInset : launcherBottom}px + ${safe})`,
         }}
       >
@@ -640,13 +647,13 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
               <CloseIcon className="h-4 w-4" />
             </span>
           ) : (
-            <LauncherIcon maskId={maskId} />
+            <LauncherIcon />
           )}
         </button>
         {unread > 0 && !open && (
           <span
             aria-hidden="true"
-            className="bg-accent text-foreground pointer-events-none absolute top-0 right-0 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-semibold shadow"
+            className="bg-accent text-foreground pointer-events-none absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-semibold shadow"
           >
             {unread > 9 ? "9+" : unread}
           </span>

@@ -74,7 +74,10 @@ calendar's ends, tooltips lost on scroll, Path step box width); the first mouse 
 ## Not done
 
 1. Owner, **in this order** (an empty table answers a cacheable 200, so env before load pins empty data on the CDN for a
-   day): passwords for both roles → `node --env-file=.env.local --import tsx scripts/cashflow-load.ts` ("verified 5
+   day): passwords for both roles (checked 11-27: both still NOLOGIN; SQL editor:
+   `alter role cashflow_loader login password '<32+ chars>'; alter role cashflow_reader login password '<32+ chars>';`,
+   then in `.env.local` `CASHFLOW_LOAD_DATABASE_URL` and `CASHFLOW_DATABASE_URL`, Session pooler, port 5432, users
+   `cashflow_loader.howpxpdnjjzdwqrgxkee` / `cashflow_reader.howpxpdnjjzdwqrgxkee`) → `node --env-file=.env.local --import tsx scripts/cashflow-load.ts` ("verified 5
    artifacts, 0 differ") → Vercel `CASHFLOW_DATABASE_URL` (Session pooler, 5432) → redeploy. Redeploy after any re-run
    of `002-schema.sql` or reload.
 2. After the load: row counts 1 / 34 / 578 / 2,838 / 777; `42501` denials on real rows (cashflow roles on qbo,
@@ -82,8 +85,8 @@ calendar's ends, tooltips lost on scroll, Path step box width); the first mouse 
    truncate / update; `pg_stat_activity` shows only `cashflow_reader` from Vercel; `get_advisors(security)` zero lints.
 3. Live: the five artifacts 200 with the cache header, unknown / traversal names 404, POST 405; CF-NFR-03 on the URL.
 4. Power BI embed link (owner) → `powerBi` on the work entry; the `cashflow` special case in `work.ts`'s filter goes then.
-5. Later, with the other reports (review notes): hyparquet out of the client chunk (all JS reports), the tooltip state
-   out of the Board root, Board / ActivitiesView size, shared focus-trap and `routeSource` helpers.
+5. ✅ 11-27 (`9c3249f`): hyparquet out of the popup chunk, the tooltip state out of the Board root, tables fetched with
+   the manifest. Left (review notes): Board / ActivitiesView size, shared focus-trap and `routeSource` helpers.
 
 **Deviation from CF-URL-03 (11-26 evening, review X2, as the other reports in the site popup):** the URL is read once
 when the report opens and never written back, so the showcase page keeps the URL the visitor came with (utm_, gclid).

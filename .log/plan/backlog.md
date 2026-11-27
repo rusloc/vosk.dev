@@ -11,10 +11,17 @@
 
 ## New on 11-26
 
-- **🎯 "Cash flow demo"** (`/work/cash-flow-demo`, owner 11-26): ACME Cash Flow web report, built and uncommitted;
-  resume from `docs/cashflow/README.md` ("Not done": build, remaining acceptance tests, CLAUDE.md rows, AGENTS.md,
-  git block; owner: role passwords → load → `CASHFLOW_DATABASE_URL`). Power BI flavour later from rusloc/pnl.
-- `next dev` 16.4 writes `AGENTS.md` at the root: delete + `agentRules: false`, or commit (owner).
+- ◐ **🎯 "Cash flow demo"** (`/work/cash-flow-demo`, owner 11-26): ACME Cash Flow web report — _built, verified
+  (AT-01…15, AT-17 measured) and pushed 11-26 23:23 (`96fa9a4`); hidden until the load._ Owner, in order: role
+  passwords → `scripts/cashflow-load.ts` → Vercel `CASHFLOW_DATABASE_URL` (5432) → redeploy; then the post-load checks
+  in `docs/cashflow/README.md`. **Power BI embed link (owner)** → a "Power BI" button and the page shows without the
+  load. Later, with all JS reports: hyparquet out of the client chunk, tooltip state, Board size, shared helpers.
+- ✅ ~~`next dev` 16.4 writes `AGENTS.md` at the root: delete + `agentRules: false`, or commit (owner).~~ _committed
+  11-26 (`96fa9a4`)._
+- ✅ The 11-25 security work (Next.js 16.4.6, contact / chat fixes, headers) pushed 11-26 23:23 (`b97aa37`); live check
+  owed (plan 11-27).
+- ✅ "Consultant, not freelance" swept again (owner 11-26): site clean since 11-22; recruiter skill + ADR-0001/0003
+  (`c122730`). The installed plugin copy of the recruiter skill still says "freelance work" (owner's side).
 
 ## New on 11-25
 

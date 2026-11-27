@@ -1,4 +1,4 @@
-<!-- next-id: SEC-003 -->
+<!-- next-id: SEC-004 -->
 
 # Security Findings
 
@@ -25,5 +25,18 @@
 **Tags:** llm, cost-cap, rate-limit, abort, nan, serverless, chat
 **Confidence:** medium
 **Last-verified:** 2026-11-25
-**Related:** SEC-001
+**Related:** SEC-001, SEC-003
+**Status:** active
+
+### SEC-003 · A Postgres-counted limit is count-then-insert, and a sibling route or branch skips it · 2026-11-27
+
+**Symptom:** the documented limits hold for a serial client and vanish for a parallel one; a second path to the same side effect (a Telegram send) has no limit at all.
+**Cause:** the count and the insert are separate statements with no lock between them, so N parallel requests all read the old count; the limit is wired to one branch only (live chat: `retryOf` and `POST /email` both reach `deliver()` unthrottled).
+**Fix / test:** report only. Take the row lock (or an advisory lock on the key) around count + insert; put every route that reaches the side effect behind the same counter. Tests to ask for: N parallel first messages from one IP open at most 5 conversations (needs a real Postgres, the fake store cannot show it); alternating emails are throttled; a retry counts.
+**Seen:** `src/lib/livechat/handlers.ts` postMessage (count L208 / L227, insert L214 / L243, retry skip L226) and postEmail (L282-292), uncommitted at 2026-11-27. Same family as SEC-002 (`inFlight` checked before two awaits).
+**Hits:** 1
+**Tags:** rate-limit, race, toctou, postgres, telegram, livechat, retry, email
+**Confidence:** low
+**Last-verified:** 2026-11-27
+**Related:** SEC-002
 **Status:** active

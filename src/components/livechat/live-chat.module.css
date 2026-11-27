@@ -16,9 +16,10 @@
   }
 }
 
-/* The closed launcher (owner, 11-27): a black rounded square, lifted off the page by a shadow; on it an orange-outlined
-   speech bubble with orange typing dots. The site's black and orange, as the buttons use them (cta-button.module.css). */
+/* The closed launcher (owner, 11-27): a black rounded square, lifted off the page by a shadow; on it a white-outlined
+   speech bubble with white typing dots. The site's black, as the buttons use it (cta-button.module.css). */
 .launcher {
+  position: relative;
   display: block;
   padding: 0;
   border: 0;
@@ -49,7 +50,7 @@
 
 .bubble {
   fill: none;
-  stroke: rgb(var(--accent-rgb));
+  stroke: #fff;
   stroke-width: 6;
   stroke-linejoin: round;
 }
@@ -70,7 +71,7 @@
   width: 5px;
   height: 5px;
   border-radius: 9999px;
-  background: rgb(var(--accent-rgb));
+  background: #fff;
   opacity: 0.45;
   animation: livechat-dot 1.3s ease-in-out infinite;
 }
@@ -94,25 +95,28 @@
   }
 }
 
-/* The open state's close button: a 34 px circle inside a 44 px hit area, where the launcher was. */
-.closeHit {
+/* The square's two faces, the bubble (closed) and a white ✕ (open), stacked and crossfaded. The hidden bubble's dots
+   stop. */
+.face {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  border: 0;
-  border-radius: 9999px;
-  background: transparent;
-  cursor: pointer;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 150ms ease-out;
 }
-
-.closeHit:focus-visible {
-  outline: 2px solid var(--foreground);
-  outline-offset: 0;
+.face[data-on="true"] {
+  opacity: 1;
+}
+.face[data-on="false"] .dot {
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .launcher {
+  .launcher,
+  .face {
     transition: none;
   }
   .launcher:hover {

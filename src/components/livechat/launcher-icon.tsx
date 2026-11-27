@@ -5,7 +5,7 @@ const BUBBLE =
   "M28 20H72a10 10 0 0 1 10 10v24a10 10 0 0 1-10 10H46L31 80V64H28a10 10 0 0 1-10-10V30a10 10 0 0 1 10-10Z";
 
 /**
- * The closed launcher's face (owner, 11-27): on the button's black square, an orange-outlined bubble with three orange
+ * The closed launcher's face (owner, 11-27): on the button's black square, a white-outlined bubble with three white
  * typing dots inside, rising in turn (CSS only, live-chat.module.css; static under reduced motion). Decorative: the
  * button carries the name.
  */

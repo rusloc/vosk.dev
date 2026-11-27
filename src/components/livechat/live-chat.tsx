@@ -29,7 +29,7 @@ import { LauncherIcon } from "./launcher-icon";
 import styles from "./live-chat.module.css";
 
 /**
- * The live chat (docs/livechat/README.md): a launcher bottom-left, a floating panel above it (on a phone too, sized
+ * The live chat (docs/livechat/README.md): a launcher at the bottom, under the nav's "Message" button, a floating panel above it (on a phone too, sized
  * to the screen and lifted above the keyboard), messages relayed to the owner's Telegram by `/api/livechat/*`. Client-only and loaded after idle by
  * <LiveChatLazy>. No request and no cookie until the first send, except one GET on mount, which answers
  * `status: null` without a conversation (the cookie is httpOnly, so asking is the only way to know).
@@ -45,9 +45,7 @@ const SLOW_MS = 5_000;
 const MAX_TEXT = 2_000;
 // A black rounded square, 20 % smaller than the 67 px two-bubble icon it replaced (owner, 11-27).
 const LAUNCHER = 54;
-// Open, the launcher is a 34 px close circle (owner, 11-27: half the icon) in a 44 px hit area, centred where the icon was.
-const CLOSE = 34;
-const CLOSE_HIT = 44;
+// Open, the same square stays where it is and shows a white ✕ instead of the bubble (owner, 11-27).
 const GAP = 12;
 
 type Msg = {
@@ -157,8 +155,8 @@ const readViewport = () => {
     : "";
 };
 
-/** The consent card's box as "top:left:width": how far its top edge sits above the bottom of the window, its left edge,
- *  and the page's width ("" when it is not there). A string, so the snapshot is stable between changes. */
+/** The consent card's box as "top:left:right": how far its top edge sits above the bottom of the window, and its left
+ *  and right edges ("" when it is not there). A string, so the snapshot is stable between changes. */
 const CONSENT_CARD = '[role="dialog"][aria-label="Cookie consent"]';
 function subscribeCard(cb: () => void) {
   const mo = new MutationObserver(cb);
@@ -172,8 +170,38 @@ function subscribeCard(cb: () => void) {
 const readCard = () => {
   const box = document.querySelector(CONSENT_CARD)?.getBoundingClientRect();
   return box
-    ? `${Math.ceil(window.innerHeight - box.top)}:${Math.floor(box.left)}:${document.documentElement.clientWidth}`
+    ? `${Math.ceil(window.innerHeight - box.top)}:${Math.floor(box.left)}:${Math.ceil(box.right)}`
     : "";
+};
+
+/**
+ * The launcher's column (owner, 11-27): the horizontal centre of whatever sits in the nav's top-right slot, the
+ * "Message" button from `md` up and the menu button below it. Measured, not derived in CSS: the slot's centre depends
+ * on the button's text width. Read as "centre:pageWidth"; with no site nav on the page, the centre is the old 16 px
+ * gutter's.
+ */
+const NAV_GROUP = "header nav > div:last-of-type";
+function subscribeColumn(cb: () => void) {
+  window.addEventListener("resize", cb);
+  // The group's width follows the button's text (a late font) and the breakpoint.
+  const group = document.querySelector(NAV_GROUP);
+  const ro = group ? new ResizeObserver(cb) : null;
+  if (group) ro?.observe(group);
+  return () => {
+    window.removeEventListener("resize", cb);
+    ro?.disconnect();
+  };
+}
+const readColumn = () => {
+  const page = document.documentElement.clientWidth;
+  const group = document.querySelector(NAV_GROUP);
+  const box = [":scope > div > a", ":scope > button"]
+    .map((q) => group?.querySelector(q)?.getBoundingClientRect())
+    .find((b) => b && b.width > 0);
+  const centre = box
+    ? Math.round(box.left + box.right) / 2
+    : page - 16 - LAUNCHER / 2;
+  return `${centre}:${page}`;
 };
 
 const FOCUSABLE =
@@ -215,6 +243,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   );
   const consentPending = useConsentPending();
   const card = useSyncExternalStore(subscribeCard, readCard, () => "");
+  const column = useSyncExternalStore(subscribeColumn, readColumn, () => "");
 
   const launcher = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
@@ -520,7 +549,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
       return;
     }
     if (e.key !== "Tab" || !dialog.current) return;
-    // The panel has no close button of its own (owner, 11-27): the launcher's ✕ (before the panel in the DOM) is the
+    // The panel has no close button of its own (owner, 11-27): the launcher, a ✕ while open (before the panel in the DOM), is the
     // stop after the panel's last control and before its first; the ✕'s own onKeyDown leads back in.
     const nodes = Array.from(
       dialog.current.querySelectorAll<HTMLElement>(FOCUSABLE),
@@ -537,22 +566,30 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
     (close ?? (e.shiftKey ? tail : head))?.focus();
   }
 
-  // Geometry: the launcher sits 16 px from the bottom-left corner (owner, 11-27) and the panel above it. The consent
-  // card sits bottom-right: whichever of the two would reach under it (the panel on a phone, the launcher only on a
-  // very narrow one) is lifted above it while it shows.
+  // Geometry: the launcher sits 16 px above the bottom, centred under the nav's top-right button (owner, 11-27), and
+  // the panel above it, its right edge on the launcher's but never past the 16 px gutter. The consent card sits
+  // bottom-right: whichever of the two would meet it is lifted above it while it shows.
   const base = 16;
-  const left = 16;
-  const [cardTop = 0, cardLeft = 0, pageWidth = 0] =
-    consentPending && card ? card.split(":").map(Number) : [];
-  const aboveCard = (width: number) =>
-    cardTop > 0 && cardLeft < left + width + GAP ? cardTop + GAP : 0;
-  const launcherBottom = Math.max(base, aboveCard(LAUNCHER));
-  // The close circle's top edge, then the gap: the panel sits just above the ✕.
-  const panelBottom = Math.max(
-    launcherBottom + Math.ceil((LAUNCHER + CLOSE) / 2) + GAP,
-    aboveCard(Math.min(pageWidth - left * 2, sheet ? 400 : 360)),
+  const gutter = 16;
+  const [centre = 0, pageWidth = 0] = column.split(":").map(Number);
+  const launcherLeft = centre - LAUNCHER / 2;
+  const panelWidth = Math.min(pageWidth - gutter * 2, sheet ? 400 : 360);
+  const panelLeft = Math.max(
+    gutter,
+    Math.min(launcherLeft + LAUNCHER, pageWidth - gutter) - panelWidth,
   );
-  const closeInset = (LAUNCHER - CLOSE_HIT) / 2;
+  const [cardTop = 0, cardLeft = 0, cardRight = 0] =
+    consentPending && card ? card.split(":").map(Number) : [];
+  const aboveCard = (left: number, width: number) =>
+    cardTop > 0 && left < cardRight + GAP && left + width > cardLeft - GAP
+      ? cardTop + GAP
+      : 0;
+  const launcherBottom = Math.max(base, aboveCard(launcherLeft, LAUNCHER));
+  // The panel sits a gap above the square.
+  const panelBottom = Math.max(
+    launcherBottom + LAUNCHER + GAP,
+    aboveCard(panelLeft, panelWidth),
+  );
   const [vvTop = 0, vvHeight = 0, layoutHeight = 0] = viewport
     ? viewport.split(":").map(Number)
     : [];
@@ -567,22 +604,21 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   const panelStyle: React.CSSProperties = sheet
     ? keyboard > 40
       ? {
-          left,
+          left: panelLeft,
           bottom: keyboard + 8,
-          width: `min(calc(100vw - ${left * 2}px), 400px)`,
+          width: panelWidth,
           height: Math.max(160, Math.min(560, vvHeight - 16)),
         }
       : {
-          left,
+          left: panelLeft,
           bottom: `calc(${panelBottom}px + ${safe})`,
-          width: `min(calc(100vw - ${left * 2}px), 400px)`,
+          width: panelWidth,
           height: `min(560px, 70dvh, calc(100dvh - ${panelBottom + 16}px - ${safe}))`,
         }
     : {
-        left,
+        left: panelLeft,
         bottom: `calc(${panelBottom}px + ${safe})`,
-        width: 360,
-        maxWidth: `calc(100vw - ${left * 2}px)`,
+        width: panelWidth,
         height: `min(520px, calc(100dvh - ${panelBottom + 16}px - ${safe}))`,
       };
 
@@ -593,8 +629,8 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
       <div
         className="fixed z-[55]"
         style={{
-          left: open ? left + closeInset : left,
-          bottom: `calc(${open ? launcherBottom + closeInset : launcherBottom}px + ${safe})`,
+          left: launcherLeft,
+          bottom: `calc(${launcherBottom}px + ${safe})`,
         }}
       >
         <button
@@ -627,28 +663,16 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
               }
             }
           }}
-          className={open ? styles.closeHit : styles.launcher}
-          style={
-            open
-              ? { width: CLOSE_HIT, height: CLOSE_HIT }
-              : { width: LAUNCHER, height: LAUNCHER, padding: 0 }
-          }
+          className={styles.launcher}
+          style={{ width: LAUNCHER, height: LAUNCHER }}
         >
-          {open ? (
-            <span
-              className={`${cta.cta} shadow-lg`}
-              style={{
-                width: CLOSE,
-                height: CLOSE,
-                padding: 0,
-                borderRadius: 9999,
-              }}
-            >
-              <CloseIcon className="h-4 w-4" />
-            </span>
-          ) : (
+          {/* Both faces stay mounted, so they crossfade (live-chat.module.css). */}
+          <span className={styles.face} data-on={!open}>
             <LauncherIcon />
-          )}
+          </span>
+          <span className={styles.face} data-on={open} aria-hidden="true">
+            <CloseIcon className="h-5 w-5" />
+          </span>
         </button>
         {unread > 0 && !open && (
           <span
@@ -670,7 +694,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
           className={`text-foreground border-border fixed z-[55] flex flex-col overflow-hidden rounded-lg border bg-white shadow-xl outline-none ${styles.panel}`}
           style={panelStyle}
         >
-          {/* No close button here (owner, 11-27): the ✕ under the panel closes it, as does Esc. */}
+          {/* No close button here (owner, 11-27): the launcher's ✕ under the panel closes it, as does Esc. */}
           <div className="border-border shrink-0 border-b px-4 py-2.5">
             <h2 id={titleId} className="text-sm font-medium">
               {COPY.title}

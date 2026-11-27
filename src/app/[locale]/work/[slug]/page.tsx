@@ -156,18 +156,14 @@ export default async function ShowcasePage({ params }: Props) {
   // A way on from a showcase (11-17 SEO check: the page linked only back): contact and services, then the next
   // showcases on the list, wrapping round. The call to action in a box (owner, 11-18): one sentence, then the buttons.
   // "Book a free call" and its sentence appear only once `siteConfig.bookingUrl` is set: no promise of a call before a
-  // scheduler exists. Left under About when the page has "Try it yourself", else at the top of the right column (11-26); there its "Contact me"
+  // scheduler exists. Always under About on the left (owner, 11-27); on a page with "Try it yourself" its "Contact me"
   // carries the landing pages' flare (owner, 11-27).
   const contactBox = (
-    <section
-      className={`border-accent/50 bg-accent/10 max-w-prose rounded-xl border p-5 sm:p-6${showcase.platform === "automation" ? "lg:p-5" : ""}`}
-    >
+    <section className="border-accent/50 bg-accent/10 max-w-prose rounded-xl border p-5 sm:p-6 lg:p-5">
       <h2 className="text-lg font-semibold tracking-tight">
         {siteConfig.bookingUrl ? t.nextCtaBooking : t.nextCta}
       </h2>
-      <div
-        className={`mt-4 flex flex-wrap gap-3 text-sm font-medium${showcase.platform === "automation" ? "lg:mt-3" : ""}`}
-      >
+      <div className="mt-4 flex flex-wrap gap-3 text-sm font-medium lg:mt-3">
         {siteConfig.bookingUrl && (
           <a
             href={siteConfig.bookingUrl}
@@ -197,8 +193,7 @@ export default async function ShowcasePage({ params }: Props) {
     </section>
   );
 
-  // "More case studies": under the contact box on the left when the page has "Try it yourself" (owner, 11-27), else
-  // last in the right column.
+  // "More case studies": always under the contact box on the left (owner, 11-27).
   const relatedBox = (
     <section className="max-w-prose">
       {related.length > 0 && (
@@ -207,13 +202,7 @@ export default async function ShowcasePage({ params }: Props) {
             {t.relatedTitle}
           </h2>
           {/* Side by side on desktop under the contact box (one line, so the page fits 1366×768), stacked elsewhere. */}
-          <ul
-            className={
-              showcase.platform === "automation"
-                ? "mt-2 space-y-1.5 lg:mt-1 lg:grid lg:grid-cols-2 lg:space-y-0 lg:gap-x-6"
-                : "mt-2 space-y-1.5"
-            }
-          >
+          <ul className="mt-2 space-y-1.5 lg:mt-1 lg:grid lg:grid-cols-2 lg:space-y-0 lg:gap-x-6">
             {related.map((r) => (
               <li key={r.slug} className="lg:min-w-0 lg:truncate">
                 <Link
@@ -434,25 +423,19 @@ export default async function ShowcasePage({ params }: Props) {
         </div>
       </div>
 
-      {/* On pages with "Try it yourself" the left column holds About, the contact box and the related titles (owner,
-          11-27), so it is the wider one: About wraps into fewer lines and the page still fits 1366×768. */}
+      {/* On every showcase the left column holds About, the contact box under it and the related titles under that; "Try
+          it yourself", where a page has it, sits to the right of About (owner, 11-27). The left column is the wider one
+          (3:2), so About wraps into fewer lines and the page fits 1366×768. Without "Try it yourself" there is no
+          right column, and About runs up to 48rem wide instead. */}
       <div
-        className={`mt-6 lg:grid lg:gap-x-14 ${showcase.platform === "automation" ? "lg:grid-cols-[3fr_2fr]" : "lg:grid-cols-2"}`}
+        className={
+          showcase.platform === "automation"
+            ? "mt-6 lg:grid lg:grid-cols-[3fr_2fr] lg:gap-x-14"
+            : "mt-6"
+        }
       >
-        <div
-          className={
-            showcase.platform === "automation"
-              ? "space-y-6 lg:space-y-3.5"
-              : "space-y-6"
-          }
-        >
-          <section
-            className={
-              showcase.platform === "automation"
-                ? "max-w-prose lg:max-w-none"
-                : "max-w-prose"
-            }
-          >
+        <div className="space-y-6 lg:space-y-3.5">
+          <section className="max-w-prose lg:max-w-3xl">
             <h2 className="text-lg font-semibold tracking-tight">
               {t.aboutHeading}
             </h2>
@@ -477,13 +460,13 @@ export default async function ShowcasePage({ params }: Props) {
               )}
             </div>
           </section>
-          {showcase.platform === "automation" && contactBox}
-          {showcase.platform === "automation" && relatedBox}
+          {contactBox}
+          {relatedBox}
         </div>
 
-        {/* Right column on desktop: the steps to try it, or the contact box; then the way on. */}
-        <div className="mt-8 space-y-6 lg:mt-0">
-          {showcase.platform === "automation" && (
+        {/* Right column on desktop: the steps to try it, only on a page that has them. */}
+        {showcase.platform === "automation" && (
+          <div className="mt-8 lg:mt-0">
             <section className="max-w-prose">
               {/* The heading and, on its right, the sample files: a native <details> (no client JS, owner 11-16) whose
               list opens over the content below, so the column stays short enough for one screen (11-26). */}
@@ -535,10 +518,8 @@ export default async function ShowcasePage({ params }: Props) {
                 ))}
               </ol>
             </section>
-          )}
-          {showcase.platform !== "automation" && contactBox}
-          {showcase.platform !== "automation" && relatedBox}
-        </div>
+          </div>
+        )}
       </div>
     </Container>
   );

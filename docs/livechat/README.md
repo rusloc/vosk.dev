@@ -1,9 +1,15 @@
 # Live chat (Telegram) — vosk.dev
 
-Status **2026-11-27: pushed (`96561f6`), off in production; SQL not applied: at 15:40 the `livechat` schema and the `livechat_app` role did not exist (checked read-only), so step 1 below is still open; `scripts/livechat-check.ts` added; the showcase "Contact me" opens the chat (below).** Server (`src/lib/livechat/`, 3 routes, setup script,
-70 tests) and widget (`src/components/livechat/`, mounted in `src/app/[locale]/layout.tsx`, browser-checked against a
-fake API) are done; the SQL in `data/livechat/sql/` is **not applied** (the MCP call was declined); off until its env
-vars are set. Spec (owner, 11-26):
+Status **LIVE in production 2026-11-27.** The owner applied `data/livechat/sql/001` in the SQL editor and set the
+`livechat_app` password; MCP checks A, C, D (0 security lints), E, F passed (B declined by permissions, then proven by
+the script). Bot `@VoskDevBot` (id 9151498298), group "vosk.dev" with Topics on, `TELEGRAM_CHAT_ID` -1005673801761,
+allowed user 165080078 (the owner). The first token answered 401 (stale); the owner replaced it locally and in Vercel.
+All six vars in `.env.local` and Vercel Production, redeployed. `scripts/livechat-check.ts`: local 14/14 PASS (incl. B,
+G, H, I); webhook set to `https://vosk.dev/api/telegram/webhook`; production check 16/16 PASS (incl. "site: live chat
+route answers"). The showcase "Contact me" opens the chat in production (below). **Pending (owner):** the phone
+conversation test (step 8) and approving or rewriting `LIVE_CHAT_DRAFT` on the privacy page. Server (`src/lib/livechat/`,
+3 routes, setup script, 70 tests), widget (`src/components/livechat/`, mounted in `src/app/[locale]/layout.tsx`), SQL in
+`data/livechat/sql/`. Spec (owner, 11-26):
 `.log/report/vosk.dev Telegram live chat build spec.md`. This file is the contract the server and the widget are built
 against, and the list of where this repo differs from the spec's assumptions.
 
@@ -83,26 +89,26 @@ before hydration, without JS, or on a modified click (new tab), it is a plain li
 
 ## Owner's setup (after the build) — in this order
 
-Pushed 2026-11-27 (`96561f6`), off in production (routes 404, no widget). The agent's MCP apply of the SQL was blocked
-by the permission rules twice (11-26, 11-27), so step 1 is the owner's.
+Steps 1–7 **done 2026-11-27** (SQL and password by the owner; checks and webhook by the agent, 16/16 PASS in
+production). Step 8's phone conversation is still open.
 
-1. **SQL:** Supabase dashboard → SQL editor → paste the whole of `data/livechat/sql/001-schema-and-roles.sql` → Run
+1. ✓ **SQL:** Supabase dashboard → SQL editor → paste the whole of `data/livechat/sql/001-schema-and-roles.sql` → Run
    (idempotent). Then tell the agent: it runs checks C, D (advisors 0) and E read-only.
-2. **Password:** in the same editor, `alter role livechat_app login password '<generated, 32+ chars>';` Build
+2. ✓ **Password:** in the same editor, `alter role livechat_app login password '<generated, 32+ chars>';` Build
    `LIVECHAT_DATABASE_URL` from the Session pooler string (Connect → Session pooler, **port 5432**), user
    `livechat_app.howpxpdnjjzdwqrgxkee`.
-3. **Telegram:** @BotFather `/newbot` → token (`TELEGRAM_BOT_TOKEN`); a private group, Topics on; add the bot as admin
+3. ✓ **Telegram:** @BotFather `/newbot` → token (`TELEGRAM_BOT_TOKEN`); a private group, Topics on; add the bot as admin
    with Manage Topics; in the group, reply **as yourself** ("Remain anonymous" off, or your messages come from
    GroupAnonymousBot and are ignored). Send one message in the group.
-4. **IDs:** `node --env-file=.env.local --import tsx scripts/telegram-setup.ts` → prints the group id
+4. ✓ **IDs:** `node --env-file=.env.local --import tsx scripts/telegram-setup.ts` → prints the group id
    (`TELEGRAM_CHAT_ID`, `-100…`) and your user id (`TELEGRAM_ALLOWED_USER_IDS`). `TELEGRAM_WEBHOOK_SECRET`: any 32–256
    characters of `A-Z a-z 0-9 _ -`.
-5. **Local check:** `node --conditions=react-server --env-file=.env.local --import tsx scripts/livechat-check.ts` → all
+5. ✓ **Local check:** `node --conditions=react-server --env-file=.env.local --import tsx scripts/livechat-check.ts` → all
    PASS: the six vars, the database as `livechat_app` (A, B, F, G, H, I on the real database), the bot, the group, your
    user. It writes one test row and deletes it; it prints no secret.
-6. **Vercel:** Settings → Environment Variables (Production): the five new vars (`CHAT_IP_HASH_SALT` is already there)
+6. ✓ **Vercel:** Settings → Environment Variables (Production): the five new vars (`CHAT_IP_HASH_SALT` is already there)
    → **Redeploy** (the layout reads them at build).
-7. **Webhook:** `node --env-file=.env.local --import tsx scripts/telegram-setup.ts https://vosk.dev`
-8. **Live check:** `node --conditions=react-server --env-file=.env.local --import tsx scripts/livechat-check.ts https://vosk.dev`
+7. ✓ **Webhook:** `node --env-file=.env.local --import tsx scripts/telegram-setup.ts https://vosk.dev`
+8. **Live check:** (script part done, 16/16 PASS; the phone conversation is pending) `node --conditions=react-server --env-file=.env.local --import tsx scripts/livechat-check.ts https://vosk.dev`
    → adds "site: live chat route answers" and "telegram: webhook". Then one real conversation from a phone: the topic
    opens, a reply reaches the widget within ~3 s, `/close` closes it. Approve or rewrite `LIVE_CHAT_DRAFT` (privacy).

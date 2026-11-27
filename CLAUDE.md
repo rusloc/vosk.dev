@@ -211,9 +211,9 @@ data/pnl/parquet/ → the P&L showcase's frozen data (Parquet + manifest; was pu
   one grid on **every** showcase (owner's sketch, 11-27): two equal columns from `lg`; row one "About" left, "Try it
   yourself" right. The right cell is there on every page and holds nothing visible where a page has no steps (the
   reports). Under "About", in the left column: the contact box ("Want this for your data? Message me."), then "More case
-  studies" (titles stacked). Its orange "Contact me" opens the live chat when the chat is on, `/contact` otherwise
+  studies" (titles stacked). Its orange "Contact now" opens the live chat when the chat is on, `/contact` otherwise
   (`components/livechat/contact-chat-link.tsx`); the nav's "Message" stays a link to `/contact`. n8n pages keep the
-  white flare on "Contact me". `details` is **three
+  white flare on "Contact now". `details` is **three
   bullets of one sentence each**: what the report is about, its metrics, the tech under the hood (`work.test.ts` checks
   it). Measure at 1440×900 and 1366×768 after any change to a showcase's text.
 - **Buttons (owner, 11-25):** one look, `components/cta-button.module.css`: black (`.cta`), orange (`.cta .accent`, which

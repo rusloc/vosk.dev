@@ -6,7 +6,7 @@ the script). Bot `@VoskDevBot` (id 9151498298), group "vosk.dev" with Topics on,
 allowed user 165080078 (the owner). The first token answered 401 (stale); the owner replaced it locally and in Vercel.
 All six vars in `.env.local` and Vercel Production, redeployed. `scripts/livechat-check.ts`: local 14/14 PASS (incl. B,
 G, H, I); webhook set to `https://vosk.dev/api/telegram/webhook`; production check 16/16 PASS (incl. "site: live chat
-route answers"). The showcase "Contact me" opens the chat in production (below). **Phone test passed 2026-11-27**
+route answers"). The showcase "Contact now" opens the chat in production (below). **Phone test passed 2026-11-27**
 (owner): visitor messages open topics on the owner's phone, replies reach the site, a normal back-and-forth works.
 **Only open item (owner):** approve or rewrite `LIVE_CHAT_DRAFT` on the privacy page. Server (`src/lib/livechat/`,
 3 routes, setup script, 70 tests), widget (`src/components/livechat/`, mounted in `src/app/[locale]/layout.tsx`), SQL in
@@ -81,7 +81,7 @@ site.
 
 ## Opening the chat from a button (11-27)
 
-The orange "Contact me" in a showcase's contact box opens the chat (owner, 11-27); the nav's "Message" stays a link to
+The orange "Contact now" in a showcase's contact box opens the chat (owner, 11-27); the nav's "Message" stays a link to
 `/contact`. `ContactChatLink` (`src/components/livechat/contact-chat-link.tsx`) is a link to `/contact`. The widget's
 wrapper (`live-chat-lazy.tsx`) marks `<html data-livechat="on">` on mount and listens for the window event
 `vosk:livechat-open` (`open-event.ts`). A click while the mark is set dispatches the event instead of following the

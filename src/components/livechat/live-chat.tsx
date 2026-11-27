@@ -206,7 +206,7 @@ const FOCUSABLE =
   'button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([tabindex="-1"]), a[href], [tabindex="0"]';
 
 export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
-  // `openFirst`: a "Contact me" click loaded the widget (live-chat-lazy.tsx), so it starts open, with focus.
+  // `openFirst`: a "Contact now" click loaded the widget (live-chat-lazy.tsx), so it starts open, with focus.
   const [open, setOpenState] = useState(
     () => openFirst || storageGet("session", OPEN_KEY) === "1",
   );
@@ -428,7 +428,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
     setOpen(true);
   }
 
-  // A "Contact me" button elsewhere on the page opens the panel (open-event.ts, owner 11-27).
+  // A "Contact now" button elsewhere on the page opens the panel (open-event.ts, owner 11-27).
   const openPanelRef = useRef(openPanel);
   useEffect(() => {
     openPanelRef.current = openPanel;
@@ -711,13 +711,14 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
           aria-labelledby={titleId}
           tabIndex={-1}
           onKeyDown={onDialogKeyDown}
-          className={`text-foreground border-foreground/20 bg-accent fixed z-[55] flex flex-col overflow-hidden rounded-lg border shadow-xl outline-none ${styles.panel}`}
+          className={`text-foreground border-border bg-background fixed z-[55] flex flex-col overflow-hidden rounded-lg border shadow-xl outline-none ${styles.panel}`}
           style={panelStyle}
         >
-          {/* On the accent orange (owner, 11-27): text straight on it is the foreground (8:1; the muted grey is 2.5:1
-              there), and Kirill's bubbles, the email card and the inputs are white. */}
+          {/* On the page's cream (owner, 11-27; the "Send a message" popup's background): notes are the muted grey
+              (5.1:1 on it); Kirill's bubbles, the email card and the inputs are white with the border colour around
+              them, since white alone is 1.06:1 against the cream. */}
           {/* No close button here (owner, 11-27): the launcher's ✕ closes it, as do Esc and a click outside. */}
-          <div className="border-foreground/15 shrink-0 border-b px-4 py-2.5">
+          <div className="border-border shrink-0 border-b px-4 py-2.5">
             <h2 id={titleId} className="text-sm font-medium">
               {COPY.title}
             </h2>
@@ -807,7 +808,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
               );
             })}
             {status === "closed" && (
-              <p className="text-foreground mt-1 text-center text-xs">
+              <p className="text-muted-foreground mt-1 text-center text-xs">
                 {COPY.closed}
               </p>
             )}
@@ -818,10 +819,13 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
               e.preventDefault();
               void send(input);
             }}
-            className="border-foreground/15 relative shrink-0 border-t p-2"
+            className="border-border relative shrink-0 border-t p-2"
           >
             {slow && (
-              <p role="status" className="text-foreground px-1 pb-1.5 text-xs">
+              <p
+                role="status"
+                className="text-muted-foreground px-1 pb-1.5 text-xs"
+              >
                 {COPY.slowDown}
               </p>
             )}
@@ -897,7 +901,7 @@ function Bubble({
 }) {
   if (direction === "system")
     return (
-      <p className="text-foreground px-4 text-center text-xs whitespace-pre-wrap">
+      <p className="text-muted-foreground px-4 text-center text-xs whitespace-pre-wrap">
         {body}
       </p>
     );
@@ -907,7 +911,7 @@ function Bubble({
       className={`flex max-w-[85%] flex-col ${owner ? "items-start self-start" : "items-end self-end"}`}
     >
       {owner && label && (
-        <span className="text-foreground mb-0.5 px-1 text-xs">
+        <span className="text-muted-foreground mb-0.5 px-1 text-xs">
           {COPY.owner}
         </span>
       )}
@@ -915,7 +919,7 @@ function Bubble({
       <p
         className={`rounded-lg px-3 py-2 break-words whitespace-pre-wrap ${
           owner
-            ? "text-foreground rounded-tl-sm bg-white"
+            ? "border-border text-foreground rounded-tl-sm border bg-white"
             : "bg-foreground text-background rounded-tr-sm"
         }`}
       >
@@ -923,12 +927,12 @@ function Bubble({
         {body}
       </p>
       {state === "pending" && (
-        <span className="text-foreground mt-0.5 px-1 text-xs">
+        <span className="text-muted-foreground mt-0.5 px-1 text-xs">
           {COPY.sending}
         </span>
       )}
       {state === "failed" && (
-        <span className="text-foreground mt-0.5 px-1 text-xs">
+        <span className="text-muted-foreground mt-0.5 px-1 text-xs">
           {COPY.notDelivered}
           {onRetry && (
             <>

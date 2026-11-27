@@ -120,7 +120,7 @@
 }
 
 /* A diagonal white flare that crosses the button every 2.2s, the landing pages' "Message" button (owner, 11-27: the
-   "Contact me" button on the showcase pages with "Try it yourself"). Above the blue fill, under nothing: it is
+   "Contact now" button on the showcase pages with "Try it yourself"). Above the blue fill, under nothing: it is
    translucent, so the label reads through it. Off under reduced motion. */
 .flare::after {
   content: "";

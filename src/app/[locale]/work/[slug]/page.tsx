@@ -157,7 +157,7 @@ export default async function ShowcasePage({ params }: Props) {
   // A way on from a showcase (11-17 SEO check: the page linked only back): contact and services, then the next
   // showcases on the list, wrapping round. The call to action in a box (owner, 11-18): one sentence, then the buttons.
   // "Book a free call" and its sentence appear only once `siteConfig.bookingUrl` is set: no promise of a call before a
-  // scheduler exists. Always under About on the left (owner, 11-27); on a page with "Try it yourself" its "Contact me"
+  // scheduler exists. Always under About on the left (owner, 11-27); on a page with "Try it yourself" its "Contact now"
   // carries the landing pages' flare (owner, 11-27).
   const contactBox = (
     <section className="border-accent/50 bg-accent/10 max-w-prose rounded-xl border p-5 sm:p-6 lg:px-5 lg:py-4">

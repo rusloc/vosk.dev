@@ -15,7 +15,7 @@ const LiveChat = dynamic(() => import("./live-chat").then((m) => m.LiveChat), {
  */
 export function LiveChatLazy() {
   const [ready, setReady] = useState(false);
-  // A "Contact me" click before the widget's chunk is in (open-event.ts): load it now and open it on mount.
+  // A "Contact now" click before the widget's chunk is in (open-event.ts): load it now and open it on mount.
   const [openFirst, setOpenFirst] = useState(false);
 
   useEffect(() => {

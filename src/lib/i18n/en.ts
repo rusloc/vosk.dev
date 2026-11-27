@@ -399,7 +399,7 @@ export const en = {
     nextCta: "Want this for your data? Message me.",
     nextCtaBooking: "Book a free call or message me.",
     nextBook: "Book a free call",
-    nextContact: "Contact me",
+    nextContact: "Contact now",
     nextServices: "See pricing",
     relatedTitle: "More case studies",
   },

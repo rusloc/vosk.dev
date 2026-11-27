@@ -215,6 +215,8 @@ export const en = {
       "I build Power BI and Fabric reports, the data models and SQL under them, and the pipelines that keep them fresh. Around them: n8n automations for reports, inboxes and invoices, and AI chats that answer questions straight from your data.",
       "I'm based in Turkey and work remotely.",
     ],
+    // The logo row (owner, 11-27): companies the owner has worked for, as clients or as an employee.
+    clientsTitle: "Worked with",
     stackTitle: "What I work with",
     stack: [
       "Power BI",

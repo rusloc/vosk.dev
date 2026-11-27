@@ -45,6 +45,37 @@ export const siteConfig = {
     upwork: "https://www.upwork.com/freelancers/~01a960a706057bdf85",
   },
   // A credential, not a profile: kept out of `social`, which feeds the Person's `sameAs`.
+  // The /about logo row (owner, 11-27). Files in public/images/clients/, from each company's site (Citilink's from
+  // its Wikipedia page; the site sits behind a bot check); Realweb's white logo recoloured to the site's foreground.
+  clients: [
+    { name: "X5 Group", logo: "/images/clients/x5.svg", width: 62, height: 42 },
+    {
+      name: "eapteka",
+      logo: "/images/clients/eapteka.svg",
+      width: 228,
+      height: 56,
+    },
+    {
+      name: "ISS Global Forwarding",
+      logo: "/images/clients/iss.png",
+      // small print in the logo: one step taller than the others
+      tall: true,
+      width: 262,
+      height: 76,
+    },
+    {
+      name: "Citilink",
+      logo: "/images/clients/citilink.svg",
+      width: 195,
+      height: 40,
+    },
+    {
+      name: "Realweb",
+      logo: "/images/clients/realweb.svg",
+      width: 126,
+      height: 38,
+    },
+  ],
   dp600Url:
     "https://learn.microsoft.com/api/credentials/share/en-us/KirillBezzubkinISSGHQ-1802/65289BC12515DA2B?sharingId=617FA0AB7D498F12",
 } as const;

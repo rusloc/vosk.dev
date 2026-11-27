@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader } from "@/components/page-header";
@@ -75,6 +76,25 @@ export default async function AboutPage({ params }: Props) {
           <p key={p}>{p}</p>
         ))}
       </div>
+
+      {/* Logos at one height, muted until hover (owner, 11-27); not links: the page keeps the visitor. */}
+      <section className="mt-10 max-w-3xl">
+        <h2 className={h2}>{t.clientsTitle}</h2>
+        <ul className="mt-4 flex flex-wrap items-center gap-x-10 gap-y-6">
+          {siteConfig.clients.map((c) => (
+            <li key={c.name}>
+              <Image
+                src={c.logo}
+                alt={c.name}
+                title={c.name}
+                width={c.width}
+                height={c.height}
+                className={`${"tall" in c ? "h-10" : "h-8"} w-auto opacity-70 grayscale transition duration-200 hover:opacity-100 hover:grayscale-0`}
+              />
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section className="mt-10 max-w-prose">
         <h2 className={h2}>{t.stackTitle}</h2>

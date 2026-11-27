@@ -200,8 +200,9 @@ data/pnl/parquet/ → the P&L showcase's frozen data (Parquet + manifest; was pu
   An `automation` entry (11-16) is an n8n workflow: its text, then "How to test" on the live demo inbox, then one
   "n8n workflow" button that opens the canvas in the popup.
 - **A showcase page fits one screen, no scroll, on desktop (owner, 11-25):** the title and buttons across the top, then two
-  columns from `lg` with aligned tops (owner, 11-26): on a page with "Try it yourself", "About" and the contact box on
-  the left, "Try it yourself" and the related titles on the right; otherwise "About" on the left, the contact box and
+  columns from `lg` with aligned tops (owner, 11-26): on a page with "Try it yourself", "About", the contact box and
+  the related titles (side by side) on the left, the wider column (3:2), "Try it yourself" on the right, and its "Contact
+  me" carries the landing pages' white flare (owner, 11-27); otherwise "About" on the left, the contact box and
   the related titles on the right. `details` is **three
   bullets of one sentence each**: what the report is about, its metrics, the tech under the hood (`work.test.ts` checks
   it). Measure at 1440×900 and 1366×768 after any change to a showcase's text.

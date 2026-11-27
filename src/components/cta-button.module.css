@@ -118,3 +118,39 @@
     transition: none;
   }
 }
+
+/* A diagonal white flare that crosses the button every 2.2s, the landing pages' "Message" button (owner, 11-27: the
+   "Contact me" button on the showcase pages with "Try it yourself"). Above the blue fill, under nothing: it is
+   translucent, so the label reads through it. Off under reduced motion. */
+.flare::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  transform: translateX(-140%) skewX(-18deg);
+  pointer-events: none;
+}
+
+@keyframes sheen {
+  0% {
+    transform: translateX(-140%) skewX(-18deg);
+  }
+  40%,
+  100% {
+    transform: translateX(340%) skewX(-18deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .flare::after {
+    animation: sheen 2.2s ease-in-out infinite;
+  }
+}

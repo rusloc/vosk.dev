@@ -156,13 +156,18 @@ export default async function ShowcasePage({ params }: Props) {
   // A way on from a showcase (11-17 SEO check: the page linked only back): contact and services, then the next
   // showcases on the list, wrapping round. The call to action in a box (owner, 11-18): one sentence, then the buttons.
   // "Book a free call" and its sentence appear only once `siteConfig.bookingUrl` is set: no promise of a call before a
-  // scheduler exists. Left under About when the page has "Try it yourself", else at the top of the right column (11-26).
+  // scheduler exists. Left under About when the page has "Try it yourself", else at the top of the right column (11-26); there its "Contact me"
+  // carries the landing pages' flare (owner, 11-27).
   const contactBox = (
-    <section className="border-accent/50 bg-accent/10 max-w-prose rounded-xl border p-5 sm:p-6">
+    <section
+      className={`border-accent/50 bg-accent/10 max-w-prose rounded-xl border p-5 sm:p-6${showcase.platform === "automation" ? "lg:p-5" : ""}`}
+    >
       <h2 className="text-lg font-semibold tracking-tight">
         {siteConfig.bookingUrl ? t.nextCtaBooking : t.nextCta}
       </h2>
-      <div className="mt-4 flex flex-wrap gap-3 text-sm font-medium">
+      <div
+        className={`mt-4 flex flex-wrap gap-3 text-sm font-medium${showcase.platform === "automation" ? "lg:mt-3" : ""}`}
+      >
         {siteConfig.bookingUrl && (
           <a
             href={siteConfig.bookingUrl}
@@ -176,7 +181,7 @@ export default async function ShowcasePage({ params }: Props) {
         )}
         <Link
           href={localizedPath(l, "/contact")}
-          className={siteConfig.bookingUrl ? CTA_SECONDARY : CTA_PRIMARY}
+          className={`${siteConfig.bookingUrl ? CTA_SECONDARY : CTA_PRIMARY}${showcase.platform === "automation" ? ` ${cta.flare}` : ""}`}
           {...ga("cta_click", slug, "showcase_contact")}
         >
           {t.nextContact}
@@ -189,6 +194,46 @@ export default async function ShowcasePage({ params }: Props) {
           {t.nextServices}
         </Link>
       </div>
+    </section>
+  );
+
+  // "More case studies": under the contact box on the left when the page has "Try it yourself" (owner, 11-27), else
+  // last in the right column.
+  const relatedBox = (
+    <section className="max-w-prose">
+      {related.length > 0 && (
+        <>
+          <h2 className="text-base font-semibold tracking-tight">
+            {t.relatedTitle}
+          </h2>
+          {/* Side by side on desktop under the contact box (one line, so the page fits 1366×768), stacked elsewhere. */}
+          <ul
+            className={
+              showcase.platform === "automation"
+                ? "mt-2 space-y-1.5 lg:mt-1 lg:grid lg:grid-cols-2 lg:space-y-0 lg:gap-x-6"
+                : "mt-2 space-y-1.5"
+            }
+          >
+            {related.map((r) => (
+              <li key={r.slug} className="lg:min-w-0 lg:truncate">
+                <Link
+                  href={localizedPath(l, `/work/${r.slug}`)}
+                  title={r.title}
+                  className="text-primary font-medium hover:underline"
+                  {...ga("select_content", r.slug, "related_showcase")}
+                >
+                  {r.title}
+                </Link>
+                {/* Titles only on desktop, so the page fits one screen (11-25). */}
+                <span className="text-muted-foreground lg:hidden">
+                  {" "}
+                  · {r.summary}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </section>
   );
 
@@ -389,9 +434,25 @@ export default async function ShowcasePage({ params }: Props) {
         </div>
       </div>
 
-      <div className="mt-6 lg:grid lg:grid-cols-2 lg:gap-x-14">
-        <div className="space-y-6">
-          <section className="max-w-prose">
+      {/* On pages with "Try it yourself" the left column holds About, the contact box and the related titles (owner,
+          11-27), so it is the wider one: About wraps into fewer lines and the page still fits 1366×768. */}
+      <div
+        className={`mt-6 lg:grid lg:gap-x-14 ${showcase.platform === "automation" ? "lg:grid-cols-[3fr_2fr]" : "lg:grid-cols-2"}`}
+      >
+        <div
+          className={
+            showcase.platform === "automation"
+              ? "space-y-6 lg:space-y-3.5"
+              : "space-y-6"
+          }
+        >
+          <section
+            className={
+              showcase.platform === "automation"
+                ? "max-w-prose lg:max-w-none"
+                : "max-w-prose"
+            }
+          >
             <h2 className="text-lg font-semibold tracking-tight">
               {t.aboutHeading}
             </h2>
@@ -417,6 +478,7 @@ export default async function ShowcasePage({ params }: Props) {
             </div>
           </section>
           {showcase.platform === "automation" && contactBox}
+          {showcase.platform === "automation" && relatedBox}
         </div>
 
         {/* Right column on desktop: the steps to try it, or the contact box; then the way on. */}
@@ -475,33 +537,7 @@ export default async function ShowcasePage({ params }: Props) {
             </section>
           )}
           {showcase.platform !== "automation" && contactBox}
-          <section className="max-w-prose">
-            {related.length > 0 && (
-              <>
-                <h2 className="text-base font-semibold tracking-tight">
-                  {t.relatedTitle}
-                </h2>
-                <ul className="mt-2 space-y-1.5">
-                  {related.map((r) => (
-                    <li key={r.slug}>
-                      <Link
-                        href={localizedPath(l, `/work/${r.slug}`)}
-                        className="text-primary font-medium hover:underline"
-                        {...ga("select_content", r.slug, "related_showcase")}
-                      >
-                        {r.title}
-                      </Link>
-                      {/* Titles only on desktop, so the page fits one screen (11-25). */}
-                      <span className="text-muted-foreground lg:hidden">
-                        {" "}
-                        · {r.summary}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </section>
+          {showcase.platform !== "automation" && relatedBox}
         </div>
       </div>
     </Container>

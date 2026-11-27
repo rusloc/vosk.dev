@@ -1,6 +1,6 @@
 # Live chat (Telegram) — vosk.dev
 
-Status **2026-11-27: pushed (`96561f6`), off in production; SQL not applied (owner, step 1 below); `scripts/livechat-check.ts` added.** Server (`src/lib/livechat/`, 3 routes, setup script,
+Status **2026-11-27: pushed (`96561f6`), off in production; SQL not applied: at 15:40 the `livechat` schema and the `livechat_app` role did not exist (checked read-only), so step 1 below is still open; `scripts/livechat-check.ts` added; the showcase "Contact me" opens the chat (below).** Server (`src/lib/livechat/`, 3 routes, setup script,
 70 tests) and widget (`src/components/livechat/`, mounted in `src/app/[locale]/layout.tsx`, browser-checked against a
 fake API) are done; the SQL in `data/livechat/sql/` is **not applied** (the MCP call was declined); off until its env
 vars are set. Spec (owner, 11-26):
@@ -71,6 +71,15 @@ site.
 - Owner label: "Kirill". Email prompt after 60 s without a reply, once per conversation: "I'm away from my desk. Leave
   your email and I'll reply there." Closed: "This chat was closed. Send a message to start again". 429: "Slow down a
   little". Failed: "Not delivered. Retry".
+
+## Opening the chat from a button (11-27)
+
+The orange "Contact me" in a showcase's contact box opens the chat (owner, 11-27); the nav's "Message" stays a link to
+`/contact`. `ContactChatLink` (`src/components/livechat/contact-chat-link.tsx`) is a link to `/contact`. The widget's
+wrapper (`live-chat-lazy.tsx`) marks `<html data-livechat="on">` on mount and listens for the window event
+`vosk:livechat-open` (`open-event.ts`). A click while the mark is set dispatches the event instead of following the
+link. A click before the widget's chunk is in loads it and starts it open, with focus in the panel. With the chat off,
+before hydration, without JS, or on a modified click (new tab), it is a plain link to `/contact`.
 
 ## Owner's setup (after the build) — in this order
 

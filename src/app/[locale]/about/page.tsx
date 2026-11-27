@@ -71,109 +71,123 @@ export default async function AboutPage({ params }: Props) {
       <JsonLd data={aboutGraph()} />
       <PageHeader title={siteConfig.author.name}>{t.lede}</PageHeader>
 
-      <div className="mt-6 max-w-prose space-y-4">
-        {t.body.map((p) => (
-          <p key={p}>{p}</p>
-        ))}
-      </div>
-
-      {/* Logos at one height, muted until hover (owner, 11-27); not links: the page keeps the visitor. */}
-      <section className="mt-10 max-w-3xl">
-        <h2 className={h2}>{t.clientsTitle}</h2>
-        <ul className="mt-4 flex flex-wrap items-center gap-x-10 gap-y-6">
-          {siteConfig.clients.map((c) => (
-            <li key={c.name}>
-              <Image
-                src={c.logo}
-                alt={c.name}
-                title={c.name}
-                width={c.width}
-                height={c.height}
-                className={`${"tall" in c ? "h-10" : "h-8"} w-auto opacity-70 grayscale transition duration-200 hover:opacity-100 hover:grayscale-0`}
-              />
-            </li>
+      {/* From lg, two columns (owner, 11-27): the text on the left, "Worked with" as a column of logos on the right,
+          its top level with the first paragraph. One column below lg, the logos in a wrapped row after the intro. */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-x-16">
+        <div className="mt-6 max-w-prose space-y-4 lg:col-start-1">
+          {t.body.map((p) => (
+            <p key={p}>{p}</p>
           ))}
-        </ul>
-      </section>
+        </div>
 
-      <section className="mt-10 max-w-prose">
-        <h2 className={h2}>{t.stackTitle}</h2>
-        <ul className="text-muted-foreground mt-3 flex flex-wrap gap-2 text-sm">
-          {t.stack.map((s) => (
-            <li key={s} className="border-border rounded-full border px-3 py-1">
-              {s}
-            </li>
-          ))}
-        </ul>
-      </section>
+        {/* Logos at one height, muted until hover; each opens the company's site in a new tab (owner, 11-27). */}
+        <section className="mt-10 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:mt-6 lg:self-start">
+          <h2 className={h2}>{t.clientsTitle}</h2>
+          <ul className="mt-4 flex flex-wrap items-center gap-x-10 gap-y-6 lg:flex-col lg:items-start lg:gap-y-7">
+            {siteConfig.clients.map((c) => (
+              <li key={c.name}>
+                <a
+                  href={c.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  <Image
+                    src={c.logo}
+                    alt={c.name}
+                    title={c.name}
+                    width={c.width}
+                    height={c.height}
+                    className={`${"tall" in c ? "h-10" : "h-8"} w-auto opacity-70 grayscale transition duration-200 hover:opacity-100 hover:grayscale-0`}
+                  />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-      <section className="mt-10 max-w-prose">
-        <h2 className={h2}>{t.credentialTitle}</h2>
-        <p className="mt-3">
-          {t.credential}:{" "}
-          <a
-            href={siteConfig.dp600Url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline"
-          >
-            {t.linkCertificate}
-          </a>
-        </p>
-      </section>
+        <section className="mt-10 max-w-prose lg:col-start-1">
+          <h2 className={h2}>{t.stackTitle}</h2>
+          <ul className="text-muted-foreground mt-3 flex flex-wrap gap-2 text-sm">
+            {t.stack.map((s) => (
+              <li
+                key={s}
+                className="border-border rounded-full border px-3 py-1"
+              >
+                {s}
+              </li>
+            ))}
+          </ul>
+        </section>
 
-      {/* Moved here from /contact (owner, 11-20). A two-column grid, so the label column sizes to the longest label. */}
-      <section className="mt-10 max-w-prose">
-        <h2 className={h2}>{t.contactsTitle}</h2>
-        <dl className="mt-3 grid grid-cols-[auto_1fr] items-baseline gap-x-6 gap-y-3 text-sm">
-          <dt className="text-muted-foreground">{t.labelName}</dt>
-          <dd className="font-medium">{siteConfig.author.firstName}</dd>
-
-          <dt className="text-muted-foreground">{t.labelEmail}</dt>
-          <dd>
-            <a
-              href={`mailto:${siteConfig.contactEmail}`}
-              className="text-primary hover:underline"
-              {...ga("email_click", undefined, "about")}
-            >
-              {siteConfig.contactEmail}
-            </a>
-          </dd>
-
-          {(
-            [
-              [t.labelLinkedin, siteConfig.social.linkedin],
-              [t.labelUpwork, siteConfig.social.upwork],
-              [t.labelGithub, siteConfig.social.github],
-            ] as const
-          ).map(([platform, url]) => (
-            <Fragment key={platform}>
-              <dt className="text-muted-foreground">{platform}</dt>
-              <dd>
-                <Profile
-                  url={url}
-                  platform={platform}
-                  text={t.linkProfile}
-                  pending={t.linkPending}
-                />
-              </dd>
-            </Fragment>
-          ))}
-
-          <dt className="text-muted-foreground">{t.labelDp600}</dt>
-          <dd>
+        <section className="mt-10 max-w-prose lg:col-start-1">
+          <h2 className={h2}>{t.credentialTitle}</h2>
+          <p className="mt-3">
+            {t.credential}:{" "}
             <a
               href={siteConfig.dp600Url}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={`${t.labelDp600}: ${t.linkCertificate}`}
               className="text-primary hover:underline"
             >
               {t.linkCertificate}
             </a>
-          </dd>
-        </dl>
-      </section>
+          </p>
+        </section>
+
+        {/* Moved here from /contact (owner, 11-20). A two-column grid, so the label column sizes to the longest label. */}
+        <section className="mt-10 max-w-prose lg:col-start-1">
+          <h2 className={h2}>{t.contactsTitle}</h2>
+          <dl className="mt-3 grid grid-cols-[auto_1fr] items-baseline gap-x-6 gap-y-3 text-sm">
+            <dt className="text-muted-foreground">{t.labelName}</dt>
+            <dd className="font-medium">{siteConfig.author.firstName}</dd>
+
+            <dt className="text-muted-foreground">{t.labelEmail}</dt>
+            <dd>
+              <a
+                href={`mailto:${siteConfig.contactEmail}`}
+                className="text-primary hover:underline"
+                {...ga("email_click", undefined, "about")}
+              >
+                {siteConfig.contactEmail}
+              </a>
+            </dd>
+
+            {(
+              [
+                [t.labelLinkedin, siteConfig.social.linkedin],
+                [t.labelUpwork, siteConfig.social.upwork],
+                [t.labelGithub, siteConfig.social.github],
+              ] as const
+            ).map(([platform, url]) => (
+              <Fragment key={platform}>
+                <dt className="text-muted-foreground">{platform}</dt>
+                <dd>
+                  <Profile
+                    url={url}
+                    platform={platform}
+                    text={t.linkProfile}
+                    pending={t.linkPending}
+                  />
+                </dd>
+              </Fragment>
+            ))}
+
+            <dt className="text-muted-foreground">{t.labelDp600}</dt>
+            <dd>
+              <a
+                href={siteConfig.dp600Url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${t.labelDp600}: ${t.linkCertificate}`}
+                className="text-primary hover:underline"
+              >
+                {t.linkCertificate}
+              </a>
+            </dd>
+          </dl>
+        </section>
+      </div>
     </Container>
   );
 }

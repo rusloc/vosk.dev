@@ -24,6 +24,7 @@ import {
   type Status,
 } from "./api";
 import { COPY } from "./copy";
+import { LIVE_CHAT_OPEN_EVENT } from "./open-event";
 import styles from "./live-chat.module.css";
 
 /**
@@ -169,9 +170,10 @@ const readCardTop = () => {
 const FOCUSABLE =
   'button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([tabindex="-1"]), a[href], [tabindex="0"]';
 
-export function LiveChat() {
+export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
+  // `openFirst`: a "Contact me" click loaded the widget (live-chat-lazy.tsx), so it starts open, with focus.
   const [open, setOpenState] = useState(
-    () => storageGet("session", OPEN_KEY) === "1",
+    () => openFirst || storageGet("session", OPEN_KEY) === "1",
   );
   const [items, setItems] = useState<Item[]>([]);
   const [status, setStatus] = useState<Status>(null);
@@ -223,7 +225,7 @@ export function LiveChat() {
   const stick = useRef(true);
   const seq = useRef(0);
   const polling = useRef(false);
-  const focusOnOpen = useRef(false);
+  const focusOnOpen = useRef(openFirst);
   const titleId = useId();
   const inputId = useId();
   const emailId = useId();
@@ -398,6 +400,20 @@ export function LiveChat() {
     markSeen(maxOwnerId.current);
     setOpen(true);
   }
+
+  // A "Contact me" button elsewhere on the page opens the panel (open-event.ts, owner 11-27).
+  const openPanelRef = useRef(openPanel);
+  useEffect(() => {
+    openPanelRef.current = openPanel;
+  });
+  useEffect(() => {
+    if (openFirst) storageSet("session", OPEN_KEY, "1");
+    // Already open (only on a desktop: a phone's sheet covers the button): the click moves focus to the message box.
+    const onOpen = () =>
+      openRef.current ? textarea.current?.focus() : openPanelRef.current();
+    window.addEventListener(LIVE_CHAT_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(LIVE_CHAT_OPEN_EVENT, onOpen);
+  }, [openFirst]);
 
   function closePanel() {
     setOpen(false);

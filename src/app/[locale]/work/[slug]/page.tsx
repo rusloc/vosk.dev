@@ -5,6 +5,7 @@ import { BackLink } from "@/components/back-link";
 import { Container } from "@/components/container";
 import { JsonLd } from "@/components/json-ld";
 import { JsReportLazy } from "@/components/js-report-lazy";
+import { ContactChatLink } from "@/components/livechat/contact-chat-link";
 import { N8nWorkflow } from "@/components/n8n-workflow";
 import {
   CHAT_REPORTS,
@@ -159,7 +160,7 @@ export default async function ShowcasePage({ params }: Props) {
   // scheduler exists. Always under About on the left (owner, 11-27); on a page with "Try it yourself" its "Contact me"
   // carries the landing pages' flare (owner, 11-27).
   const contactBox = (
-    <section className="border-accent/50 bg-accent/10 max-w-prose rounded-xl border p-5 sm:p-6 lg:p-5">
+    <section className="border-accent/50 bg-accent/10 max-w-prose rounded-xl border p-5 sm:p-6 lg:px-5 lg:py-4">
       <h2 className="text-lg font-semibold tracking-tight">
         {siteConfig.bookingUrl ? t.nextCtaBooking : t.nextCta}
       </h2>
@@ -175,13 +176,14 @@ export default async function ShowcasePage({ params }: Props) {
             {t.nextBook}
           </a>
         )}
-        <Link
+        {/* Opens the live chat when it is on (owner, 11-27); the contact page otherwise, and without JS. */}
+        <ContactChatLink
           href={localizedPath(l, "/contact")}
           className={`${siteConfig.bookingUrl ? CTA_SECONDARY : CTA_PRIMARY}${showcase.platform === "automation" ? ` ${cta.flare}` : ""}`}
           {...ga("cta_click", slug, "showcase_contact")}
         >
           {t.nextContact}
-        </Link>
+        </ContactChatLink>
         <Link
           href={localizedPath(l, "/services")}
           className={CTA_SECONDARY}
@@ -227,7 +229,7 @@ export default async function ShowcasePage({ params }: Props) {
   );
 
   return (
-    <Container className="pt-6 pb-6 lg:pb-3">
+    <Container className="pt-6 pb-6 lg:pb-2">
       <JsonLd data={breadcrumbGraph(l, trail)} />
       {!showcase.noindex && (
         <JsonLd
@@ -252,11 +254,9 @@ export default async function ShowcasePage({ params }: Props) {
           describes the same Home → Showcase → title hierarchy this link walks up. */}
       <BackLink href={localizedPath(l, "/work")} label={t.backToShowcase} />
 
-      {/* One screen, no scroll, on desktop (owner, 11-25). The title and the buttons across the page, then two columns
-          from lg whose tops align (owner, 11-26): with "Try it yourself" (the n8n showcases), About and the contact box on
-          the left, the steps and the way on to the right; without it, About on the left, the contact box and the way on
-          to the right. One column below lg. */}
-      <div className="mt-3">
+      {/* One screen, no scroll, on desktop (owner, 11-25). The title and the buttons across the page, then the grid
+          below (owner's sketch, 11-27). */}
+      <div className="mt-3 lg:mt-2">
         {/* No platform pill beside the title (owner, 11-04): the buttons below name the format. */}
         <header>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -287,7 +287,7 @@ export default async function ShowcasePage({ params }: Props) {
           labels 11-03), each opening its report in the same popup. Every showcase uses
           the same two names (owner, 11-04): "Power BI" for a Power BI report, "Web report"
           for everything drawn on the site (JS, Cube, Superset). */}
-        <div className="mt-5 flex flex-wrap gap-3">
+        <div className="mt-5 flex flex-wrap gap-3 lg:mt-4">
           {/* An n8n workflow (11-16): one button that opens its canvas, drawn by n8n's hosted preview (our server
             stays private). Owner's order, 11-16: this button, then "Try it yourself", then "About this project". */}
           {/* "Ask AI" (owner, 11-16): a 16:9 popup, the chat on the right and on the left an empty slot, a dull report
@@ -423,50 +423,39 @@ export default async function ShowcasePage({ params }: Props) {
         </div>
       </div>
 
-      {/* On every showcase the left column holds About, the contact box under it and the related titles under that; "Try
-          it yourself", where a page has it, sits to the right of About (owner, 11-27). The left column is the wider one
-          (2:1), so About wraps into fewer lines and the page fits 1366×768. Without "Try it yourself" there is no
-          right column, and About runs up to 48rem wide instead. */}
-      <div
-        className={
-          showcase.platform === "automation"
-            ? "mt-6 lg:mt-5 lg:grid lg:grid-cols-[2fr_1fr] lg:gap-x-14"
-            : "mt-6 lg:mt-5"
-        }
-      >
-        <div className="space-y-6 lg:space-y-3">
-          <section className="max-w-prose lg:max-w-3xl">
-            <h2 className="text-lg font-semibold tracking-tight">
-              {t.aboutHeading}
-            </h2>
-            <div className="text-foreground/85 mt-3 space-y-4 leading-relaxed">
-              {/* A dry bullet summary (owner, 11-05): what the report shows and which metrics reveal the detail. */}
-              <ul className="marker:text-muted-foreground list-disc space-y-1.5 pl-5">
-                {details.map((point, i) => (
-                  <li key={i}>{withBold(point)}</li>
-                ))}
-              </ul>
-              {/* The long-form story, linked by its own title as the anchor. */}
-              {article && (
-                <p>
-                  {t.writeUp}:{" "}
-                  <Link
-                    href={localizedPath(l, `/blog/${article.slug}`)}
-                    className="text-primary font-medium hover:underline"
-                  >
-                    {article.title}
-                  </Link>
-                </p>
-              )}
-            </div>
-          </section>
-          {contactBox}
-          {relatedBox}
-        </div>
+      {/* One grid on every showcase (owner's sketch, 11-27), two equal columns from lg. Row one: About on the left,
+          "Try it yourself" on the right. The right cell is there on every page and empty where a page has no steps (the
+          reports). Under About, in the left column: the contact box, then "More case studies". One column below lg. */}
+      <div className="mt-6 lg:mt-4 lg:grid lg:grid-cols-2 lg:gap-x-14 lg:gap-y-3">
+        <section className="max-w-prose lg:col-start-1 lg:row-start-1">
+          <h2 className="text-lg font-semibold tracking-tight">
+            {t.aboutHeading}
+          </h2>
+          <div className="text-foreground/85 mt-3 space-y-4 leading-relaxed lg:mt-2 lg:space-y-2 lg:text-[15px] lg:leading-normal">
+            {/* A dry bullet summary (owner, 11-05): what the report shows and which metrics reveal the detail. */}
+            <ul className="marker:text-muted-foreground list-disc space-y-1.5 pl-5 lg:space-y-1">
+              {details.map((point, i) => (
+                <li key={i}>{withBold(point)}</li>
+              ))}
+            </ul>
+            {/* The long-form story, linked by its own title as the anchor. */}
+            {article && (
+              <p>
+                {t.writeUp}:{" "}
+                <Link
+                  href={localizedPath(l, `/blog/${article.slug}`)}
+                  className="text-primary font-medium hover:underline"
+                >
+                  {article.title}
+                </Link>
+              </p>
+            )}
+          </div>
+        </section>
 
-        {/* Right column on desktop: the steps to try it, only on a page that has them. */}
-        {showcase.platform === "automation" && (
-          <div className="mt-8 lg:mt-0">
+        {/* Row one, right: the steps to try it, only on a page that has them; otherwise an empty cell that keeps the grid. */}
+        {showcase.platform === "automation" ? (
+          <div className="mt-8 lg:col-start-2 lg:row-start-1 lg:mt-0">
             <section className="max-w-prose">
               {/* The heading and, on its right, the sample files: a native <details> (no client JS, owner 11-16) whose
               list opens over the content below, so the column stays short enough for one screen (11-26). */}
@@ -498,7 +487,7 @@ export default async function ShowcasePage({ params }: Props) {
                   </details>
                 )}
               </div>
-              <ol className="text-foreground/85 marker:text-muted-foreground mt-3 list-decimal space-y-1.5 pl-5 leading-relaxed">
+              <ol className="text-foreground/85 marker:text-muted-foreground mt-3 list-decimal space-y-1.5 pl-5 leading-relaxed lg:mt-2 lg:space-y-1 lg:text-[15px] lg:leading-normal">
                 {showcase.test.steps.map((step, i) => (
                   <li key={i}>
                     {step.split(/(\{email\})/).map((part, j) =>
@@ -519,7 +508,18 @@ export default async function ShowcasePage({ params }: Props) {
               </ol>
             </section>
           </div>
+        ) : (
+          <div
+            aria-hidden
+            className="hidden lg:col-start-2 lg:row-start-1 lg:block"
+          />
         )}
+
+        {/* Rows two and three, left column, under About (owner, 11-27). */}
+        <div className="mt-6 space-y-6 lg:col-start-1 lg:mt-0 lg:space-y-3">
+          {contactBox}
+          {relatedBox}
+        </div>
       </div>
     </Container>
   );

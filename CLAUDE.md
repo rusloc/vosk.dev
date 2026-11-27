@@ -7,6 +7,14 @@
 > history keeps them). Its companies list survives in `.log/report/2026-10-20-lead-engine-companies-export.html`.
 > Leads are tracked by hand now; there is no second project driven from this folder._
 
+## Delegate to subagents — priority rule (owner, 2026-11-27)
+
+**To prevent context rot, use subagents to the maximum.** Delegate all work (building, reading across files, checks,
+docs, logs) to subagents, in parallel where the parts are independent; the main chat is the managing flow: it scopes,
+briefs, assigns disjoint files to each agent, reviews their results and hands the owner the outcome and the git block.
+Each brief names the files the agent may touch, the ones it must not (another agent's), and whether it may build: one
+`pnpm build` / `next start` at a time.
+
 ## The job flow — #1 priority, every day (owner, 2026-11-09)
 
 Paying clients or a high-paid job come before all site work. **`docs/job/README.md`** is the routine, the
@@ -200,10 +208,12 @@ data/pnl/parquet/ → the P&L showcase's frozen data (Parquet + manifest; was pu
   An `automation` entry (11-16) is an n8n workflow: its text, then "How to test" on the live demo inbox, then one
   "n8n workflow" button that opens the canvas in the popup.
 - **A showcase page fits one screen, no scroll, on desktop (owner, 11-25):** the title and buttons across the top, then
-  (owner, 11-27) "About", the contact box ("Want this for your data? Message me.") always under it, and "More case
-  studies" (titles stacked) always under that. A page with "Try it yourself" puts it to the right of "About" (two
-  columns from `lg`, 2:1, aligned tops) and its "Contact me" carries the landing pages' white flare; a page without it
-  has one column, "About" up to 48rem wide. `details` is **three
+  one grid on **every** showcase (owner's sketch, 11-27): two equal columns from `lg`; row one "About" left, "Try it
+  yourself" right. The right cell is there on every page and holds nothing visible where a page has no steps (the
+  reports). Under "About", in the left column: the contact box ("Want this for your data? Message me."), then "More case
+  studies" (titles stacked). Its orange "Contact me" opens the live chat when the chat is on, `/contact` otherwise
+  (`components/livechat/contact-chat-link.tsx`); the nav's "Message" stays a link to `/contact`. n8n pages keep the
+  white flare on "Contact me". `details` is **three
   bullets of one sentence each**: what the report is about, its metrics, the tech under the hood (`work.test.ts` checks
   it). Measure at 1440×900 and 1366×768 after any change to a showcase's text.
 - **Buttons (owner, 11-25):** one look, `components/cta-button.module.css`: black (`.cta`), orange (`.cta .accent`, which

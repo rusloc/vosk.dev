@@ -2,6 +2,7 @@
 
 ## Hot findings (last 30 days)
 
+- 2026-11-27 · PERF-003: a vendored `parquet-columns.ts` with a top-level hyparquet import puts 18 kB gz in every API-reading report popup; import it inside `readRows`. Nordmark's copy still has it (held work).
 - 2026-11-16 · CAND-002: an optional build input (a JSON that may not exist yet) is a template-literal `import()`, not a literal one and not an `fs` check.
 - 2026-11-16 · CAND-003: chat tools may be async and take a request context (`chatRoute({ context })`); first user is `lib/ceo-digest/`.
 - 2026-10-20 · AP-001: the blurred title bar (0.6em overhang + 7.5px blur) gets clipped by any `overflow-hidden` within ~45px (carousel slide on /services) — give it room inside the clip, never drop the clip.
@@ -18,7 +19,7 @@
 
 - [Anti-patterns](anti-patterns.md) — 1 entry · stalest 2026-10-20 · AP-NNN
 - [Platform gotchas](platform-gotchas.md) — 4 entries · stalest 2026-08-01 · PG-NNN
-- [Perf hotspots](perf-hotspots.md) — 2 entries · stalest 2026-08-01 · PERF-NNN
+- [Perf hotspots](perf-hotspots.md) — 3 entries · stalest 2026-08-01 · PERF-NNN
 - [Security findings](security-findings.md) — 1 entry · stalest 2026-09-21 · SEC-NNN
 - [Candidates](candidates.md) — 3 awaiting second hit · CAND-NNN
 

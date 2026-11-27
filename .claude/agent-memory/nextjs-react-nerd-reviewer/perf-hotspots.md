@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-<!-- next-id: PERF-002 -->
+<!-- next-id: PERF-004 -->
 
 # Perf Hotspots (PERF-NNN)
 
@@ -44,4 +44,19 @@ HTML from 32,327 → 31,986 bytes (~341 B on every page, pre-compression).
 **Confidence:** high — reproduced.
 **Last-verified:** 2026-08-01
 **Related:** PERF-001, PG-001, PG-002
+**Status:** active
+
+### PERF-003 · A report's vendored `parquet-columns.ts` drags hyparquet into popups that read columns over the API · 2026-11-27
+
+**Symptom:** the Mirelo / Marketing / Trucks / Cash flow popup chunk groups each listed the shared hyparquet chunk
+(58 kB raw, 18 kB gz) though the browser only calls `checkRows`.
+**Cause:** `readRows` and `checkRows` share one module with a top-level `import … from "hyparquet"`; the loader's codec
+(`artifactSources({ readRows, checkRows })`) keeps `readRows` reachable, so tree shaking can't drop it.
+**Fix:** `const { parquetMetadata, parquetRead } = await import("hyparquet")` inside `readRows` (4 files). A new
+report's vendored copy must carry the same line; the upstream js-report source still has the static import.
+**Seen:** `.next/server/app/[locale]/work/[slug]/page/react-loadable-manifest.json`: 6 entries with the chunk before,
+2 after (freight, which reads Parquet, and nordmark, left untouched as held work); each fixed popup −58 kB raw.
+**Confidence:** high — measured before/after in a production build.
+**Last-verified:** 2026-11-27
+**Related:** —
 **Status:** active

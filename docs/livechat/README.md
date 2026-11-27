@@ -6,8 +6,9 @@ the script). Bot `@VoskDevBot` (id 9151498298), group "vosk.dev" with Topics on,
 allowed user 165080078 (the owner). The first token answered 401 (stale); the owner replaced it locally and in Vercel.
 All six vars in `.env.local` and Vercel Production, redeployed. `scripts/livechat-check.ts`: local 14/14 PASS (incl. B,
 G, H, I); webhook set to `https://vosk.dev/api/telegram/webhook`; production check 16/16 PASS (incl. "site: live chat
-route answers"). The showcase "Contact me" opens the chat in production (below). **Pending (owner):** the phone
-conversation test (step 8) and approving or rewriting `LIVE_CHAT_DRAFT` on the privacy page. Server (`src/lib/livechat/`,
+route answers"). The showcase "Contact me" opens the chat in production (below). **Phone test passed 2026-11-27**
+(owner): visitor messages open topics on the owner's phone, replies reach the site, a normal back-and-forth works.
+**Only open item (owner):** approve or rewrite `LIVE_CHAT_DRAFT` on the privacy page. Server (`src/lib/livechat/`,
 3 routes, setup script, 70 tests), widget (`src/components/livechat/`, mounted in `src/app/[locale]/layout.tsx`), SQL in
 `data/livechat/sql/`. Spec (owner, 11-26):
 `.log/report/vosk.dev Telegram live chat build spec.md`. This file is the contract the server and the widget are built
@@ -90,7 +91,7 @@ before hydration, without JS, or on a modified click (new tab), it is a plain li
 ## Owner's setup (after the build) — in this order
 
 Steps 1–7 **done 2026-11-27** (SQL and password by the owner; checks and webhook by the agent, 16/16 PASS in
-production). Step 8's phone conversation is still open.
+production). Step 8 done: the owner's phone conversation passed the same day.
 
 1. ✓ **SQL:** Supabase dashboard → SQL editor → paste the whole of `data/livechat/sql/001-schema-and-roles.sql` → Run
    (idempotent). Then tell the agent: it runs checks C, D (advisors 0) and E read-only.
@@ -109,6 +110,6 @@ production). Step 8's phone conversation is still open.
 6. ✓ **Vercel:** Settings → Environment Variables (Production): the five new vars (`CHAT_IP_HASH_SALT` is already there)
    → **Redeploy** (the layout reads them at build).
 7. ✓ **Webhook:** `node --env-file=.env.local --import tsx scripts/telegram-setup.ts https://vosk.dev`
-8. **Live check:** (script part done, 16/16 PASS; the phone conversation is pending) `node --conditions=react-server --env-file=.env.local --import tsx scripts/livechat-check.ts https://vosk.dev`
+8. ✓ **Live check:** (16/16 PASS; phone conversation passed 11-27, owner) `node --conditions=react-server --env-file=.env.local --import tsx scripts/livechat-check.ts https://vosk.dev`
    → adds "site: live chat route answers" and "telegram: webhook". Then one real conversation from a phone: the topic
    opens, a reply reaches the widget within ~3 s, `/close` closes it. Approve or rewrite `LIVE_CHAT_DRAFT` (privacy).

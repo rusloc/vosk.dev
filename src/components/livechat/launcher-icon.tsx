@@ -8,8 +8,8 @@ const BACK =
   "M46 26H80a16 16 0 0 1 16 16v24a16 16 0 0 1-16 16L81.5 97 63 82H46a16 16 0 0 1-16-16V42a16 16 0 0 1 16-16Z";
 
 /**
- * The closed launcher's face: the bubbles, and "Live" typed into the front one, letter by letter with a caret, held,
- * cleared, again (CSS only, live-chat.module.css; static under reduced motion). Decorative: the button carries the name.
+ * The closed launcher's face: the bubbles, and three typing dots in the front one, rising in turn (owner, 11-27; CSS
+ * only, live-chat.module.css; static under reduced motion). Decorative: the button carries the name.
  */
 export function LauncherIcon({ maskId: rawId }: { maskId: string }) {
   // useId may hold ":" or "«»", which break a url(#…) reference.
@@ -43,17 +43,10 @@ export function LauncherIcon({ maskId: rawId }: { maskId: string }) {
           strokeLinejoin="round"
         />
       </svg>
-      <span className={styles.word}>
-        {/* Sizes the box to the whole word, so the typed letters start where the finished word sits, centred. */}
-        <span className={styles.ghost}>Live</span>
-        <span className={styles.typed}>
-          {["L", "i", "v", "e"].map((c, i) => (
-            <span key={i} className={styles.letter}>
-              {c}
-            </span>
-          ))}
-          <span className={styles.caret} />
-        </span>
+      <span className={styles.dots}>
+        <span className={styles.dot} />
+        <span className={styles.dot} />
+        <span className={styles.dot} />
       </span>
     </span>
   );

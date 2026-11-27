@@ -45,6 +45,9 @@ const SLOW_MS = 5_000;
 const MAX_TEXT = 2_000;
 // 20 % larger than the old 56 px circle (owner, 11-27): the two-bubble icon reads at a glance.
 const LAUNCHER = 67;
+// Open, the launcher is a 34 px close circle (owner, 11-27: half the icon) in a 44 px hit area, centred where the icon was.
+const CLOSE = 34;
+const CLOSE_HIT = 44;
 const GAP = 12;
 
 type Msg = {
@@ -517,20 +520,21 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
       return;
     }
     if (e.key !== "Tab" || !dialog.current) return;
+    // The panel has no close button of its own (owner, 11-27): the launcher's ✕ (before the panel in the DOM) is the
+    // stop after the panel's last control and before its first; the ✕'s own onKeyDown leads back in.
     const nodes = Array.from(
       dialog.current.querySelectorAll<HTMLElement>(FOCUSABLE),
     );
-    if (!nodes.length) return;
-    const head = nodes[0]!;
-    const tail = nodes[nodes.length - 1]!;
+    const close = launcher.current;
+    const head = nodes[0];
+    const tail = nodes[nodes.length - 1];
     const at = document.activeElement;
-    if (e.shiftKey && (at === head || at === dialog.current)) {
-      e.preventDefault();
-      tail.focus();
-    } else if (!e.shiftKey && at === tail) {
-      e.preventDefault();
-      head.focus();
-    }
+    const edge = e.shiftKey
+      ? at === head || at === dialog.current
+      : at === tail || !tail;
+    if (!edge) return;
+    e.preventDefault();
+    (close ?? (e.shiftKey ? tail : head))?.focus();
   }
 
   // Geometry: the launcher sits 16 px from the bottom-right corner, above the consent card while it shows (the card
@@ -539,7 +543,9 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   const launcherBottom =
     consentPending && cardTop > 0 ? Math.max(base, cardTop + GAP) : base;
   const right = 16;
-  const panelBottom = launcherBottom + LAUNCHER + GAP;
+  // The close circle's top edge, then the gap: the panel sits just above the ✕.
+  const panelBottom = launcherBottom + Math.ceil((LAUNCHER + CLOSE) / 2) + GAP;
+  const closeInset = (LAUNCHER - CLOSE_HIT) / 2;
   const [vvTop = 0, vvHeight = 0, layoutHeight = 0] = viewport
     ? viewport.split(":").map(Number)
     : [];
@@ -580,8 +586,8 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
       <div
         className="fixed z-[55]"
         style={{
-          right,
-          bottom: `calc(${launcherBottom}px + ${safe})`,
+          right: open ? right + closeInset : right,
+          bottom: `calc(${open ? launcherBottom + closeInset : launcherBottom}px + ${safe})`,
         }}
       >
         <button
@@ -597,16 +603,42 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
           aria-expanded={open}
           aria-haspopup="dialog"
           onClick={() => (open ? closePanel() : openPanel())}
-          className={open ? `${cta.cta} shadow-lg` : styles.launcher}
-          style={{
-            width: LAUNCHER,
-            height: LAUNCHER,
-            padding: 0,
-            borderRadius: open ? 9999 : undefined,
+          onKeyDown={(e) => {
+            // While open, the ✕ is in the panel's Tab cycle and closes on Esc like the panel.
+            if (!open || !dialog.current) return;
+            if (e.key === "Escape") {
+              e.preventDefault();
+              closePanel();
+            } else if (e.key === "Tab") {
+              const nodes = Array.from(
+                dialog.current.querySelectorAll<HTMLElement>(FOCUSABLE),
+              );
+              const to = e.shiftKey ? nodes[nodes.length - 1] : nodes[0];
+              if (to) {
+                e.preventDefault();
+                to.focus();
+              }
+            }
           }}
+          className={open ? styles.closeHit : styles.launcher}
+          style={
+            open
+              ? { width: CLOSE_HIT, height: CLOSE_HIT }
+              : { width: LAUNCHER, height: LAUNCHER, padding: 0 }
+          }
         >
           {open ? (
-            <CloseIcon className="h-5 w-5" />
+            <span
+              className={`${cta.cta} shadow-lg`}
+              style={{
+                width: CLOSE,
+                height: CLOSE,
+                padding: 0,
+                borderRadius: 9999,
+              }}
+            >
+              <CloseIcon className="h-4 w-4" />
+            </span>
           ) : (
             <LauncherIcon maskId={maskId} />
           )}
@@ -625,25 +657,17 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
         <div
           ref={dialog}
           role="dialog"
-          aria-modal="true"
           aria-labelledby={titleId}
           tabIndex={-1}
           onKeyDown={onDialogKeyDown}
-          className={`bg-background text-foreground border-border fixed z-[55] flex flex-col overflow-hidden rounded-lg border shadow-xl outline-none ${styles.panel}`}
+          className={`text-foreground border-border fixed z-[55] flex flex-col overflow-hidden rounded-lg border bg-white shadow-xl outline-none ${styles.panel}`}
           style={panelStyle}
         >
-          <div className="border-border flex shrink-0 items-center justify-between gap-4 border-b py-1.5 pr-1.5 pl-4">
+          {/* No close button here (owner, 11-27): the ✕ under the panel closes it, as does Esc. */}
+          <div className="border-border shrink-0 border-b px-4 py-2.5">
             <h2 id={titleId} className="text-sm font-medium">
               {COPY.title}
             </h2>
-            <button
-              type="button"
-              aria-label={COPY.close}
-              onClick={closePanel}
-              className="text-muted-foreground hover:text-foreground inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md"
-            >
-              <CloseIcon className="h-4 w-4" />
-            </button>
           </div>
 
           <div
@@ -687,7 +711,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
                             setEmail(e.target.value);
                             if (emailState !== "busy") setEmailState("idle");
                           }}
-                          className="border-border bg-background placeholder:text-muted-foreground min-w-0 flex-1 rounded-md border px-2 py-1 text-base sm:text-sm"
+                          className="border-border placeholder:text-muted-foreground min-w-0 flex-1 rounded-md border bg-white px-2 py-1 text-base sm:text-sm"
                         />
                         <button
                           type="submit"
@@ -778,7 +802,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
                     if (canSend) void send(input);
                   }
                 }}
-                className="border-border bg-background placeholder:text-muted-foreground focus-visible:outline-primary block max-h-32 min-h-10 min-w-0 flex-1 resize-none rounded-md border px-3 py-2 text-base leading-snug sm:text-sm"
+                className="border-border placeholder:text-muted-foreground focus-visible:outline-primary block max-h-32 min-h-10 min-w-0 flex-1 resize-none rounded-md border bg-white px-3 py-2 text-base leading-snug sm:text-sm"
               />
               <button type="submit" disabled={!canSend} className={cta.cta}>
                 {COPY.send}

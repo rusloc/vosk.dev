@@ -202,7 +202,7 @@ export default async function ShowcasePage({ params }: Props) {
             {t.relatedTitle}
           </h2>
           {/* Stacked, one title per line (owner, 11-27). */}
-          <ul className="mt-2 space-y-1.5 lg:mt-1 lg:space-y-1">
+          <ul className="mt-2 space-y-1.5 lg:mt-1 lg:space-y-0.5">
             {related.map((r) => (
               <li key={r.slug}>
                 <Link
@@ -227,7 +227,7 @@ export default async function ShowcasePage({ params }: Props) {
   );
 
   return (
-    <Container className="py-6">
+    <Container className="pt-6 pb-6 lg:pb-3">
       <JsonLd data={breadcrumbGraph(l, trail)} />
       {!showcase.noindex && (
         <JsonLd
@@ -425,16 +425,16 @@ export default async function ShowcasePage({ params }: Props) {
 
       {/* On every showcase the left column holds About, the contact box under it and the related titles under that; "Try
           it yourself", where a page has it, sits to the right of About (owner, 11-27). The left column is the wider one
-          (3:2), so About wraps into fewer lines and the page fits 1366×768. Without "Try it yourself" there is no
+          (2:1), so About wraps into fewer lines and the page fits 1366×768. Without "Try it yourself" there is no
           right column, and About runs up to 48rem wide instead. */}
       <div
         className={
           showcase.platform === "automation"
-            ? "mt-6 lg:grid lg:grid-cols-[3fr_2fr] lg:gap-x-14"
-            : "mt-6"
+            ? "mt-6 lg:mt-5 lg:grid lg:grid-cols-[2fr_1fr] lg:gap-x-14"
+            : "mt-6 lg:mt-5"
         }
       >
-        <div className="space-y-6 lg:space-y-3.5">
+        <div className="space-y-6 lg:space-y-3">
           <section className="max-w-prose lg:max-w-3xl">
             <h2 className="text-lg font-semibold tracking-tight">
               {t.aboutHeading}

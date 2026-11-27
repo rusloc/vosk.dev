@@ -202,7 +202,7 @@ data/pnl/parquet/ → the P&L showcase's frozen data (Parquet + manifest; was pu
 - **A showcase page fits one screen, no scroll, on desktop (owner, 11-25):** the title and buttons across the top, then
   (owner, 11-27) "About", the contact box ("Want this for your data? Message me.") always under it, and "More case
   studies" (titles stacked) always under that. A page with "Try it yourself" puts it to the right of "About" (two
-  columns from `lg`, 3:2, aligned tops) and its "Contact me" carries the landing pages' white flare; a page without it
+  columns from `lg`, 2:1, aligned tops) and its "Contact me" carries the landing pages' white flare; a page without it
   has one column, "About" up to 48rem wide. `details` is **three
   bullets of one sentence each**: what the report is about, its metrics, the tech under the hood (`work.test.ts` checks
   it). Measure at 1440×900 and 1366×768 after any change to a showcase's text.

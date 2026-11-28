@@ -49,6 +49,10 @@ export const en = {
     cta: "Showcase",
     ctaSecondary: "Services & pricing",
   },
+  footer: {
+    privacy: "Privacy",
+    available: "Available for new projects",
+  },
   services: {
     title: "Services",
     // The page H1 (SEO spec T-07); `title` is also the nav label and the breadcrumb name.

@@ -8,6 +8,7 @@ import { withTitleSuffix } from "@/lib/metadata";
 import { locales, isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { SiteNav } from "@/components/nav";
+import { SiteFooter } from "@/components/footer";
 import { Analytics } from "@/components/analytics";
 import { LeadSourceCapture } from "@/components/lead-source-capture";
 import { LiveChatLazy } from "@/components/livechat/live-chat-lazy";
@@ -93,6 +94,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         <main className="flex-1 has-[>.home-hero]:flex has-[>.home-hero]:flex-col">
           {children}
         </main>
+        <SiteFooter locale={locale as Locale} dict={dict} />
         <Analytics gtmId={env.NEXT_PUBLIC_GTM_ID} />
         <LeadSourceCapture />
         {/* The Telegram live chat (docs/livechat): off until its five env vars are set; loads after idle. */}

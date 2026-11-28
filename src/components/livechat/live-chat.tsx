@@ -185,6 +185,37 @@ const readCard = () => {
 };
 
 /**
+ * How much of the window's bottom the site footer covers (owner, 11-28): 0 while it is below the fold, its full height
+ * when the page is scrolled to the end, and always on a page that fits the screen. The launcher sits above that.
+ * Read on scroll and resize, once a frame at most, and when the page's height changes (a new route).
+ */
+const FOOTER = "body > footer";
+function subscribeFooter(cb: () => void) {
+  let frame = 0;
+  const onMove = () => {
+    if (frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      cb();
+    });
+  };
+  window.addEventListener("scroll", onMove, { passive: true });
+  window.addEventListener("resize", onMove);
+  const ro = new ResizeObserver(onMove);
+  ro.observe(document.body);
+  return () => {
+    cancelAnimationFrame(frame);
+    window.removeEventListener("scroll", onMove);
+    window.removeEventListener("resize", onMove);
+    ro.disconnect();
+  };
+}
+const readFooter = () => {
+  const box = document.querySelector(FOOTER)?.getBoundingClientRect();
+  return box ? Math.max(0, Math.ceil(window.innerHeight - box.top)) : 0;
+};
+
+/**
  * The launcher's line (owner, 11-27): the right edge of whatever sits in the nav's top-right slot, the "Message"
  * button from `md` up and the menu button below it; the launcher's right edge goes on it. Measured, since the nav's
  * container rules live in the nav. With no site nav on the page, the old 16 px gutter.
@@ -250,6 +281,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   const consentPending = useConsentPending();
   const card = useSyncExternalStore(subscribeCard, readCard, () => "");
   const edge = useSyncExternalStore(subscribeColumn, readColumn, () => 0);
+  const footer = useSyncExternalStore(subscribeFooter, readFooter, () => 0);
 
   const launcher = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
@@ -565,6 +597,8 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
   // Geometry: the launcher sits 16 px above the bottom, its right edge on the nav's top-right button's (owner, 11-27),
   // and the panel a gap above it, its right edge on the same line (owner's design, 11-28; on a phone it keeps 16 px
   // gutters). The consent card sits bottom-right: while it shows, whichever of the two would meet it is lifted above it.
+  // The footer lifts the launcher too, a gap above its top border while it is on screen; the higher lift wins. The
+  // lift follows the scroll directly, with no transition to lag behind it.
   const base = 16;
   const launcherLeft = edge - LAUNCHER;
   const panelLeft = Math.max(16, edge - PANEL_WIDTH);
@@ -574,7 +608,11 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
     cardTop > 0 && left < cardRight + GAP && edge > cardLeft - GAP
       ? cardTop + GAP
       : 0;
-  const launcherBottom = Math.max(base, aboveCard(launcherLeft));
+  const launcherBottom = Math.max(
+    base,
+    aboveCard(launcherLeft),
+    footer > 0 ? footer + GAP : 0,
+  );
   const panelBottom = Math.max(
     launcherBottom + LAUNCHER + GAP,
     aboveCard(panelLeft),
@@ -668,7 +706,7 @@ export function LiveChat({ openFirst = false }: { openFirst?: boolean }) {
           aria-labelledby={titleId}
           tabIndex={-1}
           onKeyDown={onDialogKeyDown}
-          className={`text-foreground border-border bg-background fixed z-[55] flex flex-col overflow-hidden rounded-2xl border shadow-xl outline-none ${styles.panel}`}
+          className={`text-foreground border-border bg-background fixed z-[55] flex flex-col overflow-hidden rounded-2xl border outline-none ${styles.panel}`}
           style={panelStyle}
         >
           {/* On the page's cream: notes are the muted grey (5.1:1 on it); Kirill's bubbles, the cards and the message

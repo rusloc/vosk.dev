@@ -108,10 +108,12 @@ open its Power BI publish-to-web link. Built 11-24: `docs/freight/README.md`.
   on 11-19). Anything added to the hero must still fit the screen; check it in a headless browser at 1440×900,
   1366×768 and 390×844 before shipping.
 
-## No site footer (owner, 2026-11-22)
+## Footer (owner, 2026-11-28)
 
-- **No footer on any page.** The site is nav + page; `components/footer.tsx` was removed. Privacy stays reachable from the
-  consent card and the ad landing pages; "Change cookie choice" lives on /privacy.
+- **One short row on every site page:** "© VOSK {year}", one "Privacy" link, "Available for new projects"
+  (`components/footer.tsx`; removed 11-22, back 11-28). Not on `/lp/*`. The home page must still fit with no scroll:
+  check 1440×900, 1366×768, 390×844 and 360×740 after any change to it. The live chat launcher lifts above it.
+  "Change cookie choice" lives on /privacy.
 
 ## Ad landing pages — `/lp/*` (owner, 2026-11-20)
 

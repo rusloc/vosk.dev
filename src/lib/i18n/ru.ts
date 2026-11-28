@@ -38,6 +38,10 @@ export const ru: Dictionary = {
     cta: "Кейсы",
     ctaSecondary: "Цены",
   },
+  footer: {
+    privacy: "Конфиденциальность",
+    available: "Открыт для новых проектов",
+  },
   services: {
     title: "Услуги",
     heading:
